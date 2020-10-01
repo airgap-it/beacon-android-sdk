@@ -1,0 +1,41 @@
+image: docker:latest
+
+variables:
+  GOOGLE_TAG: eu.gcr.io/papers-kubernetes/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME:$CI_COMMIT_SHA
+  GOOGLE_TAG_LATEST: eu.gcr.io/papers-kubernetes/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME:latest
+
+stages:
+  - build
+  - test
+#  - publish
+
+build:
+  stage: build
+  variables:
+    BUILD_CONTAINER: build-$CI_COMMIT_SHA
+  before_script:
+    - docker rm -f $BUILD_CONTAINER || true
+  script:
+    - docker build -t $GOOGLE_TAG .
+    - docker run --name $BUILD_CONTAINER $GOOGLE_TAG echo "container ran"
+    - docker cp $BUILD_CONTAINER:/build/android-release-unsigned.aar beaconsdk-release-unsigned-$CI_PIPELINE_ID.aar
+  after_script:
+    - docker rm -f $BUILD_CONTAINER || true
+  tags:
+    - docker
+  artifacts:
+    paths:
+      - beaconsdk-release-unsigned-$CI_PIPELINE_ID.aar
+
+unit:
+  stage: test
+  variables:
+    UNIT_CONTAINER: unit-$CI_COMMIT_SHA
+  before_script:
+    - docker rm -f $UNIT_CONTAINER || true
+  script:
+    - docker run --name $UNIT_CONTAINER $GOOGLE_TAG /bin/bash -c "/build/gradlew test"
+  after_script:
+    - docker rm -f $UNIT_CONTAINER || true
+  tags:
+    - docker
