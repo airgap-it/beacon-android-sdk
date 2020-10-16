@@ -1,0 +1,70 @@
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+apply plugin: 'kotlinx-serialization'
+
+android {
+    compileSdkVersion 29
+    buildToolsVersion "29.0.3"
+
+    defaultConfig {
+        minSdkVersion 21
+        targetSdkVersion 29
+        versionCode 1
+        versionName "0.0.1"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    flavorDimensions "version"
+    productFlavors {
+        prod {
+            dimension "version"
+            buildConfigField("String", "VERSION_NAME", "\"${defaultConfig.versionName}\"")
+
+        }
+        mock {
+            dimension "version"
+            buildConfigField("String", "VERSION_NAME", "\"${defaultConfig.versionName}-mock\"")
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: "libs", include: ["*.jar"])
+    implementation(Dependencies.kotlinStdlib)
+
+    implementation(Dependencies.androidxCore)
+    implementation(Dependencies.androidxAppCompat)
+
+    // Reflection
+    implementation(Dependencies.kotlinReflection)
+
+    // Serialization
+    implementation(Dependencies.kotlinxSerializationJson)
+
+    // Coroutines
+    implementation(Dependencies.kotlinxCoroutines)
+    implementation(Dependencies.kotlinxCoroutinesAndroid)
+
+    // Lazy Sodium
+    implementation(Dependencies.lazySodium)
+    implementation(Dependencies.jna)
+
+    // Test
+    testImplementation(TestDependencies.kotlinTest)
+    testImplementation(TestDependencies.kotlinxCoroutinesTest)
+
+    testImplementation(TestDependencies.junit)
+    testImplementation(TestDependencies.mockk)
+
+    androidTestImplementation(TestDependencies.androidxJunit)
+    androidTestImplementation(TestDependencies.androidxEspresso)
+}

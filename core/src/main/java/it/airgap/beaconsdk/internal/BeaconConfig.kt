@@ -1,0 +1,28 @@
+package it.airgap.beaconsdk.internal
+
+import it.airgap.beaconsdk.BuildConfig
+
+internal object BeaconConfig {
+    val versionName
+        get() = BuildConfig.VERSION_NAME
+
+    val defaultRelayServers: List<String> = listOf(
+        "matrix.papers.tech",
+//        "matrix.tez.ie",
+//        "matrix-dev.papers.tech",
+//        "matrix.stove-labs.com",
+//        "yadayada.cryptonomic-infra.tech",
+    )
+    val p2pReplicationCount: Int = 1
+
+    val cryptoProvider: CryptoProvider = CryptoProvider.LazySodium
+    val serializerProvider: SerializerProvider = SerializerProvider.Base58Check
+
+    enum class CryptoProvider {
+        LazySodium
+    }
+
+    enum class SerializerProvider {
+        Base58Check
+    }
+}

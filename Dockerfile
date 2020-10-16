@@ -12,10 +12,10 @@ COPY . /build
 # clean project
 RUN /build/gradlew --project-dir /build clean
 
-# build apk
-RUN /build/gradlew --project-dir /build build
+# build apk, exclude prod flavored unit tests
+RUN /build/gradlew --project-dir /build :core:assembleProd
 
 # copy release aar
-RUN cp /build/app/build/outputs/aar/app-release.aar android-release-unsigned.aar
+RUN cp /build/core/build/outputs/aar/core-prod-release.aar android-core-release-unsigned.aar
 
 CMD ["/build/gradlew", "test"]
