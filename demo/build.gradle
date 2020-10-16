@@ -1,0 +1,56 @@
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+
+android {
+    compileSdkVersion 29
+    buildToolsVersion "29.0.3"
+
+    defaultConfig {
+        applicationId "it.airgap.beaconsdkdemo"
+        minSdkVersion 21
+        targetSdkVersion 29
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    flavorDimensions "version"
+    productFlavors {
+        prod {
+            dimension "version"
+        }
+
+        mock {
+            dimension "version"
+            applicationIdSuffix = ".mock"
+            versionNameSuffix = "-mock"
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: "libs", include: ["*.jar"])
+    implementation project(path: ':core')
+
+    implementation(Dependencies.kotlinStdlib)
+
+    implementation(Dependencies.androidxCore)
+    implementation(Dependencies.androidxAppCompat)
+    implementation(Dependencies.androidxConstraintLayout)
+
+    implementation(Dependencies.kotlinxCoroutinesAndroid)
+
+    testImplementation(TestDependencies.junit)
+    androidTestImplementation(TestDependencies.androidxJunit)
+    androidTestImplementation(TestDependencies.androidxEspresso)
+
+}

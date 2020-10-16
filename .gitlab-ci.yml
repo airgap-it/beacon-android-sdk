@@ -18,24 +18,28 @@ build:
   script:
     - docker build -t $GOOGLE_TAG .
     - docker run --name $BUILD_CONTAINER $GOOGLE_TAG echo "container ran"
-    - docker cp $BUILD_CONTAINER:/build/android-release-unsigned.aar beaconsdk-release-unsigned-$CI_PIPELINE_ID.aar
+    - docker cp $BUILD_CONTAINER:/build/android-core-release-unsigned.aar beaconsdk-core-release-unsigned-$CI_PIPELINE_ID.aar
   after_script:
     - docker rm -f $BUILD_CONTAINER || true
   tags:
     - docker
   artifacts:
     paths:
-      - beaconsdk-release-unsigned-$CI_PIPELINE_ID.aar
+      - beaconsdk-core-release-unsigned-$CI_PIPELINE_ID.aar
 
 unit:
   stage: test
   variables:
     UNIT_CONTAINER: unit-$CI_COMMIT_SHA
+    LINT_CONTAINER: lint-$CI_COMMIT_SHA
   before_script:
     - docker rm -f $UNIT_CONTAINER || true
+    - docker rm -f $LINT_CONTAINER || true
   script:
-    - docker run --name $UNIT_CONTAINER $GOOGLE_TAG /bin/bash -c "/build/gradlew test"
+    - docker run --name $UNIT_CONTAINER $GOOGLE_TAG /bin/bash -c "/build/gradlew --project-dir /build testMockReleaseUnitTest"
+    - docker run --name $LINT_CONTAINER $GOOGLE_TAG /bin/bash -c "/build/gradlew --project-dir /build lint"
   after_script:
     - docker rm -f $UNIT_CONTAINER || true
+    - docker rm -f $LINT_CONTAINER || true
   tags:
     - docker
