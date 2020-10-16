@@ -8,11 +8,8 @@ import it.airgap.beaconsdk.internal.crypto.data.SessionKeyPair
 import it.airgap.beaconsdk.internal.matrix.MatrixClient
 import it.airgap.beaconsdk.internal.matrix.data.client.MatrixClientEvent
 import it.airgap.beaconsdk.internal.matrix.data.client.MatrixClientMessage
-import it.airgap.beaconsdk.internal.storage.ExtendedStorage
-import it.airgap.beaconsdk.internal.storage.Storage
 import it.airgap.beaconsdk.internal.transport.data.TransportMessage
 import it.airgap.beaconsdk.internal.utils.*
-import it.airgap.beaconsdk.storage.MockBeaconStorageKtx
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.toList

@@ -4,19 +4,17 @@ import it.airgap.beaconsdk.exception.BeaconException
 import it.airgap.beaconsdk.internal.BeaconApp
 import it.airgap.beaconsdk.internal.client.ConnectionClient
 import it.airgap.beaconsdk.internal.client.SdkClient
-import it.airgap.beaconsdk.internal.utils.InternalResult
 import it.airgap.beaconsdk.internal.controller.MessageController
 import it.airgap.beaconsdk.internal.message.beaconmessage.ApiBeaconMessage
 import it.airgap.beaconsdk.internal.servicelocator.InternalServiceLocator
 import it.airgap.beaconsdk.internal.storage.ExtendedStorage
 import it.airgap.beaconsdk.internal.storage.SharedPreferencesStorage
-import it.airgap.beaconsdk.internal.storage.Storage
 import it.airgap.beaconsdk.internal.transport.Transport
+import it.airgap.beaconsdk.internal.utils.InternalResult
 import it.airgap.beaconsdk.internal.utils.failWithUninitialized
 import it.airgap.beaconsdk.internal.utils.suspendTryInternal
 import it.airgap.beaconsdk.message.BeaconMessage
 import it.airgap.beaconsdk.storage.BeaconStorage
-import it.airgap.beaconsdk.storage.BeaconStorageKtx
 import kotlinx.coroutines.CompletableJob
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -25,7 +23,6 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import kotlin.jvm.Throws
 
 class BeaconWalletClient internal constructor(
     override val name: String,
@@ -154,11 +151,10 @@ class BeaconWalletClient internal constructor(
     }
 
     class Builder(private val name: String) {
-        private var _storage: Storage? = null
+        private var _storage: BeaconStorage? = null
         private var _matrixNodes: List<String> = emptyList()
 
-        fun storage(storage: BeaconStorage): Builder = apply { _storage = Storage.CallbackDecorator(storage) }
-        fun storage(storage: BeaconStorageKtx): Builder = apply { _storage = Storage.KtxDecorator(storage) }
+        fun storage(storage: BeaconStorage): Builder = apply { _storage = storage }
 
         fun matrixNodes(nodes: List<String>): Builder = apply { _matrixNodes = nodes }
         fun matrixNodes(vararg nodes: String): Builder = apply { _matrixNodes = nodes.toList() }

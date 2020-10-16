@@ -6,11 +6,10 @@ import it.airgap.beaconsdk.data.p2p.P2pPairingRequest
 import it.airgap.beaconsdk.data.sdk.Origin
 import it.airgap.beaconsdk.internal.message.ConnectionMessage
 import it.airgap.beaconsdk.internal.storage.ExtendedStorage
-import it.airgap.beaconsdk.internal.storage.Storage
 import it.airgap.beaconsdk.internal.transport.client.P2pCommunicationClient
 import it.airgap.beaconsdk.internal.transport.data.TransportMessage
 import it.airgap.beaconsdk.internal.utils.*
-import it.airgap.beaconsdk.storage.MockBeaconStorageKtx
+import it.airgap.beaconsdk.storage.MockBeaconStorage
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
@@ -35,7 +34,7 @@ class P2pTransportTest {
         mockkStatic("it.airgap.beaconsdk.internal.utils.LogKt")
         every { logDebug(any(), any()) } returns Unit
 
-        storage = ExtendedStorage(Storage.KtxDecorator(MockBeaconStorageKtx()))
+        storage = ExtendedStorage(MockBeaconStorage())
         p2pTransport = P2pTransport(appName, storage, p2pCommunicationClient)
     }
 

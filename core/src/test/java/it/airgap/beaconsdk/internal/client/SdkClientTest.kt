@@ -8,11 +8,9 @@ import io.mockk.verify
 import it.airgap.beaconsdk.internal.BeaconConfig
 import it.airgap.beaconsdk.internal.crypto.Crypto
 import it.airgap.beaconsdk.internal.crypto.data.KeyPair
-import it.airgap.beaconsdk.internal.utils.InternalResult
 import it.airgap.beaconsdk.internal.storage.ExtendedStorage
-import it.airgap.beaconsdk.internal.storage.Storage
 import it.airgap.beaconsdk.internal.utils.internalSuccess
-import it.airgap.beaconsdk.storage.MockBeaconStorageKtx
+import it.airgap.beaconsdk.storage.MockBeaconStorage
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -40,7 +38,7 @@ class SdkClientTest {
         every { crypto.generateRandomSeed() } returns internalSuccess(secretSeed)
         every { crypto.getKeyPairFromSeed(any()) } returns internalSuccess(KeyPair(privateKey, publicKey))
 
-        storage = ExtendedStorage(Storage.KtxDecorator(MockBeaconStorageKtx()))
+        storage = ExtendedStorage(MockBeaconStorage())
         sdkClient = SdkClient(storage, crypto)
     }
 

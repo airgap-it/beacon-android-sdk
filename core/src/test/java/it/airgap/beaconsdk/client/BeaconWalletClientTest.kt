@@ -13,11 +13,10 @@ import it.airgap.beaconsdk.internal.crypto.data.KeyPair
 import it.airgap.beaconsdk.internal.utils.InternalResult
 import it.airgap.beaconsdk.internal.message.beaconmessage.ApiBeaconMessage
 import it.airgap.beaconsdk.internal.storage.ExtendedStorage
-import it.airgap.beaconsdk.internal.storage.Storage
 import it.airgap.beaconsdk.internal.utils.internalSuccess
 import it.airgap.beaconsdk.internal.utils.uninitializedMessage
 import it.airgap.beaconsdk.message.BeaconMessage
-import it.airgap.beaconsdk.storage.MockBeaconStorageKtx
+import it.airgap.beaconsdk.storage.MockBeaconStorage
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.runBlocking
@@ -54,7 +53,7 @@ class BeaconWalletClientTest {
         coEvery { messageController.onRequest(any()) } returns internalSuccess(Unit)
         coEvery { messageController.onResponse(any()) } returns internalSuccess(Unit)
 
-        storage = ExtendedStorage(Storage.KtxDecorator(MockBeaconStorageKtx()))
+        storage = ExtendedStorage(MockBeaconStorage())
         sdkClient = spyk(SdkClient(storage, crypto))
 
         beaconWalletClient = BeaconWalletClient("mockApp", sdkClient, connectionClient, messageController, storage)

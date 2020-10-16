@@ -1,41 +1,29 @@
 package it.airgap.beaconsdk.storage
 
 import it.airgap.beaconsdk.data.account.AccountInfo
-import it.airgap.beaconsdk.data.sdk.AppMetadata
 import it.airgap.beaconsdk.data.p2p.P2pPairingRequest
 import it.airgap.beaconsdk.data.permission.PermissionInfo
+import it.airgap.beaconsdk.data.sdk.AppMetadata
 
 interface BeaconStorage {
-    fun getP2pPeers(listener: OnReadListener<List<P2pPairingRequest>>)
-    fun setP2pPeers(p2pPeers: List<P2pPairingRequest>, listener: OnWriteListener)
+    suspend fun getP2pPeers(): List<P2pPairingRequest>
+    suspend fun setP2pPeers(p2pPeers: List<P2pPairingRequest>)
 
-    fun getAccounts(listener: OnReadListener<List<AccountInfo>>)
-    fun setAccounts(accounts: List<AccountInfo>, listener: OnWriteListener)
+    suspend fun getAccounts(): List<AccountInfo>
+    suspend fun setAccounts(accounts: List<AccountInfo>)
 
-    fun getActiveAccountIdentifier(listener: OnReadListener<String?>)
-    fun setActiveAccountIdentifier(activeAccountIdentifier: String, listener: OnWriteListener)
+    suspend fun getActiveAccountIdentifier(): String?
+    suspend fun setActiveAccountIdentifier(activeAccountIdentifier: String)
 
-    fun getAppsMetadata(listener: OnReadListener<List<AppMetadata>>)
-    fun setAppsMetadata(appsMetadata: List<AppMetadata>, listener: OnWriteListener)
+    suspend fun getAppsMetadata(): List<AppMetadata>
+    suspend fun setAppsMetadata(appsMetadata: List<AppMetadata>)
 
-    fun getPermissions(listener: OnReadListener<List<PermissionInfo>>)
-    fun setPermissions(permissions: List<PermissionInfo>, listener: OnWriteListener)
+    suspend fun getPermissions(): List<PermissionInfo>
+    suspend fun setPermissions(permissions: List<PermissionInfo>)
 
-    fun getSdkSecretSeed(listener: OnReadListener<String?>)
-    fun setSdkSecretSeed(sdkSecretSeed: String, listener: OnWriteListener)
+    suspend fun getSdkSecretSeed(): String?
+    suspend fun setSdkSecretSeed(sdkSecretSeed: String)
 
-    fun getSdkVersion(listener: OnReadListener<String?>)
-    fun setSdkVersion(sdkVersion: String, listener: OnWriteListener)
-
-    companion object
-
-    interface OnReadListener<T> {
-        fun onSuccess(value: T)
-        fun onError(error: Throwable)
-    }
-
-    interface OnWriteListener {
-        fun onSuccess()
-        fun onError(error: Throwable)
-    }
+    suspend fun getSdkVersion(): String?
+    suspend fun setSdkVersion(sdkVersion: String)
 }

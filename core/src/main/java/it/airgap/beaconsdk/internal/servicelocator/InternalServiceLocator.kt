@@ -14,7 +14,6 @@ import it.airgap.beaconsdk.internal.protocol.ProtocolRegistry
 import it.airgap.beaconsdk.internal.serializer.Serializer
 import it.airgap.beaconsdk.internal.serializer.provider.Base58CheckSerializerProvider
 import it.airgap.beaconsdk.internal.serializer.provider.SerializerProvider
-import it.airgap.beaconsdk.internal.storage.Storage
 import it.airgap.beaconsdk.internal.storage.ExtendedStorage
 import it.airgap.beaconsdk.internal.transport.P2pTransport
 import it.airgap.beaconsdk.internal.transport.Transport
@@ -22,11 +21,12 @@ import it.airgap.beaconsdk.internal.transport.client.P2pCommunicationClient
 import it.airgap.beaconsdk.internal.utils.AccountUtils
 import it.airgap.beaconsdk.internal.utils.Base58Check
 import it.airgap.beaconsdk.internal.utils.failWithUninitialized
+import it.airgap.beaconsdk.storage.BeaconStorage
 import kotlinx.coroutines.flow.Flow
 
 internal class InternalServiceLocator(
     override val appName: String,
-    storage: Storage,
+    storage: BeaconStorage,
     override val matrixNodes: List<String>
 ) : ServiceLocator {
 
