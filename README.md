@@ -36,7 +36,7 @@ import it.airgap.beaconsdk.message.BeaconMessage
 
 class MainActivity : AppCompatActivity() {
   // create a Beacon client
-  val client: BeaconClient = BeaconWalletClient.Builder("My App").build()
+  val client: BeaconClient = BeaconWalletClient("My App")
 
   ...
 

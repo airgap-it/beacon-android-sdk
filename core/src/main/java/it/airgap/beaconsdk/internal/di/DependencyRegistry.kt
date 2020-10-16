@@ -1,52 +1,51 @@
-package it.airgap.beaconsdk.internal.servicelocator
+package it.airgap.beaconsdk.internal.di
 
+import it.airgap.beaconsdk.compat.storage.ExtendedStorage
 import it.airgap.beaconsdk.internal.BeaconConfig
 import it.airgap.beaconsdk.internal.client.ConnectionClient
 import it.airgap.beaconsdk.internal.client.SdkClient
+import it.airgap.beaconsdk.internal.controller.MessageController
 import it.airgap.beaconsdk.internal.crypto.Crypto
 import it.airgap.beaconsdk.internal.crypto.provider.CryptoProvider
 import it.airgap.beaconsdk.internal.crypto.provider.LazySodiumCryptoProvider
-import it.airgap.beaconsdk.internal.utils.InternalResult
-import it.airgap.beaconsdk.internal.controller.MessageController
 import it.airgap.beaconsdk.internal.matrix.MatrixClient
 import it.airgap.beaconsdk.internal.matrix.data.client.MatrixClientEvent
 import it.airgap.beaconsdk.internal.protocol.ProtocolRegistry
 import it.airgap.beaconsdk.internal.serializer.Serializer
 import it.airgap.beaconsdk.internal.serializer.provider.Base58CheckSerializerProvider
 import it.airgap.beaconsdk.internal.serializer.provider.SerializerProvider
-import it.airgap.beaconsdk.internal.storage.ExtendedStorage
 import it.airgap.beaconsdk.internal.transport.P2pTransport
 import it.airgap.beaconsdk.internal.transport.Transport
 import it.airgap.beaconsdk.internal.transport.client.P2pCommunicationClient
 import it.airgap.beaconsdk.internal.utils.AccountUtils
 import it.airgap.beaconsdk.internal.utils.Base58Check
+import it.airgap.beaconsdk.internal.utils.InternalResult
 import it.airgap.beaconsdk.internal.utils.failWithUninitialized
 import it.airgap.beaconsdk.storage.BeaconStorage
 import kotlinx.coroutines.flow.Flow
 
-internal class InternalServiceLocator(
-    override val appName: String,
+internal class DependencyRegistry(
+    private val appName: String,
+    private val matrixNodes: List<String>,
     storage: BeaconStorage,
-    override val matrixNodes: List<String>
-) : ServiceLocator {
+) {
+    val extendedStorage: ExtendedStorage by lazy { ExtendedStorage(storage) }
+    val sdkClient: SdkClient by lazy { SdkClient(extendedStorage, crypto) }
+    val messageController: MessageController by lazy { MessageController(protocolRegistry, extendedStorage, accountUtils) }
+    val protocolRegistry: ProtocolRegistry by lazy { ProtocolRegistry(crypto, base58Check) }
+    val crypto: Crypto by lazy { Crypto(cryptoProvider) }
+    val serializer: Serializer by lazy { Serializer(serializerProvider) }
+    val accountUtils: AccountUtils by lazy { AccountUtils(crypto, base58Check) }
+    val base58Check: Base58Check by lazy { Base58Check(crypto) }
 
-    override val extendedStorage: ExtendedStorage = ExtendedStorage(storage)
-    override val sdkClient: SdkClient by lazy { SdkClient(extendedStorage, crypto) }
-    override val messageController: MessageController by lazy { MessageController(protocolRegistry, extendedStorage, accountUtils) }
-    override val protocolRegistry: ProtocolRegistry by lazy { ProtocolRegistry(crypto, base58Check) }
-    override val crypto: Crypto by lazy { Crypto(cryptoProvider) }
-    override val serializer: Serializer by lazy { Serializer(serializerProvider) }
-    override val accountUtils: AccountUtils by lazy { AccountUtils(crypto, base58Check) }
-    override val base58Check: Base58Check by lazy { Base58Check(crypto) }
-
-    override fun connectionController(transportType: Transport.Type): ConnectionClient =
+    fun connectionController(transportType: Transport.Type): ConnectionClient =
         connectionControllers.getOrPut(transportType) {
             val transport = this.transport(transportType)
 
             return ConnectionClient(transport, serializer)
         }
 
-    override fun transport(type: Transport.Type): Transport =
+    fun transport(type: Transport.Type): Transport =
         transports.getOrPut(type) {
             when (type) {
                 Transport.Type.P2P -> {
@@ -54,7 +53,7 @@ internal class InternalServiceLocator(
                     val keyPair = sdkClient.keyPair ?: failWithUninitialized(SdkClient.TAG)
                     val client = P2pCommunicationClient(
                         matrixClients,
-                        matrixNodes.ifEmpty { BeaconConfig.defaultRelayServers },
+                        matrixNodes,
                         BeaconConfig.p2pReplicationCount,
                         crypto,
                         keyPair
@@ -124,5 +123,9 @@ internal class InternalServiceLocator(
             }
 
         }
+    }
+
+    companion object {
+        const val TAG = "GlobalServiceLocator"
     }
 }

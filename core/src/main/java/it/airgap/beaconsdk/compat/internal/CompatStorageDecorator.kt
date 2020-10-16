@@ -4,7 +4,7 @@ import it.airgap.beaconsdk.data.account.AccountInfo
 import it.airgap.beaconsdk.data.p2p.P2pPairingRequest
 import it.airgap.beaconsdk.data.permission.PermissionInfo
 import it.airgap.beaconsdk.data.sdk.AppMetadata
-import it.airgap.beaconsdk.compat.BeaconCompatStorage
+import it.airgap.beaconsdk.compat.storage.BeaconCompatStorage
 import it.airgap.beaconsdk.storage.BeaconStorage
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException

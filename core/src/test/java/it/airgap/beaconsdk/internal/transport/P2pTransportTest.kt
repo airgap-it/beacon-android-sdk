@@ -5,7 +5,7 @@ import io.mockk.impl.annotations.MockK
 import it.airgap.beaconsdk.data.p2p.P2pPairingRequest
 import it.airgap.beaconsdk.data.sdk.Origin
 import it.airgap.beaconsdk.internal.message.ConnectionMessage
-import it.airgap.beaconsdk.internal.storage.ExtendedStorage
+import it.airgap.beaconsdk.compat.storage.ExtendedStorage
 import it.airgap.beaconsdk.internal.transport.client.P2pCommunicationClient
 import it.airgap.beaconsdk.internal.transport.data.TransportMessage
 import it.airgap.beaconsdk.internal.utils.*

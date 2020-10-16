@@ -1,4 +1,4 @@
-package it.airgap.beaconsdk.compat
+package it.airgap.beaconsdk.compat.storage
 
 import it.airgap.beaconsdk.data.account.AccountInfo
 import it.airgap.beaconsdk.data.sdk.AppMetadata

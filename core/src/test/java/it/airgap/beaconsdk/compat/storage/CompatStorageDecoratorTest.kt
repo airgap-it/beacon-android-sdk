@@ -1,9 +1,9 @@
-package it.airgap.beaconsdk.internal.storage
+package it.airgap.beaconsdk.compat.storage
 
 import io.mockk.spyk
 import io.mockk.verify
-import it.airgap.beaconsdk.compat.BeaconCompatStorage
 import it.airgap.beaconsdk.compat.internal.CompatStorageDecorator
+import it.airgap.beaconsdk.compat.storage.BeaconCompatStorage
 import it.airgap.beaconsdk.data.account.AccountInfo
 import it.airgap.beaconsdk.data.network.Network
 import it.airgap.beaconsdk.data.p2p.P2pPairingRequest

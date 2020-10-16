@@ -1,4 +1,4 @@
-package it.airgap.beaconsdk.internal.storage
+package it.airgap.beaconsdk.compat.storage
 
 import it.airgap.beaconsdk.data.account.AccountInfo
 import it.airgap.beaconsdk.data.p2p.P2pPairingRequest

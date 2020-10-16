@@ -5,14 +5,12 @@ import it.airgap.beaconsdk.internal.crypto.data.KeyPair
 import it.airgap.beaconsdk.internal.crypto.data.SessionKeyPair
 import it.airgap.beaconsdk.internal.matrix.MatrixClient
 import it.airgap.beaconsdk.internal.matrix.data.client.MatrixClientEvent
-import it.airgap.beaconsdk.internal.storage.ExtendedStorage
 import it.airgap.beaconsdk.internal.transport.data.TransportMessage
 import it.airgap.beaconsdk.internal.utils.*
 import it.airgap.beaconsdk.internal.utils.HexString
 import it.airgap.beaconsdk.internal.utils.InternalResult
 import it.airgap.beaconsdk.internal.utils.asHexString
 import it.airgap.beaconsdk.internal.utils.launch
-import it.airgap.beaconsdk.internal.utils.logDebug
 import kotlinx.coroutines.flow.*
 import java.math.BigInteger
 
