@@ -2,12 +2,12 @@ package it.airgap.beaconsdk.compat.storage
 
 import it.airgap.beaconsdk.data.account.AccountInfo
 import it.airgap.beaconsdk.data.sdk.AppMetadata
-import it.airgap.beaconsdk.data.p2p.P2pPairingRequest
+import it.airgap.beaconsdk.data.p2p.P2pPeerInfo
 import it.airgap.beaconsdk.data.permission.PermissionInfo
 
 interface BeaconCompatStorage {
-    fun getP2pPeers(listener: OnReadListener<List<P2pPairingRequest>>)
-    fun setP2pPeers(p2pPeers: List<P2pPairingRequest>, listener: OnWriteListener)
+    fun getP2pPeers(listener: OnReadListener<List<P2pPeerInfo>>)
+    fun setP2pPeers(p2pPeers: List<P2pPeerInfo>, listener: OnWriteListener)
 
     fun getAccounts(listener: OnReadListener<List<AccountInfo>>)
     fun setAccounts(accounts: List<AccountInfo>, listener: OnWriteListener)

@@ -3,10 +3,9 @@ package it.airgap.beaconsdk.compat.storage
 import io.mockk.spyk
 import io.mockk.verify
 import it.airgap.beaconsdk.compat.internal.CompatStorageDecorator
-import it.airgap.beaconsdk.compat.storage.BeaconCompatStorage
 import it.airgap.beaconsdk.data.account.AccountInfo
 import it.airgap.beaconsdk.data.network.Network
-import it.airgap.beaconsdk.data.p2p.P2pPairingRequest
+import it.airgap.beaconsdk.data.p2p.P2pPeerInfo
 import it.airgap.beaconsdk.data.permission.PermissionInfo
 import it.airgap.beaconsdk.data.sdk.AppMetadata
 import it.airgap.beaconsdk.data.sdk.Origin
@@ -111,8 +110,8 @@ class CompatStorageDecoratorTest {
         }
     }
 
-    private val mockPeers: List<P2pPairingRequest> = listOf(
-        P2pPairingRequest(
+    private val mockPeers: List<P2pPeerInfo> = listOf(
+        P2pPeerInfo(
             "name",
             "publicKey",
             "relayServer"

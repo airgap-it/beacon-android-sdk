@@ -1,11 +1,12 @@
 package it.airgap.beaconsdk.internal.storage
 
 import it.airgap.beaconsdk.data.account.AccountInfo
-import it.airgap.beaconsdk.data.p2p.P2pPairingRequest
+import it.airgap.beaconsdk.data.p2p.P2pPeerInfo
 import it.airgap.beaconsdk.data.permission.PermissionInfo
 import it.airgap.beaconsdk.data.sdk.AppMetadata
 import it.airgap.beaconsdk.storage.BeaconStorage
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -17,33 +18,29 @@ private typealias StorageInsertCollection<T> = suspend BeaconStorage.(List<T>) -
 internal class ExtendedStorage(private val storage: BeaconStorage) : BeaconStorage by storage {
     private val _accounts: MutableSharedFlow<AccountInfo> by lazy { resourceFlow() }
     val accounts: Flow<AccountInfo>
-        get() = _accounts.onStart { emitAll(getAccounts().asFlow()) }
+        get() = _accounts.onSubscription { emitAll(getAccounts().asFlow()) }
 
     private val _activeAccountIdentifier: MutableSharedFlow<String?> by lazy {
-        resourceFlow(
-            bufferCapacity = 1
-        )
+        resourceFlow(bufferCapacity = 1)
     }
     val activeAccountIdentifier: Flow<String?>
-        get() = _activeAccountIdentifier.onStart { emit(getActiveAccountIdentifier()) }
+        get() = _activeAccountIdentifier.onSubscription { emit(getActiveAccountIdentifier()) }
 
     private val _appMetadata: MutableSharedFlow<AppMetadata> by lazy { resourceFlow() }
     val appMetadata: Flow<AppMetadata>
-        get() = _appMetadata.onStart { emitAll(getAppsMetadata().asFlow()) }
+        get() = _appMetadata.onSubscription { emitAll(getAppsMetadata().asFlow()) }
 
     private val _permissions: MutableSharedFlow<PermissionInfo> by lazy { resourceFlow() }
     val permissions: Flow<PermissionInfo>
-        get() = _permissions.onStart { emitAll(getPermissions().asFlow()) }
+        get() = _permissions.onSubscription { emitAll(getPermissions().asFlow()) }
 
-    private val _p2pPeers: MutableSharedFlow<P2pPairingRequest> by lazy { resourceFlow() }
-    val p2pPeers: Flow<P2pPairingRequest>
-        get() = _p2pPeers.onStart { emitAll(getP2pPeers().asFlow()) }
-
-    private val activeJobs: MutableSet<Job> = mutableSetOf()
+    private val _p2pPeers: MutableSharedFlow<P2pPeerInfo> by lazy { resourceFlow() }
+    val p2pPeers: Flow<P2pPeerInfo>
+        get() = _p2pPeers.onSubscription { emitAll(getP2pPeers().asFlow()) }
 
     override suspend fun setActiveAccountIdentifier(activeAccountIdentifier: String) {
         storage.setActiveAccountIdentifier(activeAccountIdentifier)
-        notifyScope { _activeAccountIdentifier.tryEmit(activeAccountIdentifier) }
+        CoroutineScope(Dispatchers.Default).launch { _activeAccountIdentifier.tryEmit(activeAccountIdentifier) }
     }
 
     suspend fun findAccount(predicate: (AccountInfo) -> Boolean): AccountInfo? =
@@ -51,7 +48,7 @@ internal class ExtendedStorage(private val storage: BeaconStorage) : BeaconStora
 
     suspend fun addAccounts(
         vararg accounts: AccountInfo,
-        overwrite: Boolean = true,
+        overwrite: Boolean = false,
         compare: (AccountInfo, AccountInfo) -> Boolean = { first, second -> first == second }
     ) {
         addAccounts(accounts.toList(), overwrite, compare)
@@ -59,7 +56,7 @@ internal class ExtendedStorage(private val storage: BeaconStorage) : BeaconStora
 
     suspend fun addAccounts(
         accounts: List<AccountInfo>,
-        overwrite: Boolean = true,
+        overwrite: Boolean = false,
         compare: (AccountInfo, AccountInfo) -> Boolean = { first, second -> first == second }
     ) {
         add(
@@ -86,7 +83,7 @@ internal class ExtendedStorage(private val storage: BeaconStorage) : BeaconStora
 
     suspend fun addAppsMetadata(
         vararg appsMetadata: AppMetadata,
-        overwrite: Boolean = true,
+        overwrite: Boolean = false,
         compare: (AppMetadata, AppMetadata) -> Boolean = { first, second -> first == second }
     ) {
         addAppsMetadata(appsMetadata.toList(), overwrite, compare)
@@ -94,7 +91,7 @@ internal class ExtendedStorage(private val storage: BeaconStorage) : BeaconStora
 
     suspend fun addAppsMetadata(
         appsMetadata: List<AppMetadata>,
-        overwrite: Boolean = true,
+        overwrite: Boolean = false,
         compare: (AppMetadata, AppMetadata) -> Boolean = { first, second -> first == second }
     ) {
         add(
@@ -121,7 +118,7 @@ internal class ExtendedStorage(private val storage: BeaconStorage) : BeaconStora
 
     suspend fun addPermissions(
         vararg permissions: PermissionInfo,
-        overwrite: Boolean = true,
+        overwrite: Boolean = false,
         compare: (PermissionInfo, PermissionInfo) -> Boolean = { first, second -> first == second }
     ) {
         addPermissions(permissions.toList(), overwrite, compare)
@@ -129,7 +126,7 @@ internal class ExtendedStorage(private val storage: BeaconStorage) : BeaconStora
 
     suspend fun addPermissions(
         permissions: List<PermissionInfo>,
-        overwrite: Boolean = true,
+        overwrite: Boolean = false,
         compare: (PermissionInfo, PermissionInfo) -> Boolean = { first, second -> first == second }
     ) {
         add(
@@ -151,21 +148,21 @@ internal class ExtendedStorage(private val storage: BeaconStorage) : BeaconStora
         else removeAll(BeaconStorage::setPermissions)
     }
 
-    suspend fun findP2pPeer(predicate: (P2pPairingRequest) -> Boolean): P2pPairingRequest? =
+    suspend fun findP2pPeer(predicate: (P2pPeerInfo) -> Boolean): P2pPeerInfo? =
         selectFirst(BeaconStorage::getP2pPeers, predicate)
 
     suspend fun addP2pPeers(
-        vararg peers: P2pPairingRequest,
-        overwrite: Boolean = true,
-        compare: (P2pPairingRequest, P2pPairingRequest) -> Boolean = { first, second -> first == second }
+        vararg peers: P2pPeerInfo,
+        overwrite: Boolean = false,
+        compare: (P2pPeerInfo, P2pPeerInfo) -> Boolean = { first, second -> first == second }
     ) {
         addP2pPeers(peers.toList(), overwrite, compare)
     }
 
     suspend fun addP2pPeers(
-        peers: List<P2pPairingRequest>,
-        overwrite: Boolean = true,
-        compare: (P2pPairingRequest, P2pPairingRequest) -> Boolean = { first, second -> first == second }
+        peers: List<P2pPeerInfo>,
+        overwrite: Boolean = false,
+        compare: (P2pPeerInfo, P2pPeerInfo) -> Boolean = { first, second -> first == second }
     ) {
         add(
             BeaconStorage::getP2pPeers,
@@ -177,7 +174,7 @@ internal class ExtendedStorage(private val storage: BeaconStorage) : BeaconStora
         )
     }
 
-    suspend fun removeP2pPeers(predicate: ((P2pPairingRequest) -> Boolean)? = null) {
+    suspend fun removeP2pPeers(predicate: ((P2pPeerInfo) -> Boolean)? = null) {
         if (predicate != null) remove(
             BeaconStorage::getP2pPeers,
             BeaconStorage::setP2pPeers,
@@ -219,7 +216,7 @@ internal class ExtendedStorage(private val storage: BeaconStorage) : BeaconStora
                 }
         }
 
-        notifyScope {
+        CoroutineScope(Dispatchers.Default).launch {
             (updatedEntities + newEntities).forEach { subscribeFlow.tryEmit(it) }
         }
 
@@ -240,14 +237,4 @@ internal class ExtendedStorage(private val storage: BeaconStorage) : BeaconStora
 
     private fun <T> resourceFlow(bufferCapacity: Int = 64): MutableSharedFlow<T> =
         MutableSharedFlow(extraBufferCapacity = bufferCapacity)
-
-    private fun notifyScope(block: () -> Unit) {
-        val job = Job()
-        activeJobs.add(job)
-        CoroutineScope(job).launch {
-            block()
-            job.complete()
-            activeJobs.remove(job)
-        }
-    }
 }

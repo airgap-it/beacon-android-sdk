@@ -14,9 +14,9 @@ import it.airgap.beaconsdk.internal.protocol.ProtocolRegistry
 import it.airgap.beaconsdk.internal.serializer.Serializer
 import it.airgap.beaconsdk.internal.serializer.provider.Base58CheckSerializerProvider
 import it.airgap.beaconsdk.internal.serializer.provider.SerializerProvider
-import it.airgap.beaconsdk.internal.transport.P2pTransport
+import it.airgap.beaconsdk.internal.transport.p2p.P2pTransport
 import it.airgap.beaconsdk.internal.transport.Transport
-import it.airgap.beaconsdk.internal.transport.client.P2pCommunicationClient
+import it.airgap.beaconsdk.internal.transport.p2p.P2pCommunicationClient
 import it.airgap.beaconsdk.internal.utils.AccountUtils
 import it.airgap.beaconsdk.internal.utils.Base58Check
 import it.airgap.beaconsdk.internal.utils.InternalResult

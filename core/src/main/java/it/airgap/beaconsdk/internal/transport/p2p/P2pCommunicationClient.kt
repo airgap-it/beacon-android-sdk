@@ -1,4 +1,4 @@
-package it.airgap.beaconsdk.internal.transport.client
+package it.airgap.beaconsdk.internal.transport.p2p
 
 import it.airgap.beaconsdk.internal.crypto.Crypto
 import it.airgap.beaconsdk.internal.crypto.data.KeyPair
@@ -18,9 +18,9 @@ internal class P2pCommunicationClient(
     private val matrixClients: List<MatrixClient>,
     private val matrixNodes: List<String>,
     private val replicationCount: Int,
-    crypto: Crypto,
-    keyPair: KeyPair
-) : CommunicationClient(crypto, keyPair) {
+    private val crypto: Crypto,
+    private val keyPair: KeyPair
+) {
     private val messageFlows: MutableMap<HexString, Flow<InternalResult<String>>> = mutableMapOf()
     private val keyPairs: MutableMap<HexString, SessionKeyPair> = mutableMapOf()
 
@@ -49,6 +49,11 @@ internal class P2pCommunicationClient(
             }
         }
 
+    suspend fun sendPairingRequest(publicKey: HexString, relayServer: String): InternalResult<Unit> =
+        suspendTryInternal {
+
+        }
+
     private fun encrypt(publicKey: HexString, message: String): InternalResult<String> =
         keyPairs.getOrCreate(publicKey)
             .flatMap { crypto.encryptMessage(message, it.tx) }
@@ -75,7 +80,9 @@ internal class P2pCommunicationClient(
         return Any()
     }
 
-    private fun <T> Flow<InternalResult<T>>.logAndIgnoreErrors(): Flow<T> = mapNotNull { it.getOrLogError(TAG) }
+    private fun <T> Flow<InternalResult<T>>.logAndIgnoreErrors(): Flow<T> = mapNotNull { it.getOrLogError(
+        TAG
+    ) }
 
     private fun MatrixClientEvent<*>.isTextMessageFrom(publicKey: HexString): Boolean {
         val keyHash = crypto.hashKey(publicKey).getOrLogError(TAG)

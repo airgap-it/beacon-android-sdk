@@ -3,7 +3,7 @@ package it.airgap.beaconsdk.internal.storage
 import androidx.annotation.IntRange
 import it.airgap.beaconsdk.data.account.AccountInfo
 import it.airgap.beaconsdk.data.network.Network
-import it.airgap.beaconsdk.data.p2p.P2pPairingRequest
+import it.airgap.beaconsdk.data.p2p.P2pPeerInfo
 import it.airgap.beaconsdk.data.permission.PermissionInfo
 import it.airgap.beaconsdk.data.sdk.AppMetadata
 import it.airgap.beaconsdk.data.sdk.Origin
@@ -11,9 +11,7 @@ import it.airgap.beaconsdk.internal.utils.splitAt
 import it.airgap.beaconsdk.storage.BeaconStorage
 import it.airgap.beaconsdk.storage.MockBeaconStorage
 import kotlinx.coroutines.async
-import kotlinx.coroutines.flow.single
-import kotlinx.coroutines.flow.take
-import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
@@ -98,7 +96,10 @@ class ExtendedStorageTest {
 
         runBlocking { storage.setAccounts(toStorage) }
         runBlocking {
-            extendedStorage.addAccounts(changed + toAdd) { a, b -> a.accountIdentifier == b.accountIdentifier }
+            extendedStorage.addAccounts(
+                changed + toAdd,
+                overwrite = true
+            ) { a, b -> a.accountIdentifier == b.accountIdentifier }
         }
 
         val fromStorage = runBlocking { storage.getAccounts() }
@@ -123,7 +124,10 @@ class ExtendedStorageTest {
 
         runBlocking { storage.setAppsMetadata(toStorage) }
         runBlocking {
-            extendedStorage.addAppsMetadata(changed + toAdd) { a, b -> a.name == b.name }
+            extendedStorage.addAppsMetadata(
+                changed + toAdd,
+                overwrite = true
+            ) { a, b -> a.name == b.name }
         }
 
         val fromStorage = runBlocking { storage.getAppsMetadata() }
@@ -148,7 +152,10 @@ class ExtendedStorageTest {
 
         runBlocking { storage.setPermissions(toStorage) }
         runBlocking {
-            extendedStorage.addPermissions(changed + toAdd) { a, b -> a.accountIdentifier == b.accountIdentifier }
+            extendedStorage.addPermissions(
+                changed + toAdd,
+                overwrite = true
+            ) { a, b -> a.accountIdentifier == b.accountIdentifier }
         }
 
         val fromStorage = runBlocking { storage.getPermissions() }
@@ -173,7 +180,10 @@ class ExtendedStorageTest {
 
         runBlocking { storage.setP2pPeers(toStorage) }
         runBlocking {
-            extendedStorage.addP2pPeers(changed + toAdd) { a, b -> a.name == b.name }
+            extendedStorage.addP2pPeers(
+                changed + toAdd,
+                overwrite = true
+            ) { a, b -> a.name == b.name }
         }
 
         val fromStorage = runBlocking { storage.getP2pPeers() }
@@ -377,7 +387,9 @@ class ExtendedStorageTest {
             }
             extendedStorage.addAccounts(toAdd)
 
-            assertEquals(toAdd.sortedBy { it.accountIdentifier }, newAccounts.await().sortedBy { it.accountIdentifier })
+            assertEquals(
+                toAdd.sortedBy { it.accountIdentifier },
+                newAccounts.await().sortedBy { it.accountIdentifier })
         }
     }
 
@@ -387,7 +399,7 @@ class ExtendedStorageTest {
 
         runBlocking {
             val newAccountIdentifier = async {
-                extendedStorage.activeAccountIdentifier.take(1).single()
+                extendedStorage.activeAccountIdentifier.first()
             }
             extendedStorage.setActiveAccountIdentifier(toSet)
 
@@ -423,7 +435,9 @@ class ExtendedStorageTest {
             }
             extendedStorage.addPermissions(toAdd)
 
-            assertEquals(toAdd.sortedBy { it.accountIdentifier }, newPermissions.await().sortedBy { it.accountIdentifier })
+            assertEquals(
+                toAdd.sortedBy { it.accountIdentifier },
+                newPermissions.await().sortedBy { it.accountIdentifier })
         }
     }
 
@@ -440,6 +454,102 @@ class ExtendedStorageTest {
             extendedStorage.addP2pPeers(toAdd)
 
             assertEquals(toAdd.sortedBy { it.name }, newPeers.await().sortedBy { it.name })
+        }
+    }
+
+    @Test
+    fun `notifies when accounts are updated`() {
+        val toStorage = generateAccounts(2)
+
+        runBlocking {
+            storage.setAccounts(toStorage)
+            val subscribed = async {
+                extendedStorage.accounts
+                    .drop(toStorage.size)
+                    .take(toStorage.size)
+                    .toList()
+            }
+
+            val updated = toStorage.mapIndexed { index, accountInfo ->
+                accountInfo.copy(accountIdentifier = "${accountInfo.accountIdentifier}$index")
+            }
+            extendedStorage.addAccounts(updated)
+
+            assertEquals(
+                updated.sortedBy { it.accountIdentifier },
+                subscribed.await().sortedBy { it.accountIdentifier })
+        }
+    }
+
+    @Test
+    fun `notifies when new app metadata is updated`() {
+        val toStorage = generateAppMetadata(2)
+
+        runBlocking {
+            storage.setAppsMetadata(toStorage)
+            val subscribed = async {
+                extendedStorage.appMetadata
+                    .drop(toStorage.size)
+                    .take(toStorage.size)
+                    .toList()
+            }
+
+            val updated = toStorage.mapIndexed { index, appMetadata ->
+                appMetadata.copy(name = "${appMetadata.name}$index")
+            }
+            extendedStorage.addAppsMetadata(updated)
+
+            assertEquals(
+                updated.sortedBy { it.name },
+                subscribed.await().sortedBy { it.name })
+        }
+    }
+
+    @Test
+    fun `notifies when permissions are updated`() {
+        val toStorage = generatePermissions(2)
+
+        runBlocking {
+            storage.setPermissions(toStorage)
+            val subscribed = async {
+                extendedStorage.permissions
+                    .drop(toStorage.size)
+                    .take(toStorage.size)
+                    .toList()
+            }
+
+            val updated = toStorage.mapIndexed { index, permission ->
+                permission.copy(accountIdentifier = "${permission.accountIdentifier}$index")
+            }
+            extendedStorage.addPermissions(updated)
+
+            assertEquals(
+                updated.sortedBy { it.accountIdentifier },
+                subscribed.await().sortedBy { it.accountIdentifier })
+        }
+    }
+
+    @Test
+    fun `notifies when P2P peers are updated`() {
+        val toStorage = generateP2pPeers(2)
+
+        runBlocking {
+            storage.setP2pPeers(toStorage)
+            val subscribed = async {
+                extendedStorage.p2pPeers
+                    .drop(toStorage.size)
+                    .take(toStorage.size)
+                    .toList()
+            }
+
+            val updated = toStorage.mapIndexed { index, peer ->
+                peer.copy(name = "${peer.name}$index")
+            }
+            extendedStorage.addP2pPeers(updated)
+
+            assertEquals(
+                updated.sortedBy { it.name },
+                subscribed.await().sortedBy { it.name })
         }
     }
 
@@ -480,9 +590,9 @@ class ExtendedStorageTest {
             )
         }
 
-    private fun generateP2pPeers(@IntRange(from = 1) n: Int): List<P2pPairingRequest> =
+    private fun generateP2pPeers(@IntRange(from = 1) n: Int): List<P2pPeerInfo> =
         (0 until n).map {
-            P2pPairingRequest(
+            P2pPeerInfo(
                 "#$it",
                 "publicKey#$it",
                 "relayServer#$it",

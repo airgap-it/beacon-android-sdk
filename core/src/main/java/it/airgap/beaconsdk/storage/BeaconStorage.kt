@@ -1,13 +1,13 @@
 package it.airgap.beaconsdk.storage
 
 import it.airgap.beaconsdk.data.account.AccountInfo
-import it.airgap.beaconsdk.data.p2p.P2pPairingRequest
+import it.airgap.beaconsdk.data.p2p.P2pPeerInfo
 import it.airgap.beaconsdk.data.permission.PermissionInfo
 import it.airgap.beaconsdk.data.sdk.AppMetadata
 
 interface BeaconStorage {
-    suspend fun getP2pPeers(): List<P2pPairingRequest>
-    suspend fun setP2pPeers(p2pPeers: List<P2pPairingRequest>)
+    suspend fun getP2pPeers(): List<P2pPeerInfo>
+    suspend fun setP2pPeers(p2pPeers: List<P2pPeerInfo>)
 
     suspend fun getAccounts(): List<AccountInfo>
     suspend fun setAccounts(accounts: List<AccountInfo>)

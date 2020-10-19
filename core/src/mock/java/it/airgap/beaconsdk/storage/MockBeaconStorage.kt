@@ -1,12 +1,12 @@
 package it.airgap.beaconsdk.storage
 
 import it.airgap.beaconsdk.data.account.AccountInfo
-import it.airgap.beaconsdk.data.p2p.P2pPairingRequest
+import it.airgap.beaconsdk.data.p2p.P2pPeerInfo
 import it.airgap.beaconsdk.data.permission.PermissionInfo
 import it.airgap.beaconsdk.data.sdk.AppMetadata
 
 internal class MockBeaconStorage : BeaconStorage {
-    private var p2pPeers: List<P2pPairingRequest> = emptyList()
+    private var p2pPeers: List<P2pPeerInfo> = emptyList()
     private var accounts: List<AccountInfo> = emptyList()
     private var activeAccountIdentifier: String? = null
     private var appsMetadata: List<AppMetadata> = emptyList()
@@ -14,8 +14,8 @@ internal class MockBeaconStorage : BeaconStorage {
     private var sdkSecretSeed: String? = null
     private var sdkVersion: String? = null
 
-    override suspend fun getP2pPeers(): List<P2pPairingRequest> = p2pPeers
-    override suspend fun setP2pPeers(p2pPeers: List<P2pPairingRequest>) {
+    override suspend fun getP2pPeers(): List<P2pPeerInfo> = p2pPeers
+    override suspend fun setP2pPeers(p2pPeers: List<P2pPeerInfo>) {
         this.p2pPeers = p2pPeers
     }
 

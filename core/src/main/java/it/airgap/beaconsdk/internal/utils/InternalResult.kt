@@ -6,6 +6,12 @@ internal sealed class InternalResult<T> {
         override fun toString(): String = error?.toString() ?: "Error: unknown"
     }
 
+    val isSuccess: Boolean
+        get() = this is Success
+
+    val isError: Boolean
+        get() = this is Error
+
     fun getOrNull(): T? =
         when (this) {
             is Success -> value

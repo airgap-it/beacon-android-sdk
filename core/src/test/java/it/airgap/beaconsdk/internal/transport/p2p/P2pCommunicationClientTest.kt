@@ -1,4 +1,4 @@
-package it.airgap.beaconsdk.internal.transport.client
+package it.airgap.beaconsdk.internal.transport.p2p
 
 import io.mockk.*
 import io.mockk.impl.annotations.MockK

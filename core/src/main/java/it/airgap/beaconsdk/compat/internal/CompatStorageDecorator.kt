@@ -1,7 +1,7 @@
 package it.airgap.beaconsdk.compat.internal
 
 import it.airgap.beaconsdk.data.account.AccountInfo
-import it.airgap.beaconsdk.data.p2p.P2pPairingRequest
+import it.airgap.beaconsdk.data.p2p.P2pPeerInfo
 import it.airgap.beaconsdk.data.permission.PermissionInfo
 import it.airgap.beaconsdk.data.sdk.AppMetadata
 import it.airgap.beaconsdk.compat.storage.BeaconCompatStorage
@@ -11,8 +11,8 @@ import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
 internal class CompatStorageDecorator(private val storage: BeaconCompatStorage) : BeaconStorage {
-    override suspend fun getP2pPeers(): List<P2pPairingRequest> = get(BeaconCompatStorage::getP2pPeers)
-    override suspend fun setP2pPeers(p2pPeers: List<P2pPairingRequest>) = set(p2pPeers, BeaconCompatStorage::setP2pPeers)
+    override suspend fun getP2pPeers(): List<P2pPeerInfo> = get(BeaconCompatStorage::getP2pPeers)
+    override suspend fun setP2pPeers(p2pPeers: List<P2pPeerInfo>) = set(p2pPeers, BeaconCompatStorage::setP2pPeers)
 
     override suspend fun getAccounts(): List<AccountInfo> = get(BeaconCompatStorage::getAccounts)
     override suspend fun setAccounts(accounts: List<AccountInfo>) = set(accounts, BeaconCompatStorage::setAccounts)

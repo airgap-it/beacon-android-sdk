@@ -2,13 +2,13 @@ package it.airgap.beaconsdk.storage
 
 import it.airgap.beaconsdk.data.account.AccountInfo
 import it.airgap.beaconsdk.data.sdk.AppMetadata
-import it.airgap.beaconsdk.data.p2p.P2pPairingRequest
+import it.airgap.beaconsdk.data.p2p.P2pPeerInfo
 import it.airgap.beaconsdk.data.permission.PermissionInfo
 import it.airgap.beaconsdk.compat.storage.BeaconCompatStorage
 
 internal class MockBeaconCompatStorage :
     BeaconCompatStorage {
-    private var p2pPeers: List<P2pPairingRequest> = emptyList()
+    private var p2pPeers: List<P2pPeerInfo> = emptyList()
     private var accounts: List<AccountInfo> = emptyList()
     private var activeAccountIdentifier: String? = null
     private var appsMetadata: List<AppMetadata> = emptyList()
@@ -16,11 +16,11 @@ internal class MockBeaconCompatStorage :
     private var sdkSecretSeed: String? = null
     private var sdkVersion: String? = null
 
-    override fun getP2pPeers(listener: BeaconCompatStorage.OnReadListener<List<P2pPairingRequest>>) {
+    override fun getP2pPeers(listener: BeaconCompatStorage.OnReadListener<List<P2pPeerInfo>>) {
         listener.onSuccess(p2pPeers)
     }
 
-    override fun setP2pPeers(p2pPeers: List<P2pPairingRequest>, listener: BeaconCompatStorage.OnWriteListener) {
+    override fun setP2pPeers(p2pPeers: List<P2pPeerInfo>, listener: BeaconCompatStorage.OnWriteListener) {
         this.p2pPeers = p2pPeers
         listener.onSuccess()
     }

@@ -1,13 +1,12 @@
 package it.airgap.beaconsdk.compat.client
 
 import it.airgap.beaconsdk.client.BeaconClient
+import it.airgap.beaconsdk.compat.storage.BeaconCompatStorage
+import it.airgap.beaconsdk.compat.internal.CompatStorageDecorator
 import it.airgap.beaconsdk.exception.BeaconException
 import it.airgap.beaconsdk.message.BeaconMessage
-import kotlinx.coroutines.CompletableJob
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.launch
 
 interface InitCallback {
     fun onSuccess()
@@ -57,31 +56,23 @@ fun BeaconClient.respond(message: BeaconMessage.Response, callback: ResponseCall
     }
 }
 
-private val jobs: MutableMap<JobType, CompletableJob> = mutableMapOf()
-
-private enum class JobType {
-    Init,
-    Receive,
-    Send,
-}
+fun BeaconClient.Builder.storage(storage: BeaconCompatStorage): BeaconClient.Builder =
+    storage(CompatStorageDecorator(storage))
 
 private fun initScope(block: suspend () -> Unit) {
-    jobScope(JobType.Init, block)
+    jobScope(CoroutineName("beaconClient#init"), block)
 }
 
 private fun receiveScope(block: suspend () -> Unit) {
-    jobScope(JobType.Receive, block)
+    jobScope(CoroutineName("beaconClient#receive"), block)
 }
 
 private fun sendScope(block: suspend () -> Unit) {
-    jobScope(JobType.Send, block)
+    jobScope(CoroutineName("beaconClient#send"), block)
 }
 
-private fun jobScope(type: JobType, block: suspend () -> Unit) {
-    val job = jobs.getOrPut(type) { Job() }
-    CoroutineScope(job).launch {
+private fun jobScope(coroutineName: CoroutineName, block: suspend () -> Unit) {
+    CoroutineScope(coroutineName + Dispatchers.Default).launch {
         block()
-        job.complete()
-        jobs.remove(type)
     }
 }
