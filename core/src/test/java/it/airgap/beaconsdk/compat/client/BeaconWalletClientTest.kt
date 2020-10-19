@@ -3,7 +3,7 @@ package it.airgap.beaconsdk.compat.client
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import it.airgap.beaconsdk.client.BeaconWalletClient
-import it.airgap.beaconsdk.compat.storage.ExtendedStorage
+import it.airgap.beaconsdk.internal.storage.ExtendedStorage
 import it.airgap.beaconsdk.data.network.Network
 import it.airgap.beaconsdk.data.sdk.AppMetadata
 import it.airgap.beaconsdk.data.tezos.TezosOperation

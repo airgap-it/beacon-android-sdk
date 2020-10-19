@@ -2,7 +2,7 @@ package it.airgap.beaconsdk.internal.transport
 
 import it.airgap.beaconsdk.internal.message.ConnectionMessage
 import it.airgap.beaconsdk.internal.utils.InternalResult
-import it.airgap.beaconsdk.compat.storage.ExtendedStorage
+import it.airgap.beaconsdk.internal.storage.ExtendedStorage
 import it.airgap.beaconsdk.internal.utils.logDebug
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.onStart

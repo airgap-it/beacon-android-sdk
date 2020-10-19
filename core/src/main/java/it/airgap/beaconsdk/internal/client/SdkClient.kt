@@ -3,7 +3,7 @@ package it.airgap.beaconsdk.internal.client
 import it.airgap.beaconsdk.internal.BeaconConfig
 import it.airgap.beaconsdk.internal.crypto.Crypto
 import it.airgap.beaconsdk.internal.crypto.data.KeyPair
-import it.airgap.beaconsdk.compat.storage.ExtendedStorage
+import it.airgap.beaconsdk.internal.storage.ExtendedStorage
 import it.airgap.beaconsdk.internal.utils.asHexString
 
 internal class SdkClient(private val storage: ExtendedStorage, private val crypto: Crypto) {

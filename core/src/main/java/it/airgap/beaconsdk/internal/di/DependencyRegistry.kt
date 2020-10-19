@@ -1,6 +1,6 @@
 package it.airgap.beaconsdk.internal.di
 
-import it.airgap.beaconsdk.compat.storage.ExtendedStorage
+import it.airgap.beaconsdk.internal.storage.ExtendedStorage
 import it.airgap.beaconsdk.internal.BeaconConfig
 import it.airgap.beaconsdk.internal.client.ConnectionClient
 import it.airgap.beaconsdk.internal.client.SdkClient

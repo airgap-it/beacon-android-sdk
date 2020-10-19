@@ -1,4 +1,4 @@
-package it.airgap.beaconsdk.compat.storage
+package it.airgap.beaconsdk.internal.storage
 
 import android.content.Context
 import android.content.SharedPreferences

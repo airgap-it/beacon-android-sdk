@@ -1,7 +1,7 @@
 package it.airgap.beaconsdk.client
 
-import it.airgap.beaconsdk.compat.storage.ExtendedStorage
-import it.airgap.beaconsdk.compat.storage.SharedPreferencesStorage
+import it.airgap.beaconsdk.internal.storage.ExtendedStorage
+import it.airgap.beaconsdk.internal.storage.SharedPreferencesStorage
 import it.airgap.beaconsdk.exception.BeaconException
 import it.airgap.beaconsdk.internal.BeaconApp
 import it.airgap.beaconsdk.internal.BeaconConfig

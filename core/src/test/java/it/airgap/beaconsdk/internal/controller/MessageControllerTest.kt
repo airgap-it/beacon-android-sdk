@@ -11,7 +11,7 @@ import it.airgap.beaconsdk.data.tezos.TezosOperation
 import it.airgap.beaconsdk.internal.message.beaconmessage.ApiBeaconMessage
 import it.airgap.beaconsdk.internal.protocol.Protocol
 import it.airgap.beaconsdk.internal.protocol.ProtocolRegistry
-import it.airgap.beaconsdk.compat.storage.ExtendedStorage
+import it.airgap.beaconsdk.internal.storage.ExtendedStorage
 import it.airgap.beaconsdk.internal.utils.AccountUtils
 import it.airgap.beaconsdk.internal.utils.currentTimestamp
 import it.airgap.beaconsdk.internal.utils.internalSuccess

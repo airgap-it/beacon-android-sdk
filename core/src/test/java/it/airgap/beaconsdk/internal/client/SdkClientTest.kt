@@ -8,7 +8,7 @@ import io.mockk.verify
 import it.airgap.beaconsdk.internal.BeaconConfig
 import it.airgap.beaconsdk.internal.crypto.Crypto
 import it.airgap.beaconsdk.internal.crypto.data.KeyPair
-import it.airgap.beaconsdk.compat.storage.ExtendedStorage
+import it.airgap.beaconsdk.internal.storage.ExtendedStorage
 import it.airgap.beaconsdk.internal.utils.internalSuccess
 import it.airgap.beaconsdk.storage.MockBeaconStorage
 import kotlinx.coroutines.runBlocking
