@@ -47,20 +47,18 @@ internal class P2pTransport(
         }
 
     private suspend fun pairP2pPeer(peerInfo: P2pPeerInfo) {
-        CoroutineScope(Dispatchers.Default).launch {
-            val result = client.sendPairingRequest(
-                HexString.fromString(peerInfo.publicKey),
-                peerInfo.relayServer
-            )
+        val result = client.sendPairingRequest(
+            HexString.fromString(peerInfo.publicKey),
+            peerInfo.relayServer
+        )
 
-            if (result.isSuccess) {
-                storage.addP2pPeers(peerInfo.copy(isPaired = true), overwrite = true) { a, b ->
-                    a.name == b.name
-                            && a.publicKey == b.publicKey
-                            && a.relayServer == b.relayServer
-                            && a.icon == b.icon
-                            && a.appUrl == b.appUrl
-                }
+        if (result.isSuccess) {
+            storage.addP2pPeers(peerInfo.copy(isPaired = true), overwrite = true) { a, b ->
+                a.name == b.name
+                        && a.publicKey == b.publicKey
+                        && a.relayServer == b.relayServer
+                        && a.icon == b.icon
+                        && a.appUrl == b.appUrl
             }
         }
     }
