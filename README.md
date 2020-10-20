@@ -31,12 +31,11 @@ For more examples or examples of how to use the SDK without coroutines or in Jav
 
 ```kotlin
 import it.airgap.beaconsdk.client.BeaconClient
-import it.airgap.beaconsdk.client.BeaconWalletClient
 import it.airgap.beaconsdk.message.BeaconMessage
 
 class MainActivity : AppCompatActivity() {
   // create a Beacon client
-  val client: BeaconClient = BeaconWalletClient("My App")
+  val client: BeaconClient = BeaconClient("My App")
 
   ...
 
