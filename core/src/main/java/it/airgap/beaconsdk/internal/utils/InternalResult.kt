@@ -68,28 +68,14 @@ internal sealed class InternalResult<T> {
 internal fun <T> internalSuccess(value: T): InternalResult<T> = InternalResult.Success(value)
 internal fun <T> internalError(error: Throwable? = null): InternalResult<T> = InternalResult.Error(error)
 
-internal fun <T> tryInternal(block: () -> T): InternalResult<T> =
+internal inline fun <T> tryResult(block: () -> T): InternalResult<T> =
     try {
         internalSuccess(block())
     } catch (e: Exception) {
         internalError(e)
     }
 
-internal fun <T> flatTryInternal(block: () -> InternalResult<T>): InternalResult<T> =
-    try {
-        block()
-    } catch (e: Exception) {
-        internalError(e)
-    }
-
-internal suspend fun <T> suspendTryInternal(block: suspend () -> T): InternalResult<T> =
-    try {
-        internalSuccess(block())
-    } catch (e: Exception) {
-        internalError(e)
-    }
-
-internal suspend fun <T> suspendFlatTryInternal(block: suspend () -> InternalResult<T>): InternalResult<T> =
+internal inline fun <T> flatTryResult(block: () -> InternalResult<T>): InternalResult<T> =
     try {
         block()
     } catch (e: Exception) {

@@ -3,13 +3,12 @@ package it.airgap.beaconsdk.internal.crypto
 import it.airgap.beaconsdk.internal.crypto.data.KeyPair
 import it.airgap.beaconsdk.internal.crypto.data.SessionKeyPair
 import it.airgap.beaconsdk.internal.crypto.provider.CryptoProvider
-import it.airgap.beaconsdk.internal.utils.*
 import it.airgap.beaconsdk.internal.utils.HexString
 import it.airgap.beaconsdk.internal.utils.InternalResult
 import it.airgap.beaconsdk.internal.utils.asHexString
-import it.airgap.beaconsdk.internal.utils.flatTryInternal
+import it.airgap.beaconsdk.internal.utils.flatTryResult
 import it.airgap.beaconsdk.internal.utils.isHex
-import it.airgap.beaconsdk.internal.utils.tryInternal
+import it.airgap.beaconsdk.internal.utils.tryResult
 
 internal class Crypto(private val cryptoProvider: CryptoProvider) {
     fun hashKey(key: HexString): InternalResult<ByteArray> = hash(key, 32)
@@ -23,16 +22,16 @@ internal class Crypto(private val cryptoProvider: CryptoProvider) {
         hash(message.asByteArray(), size)
 
     fun hash(message: ByteArray, size: Int): InternalResult<ByteArray> =
-        tryInternal { cryptoProvider.getHash(message, size) }
+        tryResult { cryptoProvider.getHash(message, size) }
 
     fun hashSha256(message: HexString): InternalResult<ByteArray> =
         hashSha256(message.asByteArray())
 
     fun hashSha256(message: ByteArray): InternalResult<ByteArray> =
-        tryInternal { cryptoProvider.getHash256(message) }
+        tryResult { cryptoProvider.getHash256(message) }
 
     fun generateRandomSeed(): InternalResult<String> =
-        tryInternal {
+        tryResult {
             val bytes = cryptoProvider.generateRandomBytes(SEED_BYTES)
 
             listOf(
@@ -49,14 +48,14 @@ internal class Crypto(private val cryptoProvider: CryptoProvider) {
         }
 
     fun getKeyPairFromSeed(seed: String): InternalResult<KeyPair> =
-        tryInternal {
+        tryResult {
             val seedHash = cryptoProvider.getHash(seed.toByteArray(), 32)
 
             cryptoProvider.getEd25519KeyPairFromSeed(seedHash)
         }
 
     fun createServerSessionKeyPair(publicKey: ByteArray, privateKey: ByteArray): InternalResult<SessionKeyPair> =
-        tryInternal {
+        tryResult {
             val serverPublicKey = cryptoProvider.convertEd25519PublicKeyToCurve25519(privateKey.sliceArray(32 until 64))
             val serverPrivateKey = cryptoProvider.convertEd25519PrivateKeyToCurve25519(privateKey)
             val clientPublicKey = cryptoProvider.convertEd25519PublicKeyToCurve25519(publicKey)
@@ -65,7 +64,7 @@ internal class Crypto(private val cryptoProvider: CryptoProvider) {
         }
 
     fun createClientSessionKeyPair(publicKey: ByteArray, privateKey: ByteArray): InternalResult<SessionKeyPair> =
-        tryInternal {
+        tryResult {
             val serverPublicKey = cryptoProvider.convertEd25519PublicKeyToCurve25519(privateKey.sliceArray(32 until 64))
             val serverPrivateKey = cryptoProvider.convertEd25519PrivateKeyToCurve25519(privateKey)
             val clientPublicKey = cryptoProvider.convertEd25519PublicKeyToCurve25519(publicKey)
@@ -76,7 +75,7 @@ internal class Crypto(private val cryptoProvider: CryptoProvider) {
     fun validateEncryptedMessage(encrypted: String): Boolean = cryptoProvider.validateMessage(encrypted)
 
     fun encryptMessageWithPublicKey(message: String, publicKey: ByteArray): InternalResult<String> =
-        flatTryInternal {
+        flatTryResult {
             val hexMessage =
                 if (message.isHex()) HexString.fromString(message)
                 else message.toByteArray().asHexString()
@@ -85,10 +84,10 @@ internal class Crypto(private val cryptoProvider: CryptoProvider) {
         }
 
     fun encryptMessageWithPublicKey(message: HexString, publicKey: ByteArray): InternalResult<String> =
-        tryInternal { cryptoProvider.encryptMessageWithPublicKey(message, publicKey) }
+        tryResult { cryptoProvider.encryptMessageWithPublicKey(message, publicKey) }
 
     fun decryptMessageWithKeyPair(message: String, publicKey: ByteArray, privateKey: ByteArray): InternalResult<String> =
-        flatTryInternal {
+        flatTryResult {
             val hexMessage =
                 if (message.isHex()) HexString.fromString(message)
                 else message.toByteArray().asHexString()
@@ -97,10 +96,10 @@ internal class Crypto(private val cryptoProvider: CryptoProvider) {
         }
 
     fun decryptMessageWithKeyPair(message: HexString, publicKey: ByteArray, privateKey: ByteArray): InternalResult<String> =
-        tryInternal { cryptoProvider.decryptMessageWithKeyPair(message, publicKey, privateKey) }
+        tryResult { cryptoProvider.decryptMessageWithKeyPair(message, publicKey, privateKey) }
 
     fun encryptMessageWithSharedKey(message: String, sharedKey: ByteArray): InternalResult<String> =
-        flatTryInternal {
+        flatTryResult {
             val hexMessage =
                 if (message.isHex()) HexString.fromString(message)
                 else message.toByteArray().asHexString()
@@ -109,10 +108,10 @@ internal class Crypto(private val cryptoProvider: CryptoProvider) {
         }
 
     fun encryptMessageWithSharedKey(message: HexString, sharedKey: ByteArray): InternalResult<String> =
-        tryInternal { cryptoProvider.encryptMessageWithSharedKey(message, sharedKey) }
+        tryResult { cryptoProvider.encryptMessageWithSharedKey(message, sharedKey) }
 
     fun decryptMessageWithSharedKey(message: String, sharedKey: ByteArray): InternalResult<String> =
-        flatTryInternal {
+        flatTryResult {
             val hexMessage =
                 if (message.isHex()) HexString.fromString(message)
                 else message.toByteArray().asHexString()
@@ -121,7 +120,7 @@ internal class Crypto(private val cryptoProvider: CryptoProvider) {
         }
 
     fun decryptMessageWithSharedKey(message: HexString, sharedKey: ByteArray): InternalResult<String> =
-        tryInternal { cryptoProvider.decryptMessageWithSharedKey(message, sharedKey) }
+        tryResult { cryptoProvider.decryptMessageWithSharedKey(message, sharedKey) }
 
     companion object {
         private const val SEED_BYTES = 16

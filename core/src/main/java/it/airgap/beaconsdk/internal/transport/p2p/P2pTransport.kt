@@ -9,11 +9,8 @@ import it.airgap.beaconsdk.internal.transport.data.TransportMessage
 import it.airgap.beaconsdk.internal.utils.HexString
 import it.airgap.beaconsdk.internal.utils.InternalResult
 import it.airgap.beaconsdk.internal.utils.launch
-import it.airgap.beaconsdk.internal.utils.suspendTryInternal
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import it.airgap.beaconsdk.internal.utils.tryResult
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 
 internal class P2pTransport(
     name: String,
@@ -35,7 +32,7 @@ internal class P2pTransport(
     private val subscribedPeers: MutableList<HexString> = mutableListOf()
 
     override suspend fun sendMessage(message: String, recipient: String?): InternalResult<Unit> =
-        suspendTryInternal {
+       tryResult {
             val knownPeers = storage.getP2pPeers()
             val recipients = recipient
                 ?.let { knownPeers.filterWithPublicKey(it).ifEmpty { failWithUnknownRecipient() } }

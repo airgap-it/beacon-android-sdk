@@ -8,10 +8,6 @@ import it.airgap.beaconsdk.internal.matrix.MatrixClient
 import it.airgap.beaconsdk.internal.matrix.data.client.MatrixClientEvent
 import it.airgap.beaconsdk.internal.transport.data.TransportMessage
 import it.airgap.beaconsdk.internal.utils.*
-import it.airgap.beaconsdk.internal.utils.HexString
-import it.airgap.beaconsdk.internal.utils.InternalResult
-import it.airgap.beaconsdk.internal.utils.asHexString
-import it.airgap.beaconsdk.internal.utils.launch
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
@@ -51,7 +47,7 @@ internal class P2pCommunicationClient(
         }.map { TransportMessage.fromInternalResult(publicKey, it) }
 
     suspend fun sendTo(publicKey: HexString, message: String): InternalResult<Unit> =
-        suspendTryInternal {
+        tryResult {
             val encrypted = encrypt(publicKey, message).getOrThrow()
             for (i in 0 until replicationCount) {
                 val recipientHash = crypto.hashKey(publicKey).getOrThrow().asHexString()
@@ -69,7 +65,7 @@ internal class P2pCommunicationClient(
         publicKey: HexString,
         relayServer: String
     ): InternalResult<Unit> =
-        suspendTryInternal {
+        tryResult {
             val recipientHash = crypto.hashKey(publicKey).getOrThrow().asHexString()
             val recipient = getRecipientIdentifier(recipientHash, relayServer)
 

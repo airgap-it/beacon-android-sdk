@@ -5,7 +5,7 @@ import it.airgap.beaconsdk.internal.utils.InternalResult
 import it.airgap.beaconsdk.internal.message.beaconmessage.ApiBeaconMessage
 import it.airgap.beaconsdk.internal.serializer.Serializer
 import it.airgap.beaconsdk.internal.transport.Transport
-import it.airgap.beaconsdk.internal.utils.suspendFlatTryInternal
+import it.airgap.beaconsdk.internal.utils.flatTryResult
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -16,7 +16,7 @@ internal class ConnectionClient(private val transport: Transport, private val se
             .map { ApiBeaconMessage.fromInternalResult(it)}
 
     suspend fun send(message: ApiBeaconMessage.Response): InternalResult<Unit> =
-        suspendFlatTryInternal {
+        flatTryResult {
             val serialized = serializer.serialize(message).getOrThrow()
             transport.send(serialized)
         }

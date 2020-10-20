@@ -7,7 +7,7 @@ internal class TezosProtocol(private val crypto: Crypto, private val base58Check
     private val tz1Prefix: ByteArray = byteArrayOf(6, 161.toByte(), 159.toByte())
 
     override fun getAddressFromPublicKey(publicKey: String): InternalResult<String> =
-        flatTryInternal {
+        flatTryResult {
             val publicKeyBytes = with(publicKey) {
                 when {
                     isPlainPublicKey() -> HexString.fromString(this).asByteArray()

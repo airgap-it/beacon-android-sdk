@@ -14,7 +14,7 @@ import it.airgap.beaconsdk.internal.storage.SharedPreferencesStorage
 import it.airgap.beaconsdk.internal.transport.Transport
 import it.airgap.beaconsdk.internal.utils.InternalResult
 import it.airgap.beaconsdk.internal.utils.failWithUninitialized
-import it.airgap.beaconsdk.internal.utils.suspendTryInternal
+import it.airgap.beaconsdk.internal.utils.tryResult
 import it.airgap.beaconsdk.message.BeaconMessage
 import it.airgap.beaconsdk.storage.BeaconStorage
 import kotlinx.coroutines.flow.Flow
@@ -74,7 +74,7 @@ class BeaconClient internal constructor(
         beaconRequest: InternalResult<ApiBeaconMessage.Request>
     ): InternalResult<BeaconMessage.Request> =
         beaconRequest.flatMapSuspend {  request ->
-            suspendTryInternal {
+            tryResult {
                 val appMetadata = storage.findAppMetadata { it.senderId == request.senderId } ?: failWithNoAppMetadata()
 
                 fromInternalBeaconRequest(request, appMetadata)
