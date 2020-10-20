@@ -1,12 +1,12 @@
 package it.airgap.beaconsdk.storage
 
 import it.airgap.beaconsdk.data.account.AccountInfo
-import it.airgap.beaconsdk.data.sdk.AppMetadata
-import it.airgap.beaconsdk.data.p2p.P2pPairingRequest
+import it.airgap.beaconsdk.data.p2p.P2pPeerInfo
 import it.airgap.beaconsdk.data.permission.PermissionInfo
+import it.airgap.beaconsdk.data.sdk.AppMetadata
 
 internal class MockBeaconStorage : BeaconStorage {
-    private var p2pPeers: List<P2pPairingRequest> = emptyList()
+    private var p2pPeers: List<P2pPeerInfo> = emptyList()
     private var accounts: List<AccountInfo> = emptyList()
     private var activeAccountIdentifier: String? = null
     private var appsMetadata: List<AppMetadata> = emptyList()
@@ -14,66 +14,38 @@ internal class MockBeaconStorage : BeaconStorage {
     private var sdkSecretSeed: String? = null
     private var sdkVersion: String? = null
 
-    override fun getP2pPeers(listener: BeaconStorage.OnReadListener<List<P2pPairingRequest>>) {
-        listener.onSuccess(p2pPeers)
-    }
-
-    override fun setP2pPeers(p2pPeers: List<P2pPairingRequest>, listener: BeaconStorage.OnWriteListener) {
+    override suspend fun getP2pPeers(): List<P2pPeerInfo> = p2pPeers
+    override suspend fun setP2pPeers(p2pPeers: List<P2pPeerInfo>) {
         this.p2pPeers = p2pPeers
-        listener.onSuccess()
     }
 
-    override fun getAccounts(listener: BeaconStorage.OnReadListener<List<AccountInfo>>) {
-        listener.onSuccess(accounts)
-    }
-
-    override fun setAccounts(accounts: List<AccountInfo>, listener: BeaconStorage.OnWriteListener) {
+    override suspend fun getAccounts(): List<AccountInfo> = accounts
+    override suspend fun setAccounts(accounts: List<AccountInfo>) {
         this.accounts = accounts
-        listener.onSuccess()
     }
 
-    override fun getActiveAccountIdentifier(listener: BeaconStorage.OnReadListener<String?>) {
-        listener.onSuccess(activeAccountIdentifier)
-    }
-
-    override fun setActiveAccountIdentifier(activeAccountIdentifier: String, listener: BeaconStorage.OnWriteListener) {
+    override suspend fun getActiveAccountIdentifier(): String? = activeAccountIdentifier
+    override suspend fun setActiveAccountIdentifier(activeAccountIdentifier: String) {
         this.activeAccountIdentifier = activeAccountIdentifier
-        listener.onSuccess()
     }
 
-    override fun getAppsMetadata(listener: BeaconStorage.OnReadListener<List<AppMetadata>>) {
-        listener.onSuccess(appsMetadata)
-    }
-
-    override fun setAppsMetadata(appsMetadata: List<AppMetadata>, listener: BeaconStorage.OnWriteListener) {
+    override suspend fun getAppsMetadata(): List<AppMetadata> = appsMetadata
+    override suspend fun setAppsMetadata(appsMetadata: List<AppMetadata>) {
         this.appsMetadata = appsMetadata
-        listener.onSuccess()
     }
 
-    override fun getPermissions(listener: BeaconStorage.OnReadListener<List<PermissionInfo>>) {
-        listener.onSuccess(permissions)
-    }
-
-    override fun setPermissions(permissions: List<PermissionInfo>, listener: BeaconStorage.OnWriteListener) {
+    override suspend fun getPermissions(): List<PermissionInfo> = permissions
+    override suspend fun setPermissions(permissions: List<PermissionInfo>) {
         this.permissions = permissions
-        listener.onSuccess()
     }
 
-    override fun getSdkSecretSeed(listener: BeaconStorage.OnReadListener<String?>) {
-        listener.onSuccess(sdkSecretSeed)
-    }
-
-    override fun setSdkSecretSeed(sdkSecretSeed: String, listener: BeaconStorage.OnWriteListener) {
+    override suspend fun getSdkSecretSeed(): String? = sdkSecretSeed
+    override suspend fun setSdkSecretSeed(sdkSecretSeed: String) {
         this.sdkSecretSeed = sdkSecretSeed
-        listener.onSuccess()
     }
 
-    override fun getSdkVersion(listener: BeaconStorage.OnReadListener<String?>) {
-        listener.onSuccess(sdkVersion)
-    }
-
-    override fun setSdkVersion(sdkVersion: String, listener: BeaconStorage.OnWriteListener) {
+    override suspend fun getSdkVersion(): String? = sdkVersion
+    override suspend fun setSdkVersion(sdkVersion: String) {
         this.sdkVersion = sdkVersion
-        listener.onSuccess()
     }
 }

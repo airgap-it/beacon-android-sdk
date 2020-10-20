@@ -5,11 +5,11 @@ import it.airgap.beaconsdk.internal.message.beaconmessage.ApiBeaconMessage
 import it.airgap.beaconsdk.internal.protocol.Protocol
 import it.airgap.beaconsdk.internal.protocol.ProtocolRegistry
 import it.airgap.beaconsdk.internal.storage.ExtendedStorage
+import it.airgap.beaconsdk.internal.utils.*
 import it.airgap.beaconsdk.internal.utils.AccountUtils
 import it.airgap.beaconsdk.internal.utils.InternalResult
 import it.airgap.beaconsdk.internal.utils.currentTimestamp
 import it.airgap.beaconsdk.internal.utils.pop
-import it.airgap.beaconsdk.internal.utils.suspendTryInternal
 
 internal class MessageController(
     private val protocolRegistry: ProtocolRegistry,
@@ -19,7 +19,7 @@ internal class MessageController(
     private val pendingRequests: MutableList<ApiBeaconMessage.Request> = mutableListOf()
 
     suspend fun onRequest(request: ApiBeaconMessage.Request): InternalResult<Unit> =
-        suspendTryInternal {
+        tryResult {
             pendingRequests.add(request)
             when (request) {
                 is ApiBeaconMessage.Request.Permission -> onPermissionRequest(request)
@@ -31,7 +31,7 @@ internal class MessageController(
 
 
     suspend fun onResponse(response: ApiBeaconMessage.Response): InternalResult<Unit> =
-        suspendTryInternal {
+        tryResult {
             val request = pendingRequests.pop { it.id == response.id } ?: failWithNoPendingRequest()
             when (response) {
                 is ApiBeaconMessage.Response.Permission -> onPermissionResponse(response, request)

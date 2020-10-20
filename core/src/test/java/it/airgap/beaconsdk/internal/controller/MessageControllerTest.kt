@@ -12,11 +12,10 @@ import it.airgap.beaconsdk.internal.message.beaconmessage.ApiBeaconMessage
 import it.airgap.beaconsdk.internal.protocol.Protocol
 import it.airgap.beaconsdk.internal.protocol.ProtocolRegistry
 import it.airgap.beaconsdk.internal.storage.ExtendedStorage
-import it.airgap.beaconsdk.internal.storage.Storage
 import it.airgap.beaconsdk.internal.utils.AccountUtils
 import it.airgap.beaconsdk.internal.utils.currentTimestamp
 import it.airgap.beaconsdk.internal.utils.internalSuccess
-import it.airgap.beaconsdk.storage.MockBeaconStorageKtx
+import it.airgap.beaconsdk.storage.MockBeaconStorage
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
@@ -51,7 +50,7 @@ class MessageControllerTest {
 
         every { accountUtils.getAccountIdentifier(any(), any()) } answers { internalSuccess(firstArg()) }
 
-        storage = ExtendedStorage(Storage.KtxDecorator(MockBeaconStorageKtx()))
+        storage = ExtendedStorage(MockBeaconStorage())
         messageController = MessageController(protocolRegistry, storage, accountUtils)
     }
 

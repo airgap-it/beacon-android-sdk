@@ -3,18 +3,19 @@ package it.airgap.beaconsdk.internal.storage
 import android.content.Context
 import android.content.SharedPreferences
 import it.airgap.beaconsdk.data.account.AccountInfo
-import it.airgap.beaconsdk.data.p2p.P2pPairingRequest
+import it.airgap.beaconsdk.data.p2p.P2pPeerInfo
 import it.airgap.beaconsdk.data.permission.PermissionInfo
 import it.airgap.beaconsdk.data.sdk.AppMetadata
+import it.airgap.beaconsdk.storage.BeaconStorage
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
-internal class SharedPreferencesStorage(private val sharedPreferences: SharedPreferences) : Storage {
-    override suspend fun getP2pPeers(): List<P2pPairingRequest> =
+internal class SharedPreferencesStorage(private val sharedPreferences: SharedPreferences) : BeaconStorage {
+    override suspend fun getP2pPeers(): List<P2pPeerInfo> =
         sharedPreferences.getSerializable(KEY_P2P_PEERS, emptyList())
 
-    override suspend fun setP2pPeers(p2pPeers: List<P2pPairingRequest>) {
+    override suspend fun setP2pPeers(p2pPeers: List<P2pPeerInfo>) {
         sharedPreferences.putSerializable(KEY_P2P_PEERS, p2pPeers)
     }
 

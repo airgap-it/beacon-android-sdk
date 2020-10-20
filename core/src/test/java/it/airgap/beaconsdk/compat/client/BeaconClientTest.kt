@@ -1,7 +1,9 @@
-package it.airgap.beaconsdk.client
+package it.airgap.beaconsdk.compat.client
 
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
+import it.airgap.beaconsdk.client.BeaconClient
+import it.airgap.beaconsdk.internal.storage.ExtendedStorage
 import it.airgap.beaconsdk.data.network.Network
 import it.airgap.beaconsdk.data.sdk.AppMetadata
 import it.airgap.beaconsdk.data.tezos.TezosOperation
@@ -10,24 +12,21 @@ import it.airgap.beaconsdk.internal.client.SdkClient
 import it.airgap.beaconsdk.internal.controller.MessageController
 import it.airgap.beaconsdk.internal.crypto.Crypto
 import it.airgap.beaconsdk.internal.crypto.data.KeyPair
-import it.airgap.beaconsdk.internal.utils.InternalResult
 import it.airgap.beaconsdk.internal.message.beaconmessage.ApiBeaconMessage
-import it.airgap.beaconsdk.internal.storage.ExtendedStorage
-import it.airgap.beaconsdk.internal.storage.Storage
+import it.airgap.beaconsdk.internal.utils.InternalResult
 import it.airgap.beaconsdk.internal.utils.internalSuccess
 import it.airgap.beaconsdk.internal.utils.uninitializedMessage
 import it.airgap.beaconsdk.message.BeaconMessage
-import it.airgap.beaconsdk.storage.MockBeaconStorageKtx
+import it.airgap.beaconsdk.storage.MockBeaconStorage
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
-class BeaconWalletClientTest {
+class BeaconClientTest {
 
     @MockK
     private lateinit var connectionClient: ConnectionClient
@@ -40,7 +39,7 @@ class BeaconWalletClientTest {
 
     private lateinit var storage: ExtendedStorage
     private lateinit var sdkClient: SdkClient
-    private lateinit var beaconWalletClient: BeaconWalletClient
+    private lateinit var beaconClient: BeaconClient
 
     private lateinit var testDeferred: CompletableDeferred<Unit>
 
@@ -54,23 +53,56 @@ class BeaconWalletClientTest {
         coEvery { messageController.onRequest(any()) } returns internalSuccess(Unit)
         coEvery { messageController.onResponse(any()) } returns internalSuccess(Unit)
 
-        storage = ExtendedStorage(Storage.KtxDecorator(MockBeaconStorageKtx()))
+        storage = ExtendedStorage(MockBeaconStorage())
         sdkClient = spyk(SdkClient(storage, crypto))
 
-        beaconWalletClient = BeaconWalletClient("mockApp", sdkClient, connectionClient, messageController, storage)
+        beaconClient = BeaconClient("mockApp", sdkClient, connectionClient, messageController, storage)
 
         testDeferred = CompletableDeferred()
     }
 
     @Test
-    fun `initializes itself with suspend fun`() {
-        runBlocking { beaconWalletClient.init() }
-        assertTrue(beaconWalletClient.isInitialized)
+    fun `fails when interacting before initialization`() {
+        val connectDeferred = CompletableDeferred<Unit>()
+        val respondDeferred = CompletableDeferred<Unit>()
+
+        val errors = mutableListOf<Throwable>()
+        beaconClient.connect(object : OnNewMessageListener {
+            override fun onNewMessage(message: BeaconMessage.Request) {
+                connectDeferred.complete(Unit)
+            }
+            override fun onError(error: Throwable) {
+                errors.add(error)
+                connectDeferred.complete(Unit)
+            }
+        })
+
+        beaconClient.respond(beaconResponses.shuffled().first(), object : ResponseCallback {
+            override fun onSuccess() {
+                respondDeferred.complete(Unit)
+            }
+            override fun onError(error: Throwable)  {
+                errors.add(error)
+                respondDeferred.complete(Unit)
+            }
+        })
+
+        runBlocking {
+            connectDeferred.await()
+            respondDeferred.await()
+        }
+
+        val expected = listOf<Throwable>(
+            IllegalStateException(uninitializedMessage(BeaconClient.TAG)),
+            IllegalStateException(uninitializedMessage(BeaconClient.TAG)),
+        ).map(Throwable::toString)
+
+        assertEquals(expected, errors.map(Throwable::toString))
     }
 
     @Test
     fun `initializes itself with callback`() {
-        val callback = spyk<BeaconClient.InitCallback>(object : BeaconClient.InitCallback {
+        val callback = spyk<InitCallback>(object : InitCallback {
             override fun onSuccess() {
                 testDeferred.complete(Unit)
             }
@@ -80,66 +112,12 @@ class BeaconWalletClientTest {
             }
         })
 
-        beaconWalletClient.init(callback)
+        beaconClient.init(callback)
         runBlocking { testDeferred.await() }
 
         verify { callback.onSuccess() }
-        assertTrue(beaconWalletClient.isInitialized)
-        assertEquals("0a0b0c0d0e0f1011121314", beaconWalletClient.beaconId)
-    }
-
-    @Test
-    fun `fails when interacting before initialization`() {
-        assertFailsWith(IllegalStateException::class, uninitializedMessage(BeaconWalletClient.TAG)) {
-            beaconWalletClient.beaconId
-        }
-
-        assertFailsWith(IllegalStateException::class, uninitializedMessage(BeaconWalletClient.TAG)) {
-            runBlocking { beaconWalletClient.connect() }
-        }
-
-        assertFailsWith(IllegalStateException::class, uninitializedMessage(BeaconWalletClient.TAG)) {
-            beaconWalletClient.connect(object : BeaconClient.OnNewMessageListener {
-                override fun onNewMessage(message: BeaconMessage.Request) = Unit
-                override fun onError(error: Throwable) = Unit
-            })
-        }
-
-        assertFailsWith(IllegalStateException::class, uninitializedMessage(BeaconWalletClient.TAG)) {
-            runBlocking { beaconWalletClient.respond(beaconResponses.shuffled().first()) }
-        }
-
-        assertFailsWith(IllegalStateException::class, uninitializedMessage(BeaconWalletClient.TAG)) {
-            beaconWalletClient.respond(beaconResponses.shuffled().first(), object : BeaconClient.ResponseCallback {
-                override fun onSuccess() = Unit
-                override fun onError(error: Throwable) = Unit
-            })
-        }
-    }
-
-    @Test
-    fun `connects for messages flow`() {
-        val requests = beaconRequests.shuffled().takeHalf()
-        val beaconRequestFlow =
-            MutableSharedFlow<InternalResult<ApiBeaconMessage.Request>>(requests.size + 1)
-        every { connectionClient.subscribe() } answers { beaconRequestFlow }
-
-        val appMetadata = AppMetadata(senderId, "mockApp")
-        runBlocking { storage.addAppsMetadata(appMetadata) }
-        runBlocking { beaconWalletClient.init() }
-
-        val messages = runBlocking {
-            beaconWalletClient.connect()
-                .onStart { beaconRequestFlow.tryEmit(requests) }
-                .mapNotNull { it.getOrNull() }
-                .take(requests.size)
-                .toList()
-        }
-
-        val expected = requests.map { BeaconMessage.fromInternalBeaconRequest(it, appMetadata) }
-
-        assertEquals(expected.sortedBy { it.toString() }, messages.sortedBy { it.toString() })
-        coVerify(exactly = expected.size) { messageController.onRequest(any()) }
+        assertTrue(beaconClient.isInitialized)
+        assertEquals("0a0b0c0d0e0f1011121314", beaconClient.beaconId)
     }
 
     @Test
@@ -151,11 +129,11 @@ class BeaconWalletClientTest {
 
         val appMetadata = AppMetadata(senderId, "mockApp")
         runBlocking { storage.addAppsMetadata(appMetadata) }
-        runBlocking { beaconWalletClient.init() }
+        runBlocking { beaconClient.init() }
         runBlocking {
             val messages = mutableListOf<BeaconMessage.Request>()
-            val callback = spyk<BeaconClient.OnNewMessageListener>(
-                object : BeaconClient.OnNewMessageListener {
+            val callback = spyk<OnNewMessageListener>(
+                object : OnNewMessageListener {
                     override fun onNewMessage(message: BeaconMessage.Request) {
                         messages.add(message)
 
@@ -165,7 +143,7 @@ class BeaconWalletClientTest {
                     override fun onError(error: Throwable) = Unit
                 }
             )
-            beaconWalletClient.connect(callback)
+            beaconClient.connect(callback)
             beaconRequestFlow.tryEmit(requests)
 
             testDeferred.await()
@@ -180,29 +158,15 @@ class BeaconWalletClientTest {
     }
 
     @Test
-    fun `responds to request with suspend fun`() {
-        coEvery { connectionClient.send(any()) } returns internalSuccess(Unit)
-
-        runBlocking { beaconWalletClient.init() }
-
-        val response = beaconResponses.shuffled().first()
-        val internalResponse = ApiBeaconMessage.fromBeaconResponse(response, sdkClient.beaconId!!)
-
-        runBlocking { beaconWalletClient.respond(response) }
-
-        coVerify { connectionClient.send(internalResponse) }
-    }
-
-    @Test
     fun `responds to request with callback`() {
         coEvery { connectionClient.send(any()) } returns internalSuccess(Unit)
 
-        runBlocking { beaconWalletClient.init() }
+        runBlocking { beaconClient.init() }
 
         val response = beaconResponses.shuffled().first()
         val internalResponse = ApiBeaconMessage.fromBeaconResponse(response, sdkClient.beaconId!!)
 
-        val callback = spyk<BeaconClient.ResponseCallback>(object : BeaconClient.ResponseCallback {
+        val callback = spyk<ResponseCallback>(object : ResponseCallback {
             override fun onSuccess() {
                 testDeferred.complete(Unit)
             }
@@ -212,7 +176,7 @@ class BeaconWalletClientTest {
             }
         })
 
-        beaconWalletClient.respond(response, callback)
+        beaconClient.respond(response, callback)
 
         runBlocking { testDeferred.await() }
 

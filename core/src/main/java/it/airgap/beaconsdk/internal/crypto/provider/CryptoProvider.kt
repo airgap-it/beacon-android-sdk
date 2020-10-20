@@ -29,7 +29,12 @@ internal interface CryptoProvider {
     fun validateMessage(message: String): Boolean
 
     @Throws(Exception::class)
-    fun encryptMessage(message: HexString, sharedKey: ByteArray): String
+    fun encryptMessageWithPublicKey(message: HexString, publicKey: ByteArray): String
     @Throws(Exception::class)
-    fun decryptMessage(message: HexString, sharedKey: ByteArray): String
+    fun decryptMessageWithKeyPair(message: HexString, publicKey: ByteArray, privateKey: ByteArray): String
+
+    @Throws(Exception::class)
+    fun encryptMessageWithSharedKey(message: HexString, sharedKey: ByteArray): String
+    @Throws(Exception::class)
+    fun decryptMessageWithSharedKey(message: HexString, sharedKey: ByteArray): String
 }

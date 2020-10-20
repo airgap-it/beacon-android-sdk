@@ -10,7 +10,7 @@ internal class Base58Check(private val crypto: Crypto) {
     private val biAlphabet: BigInteger by lazy { BigInteger.valueOf(ALPHABET.length.toLong()) }
 
     fun encode(bytes: ByteArray): InternalResult<String> =
-        tryInternal {
+        tryResult {
             val checksum = createChecksum(bytes)
             val encoded = bytesToBase58(bytes + checksum)
 
@@ -18,7 +18,7 @@ internal class Base58Check(private val crypto: Crypto) {
         }
 
     fun decode(base58check: String): InternalResult<ByteArray> =
-        tryInternal {
+        tryResult {
             if (!base58check.matches(bs58Regex)) failWithInvalidString()
 
             val (payloadList, checksumList) = bytesFromBase58(base58check).toList()

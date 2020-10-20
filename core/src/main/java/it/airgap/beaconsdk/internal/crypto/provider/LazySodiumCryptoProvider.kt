@@ -9,6 +9,8 @@ import it.airgap.beaconsdk.internal.crypto.data.SessionKeyPair
 import it.airgap.beaconsdk.internal.utils.HexString
 import it.airgap.beaconsdk.internal.utils.asHexString
 
+private typealias SodiumKeyPair = com.goterl.lazycode.lazysodium.utils.KeyPair
+
 internal class LazySodiumCryptoProvider : CryptoProvider {
     private val sodium: LazySodiumAndroid = LazySodiumAndroid(SodiumAndroid())
 
@@ -91,7 +93,34 @@ internal class LazySodiumCryptoProvider : CryptoProvider {
         }
 
     @Throws(Exception::class)
-    override fun encryptMessage(message: HexString, sharedKey: ByteArray): String {
+    override fun encryptMessageWithPublicKey(message: HexString, publicKey: ByteArray): String {
+        val signSodium = sodium as Sign.Native
+        val secretBoxSodium = sodium as Box.Lazy
+
+        val kxPublicKey = Key.fromBytes(
+            ByteArray(Sign.CURVE25519_PUBLICKEYBYTES).also { signSodium.convertPublicKeyEd25519ToCurve25519(it, publicKey) }
+        )
+
+        return secretBoxSodium.cryptoBoxSealEasy(message.value(withPrefix = false), kxPublicKey)
+    }
+
+    @Throws(Exception::class)
+    override fun decryptMessageWithKeyPair(
+        message: HexString,
+        publicKey: ByteArray,
+        privateKey: ByteArray
+    ): String {
+        val signSodium = sodium as Sign.Lazy
+        val secretBoxSodium = sodium as Box.Lazy
+
+        val edKeyPair = SodiumKeyPair(Key.fromBytes(privateKey), Key.fromBytes(publicKey))
+        val kxKeyPair = signSodium.convertKeyPairEd25519ToCurve25519(edKeyPair)
+
+        return secretBoxSodium.cryptoBoxSealOpenEasy(message.value(withPrefix = false), kxKeyPair)
+    }
+
+    @Throws(Exception::class)
+    override fun encryptMessageWithSharedKey(message: HexString, sharedKey: ByteArray): String {
         val randomSodium = sodium as Random
         val secretBoxSodium = sodium as SecretBox.Lazy
 
@@ -104,7 +133,7 @@ internal class LazySodiumCryptoProvider : CryptoProvider {
     }
 
     @Throws(Exception::class)
-    override fun decryptMessage(message: HexString, sharedKey: ByteArray): String {
+    override fun decryptMessageWithSharedKey(message: HexString, sharedKey: ByteArray): String {
         val secretBoxSodium = sodium as SecretBox.Lazy
 
         val nonce = message.slice(0 until SecretBox.NONCEBYTES)
