@@ -36,7 +36,7 @@ unit:
     - docker rm -f $UNIT_CONTAINER || true
     - docker rm -f $LINT_CONTAINER || true
   script:
-    - docker run --name $UNIT_CONTAINER $GOOGLE_TAG /bin/bash -c "/build/gradlew --project-dir /build testMockReleaseUnitTest"
+    - docker run --name $UNIT_CONTAINER $GOOGLE_TAG /bin/bash -c "/build/gradlew --project-dir /build --info testMockReleaseUnitTest"
     - docker run --name $LINT_CONTAINER $GOOGLE_TAG /bin/bash -c "/build/gradlew --project-dir /build lint"
   after_script:
     - docker rm -f $UNIT_CONTAINER || true
