@@ -5,7 +5,7 @@ import it.airgap.beaconsdk.data.sdk.Origin
 import it.airgap.beaconsdk.internal.message.ConnectionMessage
 import it.airgap.beaconsdk.internal.storage.ExtendedStorage
 import it.airgap.beaconsdk.internal.transport.Transport
-import it.airgap.beaconsdk.internal.transport.data.TransportMessage
+import it.airgap.beaconsdk.internal.transport.p2p.data.P2pMessage
 import it.airgap.beaconsdk.internal.utils.HexString
 import it.airgap.beaconsdk.internal.utils.InternalResult
 import it.airgap.beaconsdk.internal.utils.launch
@@ -60,14 +60,14 @@ internal class P2pTransport(
         }
     }
 
-    private fun subscribeToP2pPeer(publicKey: HexString): Flow<InternalResult<TransportMessage>> {
+    private fun subscribeToP2pPeer(publicKey: HexString): Flow<InternalResult<P2pMessage>> {
         subscribedPeers.add(publicKey)
 
         return client.subscribeTo(publicKey)
     }
 
-    private fun ConnectionMessage.Companion.fromInternalResult(transportMessage: InternalResult<TransportMessage>): InternalResult<ConnectionMessage> =
-        transportMessage.map { ConnectionMessage(Origin.P2P(it.id), it.content) }
+    private fun ConnectionMessage.Companion.fromInternalResult(p2pMessage: InternalResult<P2pMessage>): InternalResult<ConnectionMessage> =
+        p2pMessage.map { ConnectionMessage(Origin.P2P(it.id), it.content) }
 
     private fun List<P2pPeerInfo>.filterWithPublicKey(publicKey: String): List<P2pPeerInfo> =
         filter { it.publicKey == publicKey }

@@ -6,10 +6,10 @@ import it.airgap.beaconsdk.internal.crypto.data.KeyPair
 import it.airgap.beaconsdk.internal.crypto.data.SessionKeyPair
 import it.airgap.beaconsdk.internal.matrix.MatrixClient
 import it.airgap.beaconsdk.internal.matrix.data.client.MatrixClientEvent
-import it.airgap.beaconsdk.internal.transport.data.TransportMessage
+import it.airgap.beaconsdk.internal.transport.p2p.data.P2pMessage
+import it.airgap.beaconsdk.internal.transport.p2p.data.P2pHandshakeInfo
 import it.airgap.beaconsdk.internal.utils.*
 import kotlinx.coroutines.flow.*
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.math.BigInteger
@@ -25,8 +25,8 @@ internal class P2pCommunicationClient(
     private val messageFlows: MutableMap<HexString, Flow<InternalResult<String>>> = mutableMapOf()
     private val keyPairs: MutableMap<HexString, SessionKeyPair> = mutableMapOf()
 
-    private val handshakeInfo: HandshakeInfo
-        get() = HandshakeInfo(
+    private val handshakeInfo: P2pHandshakeInfo
+        get() = P2pHandshakeInfo(
             name,
             BeaconConfig.versionName,
             keyPair.publicKey.asHexString().value(withPrefix = false),
@@ -36,7 +36,7 @@ internal class P2pCommunicationClient(
     private val handshakeInfoJson: String
         get() = Json.encodeToString(handshakeInfo)
 
-    fun subscribeTo(publicKey: HexString): Flow<InternalResult<TransportMessage>> =
+    fun subscribeTo(publicKey: HexString): Flow<InternalResult<P2pMessage>> =
         messageFlows.getOrPut(publicKey) {
             matrixClients.map(MatrixClient::events)
                 .merge() // @ExperimentalCoroutinesApi
@@ -44,7 +44,7 @@ internal class P2pCommunicationClient(
                 .filterIsInstance<MatrixClientEvent.Message.Text>()
                 .filter { it.isTextMessageFrom(publicKey) }
                 .map { decrypt(publicKey, it) }
-        }.map { TransportMessage.fromInternalResult(publicKey, it) }
+        }.map { P2pMessage.fromInternalResult(publicKey, it) }
 
     suspend fun sendTo(publicKey: HexString, message: String): InternalResult<Unit> =
         tryResult {
@@ -127,11 +127,11 @@ internal class P2pCommunicationClient(
         else crypto.createServerSessionKeyPair(publicKey.asByteArray(), keyPair.privateKey)
             .alsoIfSuccess { put(publicKey, it) }
 
-    private fun TransportMessage.Companion.fromInternalResult(
+    private fun P2pMessage.Companion.fromInternalResult(
         publicKey: HexString,
         message: InternalResult<String>
-    ): InternalResult<TransportMessage> =
-        message.map { TransportMessage(publicKey.value(withPrefix = false), it) }
+    ): InternalResult<P2pMessage> =
+        message.map { P2pMessage(publicKey.value(withPrefix = false), it) }
 
     private fun HexString.absDiff(other: HexString): BigInteger =
         (toBigInteger() - other.toBigInteger()).abs()
@@ -139,12 +139,4 @@ internal class P2pCommunicationClient(
     companion object {
         const val TAG = "P2pCommunicationClient"
     }
-
-    @Serializable
-    data class HandshakeInfo(
-        val name: String,
-        val version: String,
-        val publicKey: String,
-        val relayServer: String
-    )
 }

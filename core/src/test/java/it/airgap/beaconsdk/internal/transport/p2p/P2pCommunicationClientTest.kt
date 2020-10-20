@@ -9,7 +9,8 @@ import it.airgap.beaconsdk.internal.crypto.data.SessionKeyPair
 import it.airgap.beaconsdk.internal.matrix.MatrixClient
 import it.airgap.beaconsdk.internal.matrix.data.client.MatrixClientEvent
 import it.airgap.beaconsdk.internal.matrix.data.client.MatrixClientMessage
-import it.airgap.beaconsdk.internal.transport.data.TransportMessage
+import it.airgap.beaconsdk.internal.transport.p2p.data.P2pMessage
+import it.airgap.beaconsdk.internal.transport.p2p.data.P2pHandshakeInfo
 import it.airgap.beaconsdk.internal.utils.*
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.mapNotNull
@@ -96,7 +97,7 @@ class P2pCommunicationClientTest {
         }
 
         runBlocking {
-            val expected = (messages1 + messages2).map { TransportMessage(publicKey.value(withPrefix = false), it.content.message.content) }
+            val expected = (messages1 + messages2).map { P2pMessage(publicKey.value(withPrefix = false), it.content.message.content) }
             val messages = p2pCommunicationClient.subscribeTo(publicKey).mapNotNull { it.getOrNull() }.toList()
 
            assertEquals(expected.sortedBy { it.content }, messages.sortedBy { it.content })
@@ -124,7 +125,7 @@ class P2pCommunicationClientTest {
         }
 
         runBlocking {
-            val expected = subscribedMessages.map { TransportMessage(subscribedPublicKey.value(withPrefix = false), it.content.message.content) }
+            val expected = subscribedMessages.map { P2pMessage(subscribedPublicKey.value(withPrefix = false), it.content.message.content) }
             val messages = p2pCommunicationClient.subscribeTo(subscribedPublicKey)
                 .mapNotNull { it.getOrNull() }.toList()
 
@@ -154,7 +155,7 @@ class P2pCommunicationClientTest {
         }
 
         runBlocking {
-            val expected = validMessages.map { TransportMessage(publicKey.value(withPrefix = false), it.content.message.content) }
+            val expected = validMessages.map { P2pMessage(publicKey.value(withPrefix = false), it.content.message.content) }
             val messages = p2pCommunicationClient.subscribeTo(publicKey).mapNotNull { it.getOrNull() }.toList()
 
             assertEquals(expected.sortedBy { it.content }, messages.sortedBy { it.content })
@@ -190,7 +191,7 @@ class P2pCommunicationClientTest {
         }
 
         runBlocking {
-            val expected = (textMessages1 + testMessages2).map { TransportMessage(publicKey.value(withPrefix = false), it.content.message.content) }
+            val expected = (textMessages1 + testMessages2).map { P2pMessage(publicKey.value(withPrefix = false), it.content.message.content) }
             val messages = p2pCommunicationClient.subscribeTo(publicKey).mapNotNull { it.getOrNull() }.toList()
 
             assertEquals(expected.sortedBy { it.content }, messages.sortedBy { it.content })
@@ -221,7 +222,7 @@ class P2pCommunicationClientTest {
         }
 
         runBlocking {
-            val expected = (messages1 + messages2).map { TransportMessage(publicKey.value(withPrefix = false), it.content.message.content) }
+            val expected = (messages1 + messages2).map { P2pMessage(publicKey.value(withPrefix = false), it.content.message.content) }
             val messages = p2pCommunicationClient.subscribeTo(publicKey).mapNotNull { it.getOrNull() }.toList()
 
             assertEquals(expected.sortedBy { it.content }, messages.sortedBy { it.content })
@@ -254,7 +255,7 @@ class P2pCommunicationClientTest {
         runBlocking { p2pCommunicationClient.sendPairingRequest(publicKey, relayServer) }
 
         val expectedRecipient = "@${publicKey.value(withPrefix = false)}:$relayServer"
-        val expectedEncrypted = Json.encodeToString(P2pCommunicationClient.HandshakeInfo(
+        val expectedEncrypted = Json.encodeToString(P2pHandshakeInfo(
             appName,
             BeaconConfig.versionName,
             keyPair.publicKey.asHexString().value(withPrefix = false),

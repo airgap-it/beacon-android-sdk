@@ -7,11 +7,10 @@ import it.airgap.beaconsdk.data.sdk.Origin
 import it.airgap.beaconsdk.internal.message.ConnectionMessage
 import it.airgap.beaconsdk.internal.storage.ExtendedStorage
 import it.airgap.beaconsdk.internal.transport.Transport
-import it.airgap.beaconsdk.internal.transport.data.TransportMessage
+import it.airgap.beaconsdk.internal.transport.p2p.data.P2pMessage
 import it.airgap.beaconsdk.internal.utils.*
 import it.airgap.beaconsdk.storage.MockBeaconStorage
 import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
@@ -310,20 +309,20 @@ class P2pTransportTest {
     )
 
     private fun messagesAndFlows(publicKeys: List<HexString>)
-            : Pair<List<TransportMessage>, Map<String, MutableSharedFlow<InternalResult<TransportMessage>>>> {
+            : Pair<List<P2pMessage>, Map<String, MutableSharedFlow<InternalResult<P2pMessage>>>> {
 
         val transportMessages = publicKeys.mapIndexed { index, hexString ->
-            TransportMessage(hexString.value(withPrefix = false), "content$index")
+            P2pMessage(hexString.value(withPrefix = false), "content$index")
         }
 
         val transportMessageFlows = publicKeys.map {
-            it.value(withPrefix = false) to MutableSharedFlow<InternalResult<TransportMessage>>(transportMessages.size + 1)
+            it.value(withPrefix = false) to MutableSharedFlow<InternalResult<P2pMessage>>(transportMessages.size + 1)
         } .toMap()
 
         return Pair(transportMessages, transportMessageFlows)
     }
 
-    private fun Map<String, MutableSharedFlow<InternalResult<TransportMessage>>>.tryEmit(messages: List<TransportMessage>) {
+    private fun Map<String, MutableSharedFlow<InternalResult<P2pMessage>>>.tryEmit(messages: List<P2pMessage>) {
         messages.forEach { getValue(it.id).tryEmit(internalSuccess(it)) }
     }
 }
