@@ -3,9 +3,11 @@ package it.airgap.beaconsdk.internal.crypto
 import it.airgap.beaconsdk.internal.crypto.data.KeyPair
 import it.airgap.beaconsdk.internal.crypto.data.SessionKeyPair
 import it.airgap.beaconsdk.internal.crypto.provider.CryptoProvider
+import it.airgap.beaconsdk.internal.utils.*
 import it.airgap.beaconsdk.internal.utils.HexString
 import it.airgap.beaconsdk.internal.utils.InternalResult
 import it.airgap.beaconsdk.internal.utils.asHexString
+import it.airgap.beaconsdk.internal.utils.flatTryInternal
 import it.airgap.beaconsdk.internal.utils.isHex
 import it.airgap.beaconsdk.internal.utils.tryInternal
 
@@ -73,17 +75,53 @@ internal class Crypto(private val cryptoProvider: CryptoProvider) {
 
     fun validateEncryptedMessage(encrypted: String): Boolean = cryptoProvider.validateMessage(encrypted)
 
-    fun encryptMessage(message: String, sharedKey: ByteArray): InternalResult<String> =
-        encryptMessage(HexString.fromString(message), sharedKey)
+    fun encryptMessageWithPublicKey(message: String, publicKey: ByteArray): InternalResult<String> =
+        flatTryInternal {
+            val hexMessage =
+                if (message.isHex()) HexString.fromString(message)
+                else message.toByteArray().asHexString()
 
-    fun encryptMessage(message: HexString, sharedKey: ByteArray): InternalResult<String> =
-        tryInternal { cryptoProvider.encryptMessage(message, sharedKey) }
+            encryptMessageWithPublicKey(hexMessage, publicKey)
+        }
 
-    fun decryptMessage(message: String, sharedKey: ByteArray): InternalResult<String> =
-        decryptMessage(HexString.fromString(message), sharedKey)
+    fun encryptMessageWithPublicKey(message: HexString, publicKey: ByteArray): InternalResult<String> =
+        tryInternal { cryptoProvider.encryptMessageWithPublicKey(message, publicKey) }
 
-    fun decryptMessage(message: HexString, sharedKey: ByteArray): InternalResult<String> =
-        tryInternal { cryptoProvider.decryptMessage(message, sharedKey) }
+    fun decryptMessageWithKeyPair(message: String, publicKey: ByteArray, privateKey: ByteArray): InternalResult<String> =
+        flatTryInternal {
+            val hexMessage =
+                if (message.isHex()) HexString.fromString(message)
+                else message.toByteArray().asHexString()
+
+            decryptMessageWithKeyPair(hexMessage, publicKey, privateKey)
+        }
+
+    fun decryptMessageWithKeyPair(message: HexString, publicKey: ByteArray, privateKey: ByteArray): InternalResult<String> =
+        tryInternal { cryptoProvider.decryptMessageWithKeyPair(message, publicKey, privateKey) }
+
+    fun encryptMessageWithSharedKey(message: String, sharedKey: ByteArray): InternalResult<String> =
+        flatTryInternal {
+            val hexMessage =
+                if (message.isHex()) HexString.fromString(message)
+                else message.toByteArray().asHexString()
+
+            encryptMessageWithSharedKey(hexMessage, sharedKey)
+        }
+
+    fun encryptMessageWithSharedKey(message: HexString, sharedKey: ByteArray): InternalResult<String> =
+        tryInternal { cryptoProvider.encryptMessageWithSharedKey(message, sharedKey) }
+
+    fun decryptMessageWithSharedKey(message: String, sharedKey: ByteArray): InternalResult<String> =
+        flatTryInternal {
+            val hexMessage =
+                if (message.isHex()) HexString.fromString(message)
+                else message.toByteArray().asHexString()
+
+            decryptMessageWithSharedKey(hexMessage, sharedKey)
+        }
+
+    fun decryptMessageWithSharedKey(message: HexString, sharedKey: ByteArray): InternalResult<String> =
+        tryInternal { cryptoProvider.decryptMessageWithSharedKey(message, sharedKey) }
 
     companion object {
         private const val SEED_BYTES = 16

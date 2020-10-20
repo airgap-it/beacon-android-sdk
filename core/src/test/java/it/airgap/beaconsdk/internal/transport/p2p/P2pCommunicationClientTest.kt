@@ -2,6 +2,7 @@ package it.airgap.beaconsdk.internal.transport.p2p
 
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
+import it.airgap.beaconsdk.internal.BeaconConfig
 import it.airgap.beaconsdk.internal.crypto.Crypto
 import it.airgap.beaconsdk.internal.crypto.data.KeyPair
 import it.airgap.beaconsdk.internal.crypto.data.SessionKeyPair
@@ -14,6 +15,8 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import org.junit.Before
 import org.junit.Test
 import kotlin.test.assertEquals
@@ -30,6 +33,7 @@ class P2pCommunicationClientTest {
 
     private lateinit var p2pCommunicationClient: P2pCommunicationClient
 
+    private val appName = "mockApp"
     private val replicationCount = 3
     private val keyPair = KeyPair(byteArrayOf(0), byteArrayOf(0))
 
@@ -53,13 +57,17 @@ class P2pCommunicationClientTest {
 
         every { crypto.createServerSessionKeyPair(any(), any()) } answers { internalSuccess(SessionKeyPair(byteArrayOf(0), byteArrayOf(0))) }
 
-        every { crypto.encryptMessage(any<String>(), any()) } answers { internalSuccess(firstArg()) }
-        every { crypto.encryptMessage(any<HexString>(), any()) } answers { internalSuccess(firstArg<HexString>().value(withPrefix = false)) }
+        every { crypto.encryptMessageWithPublicKey(any<String>(), any()) } answers { internalSuccess(firstArg()) }
+        every { crypto.encryptMessageWithPublicKey(any<HexString>(), any()) } answers { internalSuccess(firstArg<HexString>().value(withPrefix = false)) }
 
-        every { crypto.decryptMessage(any<String>(), any()) } answers { internalSuccess(firstArg()) }
-        every { crypto.decryptMessage(any<HexString>(), any()) } answers { internalSuccess(firstArg<HexString>().value(withPrefix = false)) }
+        every { crypto.encryptMessageWithSharedKey(any<String>(), any()) } answers { internalSuccess(firstArg()) }
+        every { crypto.encryptMessageWithSharedKey(any<HexString>(), any()) } answers { internalSuccess(firstArg<HexString>().value(withPrefix = false)) }
+
+        every { crypto.decryptMessageWithSharedKey(any<String>(), any()) } answers { internalSuccess(firstArg()) }
+        every { crypto.decryptMessageWithSharedKey(any<HexString>(), any()) } answers { internalSuccess(firstArg<HexString>().value(withPrefix = false)) }
 
         p2pCommunicationClient = P2pCommunicationClient(
+            appName,
             listOf(matrixClient1, matrixClient2),
             listOf(""),
             replicationCount,
@@ -233,6 +241,30 @@ class P2pCommunicationClientTest {
         // TODO: verify rooms
         coVerify(exactly = replicationCount) { matrixClient1.sendTextMessage(any<Any>(), message) }
         coVerify(exactly = replicationCount) { matrixClient2.sendTextMessage(any<Any>(), message) }
+    }
+
+    @Test
+    fun `sends pairing request to matrix clients`() {
+        coEvery { matrixClient1.sendTextMessage(any<Any>(), any()) } returns Unit
+        coEvery { matrixClient2.sendTextMessage(any<Any>(), any()) } returns Unit
+
+        val publicKey = HexString.fromString("0x00")
+        val relayServer = "relay_server"
+
+        runBlocking { p2pCommunicationClient.sendPairingRequest(publicKey, relayServer) }
+
+        val expectedRecipient = "@${publicKey.value(withPrefix = false)}:$relayServer"
+        val expectedEncrypted = Json.encodeToString(P2pCommunicationClient.HandshakeInfo(
+            appName,
+            BeaconConfig.versionName,
+            keyPair.publicKey.asHexString().value(withPrefix = false),
+            ""
+        ))
+        val expectedMessage = "@channel-open:$expectedRecipient:$expectedEncrypted"
+
+        // TODO: verify rooms
+        coVerify(exactly = 1) { matrixClient1.sendTextMessage(any<Any>(), expectedMessage) }
+        coVerify(exactly = 1) { matrixClient2.sendTextMessage(any<Any>(), expectedMessage) }
     }
 
     private fun validMatrixTextMessage(roomId: String, senderHash: String, content: String): MatrixClientEvent.Message.Text =

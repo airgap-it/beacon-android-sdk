@@ -52,6 +52,7 @@ internal class DependencyRegistry(
                     val matrixClients = listOf(matrixClient)
                     val keyPair = sdkClient.keyPair ?: failWithUninitialized(SdkClient.TAG)
                     val client = P2pCommunicationClient(
+                        appName,
                         matrixClients,
                         matrixNodes,
                         BeaconConfig.p2pReplicationCount,
