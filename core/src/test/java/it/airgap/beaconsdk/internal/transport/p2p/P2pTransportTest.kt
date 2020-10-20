@@ -175,15 +175,20 @@ class P2pTransportTest {
             messages.await()
 
             val expectedInStorage = peers.map { it.copy(isPaired = true) }
-            val fromStorage = storage.getP2pPeers()
+            val fromStorage = async {
+                storage.p2pPeers
+                    .filter { it.isPaired }
+                    .take(peers.size)
+                    .toList()
+            }
 
+            assertEquals(expectedInStorage.sortedBy { it.name }, fromStorage.await().sortedBy { it.name })
             coVerify(exactly = peers.filter { !it.isPaired }.size) {
                 p2pCommunicationClient.sendPairingRequest(
                     match { peersPublicKeys.contains(it) },
                     match { peersRelayServer.contains(it) }
                 )
             }
-            assertEquals(expectedInStorage.sortedBy { it.name }, fromStorage.sortedBy { it.name })
         }
     }
 
@@ -278,6 +283,15 @@ class P2pTransportTest {
             storage.addP2pPeers(peers)
 
             messages.await()
+
+            val fromStorage = async {
+                storage.p2pPeers
+                    .filter { it.isPaired }
+                    .take(peers.size)
+                    .toList()
+            }
+
+            fromStorage.await()
 
             coVerify(exactly = peers.size) {
                 p2pCommunicationClient.subscribeTo(match { peersPublicKeys.contains(it) })

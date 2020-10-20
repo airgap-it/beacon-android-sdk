@@ -216,11 +216,11 @@ internal class ExtendedStorage(private val storage: BeaconStorage) : BeaconStora
                 }
         }
 
+        insert(this, entities + newEntities)
+
         CoroutineScope(Dispatchers.Default).launch {
             (updatedEntities + newEntities).forEach { subscribeFlow.tryEmit(it) }
         }
-
-        insert(this, entities + newEntities)
     }
 
     private suspend fun <T> remove(
