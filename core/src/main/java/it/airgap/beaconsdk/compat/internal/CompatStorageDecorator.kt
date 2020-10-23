@@ -5,6 +5,7 @@ import it.airgap.beaconsdk.data.p2p.P2pPeerInfo
 import it.airgap.beaconsdk.data.permission.PermissionInfo
 import it.airgap.beaconsdk.data.sdk.AppMetadata
 import it.airgap.beaconsdk.compat.storage.BeaconCompatStorage
+import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.client.MatrixRoom
 import it.airgap.beaconsdk.storage.BeaconStorage
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -25,6 +26,12 @@ internal class CompatStorageDecorator(private val storage: BeaconCompatStorage) 
 
     override suspend fun getPermissions(): List<PermissionInfo> = get(BeaconCompatStorage::getPermissions)
     override suspend fun setPermissions(permissions: List<PermissionInfo>) = set(permissions, BeaconCompatStorage::setPermissions)
+
+    override suspend fun getMatrixSyncToken(): String? = get(BeaconCompatStorage::getMatrixSyncToken)
+    override suspend fun setMatrixSyncToken(syncToken: String) = set(syncToken, BeaconCompatStorage::setMatrixSyncToken)
+
+    override suspend fun getMatrixRooms(): List<MatrixRoom> = get(BeaconCompatStorage::getMatrixRooms)
+    override suspend fun setMatrixRooms(rooms: List<MatrixRoom>) = set(rooms, BeaconCompatStorage::setMatrixRooms)
 
     override suspend fun getSdkSecretSeed(): String? = get(BeaconCompatStorage::getSdkSecretSeed)
     override suspend fun setSdkSecretSeed(sdkSecretSeed: String) = set(sdkSecretSeed, BeaconCompatStorage::setSdkSecretSeed)

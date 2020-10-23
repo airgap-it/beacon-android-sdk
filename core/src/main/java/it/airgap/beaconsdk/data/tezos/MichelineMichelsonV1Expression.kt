@@ -21,7 +21,11 @@ sealed class MichelineMichelsonV1Expression {
     }
 
     @Serializable
-    data class PrimitiveApplication(val prim: Primitive, val args: List<MichelineMichelsonV1Expression>?, val annots: List<String>?) : MichelineMichelsonV1Expression() {
+    data class PrimitiveApplication(
+        val prim: Primitive,
+        val args: List<MichelineMichelsonV1Expression>?,
+        val annots: List<String>?
+    ) : MichelineMichelsonV1Expression() {
         companion object {}
     }
 

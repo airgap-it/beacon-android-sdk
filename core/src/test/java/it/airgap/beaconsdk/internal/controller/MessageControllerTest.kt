@@ -8,13 +8,13 @@ import it.airgap.beaconsdk.data.network.Network
 import it.airgap.beaconsdk.data.permission.PermissionInfo
 import it.airgap.beaconsdk.data.sdk.AppMetadata
 import it.airgap.beaconsdk.data.tezos.TezosOperation
-import it.airgap.beaconsdk.internal.message.beaconmessage.ApiBeaconMessage
 import it.airgap.beaconsdk.internal.protocol.Protocol
 import it.airgap.beaconsdk.internal.protocol.ProtocolRegistry
 import it.airgap.beaconsdk.internal.storage.ExtendedStorage
 import it.airgap.beaconsdk.internal.utils.AccountUtils
 import it.airgap.beaconsdk.internal.utils.currentTimestamp
 import it.airgap.beaconsdk.internal.utils.internalSuccess
+import it.airgap.beaconsdk.message.BeaconMessage
 import it.airgap.beaconsdk.storage.MockBeaconStorage
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
@@ -56,7 +56,7 @@ class MessageControllerTest {
 
     @Test
     fun `saves app metadata on permission request`() {
-        val permissionRequest = beaconRequest<ApiBeaconMessage.Request.Permission>()
+        val permissionRequest = beaconRequest<BeaconMessage.Request.Permission>()
 
         runBlocking { messageController.onRequest(permissionRequest) }
         val appsMetadata = runBlocking { storage.getAppsMetadata() }
@@ -75,8 +75,8 @@ class MessageControllerTest {
 
     @Test
     fun `saves permissions on permission response`() {
-        val permissionRequest = beaconRequest<ApiBeaconMessage.Request.Permission>()
-        val permissionResponse = beaconResponse<ApiBeaconMessage.Response.Permission>()
+        val permissionRequest = beaconRequest<BeaconMessage.Request.Permission>()
+        val permissionResponse = beaconResponse<BeaconMessage.Response.Permission>()
 
         runBlocking {
             messageController.onRequest(permissionRequest)
@@ -103,8 +103,8 @@ class MessageControllerTest {
     }
 
     private val messageId: String = "1"
-    private val beaconRequests: List<ApiBeaconMessage.Request> = listOf(
-        ApiBeaconMessage.Request.Permission(
+    private val beaconRequests: List<BeaconMessage.Request> = listOf(
+        BeaconMessage.Request.Permission(
             "1",
             messageId,
             "1",
@@ -112,7 +112,7 @@ class MessageControllerTest {
             Network.Custom(),
             emptyList(),
         ),
-        ApiBeaconMessage.Request.Operation(
+        BeaconMessage.Request.Operation(
             "1",
             messageId,
             "1",
@@ -127,14 +127,14 @@ class MessageControllerTest {
             ),
             "sourceAddress",
         ),
-        ApiBeaconMessage.Request.SignPayload(
+        BeaconMessage.Request.SignPayload(
             "1",
             messageId,
             "1",
             "payload",
             "sourceAddress",
         ),
-        ApiBeaconMessage.Request.Broadcast(
+        BeaconMessage.Request.Broadcast(
             "1",
             messageId,
             "1",
@@ -143,8 +143,8 @@ class MessageControllerTest {
         ),
     )
 
-    private val beaconResponses: List<ApiBeaconMessage.Response> = listOf(
-        ApiBeaconMessage.Response.Permission(
+    private val beaconResponses: List<BeaconMessage.Response> = listOf(
+        BeaconMessage.Response.Permission(
             "1",
             messageId,
             "1",
@@ -152,19 +152,19 @@ class MessageControllerTest {
             Network.Custom(),
             emptyList(),
         ),
-        ApiBeaconMessage.Response.Operation(
+        BeaconMessage.Response.Operation(
             "1",
             messageId,
             "1",
             "transactionHash",
         ),
-        ApiBeaconMessage.Response.SignPayload(
+        BeaconMessage.Response.SignPayload(
             "1",
             messageId,
             "1",
             "signature",
         ),
-        ApiBeaconMessage.Response.Broadcast(
+        BeaconMessage.Response.Broadcast(
             "1",
             messageId,
             "1",
@@ -172,6 +172,6 @@ class MessageControllerTest {
         ),
     )
 
-    private inline fun <reified T : ApiBeaconMessage.Request> beaconRequest(): T = beaconRequests.filterIsInstance<T>().first()
-    private inline fun <reified T : ApiBeaconMessage.Response> beaconResponse(): T = beaconResponses.filterIsInstance<T>().first()
+    private inline fun <reified T : BeaconMessage.Request> beaconRequest(): T = beaconRequests.filterIsInstance<T>().first()
+    private inline fun <reified T : BeaconMessage.Response> beaconResponse(): T = beaconResponses.filterIsInstance<T>().first()
 }

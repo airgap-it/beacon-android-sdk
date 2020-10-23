@@ -4,7 +4,7 @@ import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import it.airgap.beaconsdk.data.p2p.P2pPeerInfo
 import it.airgap.beaconsdk.data.sdk.Origin
-import it.airgap.beaconsdk.internal.message.ConnectionMessage
+import it.airgap.beaconsdk.internal.data.ConnectionMessage
 import it.airgap.beaconsdk.internal.storage.ExtendedStorage
 import it.airgap.beaconsdk.internal.transport.Transport
 import it.airgap.beaconsdk.internal.transport.p2p.data.P2pMessage
@@ -21,7 +21,7 @@ import kotlin.test.assertFailsWith
 class P2pTransportTest {
 
     @MockK
-    private lateinit var p2pCommunicationClient: P2pCommunicationClient
+    private lateinit var p2pClient: P2pClient
 
     private lateinit var storage: ExtendedStorage
     private lateinit var p2pTransport: Transport
@@ -35,10 +35,10 @@ class P2pTransportTest {
         mockkStatic("it.airgap.beaconsdk.internal.utils.LogKt")
         every { logDebug(any(), any()) } returns Unit
 
-        coEvery { p2pCommunicationClient.sendPairingRequest(any(), any()) } returns internalSuccess(Unit)
+        coEvery { p2pClient.sendPairingRequest(any(), any()) } returns internalSuccess(Unit)
 
         storage = ExtendedStorage(MockBeaconStorage())
-        p2pTransport = P2pTransport(appName, storage, p2pCommunicationClient)
+        p2pTransport = P2pTransport(appName, storage, p2pClient)
     }
 
     @Test
@@ -49,7 +49,7 @@ class P2pTransportTest {
         val (transportMessages, transportMessageFlows) =
             messagesAndFlows(peersPublicKeys)
 
-        every { p2pCommunicationClient.subscribeTo(any()) } answers {
+        every { p2pClient.subscribeTo(any()) } answers {
             transportMessageFlows.getValue(firstArg<HexString>().value(withPrefix = false))
         }
 
@@ -63,7 +63,7 @@ class P2pTransportTest {
                 .take(transportMessages.size)
                 .toList()
         }
-        verify(exactly = peers.size) { p2pCommunicationClient.subscribeTo(match { peersPublicKeys.contains(it) }) }
+        verify(exactly = peers.size) { p2pClient.subscribeTo(match { peersPublicKeys.contains(it) }) }
         assertEquals(expected.sortedBy { it.content }, messages.sortedBy { it.content })
     }
 
@@ -74,13 +74,13 @@ class P2pTransportTest {
         val message = "message"
         val recipient = peers.shuffled().first().publicKey
 
-        coEvery { p2pCommunicationClient.sendTo(any(), any()) } returns internalSuccess(Unit)
+        coEvery { p2pClient.sendTo(any(), any()) } returns internalSuccess(Unit)
 
         runBlocking { storage.setP2pPeers(peers) }
         runBlocking { p2pTransport.send(message, recipient) }
 
-        coVerify(exactly = 1) { p2pCommunicationClient.sendTo(any(), any()) }
-        coVerify { p2pCommunicationClient.sendTo(HexString.fromString(recipient), message) }
+        coVerify(exactly = 1) { p2pClient.sendTo(any(), any()) }
+        coVerify { p2pClient.sendTo(HexString.fromString(recipient), message) }
     }
 
     @Test
@@ -90,14 +90,14 @@ class P2pTransportTest {
 
         val message = "message"
 
-        coEvery { p2pCommunicationClient.sendTo(any(), any()) } returns internalSuccess(Unit)
+        coEvery { p2pClient.sendTo(any(), any()) } returns internalSuccess(Unit)
 
         runBlocking { storage.setP2pPeers(peers) }
         runBlocking { p2pTransport.send(message).getOrThrow() }
 
         val actualRecipients = mutableListOf<HexString>()
 
-        coVerify(exactly = peers.size) { p2pCommunicationClient.sendTo(capture(actualRecipients), message) }
+        coVerify(exactly = peers.size) { p2pClient.sendTo(capture(actualRecipients), message) }
         assertEquals(recipients, actualRecipients)
     }
 
@@ -108,7 +108,7 @@ class P2pTransportTest {
         val recipient = unknownPeer.first().publicKey
         val message = "message"
 
-        coEvery { p2pCommunicationClient.sendTo(any(), any()) } returns internalSuccess(Unit)
+        coEvery { p2pClient.sendTo(any(), any()) } returns internalSuccess(Unit)
 
         runBlocking { storage.setP2pPeers(knownPeers) }
 
@@ -125,7 +125,7 @@ class P2pTransportTest {
         val (transportMessages, transportMessageFlows) =
             messagesAndFlows(peersPublicKeys)
 
-        every { p2pCommunicationClient.subscribeTo(any()) } answers {
+        every { p2pClient.subscribeTo(any()) } answers {
             transportMessageFlows.getValue(firstArg<HexString>().value(withPrefix = false))
         }
 
@@ -144,7 +144,7 @@ class P2pTransportTest {
 
             assertEquals(expected.sortedBy { it.content }, messages.await().sortedBy { it.content })
             verify(exactly = peers.size) {
-                p2pCommunicationClient.subscribeTo(match { peersPublicKeys.contains(it) })
+                p2pClient.subscribeTo(match { peersPublicKeys.contains(it) })
             }
         }
     }
@@ -158,7 +158,7 @@ class P2pTransportTest {
         val (transportMessages, transportMessageFlows) =
             messagesAndFlows(peersPublicKeys)
 
-        every { p2pCommunicationClient.subscribeTo(any()) } answers {
+        every { p2pClient.subscribeTo(any()) } answers {
             transportMessageFlows.getValue(firstArg<HexString>().value(withPrefix = false))
         }
 
@@ -183,7 +183,7 @@ class P2pTransportTest {
 
             assertEquals(expectedInStorage.sortedBy { it.name }, fromStorage.await().sortedBy { it.name })
             coVerify(exactly = peers.filter { !it.isPaired }.size) {
-                p2pCommunicationClient.sendPairingRequest(
+                p2pClient.sendPairingRequest(
                     match { peersPublicKeys.contains(it) },
                     match { peersRelayServer.contains(it) }
                 )
@@ -199,7 +199,7 @@ class P2pTransportTest {
         val (transportMessages, transportMessageFlows) =
             messagesAndFlows(peersPublicKeys)
 
-        every { p2pCommunicationClient.subscribeTo(any()) } answers {
+        every { p2pClient.subscribeTo(any()) } answers {
             transportMessageFlows.getValue(firstArg<HexString>().value(withPrefix = false))
         }
 
@@ -216,7 +216,7 @@ class P2pTransportTest {
 
             val fromStorage = storage.getP2pPeers()
 
-            coVerify(exactly = 0) { p2pCommunicationClient.sendPairingRequest(any(), any()) }
+            coVerify(exactly = 0) { p2pClient.sendPairingRequest(any(), any()) }
             assertEquals(peers.sortedBy { it.name }, fromStorage.sortedBy { it.name })
         }
     }
@@ -230,8 +230,8 @@ class P2pTransportTest {
         val (transportMessages, transportMessageFlows) =
             messagesAndFlows(peersPublicKeys)
 
-        coEvery { p2pCommunicationClient.sendPairingRequest(any(), any()) } returns internalError()
-        every { p2pCommunicationClient.subscribeTo(any()) } answers {
+        coEvery { p2pClient.sendPairingRequest(any(), any()) } returns internalError()
+        every { p2pClient.subscribeTo(any()) } answers {
             transportMessageFlows.getValue(firstArg<HexString>().value(withPrefix = false))
         }
 
@@ -250,7 +250,7 @@ class P2pTransportTest {
             val fromStorage = storage.getP2pPeers()
 
             coVerify(exactly = peers.filter { !it.isPaired }.size) {
-                p2pCommunicationClient.sendPairingRequest(
+                p2pClient.sendPairingRequest(
                     match { peersPublicKeys.contains(it) },
                     match { peersRelayServer.contains(it) }
                 )
@@ -267,7 +267,7 @@ class P2pTransportTest {
         val (transportMessages, transportMessageFlows) =
             messagesAndFlows(peersPublicKeys)
 
-        every { p2pCommunicationClient.subscribeTo(any()) } answers {
+        every { p2pClient.subscribeTo(any()) } answers {
             transportMessageFlows.getValue(firstArg<HexString>().value(withPrefix = false))
         }
 
@@ -293,7 +293,7 @@ class P2pTransportTest {
             fromStorage.await()
 
             coVerify(exactly = peers.size) {
-                p2pCommunicationClient.subscribeTo(match { peersPublicKeys.contains(it) })
+                p2pClient.subscribeTo(match { peersPublicKeys.contains(it) })
             }
         }
     }

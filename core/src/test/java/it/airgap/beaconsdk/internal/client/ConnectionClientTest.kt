@@ -9,13 +9,13 @@ import it.airgap.beaconsdk.data.network.Network
 import it.airgap.beaconsdk.data.sdk.AppMetadata
 import it.airgap.beaconsdk.data.sdk.Origin
 import it.airgap.beaconsdk.data.tezos.TezosOperation
-import it.airgap.beaconsdk.internal.message.ConnectionMessage
-import it.airgap.beaconsdk.internal.utils.InternalResult
-import it.airgap.beaconsdk.internal.message.beaconmessage.ApiBeaconMessage
+import it.airgap.beaconsdk.internal.data.ConnectionMessage
 import it.airgap.beaconsdk.internal.serializer.Serializer
 import it.airgap.beaconsdk.internal.serializer.provider.MockSerializerProvider
 import it.airgap.beaconsdk.internal.transport.Transport
+import it.airgap.beaconsdk.internal.utils.InternalResult
 import it.airgap.beaconsdk.internal.utils.internalSuccess
+import it.airgap.beaconsdk.message.BeaconMessage
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
@@ -71,8 +71,8 @@ class ConnectionClientTest {
         coVerify(exactly = 1) { transport.send(serialized) }
     }
 
-    private val beaconRequests: List<ApiBeaconMessage.Request> = listOf(
-        ApiBeaconMessage.Request.Permission(
+    private val beaconRequests: List<BeaconMessage.Request> = listOf(
+        BeaconMessage.Request.Permission(
             "1",
             "1",
             "1",
@@ -80,7 +80,7 @@ class ConnectionClientTest {
             Network.Custom(),
             emptyList(),
         ),
-        ApiBeaconMessage.Request.Operation(
+        BeaconMessage.Request.Operation(
             "1",
             "1",
             "1",
@@ -95,14 +95,14 @@ class ConnectionClientTest {
             ),
             "sourceAddress",
         ),
-        ApiBeaconMessage.Request.SignPayload(
+        BeaconMessage.Request.SignPayload(
             "1",
             "1",
             "1",
             "payload",
             "sourceAddress",
         ),
-        ApiBeaconMessage.Request.Broadcast(
+        BeaconMessage.Request.Broadcast(
             "1",
             "1",
             "1",
@@ -111,8 +111,8 @@ class ConnectionClientTest {
         ),
     )
 
-    private val beaconResponses: List<ApiBeaconMessage.Response> = listOf(
-        ApiBeaconMessage.Response.Permission(
+    private val beaconResponses: List<BeaconMessage.Response> = listOf(
+        BeaconMessage.Response.Permission(
             "1",
             "1",
             "1",
@@ -120,19 +120,19 @@ class ConnectionClientTest {
             Network.Custom(),
             emptyList(),
         ),
-        ApiBeaconMessage.Response.Operation(
+        BeaconMessage.Response.Operation(
             "1",
             "1",
             "1",
             "transactionHash",
         ),
-        ApiBeaconMessage.Response.SignPayload(
+        BeaconMessage.Response.SignPayload(
             "1",
             "1",
             "1",
             "signature",
         ),
-        ApiBeaconMessage.Response.Broadcast(
+        BeaconMessage.Response.Broadcast(
             "1",
             "1",
             "1",
@@ -140,7 +140,7 @@ class ConnectionClientTest {
         ),
     )
 
-    private fun validConnectionMessages(beaconRequests: List<ApiBeaconMessage.Request>): List<ConnectionMessage> =
+    private fun validConnectionMessages(beaconRequests: List<BeaconMessage.Request>): List<ConnectionMessage> =
         beaconRequests.map {
             ConnectionMessage(Origin.P2P("1"), serializer.serialize(it).getOrThrow())
         }

@@ -3,7 +3,7 @@ package it.airgap.beaconsdk.data.tezos
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed class TezosOperation(val kind: Kind) {
+sealed class TezosOperation(internal val kind: Kind) {
     @Serializable
     data class ActivateAccount(val pkh: String, val secret: String) : TezosOperation(Kind.ActivateAccount) {
         companion object {}
@@ -38,6 +38,14 @@ sealed class TezosOperation(val kind: Kind) {
 
     @Serializable
     data class Endorsement(val level: String) : TezosOperation(Kind.Endorsement) {
+        companion object {}
+    }
+
+    @Serializable
+    data class DoubleEndorsementEvidence(
+        val op1: TezosInlinedEndorsement,
+        val op2: TezosInlinedEndorsement
+    ) : TezosOperation(Kind.DoubleEndorsementEvidence) {
         companion object {}
     }
 
@@ -99,7 +107,7 @@ sealed class TezosOperation(val kind: Kind) {
 
     companion object {}
 
-    enum class Kind {
+    internal enum class Kind {
         Endorsement,
         SeedNonceRevelation,
         DoubleEndorsementEvidence,

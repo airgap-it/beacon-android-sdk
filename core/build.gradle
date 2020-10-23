@@ -54,6 +54,12 @@ dependencies {
     implementation(Dependencies.kotlinxCoroutines)
     implementation(Dependencies.kotlinxCoroutinesAndroid)
 
+    // Ktor
+    implementation(Dependencies.ktorOkHttp)
+    implementation(Dependencies.ktorJson)
+    implementation(Dependencies.ktorSerializationJvm)
+    implementation(Dependencies.ktorLoggingJvm)
+
     // Lazy Sodium
     implementation(Dependencies.lazySodium)
     implementation(Dependencies.jna)

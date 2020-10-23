@@ -5,153 +5,195 @@ import it.airgap.beaconsdk.data.permission.PermissionScope
 import it.airgap.beaconsdk.data.sdk.AppMetadata
 import it.airgap.beaconsdk.data.sdk.Threshold
 import it.airgap.beaconsdk.data.tezos.TezosOperation
-import it.airgap.beaconsdk.internal.message.beaconmessage.BaseBeaconMessage
-import it.airgap.beaconsdk.internal.message.beaconmessage.ApiBeaconMessage
+import it.airgap.beaconsdk.exception.BeaconException
+import it.airgap.beaconsdk.internal.BeaconConfig
+import kotlinx.serialization.Serializable
 
-sealed class BeaconMessage : BaseBeaconMessage {
-    abstract val type: Type
+@Serializable
+sealed class BeaconMessage {
+    internal abstract val type: Type
+    internal abstract val version: String
 
+    abstract val id: String
+    abstract var senderId: String
+        internal set
+
+    @Serializable
     sealed class Request(override val type: Type) : BeaconMessage() {
-        abstract val senderId: String
-        abstract val appMetadata: AppMetadata
+        internal abstract fun extendWithMetadata(appMetadata: AppMetadata?)
 
+        @Serializable
         data class Permission internal constructor(
+            override val version: String,
             override val id: String,
-            override val senderId: String,
-            override val appMetadata: AppMetadata,
-            override val network: Network,
-            override val scopes: List<PermissionScope>,
-        ) : Request(Type.PermissionRequest), BaseBeaconMessage.PermissionRequest {
+            override var senderId: String,
+            val appMetadata: AppMetadata,
+            val network: Network,
+            val scopes: List<PermissionScope>,
+        ) : Request(Type.PermissionRequest) {
+
+            override fun extendWithMetadata(appMetadata: AppMetadata?) = Unit // do nothing, the request comes with `appMetadata` already
+
             companion object {}
         }
 
+        @Serializable
         data class Operation internal constructor(
+            override val version: String,
             override val id: String,
-            override val senderId: String,
-            override val appMetadata: AppMetadata,
-            override val network: Network,
-            override val operationDetails: TezosOperation,
-            override val sourceAddress: String,
-        ) : Request(Type.OperationRequest), BaseBeaconMessage.OperationRequest {
+            override var senderId: String,
+            val network: Network,
+            val operationDetails: TezosOperation,
+            val sourceAddress: String,
+        ) : Request(Type.OperationRequest) {
+            var appMetadata: AppMetadata? = null
+                internal set
+
+            override fun extendWithMetadata(appMetadata: AppMetadata?) {
+                this.appMetadata = appMetadata
+            }
+
             companion object {}
         }
 
+        @Serializable
         data class SignPayload internal constructor(
+            override val version: String,
             override val id: String,
-            override val senderId: String,
-            override val appMetadata: AppMetadata,
-            override val payload: String,
-            override val sourceAddress: String,
-        ) : Request(Type.SignPayloadRequest), BaseBeaconMessage.SignPayloadRequest {
+            override var senderId: String,
+            val payload: String,
+            val sourceAddress: String,
+        ) : Request(Type.SignPayloadRequest) {
+            var appMetadata: AppMetadata? = null
+                internal set
+
+            override fun extendWithMetadata(appMetadata: AppMetadata?) {
+                this.appMetadata = appMetadata
+            }
+
             companion object {}
         }
 
+        @Serializable
         data class Broadcast internal constructor(
+            override val version: String,
             override val id: String,
-            override val senderId: String,
-            override val appMetadata: AppMetadata,
-            override val network: Network,
-            override val signedTransaction: String,
-        ) : Request(Type.BroadcastRequest), BaseBeaconMessage.BroadcastRequest {
+            override var senderId: String,
+            val network: Network,
+            val signedTransaction: String,
+        ) : Request(Type.BroadcastRequest) {
+            var appMetadata: AppMetadata? = null
+                internal set
+
+            override fun extendWithMetadata(appMetadata: AppMetadata?) {
+                this.appMetadata = appMetadata
+            }
+
             companion object {}
         }
 
         companion object {}
     }
 
+    @Serializable
     sealed class Response(override val type: Type) : BeaconMessage() {
 
+        @Serializable
         data class Permission internal constructor(
+            override val version: String,
             override val id: String,
-            override val publicKey: String,
-            override val network: Network,
-            override val scopes: List<PermissionScope>,
-            override val threshold: Threshold? = null,
-        ) : Response(Type.PermissionResponse), BaseBeaconMessage.PermissionResponse {
+            override var senderId: String,
+            val publicKey: String,
+            val network: Network,
+            val scopes: List<PermissionScope>,
+            val threshold: Threshold? = null,
+        ) : Response(Type.PermissionResponse) {
+            constructor(
+                id: String,
+                publicKey: String,
+                network: Network,
+                scopes: List<PermissionScope>,
+                threshold: Threshold? = null,
+            ) : this(BeaconConfig.versionName, id, "", publicKey, network, scopes, threshold)
+
             companion object {}
         }
 
+        @Serializable
         data class Operation internal constructor(
+            override val version: String,
             override val id: String,
-            override val transactionHash: String,
-        ) : Response(Type.OperationResponse), BaseBeaconMessage.OperationResponse {
+            override var senderId: String,
+            val transactionHash: String,
+        ) : Response(Type.OperationResponse) {
+            constructor(id: String, transactionHash: String) : this(
+                BeaconConfig.versionName,
+                id,
+                "",
+                transactionHash,
+            )
+
             companion object {}
         }
 
+        @Serializable
         data class SignPayload internal constructor(
+            override val version: String,
             override val id: String,
-            override val signature: String,
-        ) : Response(Type.SignPayloadResponse), BaseBeaconMessage.SignPayloadResponse {
+            override var senderId: String,
+            val signature: String,
+        ) : Response(Type.SignPayloadResponse) {
+            constructor(id: String, signature: String) : this(
+                BeaconConfig.versionName,
+                id,
+                "",
+                signature,
+            )
+
             companion object {}
         }
 
+        @Serializable
         data class Broadcast internal constructor(
+            override val version: String,
             override val id: String,
-            override val transactionHash: String,
-        ) : Response(Type.BroadcastResponse), BaseBeaconMessage.BroadcastResponse {
+            override var senderId: String,
+            val transactionHash: String,
+        ) : Response(Type.BroadcastResponse) {
+            constructor(id: String, transactionHash: String) : this(
+                BeaconConfig.versionName,
+                id,
+                "",
+                transactionHash,
+            )
+
             companion object {}
         }
 
         companion object {}
     }
 
-    companion object {
-        internal fun fromInternalBeaconRequest(request: ApiBeaconMessage.Request, appMetadata: AppMetadata): Request =
-            when (request) {
-                is ApiBeaconMessage.Request.Permission -> Request.Permission(
-                    request.id,
-                    request.senderId,
-                    request.appMetadata,
-                    request.network,
-                    request.scopes,
-                )
-                is ApiBeaconMessage.Request.Operation -> Request.Operation(
-                    request.id,
-                    request.senderId,
-                    appMetadata,
-                    request.network,
-                    request.operationDetails,
-                    request.sourceAddress,
-                )
-                is ApiBeaconMessage.Request.SignPayload -> Request.SignPayload(
-                    request.id,
-                    request.senderId,
-                    appMetadata,
-                    request.payload,
-                    request.sourceAddress,
-                )
-                is ApiBeaconMessage.Request.Broadcast -> Request.Broadcast(
-                    request.id,
-                    request.senderId,
-                    appMetadata,
-                    request.network,
-                    request.signedTransaction,
-                )
-            }
-
-        internal fun fromInternalBeaconResponse(response: ApiBeaconMessage.Response): Response =
-            when (response) {
-                is ApiBeaconMessage.Response.Permission -> Response.Permission(
-                    response.id,
-                    response.publicKey,
-                    response.network,
-                    response.scopes,
-                    response.threshold,
-                )
-                is ApiBeaconMessage.Response.Operation -> Response.Operation(
-                    response.id,
-                    response.transactionHash,
-                )
-                is ApiBeaconMessage.Response.SignPayload -> Response.SignPayload(
-                    response.id,
-                    response.signature,
-                )
-                is ApiBeaconMessage.Response.Broadcast -> Response.Broadcast(
-                    response.id,
-                    response.transactionHash,
-                )
-            }
+    @Serializable
+    internal data class Disconnect internal constructor(
+        override val version: String,
+        override val id: String,
+        override var senderId: String,
+    ) : BeaconMessage() {
+        override val type: Type = Type.Disconnect
     }
+
+    @Serializable
+    internal data class Error internal constructor(
+        override val version: String,
+        override val id: String,
+        override var senderId: String,
+        val errorType: BeaconException.Type,
+    ) : BeaconMessage() {
+        override val type: Type = Type.Error
+    }
+
+    companion object {}
+
     enum class Type {
         PermissionRequest,
         PermissionResponse,
@@ -164,6 +206,9 @@ sealed class BeaconMessage : BaseBeaconMessage {
 
         BroadcastRequest,
         BroadcastResponse,
+
+        Disconnect,
+        Error,
     }
 
 }

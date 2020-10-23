@@ -8,6 +8,9 @@ object Version {
     const val androidxConstraintLayout = "1.1.3"
 
     const val coroutines = "1.4.0-M1"
+
+    const val ktor = "1.4.1"
+
     const val lazySodium = "4.2.0"
     const val jna = "5.6.0"
 
@@ -26,6 +29,11 @@ object Dependencies {
     const val kotlinxSerializationJson = "org.jetbrains.kotlinx:kotlinx-serialization-json:${Version.kotlinSerialization}"
     const val kotlinxCoroutines = "org.jetbrains.kotlinx:kotlinx-coroutines-core:${Version.coroutines}"
     const val kotlinxCoroutinesAndroid = "org.jetbrains.kotlinx:kotlinx-coroutines-android:${Version.coroutines}"
+
+    const val ktorOkHttp = "io.ktor:ktor-client-okhttp:${Version.ktor}"
+    const val ktorJson = "io.ktor:ktor-client-json:${Version.ktor}"
+    const val ktorSerializationJvm = "io.ktor:ktor-client-serialization-jvm:${Version.ktor}"
+    const val ktorLoggingJvm = "io.ktor:ktor-client-logging-jvm:${Version.ktor}"
 
     const val androidxCore = "androidx.core:core-ktx:${Version.androidxCore}"
     const val androidxAppCompat = "androidx.appcompat:appcompat:${Version.androidxAppCompat}"

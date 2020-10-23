@@ -26,6 +26,9 @@ internal interface CryptoProvider {
     @Throws(Exception::class)
     fun createClientSessionKeyPair(serverPublicKey: ByteArray, serverPrivateKey: ByteArray, clientPublicKey: ByteArray): SessionKeyPair
 
+    @Throws(Exception::class)
+    fun signMessageDetached(message: HexString, privateKey: ByteArray): ByteArray
+
     fun validateMessage(message: String): Boolean
 
     @Throws(Exception::class)

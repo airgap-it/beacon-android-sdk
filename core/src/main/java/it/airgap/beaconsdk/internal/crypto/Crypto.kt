@@ -3,12 +3,7 @@ package it.airgap.beaconsdk.internal.crypto
 import it.airgap.beaconsdk.internal.crypto.data.KeyPair
 import it.airgap.beaconsdk.internal.crypto.data.SessionKeyPair
 import it.airgap.beaconsdk.internal.crypto.provider.CryptoProvider
-import it.airgap.beaconsdk.internal.utils.HexString
-import it.airgap.beaconsdk.internal.utils.InternalResult
-import it.airgap.beaconsdk.internal.utils.asHexString
-import it.airgap.beaconsdk.internal.utils.flatTryResult
-import it.airgap.beaconsdk.internal.utils.isHex
-import it.airgap.beaconsdk.internal.utils.tryResult
+import it.airgap.beaconsdk.internal.utils.*
 
 internal class Crypto(private val cryptoProvider: CryptoProvider) {
     fun hashKey(key: HexString): InternalResult<ByteArray> = hash(key, 32)
@@ -71,6 +66,18 @@ internal class Crypto(private val cryptoProvider: CryptoProvider) {
 
             cryptoProvider.createClientSessionKeyPair(serverPublicKey, serverPrivateKey, clientPublicKey)
         }
+
+    fun signMessageDetached(message: String, privateKey: ByteArray): InternalResult<ByteArray> =
+        flatTryResult {
+            if (message.isHex()) signMessageDetached(HexString.fromString(message), privateKey)
+            else signMessageDetached(message.toByteArray(), privateKey)
+        }
+
+    fun signMessageDetached(message: HexString, privateKey: ByteArray): InternalResult<ByteArray> =
+        tryResult { cryptoProvider.signMessageDetached(message, privateKey) }
+
+    fun signMessageDetached(message: ByteArray, privateKey: ByteArray): InternalResult<ByteArray> =
+        flatTryResult { signMessageDetached(message.asHexString(), privateKey) }
 
     fun validateEncryptedMessage(encrypted: String): Boolean = cryptoProvider.validateMessage(encrypted)
 

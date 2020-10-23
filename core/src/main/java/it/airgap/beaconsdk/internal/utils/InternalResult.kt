@@ -18,7 +18,13 @@ internal sealed class InternalResult<T> {
             is Error -> null
         }
 
-    fun getOrLogError(tag: String): T? = getOrNull().also { if (it == null) logDebug(tag, toString()) }
+    fun getErrorOrNull(): Throwable? =
+        when (this) {
+            is Success -> null
+            is Error -> error
+        }
+
+    fun getOrLogError(tag: String): T? = tryLog(tag) { getOrThrow() }
 
     fun getOrThrow(): T =
         when (this) {
@@ -62,22 +68,8 @@ internal sealed class InternalResult<T> {
             is Error -> Error(error)
         }
 
-    fun alsoIfSuccess(block: (T) -> Unit): InternalResult<T> = also { it.getOrNull()?.let(block) }
+    inline fun alsoIfSuccess(block: (T) -> Unit): InternalResult<T> = also { it.getOrNull()?.let(block) }
 }
 
 internal fun <T> internalSuccess(value: T): InternalResult<T> = InternalResult.Success(value)
 internal fun <T> internalError(error: Throwable? = null): InternalResult<T> = InternalResult.Error(error)
-
-internal inline fun <T> tryResult(block: () -> T): InternalResult<T> =
-    try {
-        internalSuccess(block())
-    } catch (e: Exception) {
-        internalError(e)
-    }
-
-internal inline fun <T> flatTryResult(block: () -> InternalResult<T>): InternalResult<T> =
-    try {
-        block()
-    } catch (e: Exception) {
-        internalError(e)
-    }
