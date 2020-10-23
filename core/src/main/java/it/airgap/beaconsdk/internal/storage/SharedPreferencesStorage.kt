@@ -6,6 +6,7 @@ import it.airgap.beaconsdk.data.account.AccountInfo
 import it.airgap.beaconsdk.data.p2p.P2pPeerInfo
 import it.airgap.beaconsdk.data.permission.PermissionInfo
 import it.airgap.beaconsdk.data.sdk.AppMetadata
+import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.client.MatrixRoom
 import it.airgap.beaconsdk.storage.BeaconStorage
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -47,6 +48,20 @@ internal class SharedPreferencesStorage(private val sharedPreferences: SharedPre
         sharedPreferences.putSerializable(KEY_PERMISSIONS, permissions)
     }
 
+    override suspend fun getMatrixSyncToken(): String? =
+        sharedPreferences.getString(KEY_MATRIX_SYNC_TOKEN, null)
+
+    override suspend fun setMatrixSyncToken(syncToken: String) {
+        sharedPreferences.putString(KEY_MATRIX_SYNC_TOKEN, syncToken)
+    }
+
+    override suspend fun getMatrixRooms(): List<MatrixRoom> =
+        sharedPreferences.getSerializable(KEY_MATRIX_ROOM_IDS, emptyList())
+
+    override suspend fun setMatrixRooms(rooms: List<MatrixRoom>) {
+        sharedPreferences.putSerializable(KEY_MATRIX_ROOM_IDS, rooms)
+    }
+
     override suspend fun getSdkSecretSeed(): String? =
         sharedPreferences.getString(KEY_SDK_SECRET_SEED, null)
 
@@ -86,6 +101,9 @@ internal class SharedPreferencesStorage(private val sharedPreferences: SharedPre
 
         const val KEY_APPS_METADATA = "appsMetadata"
         const val KEY_PERMISSIONS = "permissions"
+
+        const val KEY_MATRIX_SYNC_TOKEN = "matrixSyncToken"
+        const val KEY_MATRIX_ROOM_IDS = "matrixRoomIds"
 
         const val KEY_SDK_SECRET_SEED = "sdkSecretSeed"
         const val KEY_SDK_VERSION = "sdkVersion"

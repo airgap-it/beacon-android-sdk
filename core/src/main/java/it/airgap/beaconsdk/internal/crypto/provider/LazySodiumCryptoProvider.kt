@@ -85,6 +85,14 @@ internal class LazySodiumCryptoProvider : CryptoProvider {
         return SessionKeyPair(sessionPair.rx, sessionPair.tx)
     }
 
+    override fun signMessageDetached(message: HexString, privateKey: ByteArray): ByteArray {
+        val signSodium = sodium as Sign.Lazy
+
+        val signature = signSodium.cryptoSignDetached(message.value(withPrefix = false), Key.fromBytes(privateKey))
+
+        return HexString.fromString(signature).asByteArray()
+    }
+
     override fun validateMessage(message: String): Boolean =
         try {
             HexString.fromString(message).length(withPrefix = false) >= SecretBox.NONCEBYTES + SecretBox.MACBYTES

@@ -11,7 +11,6 @@ import it.airgap.beaconsdk.internal.controller.MessageController
 import it.airgap.beaconsdk.internal.crypto.Crypto
 import it.airgap.beaconsdk.internal.crypto.data.KeyPair
 import it.airgap.beaconsdk.internal.utils.InternalResult
-import it.airgap.beaconsdk.internal.message.beaconmessage.ApiBeaconMessage
 import it.airgap.beaconsdk.internal.storage.ExtendedStorage
 import it.airgap.beaconsdk.internal.utils.internalSuccess
 import it.airgap.beaconsdk.internal.utils.uninitializedMessage
@@ -86,7 +85,7 @@ class BeaconClientTest {
     fun `connects for messages flow`() {
         val requests = beaconRequests.shuffled().takeHalf()
         val beaconRequestFlow =
-            MutableSharedFlow<InternalResult<ApiBeaconMessage.Request>>(requests.size + 1)
+            MutableSharedFlow<InternalResult<BeaconMessage.Request>>(requests.size + 1)
         every { connectionClient.subscribe() } answers { beaconRequestFlow }
 
         val appMetadata = AppMetadata(senderId, "mockApp")
@@ -101,7 +100,9 @@ class BeaconClientTest {
                 .toList()
         }
 
-        val expected = requests.map { BeaconMessage.fromInternalBeaconRequest(it, appMetadata) }
+        val expected = requests.map { request ->
+            request.also { it.extendWithMetadata(appMetadata) }
+        }
 
         assertEquals(expected.sortedBy { it.toString() }, messages.sortedBy { it.toString() })
         coVerify(exactly = expected.size) { messageController.onRequest(any()) }
@@ -114,7 +115,7 @@ class BeaconClientTest {
         runBlocking { beaconClient.init() }
 
         val response = beaconResponses.shuffled().first()
-        val internalResponse = ApiBeaconMessage.fromBeaconResponse(response, sdkClient.beaconId!!)
+        val internalResponse = response.apply { senderId = sdkClient.beaconId!! }
 
         runBlocking { beaconClient.respond(response) }
 
@@ -126,8 +127,8 @@ class BeaconClientTest {
     private val privateKey: ByteArray = byteArrayOf(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
     private val publicKey: ByteArray = byteArrayOf(10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20)
 
-    private val beaconRequests: List<ApiBeaconMessage.Request> = listOf(
-        ApiBeaconMessage.Request.Permission(
+    private val beaconRequests: List<BeaconMessage.Request> = listOf(
+        BeaconMessage.Request.Permission(
             "1",
             "1",
             senderId,
@@ -135,7 +136,7 @@ class BeaconClientTest {
             Network.Custom(),
             emptyList()
         ),
-        ApiBeaconMessage.Request.Operation(
+        BeaconMessage.Request.Operation(
             "1",
             "1",
             senderId,
@@ -150,14 +151,14 @@ class BeaconClientTest {
             ),
             "sourceAddress"
         ),
-        ApiBeaconMessage.Request.SignPayload(
+        BeaconMessage.Request.SignPayload(
             "1",
             "1",
             senderId,
             "payload",
             "sourceAddress"
         ),
-        ApiBeaconMessage.Request.Broadcast(
+        BeaconMessage.Request.Broadcast(
             "1",
             "1",
             senderId,

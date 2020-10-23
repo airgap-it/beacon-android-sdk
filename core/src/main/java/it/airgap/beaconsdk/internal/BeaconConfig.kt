@@ -6,6 +6,8 @@ internal object BeaconConfig {
     val versionName
         get() = BuildConfig.VERSION_NAME
 
+    val matrixClientApi: String = "/_matrix/client/r0"
+    val matrixMaxSyncRetries: Int = 3
     val defaultRelayServers: List<String> = listOf(
         "matrix.papers.tech",
 //        "matrix.tez.ie",
@@ -17,6 +19,7 @@ internal object BeaconConfig {
 
     val cryptoProvider: CryptoProvider = CryptoProvider.LazySodium
     val serializerProvider: SerializerProvider = SerializerProvider.Base58Check
+    val httpClientProvider: HttpClientProvider = HttpClientProvider.Ktor
 
     enum class CryptoProvider {
         LazySodium
@@ -24,5 +27,9 @@ internal object BeaconConfig {
 
     enum class SerializerProvider {
         Base58Check
+    }
+
+    enum class HttpClientProvider {
+        Ktor
     }
 }

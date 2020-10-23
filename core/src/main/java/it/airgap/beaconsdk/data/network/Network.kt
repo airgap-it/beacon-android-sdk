@@ -3,7 +3,7 @@ package it.airgap.beaconsdk.data.network
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed class Network(val type: Type) {
+sealed class Network(internal val type: Type) {
     abstract val name: String?
     abstract val rpcUrl: String?
 
@@ -24,7 +24,7 @@ sealed class Network(val type: Type) {
 
     companion object {}
 
-    enum class Type(val identifier: String) {
+    internal enum class Type(val identifier: String) {
         Mainnet("mainnet"),
         Carthagenet("carthagenet"),
         Custom("custom'")

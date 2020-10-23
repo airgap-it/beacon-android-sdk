@@ -1,4 +1,4 @@
-package it.airgap.beaconsdk.internal.message
+package it.airgap.beaconsdk.internal.data
 
 import it.airgap.beaconsdk.data.sdk.Origin
 

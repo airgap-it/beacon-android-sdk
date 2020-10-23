@@ -5,6 +5,7 @@ import it.airgap.beaconsdk.data.sdk.AppMetadata
 import it.airgap.beaconsdk.data.p2p.P2pPeerInfo
 import it.airgap.beaconsdk.data.permission.PermissionInfo
 import it.airgap.beaconsdk.compat.storage.BeaconCompatStorage
+import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.client.MatrixRoom
 
 internal class MockBeaconCompatStorage :
     BeaconCompatStorage {
@@ -13,6 +14,8 @@ internal class MockBeaconCompatStorage :
     private var activeAccountIdentifier: String? = null
     private var appsMetadata: List<AppMetadata> = emptyList()
     private var permissions: List<PermissionInfo> = emptyList()
+    private var matrixSyncToken: String? = null
+    private var matrixRooms: List<MatrixRoom> = emptyList()
     private var sdkSecretSeed: String? = null
     private var sdkVersion: String? = null
 
@@ -58,6 +61,30 @@ internal class MockBeaconCompatStorage :
 
     override fun setPermissions(permissions: List<PermissionInfo>, listener: BeaconCompatStorage.OnWriteListener) {
         this.permissions = permissions
+        listener.onSuccess()
+    }
+
+    override fun getMatrixSyncToken(listener: BeaconCompatStorage.OnReadListener<String?>) {
+        listener.onSuccess(matrixSyncToken)
+    }
+
+    override fun setMatrixSyncToken(
+        syncToken: String,
+        listener: BeaconCompatStorage.OnWriteListener
+    ) {
+        this.matrixSyncToken = syncToken
+        listener.onSuccess()
+    }
+
+    override fun getMatrixRooms(listener: BeaconCompatStorage.OnReadListener<List<MatrixRoom>>) {
+        listener.onSuccess(matrixRooms)
+    }
+
+    override fun setMatrixRooms(
+        rooms: List<MatrixRoom>,
+        listener: BeaconCompatStorage.OnWriteListener
+    ) {
+        this.matrixRooms = rooms
         listener.onSuccess()
     }
 

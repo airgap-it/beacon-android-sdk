@@ -3,7 +3,7 @@ package it.airgap.beaconsdk.data.sdk
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed class Origin(val type: Type) {
+sealed class Origin(internal val type: Type) {
     abstract val id: String
 
     @Serializable
@@ -23,7 +23,7 @@ sealed class Origin(val type: Type) {
 
     companion object {}
 
-    enum class Type {
+    internal enum class Type {
         Website,
         Extension,
         P2P

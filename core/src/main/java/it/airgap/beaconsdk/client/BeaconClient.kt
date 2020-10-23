@@ -8,7 +8,6 @@ import it.airgap.beaconsdk.internal.client.ConnectionClient
 import it.airgap.beaconsdk.internal.client.SdkClient
 import it.airgap.beaconsdk.internal.controller.MessageController
 import it.airgap.beaconsdk.internal.di.DependencyRegistry
-import it.airgap.beaconsdk.internal.message.beaconmessage.ApiBeaconMessage
 import it.airgap.beaconsdk.internal.storage.ExtendedStorage
 import it.airgap.beaconsdk.internal.storage.SharedPreferencesStorage
 import it.airgap.beaconsdk.internal.transport.Transport
@@ -53,10 +52,10 @@ class BeaconClient internal constructor(
     @Throws(BeaconException::class)
     suspend fun respond(message: BeaconMessage.Response) {
         failIfUninitialized()
+        message.senderId = beaconId
 
-        val internalMessage = ApiBeaconMessage.fromBeaconResponse(message, beaconId)
-        messageController.onResponse(internalMessage).mapError { BeaconException.Internal(cause = it) }.getOrThrow()
-        connectionClient.send(internalMessage)
+        messageController.onResponse(message).mapError { BeaconException.Internal(cause = it) }.getOrThrow()
+        connectionClient.send(message)
     }
 
     suspend fun addPeers(vararg peers: P2pPeerInfo) {
@@ -71,22 +70,21 @@ class BeaconClient internal constructor(
             .map { BeaconMessage.fromInternalResult(it) }
 
     private suspend fun BeaconMessage.Companion.fromInternalResult(
-        beaconRequest: InternalResult<ApiBeaconMessage.Request>
+        beaconRequest: InternalResult<BeaconMessage.Request>
     ): InternalResult<BeaconMessage.Request> =
         beaconRequest.flatMapSuspend {  request ->
             tryResult {
-                val appMetadata = storage.findAppMetadata { it.senderId == request.senderId } ?: failWithNoAppMetadata()
-
-                fromInternalBeaconRequest(request, appMetadata)
+                request.apply {
+                    val appMetadata = storage.findAppMetadata { it.senderId == request.senderId }
+                    extendWithMetadata(appMetadata)
+                }
             }
         }
 
     private fun failIfUninitialized() {
         if (!isInitialized) failWithUninitialized(TAG)
+
     }
-
-    private fun failWithNoAppMetadata(): Nothing = throw IllegalArgumentException("No matching app metadata found")
-
     companion object {
         internal const val TAG = "BeaconWalletClient"
     }

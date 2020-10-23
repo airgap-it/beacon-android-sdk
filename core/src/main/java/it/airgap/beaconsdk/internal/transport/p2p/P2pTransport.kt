@@ -2,7 +2,7 @@ package it.airgap.beaconsdk.internal.transport.p2p
 
 import it.airgap.beaconsdk.data.p2p.P2pPeerInfo
 import it.airgap.beaconsdk.data.sdk.Origin
-import it.airgap.beaconsdk.internal.message.ConnectionMessage
+import it.airgap.beaconsdk.internal.data.ConnectionMessage
 import it.airgap.beaconsdk.internal.storage.ExtendedStorage
 import it.airgap.beaconsdk.internal.transport.Transport
 import it.airgap.beaconsdk.internal.transport.p2p.data.P2pMessage
@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.*
 internal class P2pTransport(
     name: String,
     storage: ExtendedStorage,
-    private val client: P2pCommunicationClient
+    private val client: P2pClient
 ) : Transport(name, storage) {
     override val type: Type = Type.P2P
 

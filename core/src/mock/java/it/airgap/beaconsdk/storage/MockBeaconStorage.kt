@@ -4,6 +4,7 @@ import it.airgap.beaconsdk.data.account.AccountInfo
 import it.airgap.beaconsdk.data.p2p.P2pPeerInfo
 import it.airgap.beaconsdk.data.permission.PermissionInfo
 import it.airgap.beaconsdk.data.sdk.AppMetadata
+import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.client.MatrixRoom
 
 internal class MockBeaconStorage : BeaconStorage {
     private var p2pPeers: List<P2pPeerInfo> = emptyList()
@@ -11,6 +12,8 @@ internal class MockBeaconStorage : BeaconStorage {
     private var activeAccountIdentifier: String? = null
     private var appsMetadata: List<AppMetadata> = emptyList()
     private var permissions: List<PermissionInfo> = emptyList()
+    private var matrixSyncToken: String? = null
+    private var matrixRooms: List<MatrixRoom> = emptyList()
     private var sdkSecretSeed: String? = null
     private var sdkVersion: String? = null
 
@@ -37,6 +40,16 @@ internal class MockBeaconStorage : BeaconStorage {
     override suspend fun getPermissions(): List<PermissionInfo> = permissions
     override suspend fun setPermissions(permissions: List<PermissionInfo>) {
         this.permissions = permissions
+    }
+
+    override suspend fun getMatrixSyncToken(): String? = matrixSyncToken
+    override suspend fun setMatrixSyncToken(syncToken: String) {
+        this.matrixSyncToken = syncToken
+    }
+
+    override suspend fun getMatrixRooms(): List<MatrixRoom> = matrixRooms
+    override suspend fun setMatrixRooms(rooms: List<MatrixRoom>) {
+        this.matrixRooms = rooms
     }
 
     override suspend fun getSdkSecretSeed(): String? = sdkSecretSeed
