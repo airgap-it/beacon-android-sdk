@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">Beacon SDK Demo</string>
+
+    <string name="button_add_peer">Add peer</string>
+    <string name="button_remove_peer">Remove peer</string>
+    <string name="button_respond">Respond</string>
+
+    <string name="hint_beacon_request">- Beacon Request -</string>
+
+    <string name="hint_peer_name">Name</string>
+    <string name="hint_peer_public_key">Public Key</string>
+    <string name="hint_peer_relay_server">Relay Server</string>
+</resources>
