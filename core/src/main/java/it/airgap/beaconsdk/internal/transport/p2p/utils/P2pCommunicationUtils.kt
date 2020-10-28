@@ -10,15 +10,15 @@ internal class P2pCommunicationUtils(private val crypto: Crypto) {
     fun getRecipientIdentifier(publicKey: HexString, relayServer: String): String {
         val hash = crypto.hashKey(publicKey).getOrThrow().asHexString()
 
-        return "@${hash.value(withPrefix = false)}:$relayServer"
+        return "@${hash.value()}:$relayServer"
     }
 
     fun isMessageFrom(message: MatrixEvent.TextMessage, publicKey: HexString): Boolean {
         val hash = crypto.hashKey(publicKey).getOrNull()?.asHexString()
 
-        return message.sender.startsWith("@${hash?.value(withPrefix = false)}")
+        return message.sender.startsWith("@${hash?.value()}")
     }
 
-    fun createOpenChannelMessage(recipient: String, handshakeInfo: String): String =
-        "@channel-open:$recipient:$handshakeInfo"
+    fun createOpenChannelMessage(recipient: String, payload: String): String =
+        "@channel-open:$recipient:$payload"
 }

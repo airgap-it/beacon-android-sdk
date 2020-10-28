@@ -15,9 +15,9 @@ internal sealed class MatrixEvent {
 
     companion object {
         fun fromSync(syncRooms: MatrixSyncResponse.Rooms): List<MatrixEvent?> {
-            val joinEvents = syncRooms.join.entries.flatMap { fromSync(it.key, it.value) }
-            val inviteEvents = syncRooms.invite.entries.flatMap { fromSync(it.key, it.value) }
-            val leftEvents = syncRooms.left.entries.flatMap { fromSync(it.key, it.value) }
+            val joinEvents = syncRooms.join?.entries?.flatMap { fromSync(it.key, it.value) } ?: emptyList()
+            val inviteEvents = syncRooms.invite?.entries?.flatMap { fromSync(it.key, it.value) } ?: emptyList()
+            val leftEvents = syncRooms.leave?.entries?.flatMap { fromSync(it.key, it.value) } ?: emptyList()
             
             return joinEvents + inviteEvents + leftEvents
         }

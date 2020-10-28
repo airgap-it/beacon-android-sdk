@@ -6,7 +6,7 @@ import it.airgap.beaconsdk.internal.crypto.Crypto
 internal class AccountUtils(private val crypto: Crypto, private val base58Check: Base58Check) {
 
     fun getAccountIdentifier(address: String, network: Network): InternalResult<String> {
-        val data = mutableListOf(address, network.type.identifier)
+        val data = mutableListOf(address, network.identifier)
         network.name?.let { data.add("name:$it") }
         network.rpcUrl?.let { data.add("rpc:$it") }
 

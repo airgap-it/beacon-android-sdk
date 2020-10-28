@@ -1,31 +1,27 @@
 package it.airgap.beaconsdk.data.sdk
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed class Origin(internal val type: Type) {
+sealed class Origin {
     abstract val id: String
 
     @Serializable
-    data class Website(override val id: String) : Origin(Type.Website) {
+    @SerialName("website")
+    data class Website(override val id: String) : Origin() {
         companion object {}
     }
 
     @Serializable
-    data class Extension(override val id: String) : Origin(Type.Extension) {
+    @SerialName("extension")
+    data class Extension(override val id: String) : Origin() {
         companion object {}
     }
 
     @Serializable
-    data class P2P(override val id: String) : Origin(Type.P2P) {
+    @SerialName("p2p")
+    data class P2P(override val id: String) : Origin() {
         companion object {}
-    }
-
-    companion object {}
-
-    internal enum class Type {
-        Website,
-        Extension,
-        P2P
     }
 }

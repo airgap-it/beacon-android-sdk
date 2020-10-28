@@ -11,6 +11,7 @@ import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.client.MatrixEvent
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.client.MatrixRoom
 import it.airgap.beaconsdk.internal.transport.p2p.data.P2pMessage
 import it.airgap.beaconsdk.internal.transport.p2p.data.P2pHandshakeInfo
+import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.api.event.MatrixEventResponse
 import it.airgap.beaconsdk.internal.transport.p2p.utils.P2pCommunicationUtils
 import it.airgap.beaconsdk.internal.transport.p2p.utils.P2pServerUtils
 import it.airgap.beaconsdk.internal.utils.*
@@ -59,6 +60,9 @@ class P2pClientTest {
             Unit
         }
 
+        coEvery { matrixClient1.isLoggedIn() } returns true
+        coEvery { matrixClient2.isLoggedIn() } returns true
+
         coEvery { matrixClient1.start(any(), any(), any()) } returns Unit
         coEvery { matrixClient2.start(any(), any(), any()) } returns Unit
 
@@ -74,19 +78,23 @@ class P2pClientTest {
         every { crypto.hashKey(any<ByteArray>()) } answers { internalSuccess(firstArg()) }
 
         every { crypto.createServerSessionKeyPair(any(), any()) } answers { internalSuccess(SessionKeyPair(byteArrayOf(0), byteArrayOf(0))) }
+        every { crypto.createClientSessionKeyPair(any(), any()) } answers { internalSuccess(SessionKeyPair(byteArrayOf(0), byteArrayOf(0))) }
 
-        every { crypto.signMessageDetached(any<String>(), any()) } answers { internalSuccess(firstArg<String>().toByteArray()) }
+        every { crypto.signMessageDetached(any<String>(), any()) } answers { internalSuccess(firstArg<String>().encodeToByteArray()) }
         every { crypto.signMessageDetached(any<HexString>(), any()) } answers { internalSuccess(firstArg<HexString>().asByteArray()) }
         every { crypto.signMessageDetached(any<ByteArray>(), any()) } answers { internalSuccess(firstArg()) }
 
-        every { crypto.encryptMessageWithPublicKey(any<String>(), any()) } answers { internalSuccess(firstArg()) }
-        every { crypto.encryptMessageWithPublicKey(any<HexString>(), any()) } answers { internalSuccess(firstArg<HexString>().value(withPrefix = false)) }
+        every { crypto.encryptMessageWithPublicKey(any<String>(), any()) } answers { internalSuccess(firstArg<String>().encodeToByteArray()) }
+        every { crypto.encryptMessageWithPublicKey(any<HexString>(), any()) } answers { internalSuccess(firstArg<HexString>().asByteArray()) }
+        every { crypto.encryptMessageWithPublicKey(any<ByteArray>(), any()) } answers { internalSuccess(firstArg()) }
 
-        every { crypto.encryptMessageWithSharedKey(any<String>(), any()) } answers { internalSuccess(firstArg()) }
-        every { crypto.encryptMessageWithSharedKey(any<HexString>(), any()) } answers { internalSuccess(firstArg<HexString>().value(withPrefix = false)) }
+        every { crypto.encryptMessageWithSharedKey(any<String>(), any()) } answers { internalSuccess(firstArg<String>().encodeToByteArray()) }
+        every { crypto.encryptMessageWithSharedKey(any<HexString>(), any()) } answers { internalSuccess(firstArg<HexString>().asByteArray()) }
+        every { crypto.encryptMessageWithSharedKey(any<ByteArray>(), any()) } answers { internalSuccess(firstArg()) }
 
-        every { crypto.decryptMessageWithSharedKey(any<String>(), any()) } answers { internalSuccess(firstArg()) }
-        every { crypto.decryptMessageWithSharedKey(any<HexString>(), any()) } answers { internalSuccess(firstArg<HexString>().value(withPrefix = false)) }
+        every { crypto.decryptMessageWithSharedKey(any<String>(), any()) } answers { internalSuccess(firstArg<String>().encodeToByteArray()) }
+        every { crypto.decryptMessageWithSharedKey(any<HexString>(), any()) } answers { internalSuccess(firstArg<HexString>().asByteArray()) }
+        every { crypto.decryptMessageWithSharedKey(any<ByteArray>(), any()) } answers { internalSuccess(firstArg()) }
 
         p2pClient = P2pClient(
             appName,
@@ -104,10 +112,10 @@ class P2pClientTest {
         val publicKey = HexString.fromString("0x00")
 
         val messages1 = listOf(
-            validMatrixTextMessage("1", publicKey.value(withPrefix = false), "content1")
+            validMatrixTextMessage("1", publicKey.value(), "content1")
         )
         val messages2 = listOf(
-            validMatrixTextMessage("1", publicKey.value(withPrefix = false), "content2")
+            validMatrixTextMessage("1", publicKey.value(), "content2")
         )
 
         every { p2pCommunicationUtils.isMessageFrom(any(), any()) } returns true
@@ -120,7 +128,7 @@ class P2pClientTest {
         }
 
         runBlocking {
-            val expected = (messages1 + messages2).map { P2pMessage(publicKey.value(withPrefix = false), it.message) }
+            val expected = (messages1 + messages2).map { P2pMessage(publicKey.value(), it.message) }
             val messages = p2pClient.subscribeTo(publicKey).mapNotNull { it.getOrNull() }.toList()
 
            assertEquals(expected.sortedBy { it.content }, messages.sortedBy { it.content })
@@ -133,10 +141,10 @@ class P2pClientTest {
         val unsubscribedPublicKey = HexString.fromString("0x01")
 
         val subscribedMessages = listOf(
-            validMatrixTextMessage("1", subscribedPublicKey.value(withPrefix = false), "content1")
+            validMatrixTextMessage("1", subscribedPublicKey.value(), "content1")
         )
         val unsubscribedMessages = listOf(
-            validMatrixTextMessage("1", unsubscribedPublicKey.value(withPrefix = false), "content2")
+            validMatrixTextMessage("1", unsubscribedPublicKey.value(), "content2")
         )
 
         every { p2pCommunicationUtils.isMessageFrom(match { subscribedMessages.contains(it) }, any()) } returns true
@@ -150,7 +158,7 @@ class P2pClientTest {
         }
 
         runBlocking {
-            val expected = subscribedMessages.map { P2pMessage(subscribedPublicKey.value(withPrefix = false), it.message) }
+            val expected = subscribedMessages.map { P2pMessage(subscribedPublicKey.value(), it.message) }
             val messages = p2pClient.subscribeTo(subscribedPublicKey)
                 .mapNotNull { it.getOrNull() }.toList()
 
@@ -163,10 +171,10 @@ class P2pClientTest {
         val publicKey = HexString.fromString("0x00")
 
         val validMessages = listOf(
-            validMatrixTextMessage("1", publicKey.value(withPrefix = false), "valid1")
+            validMatrixTextMessage("1", publicKey.value(), "valid1")
         )
         val invalidMessages = listOf(
-            validMatrixTextMessage("1", publicKey.value(withPrefix = false), "invalid2")
+            validMatrixTextMessage("1", publicKey.value(), "invalid2")
         )
 
         every { p2pCommunicationUtils.isMessageFrom(any(), any()) } returns true
@@ -181,7 +189,7 @@ class P2pClientTest {
         }
 
         runBlocking {
-            val expected = validMessages.map { P2pMessage(publicKey.value(withPrefix = false), it.message) }
+            val expected = validMessages.map { P2pMessage(publicKey.value(), it.message) }
             val messages = p2pClient.subscribeTo(publicKey).mapNotNull { it.getOrNull() }.toList()
 
             assertEquals(expected.sortedBy { it.content }, messages.sortedBy { it.content })
@@ -193,14 +201,14 @@ class P2pClientTest {
         val publicKey = HexString.fromString("0x00")
 
         val textMessages1 = listOf(
-            validMatrixTextMessage("1", publicKey.value(withPrefix = false), "content1")
+            validMatrixTextMessage("1", publicKey.value(), "content1")
         )
         val otherMessages1 = listOf(
             validMatrixInviteMessage("2")
         )
 
         val testMessages2 = listOf(
-            validMatrixTextMessage("1", publicKey.value(withPrefix = false), "content2")
+            validMatrixTextMessage("1", publicKey.value(), "content2")
         )
         val otherMessages2 = listOf(
             validMatrixInviteMessage("2")
@@ -218,7 +226,7 @@ class P2pClientTest {
         }
 
         runBlocking {
-            val expected = (textMessages1 + testMessages2).map { P2pMessage(publicKey.value(withPrefix = false), it.message) }
+            val expected = (textMessages1 + testMessages2).map { P2pMessage(publicKey.value(), it.message) }
             val messages = p2pClient.subscribeTo(publicKey).mapNotNull { it.getOrNull() }.toList()
 
             assertEquals(expected.sortedBy { it.content }, messages.sortedBy { it.content })
@@ -230,31 +238,33 @@ class P2pClientTest {
         every { p2pServerUtils.getRelayServer(any<ByteArray>(), any()) } returns ""
         every { p2pServerUtils.getRelayServer(any<HexString>(), any()) } returns ""
 
-        every { p2pCommunicationUtils.getRecipientIdentifier(any(), any()) } answers { firstArg<HexString>().value(withPrefix = false) }
+        every { p2pCommunicationUtils.getRecipientIdentifier(any(), any()) } answers { firstArg<HexString>().value() }
 
-        coEvery { matrixClient1.sendTextMessage(any<MatrixRoom>(), any()) } returns Unit
-        coEvery { matrixClient2.sendTextMessage(any<MatrixRoom>(), any()) } returns Unit
+        coEvery { matrixClient1.sendTextMessage(any<MatrixRoom>(), any()) } returns internalSuccess(MatrixEventResponse())
+        coEvery { matrixClient2.sendTextMessage(any<MatrixRoom>(), any()) } returns internalSuccess(MatrixEventResponse())
 
         val publicKey = HexString.fromString("0x00")
         val otherPublicKey = HexString.fromString("0x01")
         val message = "message"
 
-        val room1 = MatrixRoom.Joined("room1", listOf(publicKey.value(withPrefix = false)))
-        val room2 = MatrixRoom.Joined("room2", listOf(otherPublicKey.value(withPrefix = false)))
+        val room1 = MatrixRoom.Joined("room1", listOf(publicKey.value()))
+        val room2 = MatrixRoom.Joined("room2", listOf(otherPublicKey.value()))
 
         coEvery { matrixClient1.joinedRooms() } returns listOf(room1, room2).shuffled()
         coEvery { matrixClient2.joinedRooms() } returns listOf(room1, room2).shuffled()
 
         runBlocking { p2pClient.sendTo(publicKey, message) }
 
-        coVerify(exactly = replicationCount) { matrixClient1.sendTextMessage(room1, message) }
-        coVerify(exactly = replicationCount) { matrixClient2.sendTextMessage(room1, message) }
+        val expectedMessage = message.encodeToHexString().value()
+
+        coVerify(exactly = replicationCount) { matrixClient1.sendTextMessage(room1, expectedMessage) }
+        coVerify(exactly = replicationCount) { matrixClient2.sendTextMessage(room1, expectedMessage) }
     }
 
     @Test
     fun `sends pairing request to matrix clients`() {
         every { p2pCommunicationUtils.getRecipientIdentifier(any(), any()) } answers {
-            "${firstArg<HexString>().value(withPrefix = false)}:${secondArg<String>()}"
+            "${firstArg<HexString>().value()}:${secondArg<String>()}"
         }
 
         every { p2pCommunicationUtils.createOpenChannelMessage(any(), any()) } answers {
@@ -264,8 +274,8 @@ class P2pClientTest {
         coEvery { matrixClient1.joinedRooms() } returns emptyList()
         coEvery { matrixClient2.joinedRooms() } returns emptyList()
 
-        coEvery { matrixClient1.sendTextMessage(any<MatrixRoom>(), any()) } returns Unit
-        coEvery { matrixClient2.sendTextMessage(any<MatrixRoom>(), any()) } returns Unit
+        coEvery { matrixClient1.sendTextMessage(any<MatrixRoom>(), any()) } returns internalSuccess(MatrixEventResponse())
+        coEvery { matrixClient2.sendTextMessage(any<MatrixRoom>(), any()) } returns internalSuccess(MatrixEventResponse())
 
         val newRoom = MatrixRoom.Unknown("room1", emptyList())
 
@@ -281,14 +291,22 @@ class P2pClientTest {
 
         runBlocking { p2pClient.sendPairingRequest(publicKey, relayServer) }
 
-        val expectedRecipient = "${publicKey.value(withPrefix = false)}:$relayServer"
-        val expectedEncrypted = Json.encodeToString(P2pHandshakeInfo(
-            appName,
-            BeaconConfig.versionName,
-            keyPair.publicKey.asHexString().value(withPrefix = false),
-            clientRelayServer
-        ))
-        val expectedMessage = "@channel-open:$expectedRecipient:$expectedEncrypted"
+        val expectedRecipient = "${publicKey.value()}:$relayServer"
+        val expectedPayload = keyPair.publicKey
+            .asHexString()
+            .value()
+            .encodeToHexString()
+            .value()
+
+        // TODO: v2
+//        val expectedPayload = Json.encodeToString(P2pHandshakeInfo(
+//            appName,
+//            BeaconConfig.versionName,
+//            keyPair.publicKey.asHexString().value(),
+//            clientRelayServer
+//        )).encodeToByteArray().asHexString().value()
+
+        val expectedMessage = "@channel-open:$expectedRecipient:$expectedPayload"
 
         coVerify(exactly = 1) { matrixClient1.sendTextMessage(newRoom, expectedMessage) }
         coVerify(exactly = 1) { matrixClient2.sendTextMessage(newRoom, expectedMessage) }

@@ -12,6 +12,7 @@ internal abstract class HttpClientProvider(protected val baseUrl: String) {
         headers: List<HttpHeader>,
         parameters: List<HttpParameter>,
         resourceClass: KClass<T>,
+        timeoutMillis: Long?,
     ): T
 
     @Throws(Exception::class)
@@ -22,6 +23,7 @@ internal abstract class HttpClientProvider(protected val baseUrl: String) {
         body: T? = null,
         bodyClass: KClass<T>,
         responseClass: KClass<R>,
+        timeoutMillis: Long?,
     ): R
 
     @Throws(Exception::class)
@@ -32,5 +34,6 @@ internal abstract class HttpClientProvider(protected val baseUrl: String) {
         body: T? = null,
         bodyClass: KClass<T>,
         responseClass: KClass<R>,
+        timeoutMillis: Long?,
     ): R
 }

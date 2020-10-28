@@ -38,19 +38,26 @@ internal class MatrixStore(private val storage: ExtendedStorage) {
                     val newRooms = action.syncRooms?.let { MatrixRoom.fromSync(it) }
                     val events = action.syncRooms?.let { MatrixEvent.fromSync(it) }
 
+                    val mergedRooms = newRooms?.ifNotEmpty { state.rooms.merge(it) }
+
                     events?.filterNotNull()?.forEach { _events.tryEmit(it) }
 
+                    with (storage) {
+                        action.syncToken?.let { setMatrixSyncToken(it) }
+                        mergedRooms?.values?.toList()?.let { setMatrixRooms(it) }
+                    }
+
                     state.copy(
-                        isActive = true,
+                        isPolling = true,
                         syncToken = action.syncToken,
                         pollingTimeout = action.pollingTimeout,
                         pollingRetries = 0,
-                        rooms = newRooms?.let { state.rooms.merge(it) } ?: state.rooms,
+                        rooms = mergedRooms ?: state.rooms,
                     )
                 }
                 is OnSyncError -> {
                     state.copy(
-                        isActive = false,
+                        isPolling = false,
                         pollingRetries = state.pollingRetries + 1
                     )
                 }
@@ -62,14 +69,18 @@ internal class MatrixStore(private val storage: ExtendedStorage) {
     }
 
     private fun Map<String, MatrixRoom>.merge(newRooms: List<MatrixRoom>): Map<String, MatrixRoom> {
-        val updated = newRooms.mapNotNull { get(it.id)?.update(it.members) }
+        val new = newRooms.map { get(it.id)?.update(it.members) ?: it }
 
-        return (values + updated).associateBy { it.id }
+        return (values + new).associateBy { it.id }
     }
 
     private fun Map<String, MatrixRoom>.merge(vararg newRooms: MatrixRoom): Map<String, MatrixRoom> {
-        val updated = newRooms.mapNotNull { get(it.id)?.update(it.members) }
+        val new = newRooms.map { get(it.id)?.update(it.members) ?: it }
 
-        return (values + updated).associateBy { it.id }
+        return (values + new).associateBy { it.id }
     }
+
+    private fun <T, R> List<T>.ifNotEmpty(block: (List<T>) -> R): R? =
+        if (!isNullOrEmpty()) block(this)
+        else null
 }

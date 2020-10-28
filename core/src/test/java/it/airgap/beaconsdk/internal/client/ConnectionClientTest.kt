@@ -85,7 +85,7 @@ class ConnectionClientTest {
             "1",
             "1",
             Network.Custom(),
-            TezosOperation.DelegationOperation(
+            TezosOperation.Delegation(
                 "source",
                 "fee",
                 "counter",

@@ -7,4 +7,4 @@ import kotlinx.serialization.Serializable
 internal class MatrixJoinRoomRequest
 
 @Serializable
-internal data class MatrixJoinRoomResponse(@SerialName("user_id") val userId: String?)
+internal data class MatrixJoinRoomResponse(@SerialName("user_id") val userId: String? = null)

@@ -1,6 +1,7 @@
 package it.airgap.beaconsdk.internal.transport.p2p.matrix.network
 
 import it.airgap.beaconsdk.internal.network.HttpClient
+import it.airgap.beaconsdk.internal.network.data.ApplicationJson
 import it.airgap.beaconsdk.internal.network.data.BearerHeader
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.api.room.*
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.client.MatrixRoom
@@ -16,7 +17,7 @@ internal class MatrixRoomService(private val httpClient: HttpClient) {
         httpClient.post<MatrixCreateRoomRequest, MatrixCreateRoomResponse>(
             "/createRoom",
             body = roomConfig,
-            headers = listOf(BearerHeader(accessToken))
+            headers = listOf(BearerHeader(accessToken), ApplicationJson())
         ).single()
 
     suspend fun inviteToRoom(
@@ -27,7 +28,7 @@ internal class MatrixRoomService(private val httpClient: HttpClient) {
         httpClient.post<MatrixInviteRoomRequest, MatrixInviteRoomResponse>(
             "/rooms/$roomId/invite",
             body = MatrixInviteRoomRequest(user),
-            headers = listOf(BearerHeader(accessToken))
+            headers = listOf(BearerHeader(accessToken), ApplicationJson())
         ).single()
 
     suspend fun joinRoom(
@@ -37,6 +38,6 @@ internal class MatrixRoomService(private val httpClient: HttpClient) {
         httpClient.post<MatrixJoinRoomRequest, MatrixJoinRoomResponse>(
             "/rooms/$roomId/join",
             body = MatrixJoinRoomRequest(),
-            headers = listOf(BearerHeader(accessToken))
+            headers = listOf(BearerHeader(accessToken), ApplicationJson())
         ).single()
 }

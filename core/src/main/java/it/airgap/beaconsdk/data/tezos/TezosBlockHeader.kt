@@ -1,5 +1,6 @@
 package it.airgap.beaconsdk.data.tezos
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -8,12 +9,12 @@ data class TezosBlockHeader(
     val proto: Int,
     val predecessor: String,
     val timestamp: String,
-    val validationPass: Int,
-    val operationsHash: String,
+    @SerialName("validation_pass") val validationPass: Int,
+    @SerialName("operations_hash") val operationsHash: String,
     val fitness: List<String>,
     val context: String,
     val priority: Int,
-    val proofOfWorkNonce: String,
+    @SerialName("proof_of_work_nonce") val proofOfWorkNonce: String,
     val signature: String
 ) {
     companion object {}

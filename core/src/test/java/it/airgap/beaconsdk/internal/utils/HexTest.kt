@@ -62,7 +62,7 @@ class HexTest {
         val hexString = HexString.fromString(string)
 
         assertEquals(withHexPrefix(string), hexString.value(withPrefix = true))
-        assertEquals(withoutHexPrefix(string), hexString.value(withPrefix = false))
+        assertEquals(withoutHexPrefix(string), hexString.value())
     }
 
     @Test
@@ -76,8 +76,8 @@ class HexTest {
         val sliceWithRange = hexString.slice(sliceRange)
         val sliceWithIndex = hexString.slice(sliceIndex)
 
-        assertEquals(withoutHexPrefix(string).slice(sliceRange), sliceWithRange.value(withPrefix = false))
-        assertEquals(withoutHexPrefix(string).substring(sliceIndex), sliceWithIndex.value(withPrefix = false))
+        assertEquals(withoutHexPrefix(string).slice(sliceRange), sliceWithRange.value())
+        assertEquals(withoutHexPrefix(string).substring(sliceIndex), sliceWithIndex.value())
     }
 
     @Test
@@ -89,11 +89,12 @@ class HexTest {
             "c47320abdd31" to byteArrayOf(-60, 115, 32, -85, -35, 49),
             "0x5786dac9eaf4" to byteArrayOf(87, -122, -38, -55, -22, -12),
         )
-        val matches = hexStringsWithExpected
-            .map { HexString.fromString(it.first).asByteArray().contentEquals(it.second) }
-            .fold(true, Boolean::and)
 
-        assertTrue(matches)
+        hexStringsWithExpected
+            .map { HexString.fromString(it.first).asByteArray() to it.second }
+            .forEach {
+                assertArrayEquals(it.second, it.first)
+            }
     }
 
     @Test
@@ -101,17 +102,17 @@ class HexTest {
         val hexStringsWithExpected: List<Pair<String, BigInteger>> =
             validHexStrings.map { it to BigInteger(withoutHexPrefix(it), 16) }
 
-        val matches = hexStringsWithExpected
-            .map { HexString.fromString(it.first).toBigInteger() == it.second }
-            .fold(true, Boolean::and)
-
-        assertTrue(matches)
+        hexStringsWithExpected
+            .map { HexString.fromString(it.first).toBigInteger() to it.second }
+            .forEach {
+                assertEquals(it.second, it.first)
+            }
     }
 
     @Test
     fun `verifies if string is valid hex string`() {
-        val allValid = validHexStrings.map(String::isHex).foldRight(true, Boolean::and)
-        val allInvalid = invalidHexStrings.map(String::isHex).foldRight(false, Boolean::or)
+        val allValid = validHexStrings.map(String::isHex).fold(true, Boolean::and)
+        val allInvalid = invalidHexStrings.map(String::isHex).fold(false, Boolean::or)
 
         assertTrue(allValid)
         assertFalse(allInvalid)
@@ -154,11 +155,11 @@ class HexTest {
             Int.MAX_VALUE,
         ).map { it to it.toString(16).padStartEven('0') }
 
-        val matches = intsWithHexStrings
-            .map { it.first.asHexString() == HexString.fromString(it.second) }
-            .fold(true, Boolean::and)
-
-        assertTrue(matches)
+        intsWithHexStrings
+            .map { it.first.asHexString() to HexString.fromString(it.second) }
+            .forEach {
+                assertEquals(it.second, it.first)
+            }
     }
 
     @Test
@@ -204,11 +205,11 @@ class HexTest {
             BigInteger.valueOf(Long.MAX_VALUE),
         ).map { it to it.toString(16).padStartEven('0') }
 
-        val matches = bigIntegersWithExpected
-            .map { it.first.asHexString() == HexString.fromString(it.second) }
-            .fold(true, Boolean::and)
-
-        assertTrue(matches)
+        bigIntegersWithExpected
+            .map { it.first.asHexString() to HexString.fromString(it.second) }
+            .forEach {
+                assertEquals(it.second, it.first)
+            }
     }
 
     @Test

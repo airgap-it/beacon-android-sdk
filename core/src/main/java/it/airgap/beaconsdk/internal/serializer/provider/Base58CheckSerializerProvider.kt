@@ -7,17 +7,17 @@ import kotlinx.serialization.json.Json
 import kotlin.reflect.KClass
 
 internal class Base58CheckSerializerProvider(private val base58Check: Base58Check) : SerializerProvider {
-    private val json: Json by lazy { Json { classDiscriminator = "_type" } }
+    private val json: Json by lazy { Json { ignoreUnknownKeys = true } }
 
     override fun <T : Any> serialize(message: T, sourceClass: KClass<T>): String {
         val jsonEncoded = json.encodeToString(message, sourceClass)
-        return base58Check.encode(jsonEncoded.toByteArray()).getOrThrow()
+        return base58Check.encode(jsonEncoded.encodeToByteArray()).getOrThrow()
     }
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : Any> deserialize(message: String, targetClass: KClass<T>): T {
         val decoded = base58Check.decode(message).getOrThrow()
-        val jsonEncoded = String(decoded)
+        val jsonEncoded = decoded.decodeToString()
 
         return json.decodeFromString(jsonEncoded, targetClass)
     }

@@ -8,9 +8,8 @@ import it.airgap.beaconsdk.message.BeaconMessage
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
 
-interface InitCallback {
-    fun onSuccess()
-    fun onError(error: Throwable)
+interface BuildCallback {
+    fun onSuccess(beaconClient: BeaconClient)
 }
 
 interface OnNewMessageListener {
@@ -21,13 +20,6 @@ interface OnNewMessageListener {
 interface ResponseCallback {
     fun onSuccess()
     fun onError(error: Throwable)
-}
-
-fun BeaconClient.init(callback: InitCallback) {
-    initScope {
-        init()
-        callback.onSuccess()
-    }
 }
 
 fun BeaconClient.connect(listener: OnNewMessageListener) {
@@ -59,16 +51,24 @@ fun BeaconClient.respond(message: BeaconMessage.Response, callback: ResponseCall
 fun BeaconClient.Builder.storage(storage: BeaconCompatStorage): BeaconClient.Builder =
     storage(CompatStorageDecorator(storage))
 
-private fun initScope(block: suspend () -> Unit) {
-    jobScope(CoroutineName("beaconClient#init"), block)
+fun BeaconClient.Builder.build(callback: BuildCallback) {
+    buildScope {
+        val beaconClient = build()
+        callback.onSuccess(beaconClient)
+    }
 }
 
+
 private fun receiveScope(block: suspend () -> Unit) {
-    jobScope(CoroutineName("beaconClient#receive"), block)
+    jobScope(CoroutineName("BeaconClient#receive"), block)
 }
 
 private fun sendScope(block: suspend () -> Unit) {
-    jobScope(CoroutineName("beaconClient#send"), block)
+    jobScope(CoroutineName("BeaconClient#send"), block)
+}
+
+private fun buildScope(block: suspend () -> Unit) {
+    jobScope(CoroutineName("BeaconClient.Builder#build"), block)
 }
 
 private fun jobScope(coroutineName: CoroutineName, block: suspend () -> Unit) {

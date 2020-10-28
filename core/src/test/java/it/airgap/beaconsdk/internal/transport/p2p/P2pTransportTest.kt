@@ -50,7 +50,7 @@ class P2pTransportTest {
             messagesAndFlows(peersPublicKeys)
 
         every { p2pClient.subscribeTo(any()) } answers {
-            transportMessageFlows.getValue(firstArg<HexString>().value(withPrefix = false))
+            transportMessageFlows.getValue(firstArg<HexString>().value())
         }
 
         runBlocking { storage.setP2pPeers(peers) }
@@ -126,7 +126,7 @@ class P2pTransportTest {
             messagesAndFlows(peersPublicKeys)
 
         every { p2pClient.subscribeTo(any()) } answers {
-            transportMessageFlows.getValue(firstArg<HexString>().value(withPrefix = false))
+            transportMessageFlows.getValue(firstArg<HexString>().value())
         }
 
         val expected = transportMessages.map { ConnectionMessage(Origin.P2P(it.id), it.content) }
@@ -159,7 +159,7 @@ class P2pTransportTest {
             messagesAndFlows(peersPublicKeys)
 
         every { p2pClient.subscribeTo(any()) } answers {
-            transportMessageFlows.getValue(firstArg<HexString>().value(withPrefix = false))
+            transportMessageFlows.getValue(firstArg<HexString>().value())
         }
 
         runBlocking {
@@ -200,7 +200,7 @@ class P2pTransportTest {
             messagesAndFlows(peersPublicKeys)
 
         every { p2pClient.subscribeTo(any()) } answers {
-            transportMessageFlows.getValue(firstArg<HexString>().value(withPrefix = false))
+            transportMessageFlows.getValue(firstArg<HexString>().value())
         }
 
         runBlocking {
@@ -232,7 +232,7 @@ class P2pTransportTest {
 
         coEvery { p2pClient.sendPairingRequest(any(), any()) } returns internalError()
         every { p2pClient.subscribeTo(any()) } answers {
-            transportMessageFlows.getValue(firstArg<HexString>().value(withPrefix = false))
+            transportMessageFlows.getValue(firstArg<HexString>().value())
         }
 
         runBlocking {
@@ -268,7 +268,7 @@ class P2pTransportTest {
             messagesAndFlows(peersPublicKeys)
 
         every { p2pClient.subscribeTo(any()) } answers {
-            transportMessageFlows.getValue(firstArg<HexString>().value(withPrefix = false))
+            transportMessageFlows.getValue(firstArg<HexString>().value())
         }
 
         runBlocking {
@@ -312,11 +312,11 @@ class P2pTransportTest {
             : Pair<List<P2pMessage>, Map<String, MutableSharedFlow<InternalResult<P2pMessage>>>> {
 
         val transportMessages = publicKeys.mapIndexed { index, hexString ->
-            P2pMessage(hexString.value(withPrefix = false), "content$index")
+            P2pMessage(hexString.value(), "content$index")
         }
 
         val transportMessageFlows = publicKeys.map {
-            it.value(withPrefix = false) to MutableSharedFlow<InternalResult<P2pMessage>>(transportMessages.size + 1)
+            it.value() to MutableSharedFlow<InternalResult<P2pMessage>>(transportMessages.size + 1)
         } .toMap()
 
         return Pair(transportMessages, transportMessageFlows)

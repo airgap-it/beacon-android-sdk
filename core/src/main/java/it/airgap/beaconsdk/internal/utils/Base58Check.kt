@@ -34,14 +34,18 @@ internal class Base58Check(private val crypto: Crypto) {
 
     private fun bytesToBase58(bytes: ByteArray): String {
         val hex = bytes.asHexString()
-        return bigIntegerToBase58("", hex.toBigInteger()).reversed()
+        val base58 = bigIntegerToBase58("", hex.toBigInteger()).reversed()
+
+        val leadingZeros = bytes.takeWhile { it == 0.toByte() }.size
+
+        return ALPHABET[0].toString().repeat(leadingZeros) + base58
     }
 
     private fun bytesFromBase58(base58: String): ByteArray {
         val chars = base58.toCharArray().toList()
         val bytes = base58ToBigInteger(bi0, chars).asHexString().asByteArray()
 
-        val leadingZeros = base58.substringBefore(ALPHABET[0], "").length
+        val leadingZeros = base58.takeWhile { it == ALPHABET[0] }.length
 
         return ByteArray(leadingZeros) { 0 } + bytes
     }
