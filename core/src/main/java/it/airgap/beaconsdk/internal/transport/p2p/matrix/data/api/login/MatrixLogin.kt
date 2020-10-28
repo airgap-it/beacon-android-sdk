@@ -1,19 +1,18 @@
 package it.airgap.beaconsdk.internal.transport.p2p.matrix.data.api.login
 
-import kotlinx.serialization.Required
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-internal sealed class MatrixLoginRequest(@Required private val type: Type) {
+internal sealed class MatrixLoginRequest(private val type: Type) {
     abstract val identifier: UserIdentifier
-    @SerialName("device_id") abstract val deviceId: String?
+    abstract val deviceId: String?
 
     @Serializable
     data class Password(
         override val identifier: UserIdentifier,
         val password: String,
-        override val deviceId: String? = null,
+        @SerialName("device_id") override val deviceId: String? = null,
     ) : MatrixLoginRequest(Type.Password)
 
     @Serializable
@@ -23,7 +22,7 @@ internal sealed class MatrixLoginRequest(@Required private val type: Type) {
     }
 
     @Serializable
-    sealed class UserIdentifier(@Required private val type: Type) {
+    sealed class UserIdentifier(private val type: Type) {
 
         @Serializable
         data class User(val user: String) : UserIdentifier(Type.User)

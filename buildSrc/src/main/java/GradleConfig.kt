@@ -7,12 +7,17 @@ object Version {
     const val androidxAppCompat = "1.2.0"
     const val androidxConstraintLayout = "1.1.3"
 
+    const val androidxActivity = "1.1.0"
+    const val androidxLifecycle = "2.2.0"
+
     const val coroutines = "1.4.0-M1"
 
     const val ktor = "1.4.1"
 
     const val lazySodium = "4.2.0"
     const val jna = "5.6.0"
+
+    const val materialComponents = "1.2.1"
 
     const val junit = "4.13"
 
@@ -36,8 +41,17 @@ object Dependencies {
     const val ktorLoggingJvm = "io.ktor:ktor-client-logging-jvm:${Version.ktor}"
 
     const val androidxCore = "androidx.core:core-ktx:${Version.androidxCore}"
+
     const val androidxAppCompat = "androidx.appcompat:appcompat:${Version.androidxAppCompat}"
     const val androidxConstraintLayout = "androidx.constraintlayout:constraintlayout:${Version.androidxConstraintLayout}"
+
+    const val androidxActivity = "androidx.activity:activity-ktx:${Version.androidxActivity}"
+
+    const val androidxLifecycleViewModel = "androidx.lifecycle:lifecycle-viewmodel-ktx:${Version.androidxLifecycle}"
+    const val androidxLifecycleLiveData = "androidx.lifecycle:lifecycle-livedata-ktx:${Version.androidxLifecycle}"
+    const val androidxLifecycleRuntime = "androidx.lifecycle:lifecycle-runtime-ktx:${Version.androidxLifecycle}"
+
+    const val materialComponents = "com.google.android.material:material:${Version.materialComponents}"
 
     const val lazySodium = "com.goterl.lazycode:lazysodium-android:${Version.lazySodium}@aar"
     const val jna = "net.java.dev.jna:jna:${Version.jna}@aar"

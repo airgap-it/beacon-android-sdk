@@ -23,16 +23,18 @@ internal class HexString private constructor(value: String) {
     fun slice(indices: IntRange): HexString = HexString(value.slice(indices))
     fun slice(startIndex: Int): HexString = HexString(value.substring(startIndex))
 
-    fun asByteArray(): ByteArray = value(withPrefix = false).chunked(2).map { it.toInt(16).toByte() }.toByteArray()
+    fun asByteArray(): ByteArray = value().chunked(2).map { it.toInt(16).toByte() }.toByteArray()
 
-    fun toBigInteger(): BigInteger = BigInteger(value(withPrefix = false), 16)
+    fun decodeToString(): String = asByteArray().decodeToString()
+
+    fun toBigInteger(): BigInteger = BigInteger(value(), 16)
 
     override fun equals(other: Any?): Boolean =
         if (other == null || other !is HexString) false
         else value == other.value
 
     override fun hashCode(): Int = value.hashCode()
-    override fun toString(): String = value(withPrefix = true)
+    override fun toString(): String = value()
 
     companion object {
         @Throws(IllegalArgumentException::class)
@@ -44,18 +46,20 @@ internal class HexString private constructor(value: String) {
 
 internal fun String.isHex(): Boolean = this.matches(hexRegex)
 
+internal fun String.encodeToHexString(): HexString = encodeToByteArray().asHexString()
+
 internal fun Byte.asHexString(): HexString {
     val hex = "%02x".format(this)
     return HexString.fromString(hex)
 }
 
 internal fun ByteArray.asHexString(): HexString {
-    val hex = joinToString("") { it.asHexString().value(withPrefix = false) }
+    val hex = joinToString("") { it.asHexString().value() }
     return HexString.fromString(hex)
 }
 
 internal fun List<Byte>.asHexString(): HexString {
-    val hex = joinToString("") { it.asHexString().value(withPrefix = false) }
+    val hex = joinToString("") { it.asHexString().value() }
     return HexString.fromString(hex)
 }
 

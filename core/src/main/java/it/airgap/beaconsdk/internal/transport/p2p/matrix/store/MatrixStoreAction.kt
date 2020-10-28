@@ -11,7 +11,7 @@ internal sealed class MatrixStoreAction {
 
     data class OnSyncSuccess(
         val syncToken: String?,
-        val pollingTimeout: Int,
+        val pollingTimeout: Long,
         val syncRooms: MatrixSyncResponse.Rooms?,
     ) : MatrixStoreAction()
 

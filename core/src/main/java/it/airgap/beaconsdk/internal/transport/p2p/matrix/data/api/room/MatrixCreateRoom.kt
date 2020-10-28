@@ -30,4 +30,4 @@ data class MatrixCreateRoomRequest(
 }
 
 @Serializable
-internal data class MatrixCreateRoomResponse(@SerialName("room_id") val roomId: String?)
+internal data class MatrixCreateRoomResponse(@SerialName("room_id") val roomId: String? = null)

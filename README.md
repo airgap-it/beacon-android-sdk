@@ -34,14 +34,12 @@ import it.airgap.beaconsdk.client.BeaconClient
 import it.airgap.beaconsdk.message.BeaconMessage
 
 class MainActivity : AppCompatActivity() {
-  // create a Beacon client
-  val client: BeaconClient = BeaconClient("My App")
-
+  lateinit var client: BeaconClient
   ...
 
   suspend fun listenForBeaconMessages() {
-    // initialize the client
-    client.init()
+    // create a Beacon client
+    client = BeaconClient("My App")
 
     myCoroutineScope.launch {
       // subscribe to a message Flow

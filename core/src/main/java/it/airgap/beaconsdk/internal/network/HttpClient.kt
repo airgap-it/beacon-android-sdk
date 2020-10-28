@@ -14,14 +14,16 @@ internal class HttpClient(private val httpClientProvider: HttpClientProvider) {
         endpoint: String,
         headers: List<HttpHeader> = emptyList(),
         parameters: List<HttpParameter> = emptyList(),
+        timeoutMillis: Long? = null,
     ): Flow<InternalResult<T>> =
-        resultFlowFor { httpClientProvider.get(endpoint, headers, parameters, T::class) }
+        resultFlowFor { httpClientProvider.get(endpoint, headers, parameters, T::class, timeoutMillis) }
 
     inline fun <reified T : Any, reified R : Any> post(
         endpoint: String,
         body: T? = null,
         headers: List<HttpHeader> = emptyList(),
         parameters: List<HttpParameter> = emptyList(),
+        timeoutMillis: Long? = null,
     ): Flow<InternalResult<R>> = resultFlowFor {
         httpClientProvider.post(
             endpoint,
@@ -29,7 +31,8 @@ internal class HttpClient(private val httpClientProvider: HttpClientProvider) {
             parameters,
             body,
             T::class,
-            R::class
+            R::class,
+            timeoutMillis,
         )
     }
 
@@ -38,6 +41,7 @@ internal class HttpClient(private val httpClientProvider: HttpClientProvider) {
         body: T? = null,
         headers: List<HttpHeader> = emptyList(),
         parameters: List<HttpParameter> = emptyList(),
+        timeoutMillis: Long? = null,
     ): Flow<InternalResult<R>> = resultFlowFor {
         httpClientProvider.put(
             endpoint,
@@ -45,7 +49,8 @@ internal class HttpClient(private val httpClientProvider: HttpClientProvider) {
             parameters,
             body,
             T::class,
-            R::class
+            R::class,
+            timeoutMillis,
         )
     }
 

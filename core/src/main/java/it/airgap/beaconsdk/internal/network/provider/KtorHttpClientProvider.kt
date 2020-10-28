@@ -2,6 +2,7 @@ package it.airgap.beaconsdk.internal.network.provider
 
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
+import io.ktor.client.features.*
 import io.ktor.client.features.json.*
 import io.ktor.client.features.json.serializer.*
 import io.ktor.client.features.logging.*
@@ -21,6 +22,8 @@ internal class KtorHttpClientProvider(baseUrl: String) : HttpClientProvider(base
                 serializer = KotlinxSerializer(json)
             }
 
+            install(HttpTimeout)
+
             install(Logging) {
                 logger = object : Logger {
                     override fun log(message: String) {
@@ -32,7 +35,11 @@ internal class KtorHttpClientProvider(baseUrl: String) : HttpClientProvider(base
         }
     }
 
-    private val json: Json = Json { classDiscriminator = "_type" }
+    private val json: Json = Json {
+        classDiscriminator = "serializationType"
+        ignoreUnknownKeys = true
+        prettyPrint = true
+    }
 
     @Suppress("UNCHECKED_CAST")
     override suspend fun <T : Any> get(
@@ -40,7 +47,8 @@ internal class KtorHttpClientProvider(baseUrl: String) : HttpClientProvider(base
         headers: List<HttpHeader>,
         parameters: List<HttpParameter>,
         resourceClass: KClass<T>,
-    ): T = request(HttpMethod.Get, apiUrl(endpoint), headers, parameters, resourceClass)
+        timeoutMillis: Long?,
+    ): T = request(HttpMethod.Get, endpoint, headers, parameters, resourceClass, timeoutMillis)
 
     override suspend fun <T : Any, R : Any> post(
         endpoint: String,
@@ -49,7 +57,8 @@ internal class KtorHttpClientProvider(baseUrl: String) : HttpClientProvider(base
         body: T?,
         bodyClass: KClass<T>,
         responseClass: KClass<R>,
-    ): R = request(HttpMethod.Post, apiUrl(endpoint), headers, parameters, responseClass) {
+        timeoutMillis: Long?,
+    ): R = request(HttpMethod.Post, endpoint, headers, parameters, responseClass, timeoutMillis) {
         body?.let { this.body = it }
     }
 
@@ -61,7 +70,8 @@ internal class KtorHttpClientProvider(baseUrl: String) : HttpClientProvider(base
         body: T?,
         bodyClass: KClass<T>,
         responseClass: KClass<R>,
-    ): R = request(HttpMethod.Put, apiUrl(endpoint), headers, parameters, responseClass) {
+        timeoutMillis: Long?,
+    ): R = request(HttpMethod.Put, endpoint, headers, parameters, responseClass, timeoutMillis) {
         body?.let { this.body = it }
     }
 
@@ -71,6 +81,7 @@ internal class KtorHttpClientProvider(baseUrl: String) : HttpClientProvider(base
         httpHeaders: List<HttpHeader>,
         httpParameters: List<HttpParameter>,
         responseClass: KClass<T>,
+        timeoutMillis: Long?,
         block: HttpRequestBuilder.() -> Unit = {}): T
     {
 
@@ -79,6 +90,9 @@ internal class KtorHttpClientProvider(baseUrl: String) : HttpClientProvider(base
             url(apiUrl(endpoint))
             headers(httpHeaders)
             parameters(httpParameters)
+
+            timeoutMillis?.let { timeout(it) }
+
             block(this)
         }
 
@@ -93,6 +107,14 @@ internal class KtorHttpClientProvider(baseUrl: String) : HttpClientProvider(base
 
     private fun HttpRequestBuilder.parameters(parameters: List<HttpParameter>) {
         parameters.forEach { parameter(it.first, it.second) }
+    }
+
+    private fun HttpRequestBuilder.timeout(timeoutMillis: Long?) {
+        timeout {
+            requestTimeoutMillis = timeoutMillis
+            connectTimeoutMillis = timeoutMillis
+            socketTimeoutMillis = timeoutMillis
+        }
     }
 
     companion object {

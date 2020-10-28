@@ -27,17 +27,17 @@ internal interface CryptoProvider {
     fun createClientSessionKeyPair(serverPublicKey: ByteArray, serverPrivateKey: ByteArray, clientPublicKey: ByteArray): SessionKeyPair
 
     @Throws(Exception::class)
-    fun signMessageDetached(message: HexString, privateKey: ByteArray): ByteArray
+    fun signMessageDetached(message: ByteArray, privateKey: ByteArray): ByteArray
 
     fun validateMessage(message: String): Boolean
 
     @Throws(Exception::class)
-    fun encryptMessageWithPublicKey(message: HexString, publicKey: ByteArray): String
+    fun encryptMessageWithPublicKey(message: ByteArray, publicKey: ByteArray): ByteArray
     @Throws(Exception::class)
-    fun decryptMessageWithKeyPair(message: HexString, publicKey: ByteArray, privateKey: ByteArray): String
+    fun decryptMessageWithKeyPair(message: ByteArray, publicKey: ByteArray, privateKey: ByteArray): ByteArray
 
     @Throws(Exception::class)
-    fun encryptMessageWithSharedKey(message: HexString, sharedKey: ByteArray): String
+    fun encryptMessageWithSharedKey(message: ByteArray, sharedKey: ByteArray): ByteArray
     @Throws(Exception::class)
-    fun decryptMessageWithSharedKey(message: HexString, sharedKey: ByteArray): String
+    fun decryptMessageWithSharedKey(message: ByteArray, sharedKey: ByteArray): ByteArray
 }

@@ -1,6 +1,7 @@
 package it.airgap.beaconsdk.internal.transport.p2p.matrix.data.client
 
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.api.sync.MatrixSyncResponse
+import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.api.sync.MatrixSyncRoom
 import kotlinx.serialization.Serializable
 
 // TODO: resolve internal/public conflict (`MatrixRoom` is clearly an internal structure, but has to be exposed in the storage)
@@ -31,11 +32,14 @@ sealed class MatrixRoom {
 
     companion object {
         internal fun fromSync(syncRooms: MatrixSyncResponse.Rooms): List<MatrixRoom> {
-            val joined = syncRooms.join.entries.map { Joined(it.key, emptyList()) }
-            val invited = syncRooms.invite.entries.map { Invited(it.key, emptyList()) }
-            val left = syncRooms.left.entries.map { Left(it.key, emptyList()) }
+            val joined = syncRooms.join?.entries?.map { Joined(it.key, membersFromSync(it.key, it.value)) } ?: emptyList()
+            val invited = syncRooms.invite?.entries?.map { Invited(it.key, membersFromSync(it.key, it.value)) } ?: emptyList()
+            val left = syncRooms.leave?.entries?.map { Left(it.key, membersFromSync(it.key, it.value)) } ?: emptyList()
 
             return joined + invited + left
         }
+
+        private fun membersFromSync(id: String, syncRoom: MatrixSyncRoom): List<String> =
+            MatrixEvent.fromSync(id, syncRoom).filterIsInstance<MatrixEvent.Join>().map(MatrixEvent.Join::userId)
     }
 }

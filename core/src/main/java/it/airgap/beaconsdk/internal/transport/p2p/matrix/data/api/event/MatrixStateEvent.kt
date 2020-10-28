@@ -1,5 +1,6 @@
 package it.airgap.beaconsdk.internal.transport.p2p.matrix.data.api.event
 
+import it.airgap.beaconsdk.internal.utils.failWithExpectedJsonDecoder
 import kotlinx.serialization.*
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
@@ -7,80 +8,65 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.JsonDecoder
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlin.reflect.KClass
 
-private typealias ISerializable = java.io.Serializable
-
 @Serializable(with = MatrixStateEvent.Serializer::class)
-internal sealed class MatrixStateEvent<Content : ISerializable> {
+internal sealed class MatrixStateEvent<Content> {
     abstract val content: Content?
     abstract val type: String?
-
-    @SerialName("event_id")
     abstract val eventId: String?
-
     abstract val sender: String?
-
-    @SerialName("state_key")
     abstract val stateKey: String?
 
     @Serializable
     data class Create(
         override val content: Content?,
-        override val eventId: String?,
-        override val sender: String?,
-        override val stateKey: String?
+        @SerialName("event_id") override val eventId: String? = null,
+        override val sender: String? = null,
+        @SerialName("state_key") override val stateKey: String? = null,
     ) : MatrixStateEvent<Create.Content>() {
         override val type: String? = TYPE_CREATE
 
         @Serializable
-        data class Content(val creator: String) : ISerializable
+        data class Content(val creator: String)
     }
 
     @Serializable
     data class Member(
         override val content: Content?,
-        override val eventId: String?,
-        override val sender: String?,
-        override val stateKey: String?
+        @SerialName("event_id") override val eventId: String? = null,
+        override val sender: String? = null,
+        @SerialName("state_key") override val stateKey: String? = null,
     ) : MatrixStateEvent<Member.Content>() {
         override val type: String? = TYPE_MEMBER
 
         @Serializable
-        data class Content(val membership: Membership?): ISerializable
+        data class Content(val membership: Membership? = null)
 
         @Serializable
         enum class Membership {
-            @SerialName("invite")
-            Invite,
-
-            @SerialName("join")
-            Join,
-
-            @SerialName("leave")
-            Leave,
-
-            @SerialName("ban")
-            Ban,
-
-            @SerialName("knock")
-            Knock,
+            @SerialName("invite") Invite,
+            @SerialName("join") Join,
+            @SerialName("leave") Leave,
+            @SerialName("ban") Ban,
+            @SerialName("knock") Knock,
         }
     }
 
     @Serializable
     data class Message(
         override val content: Content?,
-        override val eventId: String?,
-        override val sender: String?,
-        override val stateKey: String?
+        @SerialName("event_id") override val eventId: String? = null,
+        override val sender: String? = null,
+        @SerialName("state_key") override val stateKey: String? = null,
     ) : MatrixStateEvent<Message.Content>() {
         override val type: String? = TYPE_MESSAGE
 
         @Serializable
-        data class Content(val msgtype: String?, val body: String?): ISerializable
+        data class Content(val msgtype: String? = null, val body: String? = null)
 
         companion object {
             const val TYPE_TEXT = "m.text"
@@ -89,12 +75,12 @@ internal sealed class MatrixStateEvent<Content : ISerializable> {
 
     @Serializable
     data class Unknown(
-        override val content: String? = null,
+        override val content: JsonElement? = null,
         override val type: String? = null,
-        override val eventId: String? = null,
+        @SerialName("event_id") override val eventId: String? = null,
         override val sender: String? = null,
-        override val stateKey: String? = null,
-    ) : MatrixStateEvent<String>()
+        @SerialName("state_key") override val stateKey: String? = null,
+    ) : MatrixStateEvent<JsonElement>()
 
     companion object {
         const val TYPE_CREATE = "m.room.create"
@@ -128,8 +114,5 @@ internal sealed class MatrixStateEvent<Content : ISerializable> {
                 is Unknown -> encoder.encodeSerializableValue(Unknown.serializer(), value)
             }
         }
-
-        private fun failWithExpectedJsonDecoder(actual: KClass<out Decoder>): Nothing =
-            throw SerializationException("Expected Json decoder, got $actual")
     }
 }

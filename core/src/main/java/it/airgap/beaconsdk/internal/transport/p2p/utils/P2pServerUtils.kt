@@ -13,7 +13,7 @@ internal class P2pServerUtils(private val crypto: Crypto, private val matrixNode
 
     fun getRelayServer(publicKey: HexString, nonce: HexString? = null): String {
         val hash = crypto.hashKey(publicKey).getOrThrow().asHexString()
-        val nonceValue = nonce?.value(withPrefix = false) ?: ""
+        val nonceValue = nonce?.value() ?: ""
 
         return matrixNodes.minByOrNull {
             val relayServerHash = crypto.hash(it + nonceValue, 32).getOrThrow().asHexString()

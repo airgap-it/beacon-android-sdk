@@ -2,6 +2,7 @@ package it.airgap.beaconsdk.internal.crypto.provider
 
 import com.goterl.lazycode.lazysodium.LazySodiumAndroid
 import com.goterl.lazycode.lazysodium.SodiumAndroid
+import com.goterl.lazycode.lazysodium.exceptions.SodiumException
 import com.goterl.lazycode.lazysodium.interfaces.*
 import com.goterl.lazycode.lazysodium.utils.Key
 import it.airgap.beaconsdk.internal.crypto.data.KeyPair
@@ -22,13 +23,21 @@ internal class LazySodiumCryptoProvider : CryptoProvider {
     override fun getHash(message: ByteArray, size: Int): ByteArray {
         val genericHashSodium = sodium as GenericHash.Native
 
-        return ByteArray(size).also { genericHashSodium.cryptoGenericHash(it, it.size, message, message.size.toLong()) }
+        return ByteArray(size).also {
+            assertOrFail("Could not hash the message") {
+                genericHashSodium.cryptoGenericHash(it, it.size, message, message.size.toLong())
+            }
+        }
     }
 
     override fun getHash256(message: ByteArray): ByteArray {
         val hashSodium = sodium as Hash.Native
 
-        return ByteArray(message.size).also { hashSodium.cryptoHashSha256(it, message, message.size.toLong()) }
+        return ByteArray(Hash.SHA256_BYTES).also {
+            assertOrFail("Could not finalize SHA-256") {
+                hashSodium.cryptoHashSha256(it, message, message.size.toLong())
+            }
+        }
     }
 
     @Throws(Exception::class)
@@ -43,20 +52,22 @@ internal class LazySodiumCryptoProvider : CryptoProvider {
     override fun convertEd25519PrivateKeyToCurve25519(privateKey: ByteArray): ByteArray {
         val signSodium = sodium as Sign.Native
 
-        val curve = ByteArray(Sign.CURVE25519_SECRETKEYBYTES)
-        signSodium.convertSecretKeyEd25519ToCurve25519(curve, privateKey)
-
-        return curve
+        return ByteArray(Sign.CURVE25519_SECRETKEYBYTES).also {
+            assertOrFail("Could not convert the private key") {
+                signSodium.convertSecretKeyEd25519ToCurve25519(it, privateKey)
+            }
+        }
     }
 
     @Throws(Exception::class)
     override fun convertEd25519PublicKeyToCurve25519(publicKey: ByteArray): ByteArray {
         val signSodium = sodium as Sign.Native
 
-        val curve = ByteArray(Sign.CURVE25519_PUBLICKEYBYTES)
-        signSodium.convertPublicKeyEd25519ToCurve25519(curve, publicKey)
-
-        return curve
+        return ByteArray(Sign.CURVE25519_PUBLICKEYBYTES).also {
+            assertOrFail("Could not convert the public key") {
+                signSodium.convertPublicKeyEd25519ToCurve25519(it, publicKey)
+            }
+        }
     }
 
     @Throws(Exception::class)
@@ -85,12 +96,20 @@ internal class LazySodiumCryptoProvider : CryptoProvider {
         return SessionKeyPair(sessionPair.rx, sessionPair.tx)
     }
 
-    override fun signMessageDetached(message: HexString, privateKey: ByteArray): ByteArray {
-        val signSodium = sodium as Sign.Lazy
+    override fun signMessageDetached(message: ByteArray, privateKey: ByteArray): ByteArray {
+        val signSodium = sodium as Sign.Native
 
-        val signature = signSodium.cryptoSignDetached(message.value(withPrefix = false), Key.fromBytes(privateKey))
 
-        return HexString.fromString(signature).asByteArray()
+        return ByteArray(Sign.ED25519_BYTES).also {
+            assertOrFail("Could not create a signature for the message in the detached mode") {
+                signSodium.cryptoSignDetached(
+                    it,
+                    message,
+                    message.size.toLong(),
+                    privateKey
+                )
+            }
+        }
     }
 
     override fun validateMessage(message: String): Boolean =
@@ -101,53 +120,75 @@ internal class LazySodiumCryptoProvider : CryptoProvider {
         }
 
     @Throws(Exception::class)
-    override fun encryptMessageWithPublicKey(message: HexString, publicKey: ByteArray): String {
+    override fun encryptMessageWithPublicKey(message: ByteArray, publicKey: ByteArray): ByteArray {
         val signSodium = sodium as Sign.Native
-        val secretBoxSodium = sodium as Box.Lazy
+        val secretBoxSodium = sodium as Box.Native
 
-        val kxPublicKey = Key.fromBytes(
-            ByteArray(Sign.CURVE25519_PUBLICKEYBYTES).also { signSodium.convertPublicKeyEd25519ToCurve25519(it, publicKey) }
-        )
+        val kxPublicKey = ByteArray(Sign.CURVE25519_PUBLICKEYBYTES).also {
+            assertOrFail("Could not convert the public key") {
+                signSodium.convertPublicKeyEd25519ToCurve25519(it, publicKey)
+            }
+        }
 
-        return secretBoxSodium.cryptoBoxSealEasy(message.value(withPrefix = false), kxPublicKey)
+        return ByteArray(Box.SEALBYTES + message.size).also {
+            assertOrFail("Could not encrypt the message") {
+                secretBoxSodium.cryptoBoxSeal(it, message, message.size.toLong(), kxPublicKey)
+            }
+        }
     }
 
     @Throws(Exception::class)
     override fun decryptMessageWithKeyPair(
-        message: HexString,
+        message: ByteArray,
         publicKey: ByteArray,
         privateKey: ByteArray
-    ): String {
+    ): ByteArray {
         val signSodium = sodium as Sign.Lazy
-        val secretBoxSodium = sodium as Box.Lazy
+        val secretBoxSodium = sodium as Box.Native
 
         val edKeyPair = SodiumKeyPair(Key.fromBytes(privateKey), Key.fromBytes(publicKey))
         val kxKeyPair = signSodium.convertKeyPairEd25519ToCurve25519(edKeyPair)
 
-        return secretBoxSodium.cryptoBoxSealOpenEasy(message.value(withPrefix = false), kxKeyPair)
+        return ByteArray(message.size - Box.SEALBYTES).also {
+            assertOrFail("Could not decrypt the message") {
+                secretBoxSodium.cryptoBoxSealOpen(it, message, message.size.toLong(), kxKeyPair.publicKey.asBytes, kxKeyPair.secretKey.asBytes)
+            }
+        }.trimNulls()
     }
 
     @Throws(Exception::class)
-    override fun encryptMessageWithSharedKey(message: HexString, sharedKey: ByteArray): String {
+    override fun encryptMessageWithSharedKey(message: ByteArray, sharedKey: ByteArray): ByteArray {
         val randomSodium = sodium as Random
-        val secretBoxSodium = sodium as SecretBox.Lazy
+        val secretBoxSodium = sodium as SecretBox.Native
 
         val nonce = randomSodium.randomBytesBuf(SecretBox.NONCEBYTES)
-        val key = Key.fromBytes(sharedKey)
 
-        val encrypted = secretBoxSodium.cryptoSecretBoxEasy(message.value(withPrefix = false), nonce, key)
+        val encrypted = ByteArray(SecretBox.MACBYTES + message.size).also {
+            assertOrFail("Could not encrypt the message with the shared key") {
+                secretBoxSodium.cryptoSecretBoxEasy(it, message, message.size.toLong(), nonce, sharedKey)
+            }
+        }
 
-        return "${nonce.asHexString().value(withPrefix = false)}${encrypted}"
+        return HexString.fromString("${nonce.asHexString().value()}${encrypted.asHexString().value()}").asByteArray()
     }
 
     @Throws(Exception::class)
-    override fun decryptMessageWithSharedKey(message: HexString, sharedKey: ByteArray): String {
-        val secretBoxSodium = sodium as SecretBox.Lazy
+    override fun decryptMessageWithSharedKey(message: ByteArray, sharedKey: ByteArray): ByteArray {
+        val secretBoxSodium = sodium as SecretBox.Native
 
-        val nonce = message.slice(0 until SecretBox.NONCEBYTES)
-        val ciphertext = message.slice(SecretBox.NONCEBYTES)
-        val key = Key.fromBytes(sharedKey)
+        val nonce = message.sliceArray(0 until SecretBox.NONCEBYTES)
+        val ciphertext = message.sliceArray(SecretBox.NONCEBYTES until message.size)
 
-        return secretBoxSodium.cryptoSecretBoxOpenEasy(ciphertext.value(withPrefix = false), nonce.asByteArray(), key)
+        return ByteArray(message.size - SecretBox.MACBYTES).also {
+            assertOrFail("Could not decrypt the message with the shared key") {
+                secretBoxSodium.cryptoSecretBoxOpenEasy(it, ciphertext, ciphertext.size.toLong(), nonce, sharedKey)
+            }
+        }.trimNulls()
+    }
+
+    private fun ByteArray.trimNulls(): ByteArray = sodium.removeNulls(this)
+
+    private inline fun assertOrFail(message: String? = null, block: () -> Boolean) {
+        if (!block()) throw SodiumException(message)
     }
 }
