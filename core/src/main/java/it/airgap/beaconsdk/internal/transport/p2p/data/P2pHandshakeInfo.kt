@@ -7,5 +7,5 @@ internal data class P2pHandshakeInfo(
     val name: String,
     val version: String,
     val publicKey: String,
-    val relayServer: String
+    val relayServer: String,
 )

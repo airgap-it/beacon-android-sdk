@@ -2,16 +2,14 @@ package it.airgap.beaconsdk.internal.transport.p2p
 
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
-import it.airgap.beaconsdk.internal.BeaconConfig
 import it.airgap.beaconsdk.internal.crypto.Crypto
 import it.airgap.beaconsdk.internal.crypto.data.KeyPair
 import it.airgap.beaconsdk.internal.crypto.data.SessionKeyPair
-import it.airgap.beaconsdk.internal.transport.p2p.matrix.MatrixClient
-import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.client.MatrixEvent
-import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.client.MatrixRoom
 import it.airgap.beaconsdk.internal.transport.p2p.data.P2pMessage
-import it.airgap.beaconsdk.internal.transport.p2p.data.P2pHandshakeInfo
+import it.airgap.beaconsdk.internal.transport.p2p.matrix.MatrixClient
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.api.event.MatrixEventResponse
+import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.MatrixEvent
+import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.MatrixRoom
 import it.airgap.beaconsdk.internal.transport.p2p.utils.P2pCommunicationUtils
 import it.airgap.beaconsdk.internal.transport.p2p.utils.P2pServerUtils
 import it.airgap.beaconsdk.internal.utils.*
@@ -19,13 +17,11 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import org.junit.Before
 import org.junit.Test
 import kotlin.test.assertEquals
 
-class P2pClientTest {
+internal class P2pClientTest {
 
     @MockK
     private lateinit var p2pServerUtils: P2pServerUtils
@@ -68,33 +64,33 @@ class P2pClientTest {
 
         every { crypto.hash(any<String>(), any()) } answers {
             val arg = firstArg<String>()
-            val bytes = HexString.fromStringOrNull(arg)?.asByteArray() ?: arg.toByteArray()
-            internalSuccess(bytes)
+            val bytes = HexString.fromStringOrNull(arg)?.asByteArray() ?: arg.encodeToByteArray()
+            Success(bytes)
         }
-        every { crypto.hash(any<HexString>(), any()) } answers { internalSuccess(firstArg<HexString>().asByteArray()) }
-        every { crypto.hash(any<ByteArray>(), any()) } answers { internalSuccess(firstArg()) }
+        every { crypto.hash(any<HexString>(), any()) } answers { Success(firstArg<HexString>().asByteArray()) }
+        every { crypto.hash(any<ByteArray>(), any()) } answers { Success(firstArg()) }
 
-        every { crypto.hashKey(any<HexString>()) } answers { internalSuccess(firstArg<HexString>().asByteArray()) }
-        every { crypto.hashKey(any<ByteArray>()) } answers { internalSuccess(firstArg()) }
+        every { crypto.hashKey(any<HexString>()) } answers { Success(firstArg<HexString>().asByteArray()) }
+        every { crypto.hashKey(any<ByteArray>()) } answers { Success(firstArg()) }
 
-        every { crypto.createServerSessionKeyPair(any(), any()) } answers { internalSuccess(SessionKeyPair(byteArrayOf(0), byteArrayOf(0))) }
-        every { crypto.createClientSessionKeyPair(any(), any()) } answers { internalSuccess(SessionKeyPair(byteArrayOf(0), byteArrayOf(0))) }
+        every { crypto.createServerSessionKeyPair(any(), any()) } answers { Success(SessionKeyPair(byteArrayOf(0), byteArrayOf(0))) }
+        every { crypto.createClientSessionKeyPair(any(), any()) } answers { Success(SessionKeyPair(byteArrayOf(0), byteArrayOf(0))) }
 
-        every { crypto.signMessageDetached(any<String>(), any()) } answers { internalSuccess(firstArg<String>().encodeToByteArray()) }
-        every { crypto.signMessageDetached(any<HexString>(), any()) } answers { internalSuccess(firstArg<HexString>().asByteArray()) }
-        every { crypto.signMessageDetached(any<ByteArray>(), any()) } answers { internalSuccess(firstArg()) }
+        every { crypto.signMessageDetached(any<String>(), any()) } answers { Success(firstArg<String>().encodeToByteArray()) }
+        every { crypto.signMessageDetached(any<HexString>(), any()) } answers { Success(firstArg<HexString>().asByteArray()) }
+        every { crypto.signMessageDetached(any<ByteArray>(), any()) } answers { Success(firstArg()) }
 
-        every { crypto.encryptMessageWithPublicKey(any<String>(), any()) } answers { internalSuccess(firstArg<String>().encodeToByteArray()) }
-        every { crypto.encryptMessageWithPublicKey(any<HexString>(), any()) } answers { internalSuccess(firstArg<HexString>().asByteArray()) }
-        every { crypto.encryptMessageWithPublicKey(any<ByteArray>(), any()) } answers { internalSuccess(firstArg()) }
+        every { crypto.encryptMessageWithPublicKey(any<String>(), any()) } answers { Success(firstArg<String>().encodeToByteArray()) }
+        every { crypto.encryptMessageWithPublicKey(any<HexString>(), any()) } answers { Success(firstArg<HexString>().asByteArray()) }
+        every { crypto.encryptMessageWithPublicKey(any<ByteArray>(), any()) } answers { Success(firstArg()) }
 
-        every { crypto.encryptMessageWithSharedKey(any<String>(), any()) } answers { internalSuccess(firstArg<String>().encodeToByteArray()) }
-        every { crypto.encryptMessageWithSharedKey(any<HexString>(), any()) } answers { internalSuccess(firstArg<HexString>().asByteArray()) }
-        every { crypto.encryptMessageWithSharedKey(any<ByteArray>(), any()) } answers { internalSuccess(firstArg()) }
+        every { crypto.encryptMessageWithSharedKey(any<String>(), any()) } answers { Success(firstArg<String>().encodeToByteArray()) }
+        every { crypto.encryptMessageWithSharedKey(any<HexString>(), any()) } answers { Success(firstArg<HexString>().asByteArray()) }
+        every { crypto.encryptMessageWithSharedKey(any<ByteArray>(), any()) } answers { Success(firstArg()) }
 
-        every { crypto.decryptMessageWithSharedKey(any<String>(), any()) } answers { internalSuccess(firstArg<String>().encodeToByteArray()) }
-        every { crypto.decryptMessageWithSharedKey(any<HexString>(), any()) } answers { internalSuccess(firstArg<HexString>().asByteArray()) }
-        every { crypto.decryptMessageWithSharedKey(any<ByteArray>(), any()) } answers { internalSuccess(firstArg()) }
+        every { crypto.decryptMessageWithSharedKey(any<String>(), any()) } answers { Success(firstArg<String>().encodeToByteArray()) }
+        every { crypto.decryptMessageWithSharedKey(any<HexString>(), any()) } answers { Success(firstArg<HexString>().asByteArray()) }
+        every { crypto.decryptMessageWithSharedKey(any<ByteArray>(), any()) } answers { Success(firstArg()) }
 
         p2pClient = P2pClient(
             appName,
@@ -129,7 +125,7 @@ class P2pClientTest {
 
         runBlocking {
             val expected = (messages1 + messages2).map { P2pMessage(publicKey.value(), it.message) }
-            val messages = p2pClient.subscribeTo(publicKey).mapNotNull { it.getOrNull() }.toList()
+            val messages = p2pClient.subscribeTo(publicKey).mapNotNull { it.valueOrNull() }.toList()
 
            assertEquals(expected.sortedBy { it.content }, messages.sortedBy { it.content })
         }
@@ -160,7 +156,7 @@ class P2pClientTest {
         runBlocking {
             val expected = subscribedMessages.map { P2pMessage(subscribedPublicKey.value(), it.message) }
             val messages = p2pClient.subscribeTo(subscribedPublicKey)
-                .mapNotNull { it.getOrNull() }.toList()
+                .mapNotNull { it.valueOrNull() }.toList()
 
             assertEquals(expected.sortedBy { it.content }, messages.sortedBy { it.content })
         }
@@ -190,7 +186,7 @@ class P2pClientTest {
 
         runBlocking {
             val expected = validMessages.map { P2pMessage(publicKey.value(), it.message) }
-            val messages = p2pClient.subscribeTo(publicKey).mapNotNull { it.getOrNull() }.toList()
+            val messages = p2pClient.subscribeTo(publicKey).mapNotNull { it.valueOrNull() }.toList()
 
             assertEquals(expected.sortedBy { it.content }, messages.sortedBy { it.content })
         }
@@ -227,7 +223,7 @@ class P2pClientTest {
 
         runBlocking {
             val expected = (textMessages1 + testMessages2).map { P2pMessage(publicKey.value(), it.message) }
-            val messages = p2pClient.subscribeTo(publicKey).mapNotNull { it.getOrNull() }.toList()
+            val messages = p2pClient.subscribeTo(publicKey).mapNotNull { it.valueOrNull() }.toList()
 
             assertEquals(expected.sortedBy { it.content }, messages.sortedBy { it.content })
         }
@@ -238,10 +234,10 @@ class P2pClientTest {
         every { p2pServerUtils.getRelayServer(any<ByteArray>(), any()) } returns ""
         every { p2pServerUtils.getRelayServer(any<HexString>(), any()) } returns ""
 
-        every { p2pCommunicationUtils.getRecipientIdentifier(any(), any()) } answers { firstArg<HexString>().value() }
+        every { p2pCommunicationUtils.recipientIdentifier(any(), any()) } answers { firstArg<HexString>().value() }
 
-        coEvery { matrixClient1.sendTextMessage(any<MatrixRoom>(), any()) } returns internalSuccess(MatrixEventResponse())
-        coEvery { matrixClient2.sendTextMessage(any<MatrixRoom>(), any()) } returns internalSuccess(MatrixEventResponse())
+        coEvery { matrixClient1.sendTextMessage(any<MatrixRoom>(), any()) } returns Success(MatrixEventResponse())
+        coEvery { matrixClient2.sendTextMessage(any<MatrixRoom>(), any()) } returns Success(MatrixEventResponse())
 
         val publicKey = HexString.fromString("0x00")
         val otherPublicKey = HexString.fromString("0x01")
@@ -263,24 +259,27 @@ class P2pClientTest {
 
     @Test
     fun `sends pairing request to matrix clients`() {
-        every { p2pCommunicationUtils.getRecipientIdentifier(any(), any()) } answers {
+        every { p2pCommunicationUtils.recipientIdentifier(any(), any()) } answers {
             "${firstArg<HexString>().value()}:${secondArg<String>()}"
         }
 
-        every { p2pCommunicationUtils.createOpenChannelMessage(any(), any()) } answers {
+        val pairingPayload = "pairingPayload"
+        every { p2pCommunicationUtils.pairingPayload(any(), any(), any(), any()) } returns pairingPayload
+
+        every { p2pCommunicationUtils.channelOpeningMessage(any(), any()) } answers {
             "@channel-open:${firstArg<String>()}:${secondArg<String>()}"
         }
 
         coEvery { matrixClient1.joinedRooms() } returns emptyList()
         coEvery { matrixClient2.joinedRooms() } returns emptyList()
 
-        coEvery { matrixClient1.sendTextMessage(any<MatrixRoom>(), any()) } returns internalSuccess(MatrixEventResponse())
-        coEvery { matrixClient2.sendTextMessage(any<MatrixRoom>(), any()) } returns internalSuccess(MatrixEventResponse())
+        coEvery { matrixClient1.sendTextMessage(any<MatrixRoom>(), any()) } returns Success(MatrixEventResponse())
+        coEvery { matrixClient2.sendTextMessage(any<MatrixRoom>(), any()) } returns Success(MatrixEventResponse())
 
         val newRoom = MatrixRoom.Unknown("room1", emptyList())
 
-        coEvery { matrixClient1.createTrustedPrivateRoom(any()) } returns internalSuccess(newRoom)
-        coEvery { matrixClient2.createTrustedPrivateRoom(any()) } returns internalSuccess(newRoom)
+        coEvery { matrixClient1.createTrustedPrivateRoom(any()) } returns Success(newRoom)
+        coEvery { matrixClient2.createTrustedPrivateRoom(any()) } returns Success(newRoom)
 
         val publicKey = HexString.fromString("0x00")
         val relayServer = "relay_server"
@@ -289,23 +288,10 @@ class P2pClientTest {
         every { p2pServerUtils.getRelayServer(any<ByteArray>(), any()) } returns clientRelayServer
         every { p2pServerUtils.getRelayServer(any<HexString>(), any()) } returns clientRelayServer
 
-        runBlocking { p2pClient.sendPairingRequest(publicKey, relayServer) }
+        runBlocking { p2pClient.sendPairingRequest(publicKey, relayServer, null) }
 
         val expectedRecipient = "${publicKey.value()}:$relayServer"
-        val expectedPayload = keyPair.publicKey
-            .asHexString()
-            .value()
-            .encodeToHexString()
-            .value()
-
-        // TODO: v2
-//        val expectedPayload = Json.encodeToString(P2pHandshakeInfo(
-//            appName,
-//            BeaconConfig.versionName,
-//            keyPair.publicKey.asHexString().value(),
-//            clientRelayServer
-//        )).encodeToByteArray().asHexString().value()
-
+        val expectedPayload = pairingPayload.encodeToByteArray().asHexString().value()
         val expectedMessage = "@channel-open:$expectedRecipient:$expectedPayload"
 
         coVerify(exactly = 1) { matrixClient1.sendTextMessage(newRoom, expectedMessage) }

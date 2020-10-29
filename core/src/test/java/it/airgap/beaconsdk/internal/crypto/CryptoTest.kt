@@ -8,7 +8,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 
-class CryptoTest {
+internal class CryptoTest {
     @MockK
     private lateinit var cryptoProvider: CryptoProvider
 
@@ -24,7 +24,7 @@ class CryptoTest {
         val crypto = Crypto(cryptoProvider)
         val seed = crypto.generateRandomSeed()
 
-        assertEquals("00010203-0405-0607-0809-0a0b0c0d0e0f", seed.getOrThrow())
+        assertEquals("00010203-0405-0607-0809-0a0b0c0d0e0f", seed.value())
     }
 
     // Crypto#getKeyPairFromSeed correctness heavily depends on a provider

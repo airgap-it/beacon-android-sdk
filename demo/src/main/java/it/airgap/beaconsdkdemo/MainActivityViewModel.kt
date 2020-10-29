@@ -2,8 +2,8 @@ package it.airgap.beaconsdkdemo
 
 import androidx.lifecycle.*
 import it.airgap.beaconsdk.client.BeaconClient
-import it.airgap.beaconsdk.data.p2p.P2pPeerInfo
-import it.airgap.beaconsdk.message.BeaconMessage
+import it.airgap.beaconsdk.data.beacon.P2pPeerInfo
+import it.airgap.beaconsdk.message.*
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -14,7 +14,7 @@ class MainActivityViewModel : ViewModel() {
         get() = _state
 
     private var beaconClient: BeaconClient? = null
-    private var awaitingRequest: BeaconMessage.Request? = null
+    private var awaitingRequest: BeaconRequest? = null
 
     fun startBeacon(): LiveData<Result<BeaconMessage>> = liveData {
         beaconClient = BeaconClient("Beacon SDK Demo")
@@ -30,16 +30,16 @@ class MainActivityViewModel : ViewModel() {
 
         viewModelScope.launch {
             val response = when (request) {
-                is BeaconMessage.Request.Permission ->
-                    BeaconMessage.Response.Permission(
+                is PermissionBeaconRequest ->
+                    PermissionBeaconResponse(
                         request.id,
                         exampleTezosPublicKey,
                         request.network,
                         request.scopes,
                     )
-                is BeaconMessage.Request.Operation -> TODO()
-                is BeaconMessage.Request.SignPayload -> TODO()
-                is BeaconMessage.Request.Broadcast -> TODO()
+                is OperationBeaconRequest -> TODO()
+                is SignPayloadBeaconRequest -> TODO()
+                is BroadcastBeaconRequest -> TODO()
             }
             beaconClient?.respond(response)
             removeAwaitingRequest()
@@ -74,7 +74,7 @@ class MainActivityViewModel : ViewModel() {
     }
 
     private fun saveAwaitingRequest(message: BeaconMessage) {
-        awaitingRequest = if (message is BeaconMessage.Request) message else null
+        awaitingRequest = if (message is BeaconRequest) message else null
         checkForAwaitingRequest()
     }
 

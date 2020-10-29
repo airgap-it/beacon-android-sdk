@@ -21,19 +21,19 @@ internal class TezosProtocol(private val crypto: Crypto, private val base58Check
         }
 
     private fun publicKeyFromEncrypted(encrypted: String): ByteArray {
-        val decoded = base58Check.decode(encrypted).getOrThrow()
+        val decoded = base58Check.decode(encrypted).value()
 
         return decoded.sliceArray(PREFIX_ENCRYPTED_PUBLIC_KEY.length until decoded.size)
     }
 
     private fun String.isPlainPublicKey(): Boolean = ((length == 64 || length == 66) && isHex())
-    private fun String.isEncryptedPublicKey(): Boolean = (length == 54 && startsWith(PREFIX_ENCRYPTED_PUBLIC_KEY))
+    private fun String.isEncryptedPublicKey(): Boolean =
+        (length == 54 && startsWith(PREFIX_ENCRYPTED_PUBLIC_KEY))
 
-    private fun failWithInvalidPublicKey(): Nothing = throw IllegalArgumentException(ERROR_MESSAGE_INVALID_PUBLIC_KEY)
+    private fun failWithInvalidPublicKey(): Nothing =
+        throw IllegalArgumentException("Public key is invalid, expected a plain hex string or encrypted key")
 
     companion object {
         private const val PREFIX_ENCRYPTED_PUBLIC_KEY = "edpk"
-
-        private const val ERROR_MESSAGE_INVALID_PUBLIC_KEY = "Public key is invalid, expected a plain hex string or encrypted key"
     }
 }

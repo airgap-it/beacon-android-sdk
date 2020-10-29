@@ -1,10 +1,11 @@
 package it.airgap.beaconsdk.data.tezos
 
 import it.airgap.beaconsdk.internal.utils.failWithExpectedJsonDecoder
+import it.airgap.beaconsdk.internal.utils.failWithMissingField
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Required
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -14,133 +15,207 @@ import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
-@Serializable
-sealed class TezosOperation(internal val kind: Kind) {
+@Serializable(with = TezosOperation.Serializer::class)
+public sealed class TezosOperation {
+    internal abstract val kind: Kind
+
     @Serializable
-    data class ActivateAccount(val pkh: String, val secret: String) : TezosOperation(Kind.ActivateAccount) {
-        companion object {}
+    public data class ActivateAccount(
+        public val pkh: String,
+        public val secret: String,
+    ) : TezosOperation() {
+        @Required
+        override val kind: Kind = Kind.ActivateAccount
+
+        public companion object {}
     }
 
     @Serializable
-    data class Ballot(val source: String, val period: String, val proposal: String, val ballot: Type) : TezosOperation(Kind.Ballot) {
+    public data class Ballot(
+        public val source: String,
+        public val period: String,
+        public val proposal: String,
+        public val ballot: Type,
+    ) : TezosOperation() {
+        @Required
+        override val kind: Kind = Kind.Ballot
 
         @Serializable
-        enum class Type {
-            @SerialName("nay") Nay,
-            @SerialName("yay") Yay,
-            @SerialName("pass") Pass,
+        public enum class Type {
+            @SerialName("nay")
+            Nay,
+
+            @SerialName("yay")
+            Yay,
+
+            @SerialName("pass")
+            Pass,
         }
 
-        companion object {}
+        public companion object {}
     }
 
     @Serializable
-    data class Delegation(
-        val source: String,
-        val fee: String,
-        val counter: String,
-        @SerialName("gas_limit") val gasLimit: String,
-        @SerialName("storage_limit") val storageLimit: String,
-        val delegate: String?
-    ) : TezosOperation(Kind.Delegation) {
-        companion object {}
+    public data class Delegation(
+        public val source: String,
+        public val fee: String,
+        public val counter: String,
+        @SerialName("gas_limit") public val gasLimit: String,
+        @SerialName("storage_limit") public val storageLimit: String,
+        public val delegate: String?,
+    ) : TezosOperation() {
+        @Required
+        override val kind: Kind = Kind.Delegation
+
+        public companion object {}
     }
 
     @Serializable
-    data class DoubleBakingEvidence(
-        val bh1: TezosBlockHeader,
-        val bh2: TezosBlockHeader
-    ) : TezosOperation(Kind.DoubleBakingEvidence) {
-        companion object {}
+    public data class DoubleBakingEvidence(
+        public val bh1: TezosBlockHeader,
+        public val bh2: TezosBlockHeader,
+    ) : TezosOperation() {
+        @Required
+        override val kind: Kind = Kind.DoubleBakingEvidence
+
+        public companion object {}
     }
 
     @Serializable
-    data class Endorsement(val level: String) : TezosOperation(Kind.Endorsement) {
-        companion object {}
+    public data class Endorsement(public val level: String) : TezosOperation() {
+        @Required
+        override val kind: Kind = Kind.Endorsement
+
+        public companion object {}
     }
 
     @Serializable
-    data class DoubleEndorsementEvidence(
-        val op1: TezosInlinedEndorsement,
-        val op2: TezosInlinedEndorsement
-    ) : TezosOperation(Kind.DoubleEndorsementEvidence) {
-        companion object {}
+    public data class DoubleEndorsementEvidence(
+        public val op1: TezosInlinedEndorsement,
+        public val op2: TezosInlinedEndorsement,
+    ) : TezosOperation() {
+        @Required
+        override val kind: Kind = Kind.DoubleEndorsementEvidence
+
+        public companion object {}
     }
 
     @Serializable
-    data class Origination(
-        val source: String,
-        val fee: String,
-        val counter: String,
-        @SerialName("gas_limit") val gasLimit: String,
-        @SerialName("storage_limit") val storageLimit: String,
-        val balance: String,
-        val script: String,
-        val delegate: String?,
-    ) : TezosOperation(Kind.Origination) {
-        companion object {}
+    public data class Origination(
+        public val source: String,
+        public val fee: String,
+        public val counter: String,
+        @SerialName("gas_limit") public val gasLimit: String,
+        @SerialName("storage_limit") public val storageLimit: String,
+        public val balance: String,
+        public val script: String,
+        public val delegate: String?,
+    ) : TezosOperation() {
+        @Required
+        override val kind: Kind = Kind.Origination
+
+        public companion object {}
     }
 
     @Serializable
-    data class Proposals(val period: String, val proposals: List<String>) : TezosOperation(Kind.Proposals) {
-        companion object {}
+    public data class Proposals(
+        public val period: String,
+        public val proposals: List<String>,
+    ) : TezosOperation() {
+        @Required
+        override val kind: Kind = Kind.Proposals
+
+        public companion object {}
     }
 
     @Serializable
-    data class Reveal(
-        val source: String,
-        val fee: String,
-        val counter: String,
-        @SerialName("gas_limit") val gasLimit: String,
-        @SerialName("storage_limit") val storageLimit: String,
-        val publicKey: String
-    ) : TezosOperation(Kind.Reveal) {
-        companion object {}
+    public data class Reveal(
+        public val source: String,
+        public val fee: String,
+        public val counter: String,
+        @SerialName("gas_limit") public val gasLimit: String,
+        @SerialName("storage_limit") public val storageLimit: String,
+        public val publicKey: String,
+    ) : TezosOperation() {
+        @Required
+        override val kind: Kind = Kind.Reveal
+
+        public companion object {}
     }
 
     @Serializable
-    data class SeedNonceRevelation(val level: String, val nonce: String) : TezosOperation(Kind.SeedNonceRevelation) {
-        companion object {}
+    public data class SeedNonceRevelation(public val level: String, public val nonce: String) :
+        TezosOperation() {
+        @Required
+        override val kind: Kind = Kind.SeedNonceRevelation
+
+        public companion object {}
     }
 
     @Serializable
-    data class Transaction(
-        val source: String,
-        val fee: String,
-        val counter: String,
-        @SerialName("gas_limit") val gasLimit: String,
-        @SerialName("storage_limit") val storageLimit: String,
-        val amount: String,
-        val destination: String,
-        val parameters: Parameters
-    ) : TezosOperation(Kind.Transaction) {
+    public data class Transaction(
+        public val source: String,
+        public val fee: String,
+        public val counter: String,
+        @SerialName("gas_limit") public val gasLimit: String,
+        @SerialName("storage_limit") public val storageLimit: String,
+        public val amount: String,
+        public val destination: String,
+        public val parameters: Parameters,
+    ) : TezosOperation() {
+        @Required
+        override val kind: Kind = Kind.Transaction
 
         @Serializable
-        data class Parameters(val entrypoint: String, val value: MichelineMichelsonV1Expression) {
-            companion object {}
+        public data class Parameters(
+            public val entrypoint: String,
+            public val value: MichelineMichelsonV1Expression,
+        ) {
+            public companion object {}
         }
 
-        companion object {}
+        public companion object {}
     }
 
-    companion object {}
+    public companion object {}
 
     @Serializable
     internal enum class Kind {
-        @SerialName("endorsement") Endorsement,
-        @SerialName("seed_nonce_revelation") SeedNonceRevelation,
-        @SerialName("double_endorsement_evidence") DoubleEndorsementEvidence,
-        @SerialName("double_baking_evidence") DoubleBakingEvidence,
-        @SerialName("activate_account") ActivateAccount,
-        @SerialName("proposals") Proposals,
-        @SerialName("ballot") Ballot,
-        @SerialName("reveal") Reveal,
-        @SerialName("transaction") Transaction,
-        @SerialName("origination") Origination,
-        @SerialName("delegation") Delegation,
+        @SerialName("endorsement")
+        Endorsement,
+
+        @SerialName("seed_nonce_revelation")
+        SeedNonceRevelation,
+
+        @SerialName("double_endorsement_evidence")
+        DoubleEndorsementEvidence,
+
+        @SerialName("double_baking_evidence")
+        DoubleBakingEvidence,
+
+        @SerialName("activate_account")
+        ActivateAccount,
+
+        @SerialName("proposals")
+        Proposals,
+
+        @SerialName("ballot")
+        Ballot,
+
+        @SerialName("reveal")
+        Reveal,
+
+        @SerialName("transaction")
+        Transaction,
+
+        @SerialName("origination")
+        Origination,
+
+        @SerialName("delegation")
+        Delegation,
     }
 
-    class Serializer : KSerializer<TezosOperation> {
+    internal class Serializer : KSerializer<TezosOperation> {
         override val descriptor: SerialDescriptor =
             PrimitiveSerialDescriptor("TezosOperation", PrimitiveKind.STRING)
 
@@ -149,8 +224,9 @@ sealed class TezosOperation(internal val kind: Kind) {
             val jsonElement = jsonDecoder.decodeJsonElement()
 
             val kindField = "kind"
-            val kindSerialized = jsonElement.jsonObject[kindField]?.jsonPrimitive?.content ?: failWithMissingField(kindField)
-            val kind = jsonDecoder.json.decodeFromString(Kind.serializer(), kindSerialized)
+            val kindSerialized =
+                jsonElement.jsonObject[kindField]?.jsonPrimitive ?: failWithMissingField(kindField)
+            val kind = jsonDecoder.json.decodeFromJsonElement(Kind.serializer(), kindSerialized)
 
             return when (kind) {
                 Kind.ActivateAccount -> jsonDecoder.json.decodeFromJsonElement(ActivateAccount.serializer(), jsonElement)
@@ -182,9 +258,6 @@ sealed class TezosOperation(internal val kind: Kind) {
                 is Transaction -> encoder.encodeSerializableValue(Transaction.serializer(), value)
             }
         }
-
-        private fun failWithMissingField(name: String): Nothing =
-            throw SerializationException("Could not deserialize, `$name` field is missing")
 
     }
 }

@@ -49,22 +49,36 @@ internal class Crypto(private val cryptoProvider: CryptoProvider) {
             cryptoProvider.getEd25519KeyPairFromSeed(seedHash)
         }
 
-    fun createServerSessionKeyPair(publicKey: ByteArray, privateKey: ByteArray): InternalResult<SessionKeyPair> =
+    fun createServerSessionKeyPair(
+        publicKey: ByteArray,
+        privateKey: ByteArray,
+    ): InternalResult<SessionKeyPair> =
         tryResult {
             val serverPublicKey = cryptoProvider.convertEd25519PublicKeyToCurve25519(privateKey.sliceArray(32 until 64))
             val serverPrivateKey = cryptoProvider.convertEd25519PrivateKeyToCurve25519(privateKey)
             val clientPublicKey = cryptoProvider.convertEd25519PublicKeyToCurve25519(publicKey)
 
-            cryptoProvider.createServerSessionKeyPair(serverPublicKey, serverPrivateKey, clientPublicKey)
+            cryptoProvider.createServerSessionKeyPair(
+                serverPublicKey,
+                serverPrivateKey,
+                clientPublicKey,
+            )
         }
 
-    fun createClientSessionKeyPair(publicKey: ByteArray, privateKey: ByteArray): InternalResult<SessionKeyPair> =
+    fun createClientSessionKeyPair(
+        publicKey: ByteArray,
+        privateKey: ByteArray,
+    ): InternalResult<SessionKeyPair> =
         tryResult {
             val serverPublicKey = cryptoProvider.convertEd25519PublicKeyToCurve25519(privateKey.sliceArray(32 until 64))
             val serverPrivateKey = cryptoProvider.convertEd25519PrivateKeyToCurve25519(privateKey)
             val clientPublicKey = cryptoProvider.convertEd25519PublicKeyToCurve25519(publicKey)
 
-            cryptoProvider.createClientSessionKeyPair(serverPublicKey, serverPrivateKey, clientPublicKey)
+            cryptoProvider.createClientSessionKeyPair(
+                serverPublicKey,
+                serverPrivateKey,
+                clientPublicKey,
+            )
         }
 
     fun signMessageDetached(message: String, privateKey: ByteArray): InternalResult<ByteArray> =
@@ -81,40 +95,79 @@ internal class Crypto(private val cryptoProvider: CryptoProvider) {
 
     fun validateEncryptedMessage(encrypted: String): Boolean = cryptoProvider.validateMessage(encrypted)
 
-    fun encryptMessageWithPublicKey(message: String, publicKey: ByteArray): InternalResult<ByteArray> =
+    fun encryptMessageWithPublicKey(
+        message: String,
+        publicKey: ByteArray,
+    ): InternalResult<ByteArray> =
         flatTryResult { encryptMessageWithPublicKey(message.encodeToByteArray(), publicKey) }
 
-    fun encryptMessageWithPublicKey(message: HexString, publicKey: ByteArray): InternalResult<ByteArray> =
+    fun encryptMessageWithPublicKey(
+        message: HexString,
+        publicKey: ByteArray,
+    ): InternalResult<ByteArray> =
         flatTryResult { encryptMessageWithPublicKey(message.asByteArray(), publicKey) }
 
-    fun encryptMessageWithPublicKey(message: ByteArray, publicKey: ByteArray): InternalResult<ByteArray> =
+    fun encryptMessageWithPublicKey(
+        message: ByteArray,
+        publicKey: ByteArray,
+    ): InternalResult<ByteArray> =
         tryResult { cryptoProvider.encryptMessageWithPublicKey(message, publicKey) }
 
-    fun decryptMessageWithKeyPair(message: String, publicKey: ByteArray, privateKey: ByteArray): InternalResult<ByteArray> =
+    fun decryptMessageWithKeyPair(
+        message: String,
+        publicKey: ByteArray,
+        privateKey: ByteArray,
+    ): InternalResult<ByteArray> =
         flatTryResult { decryptMessageWithKeyPair(message.encodeToByteArray(), publicKey, privateKey) }
 
-    fun decryptMessageWithKeyPair(message: HexString, publicKey: ByteArray, privateKey: ByteArray): InternalResult<ByteArray> =
+    fun decryptMessageWithKeyPair(
+        message: HexString,
+        publicKey: ByteArray,
+        privateKey: ByteArray,
+    ): InternalResult<ByteArray> =
         flatTryResult { decryptMessageWithKeyPair(message.asByteArray(), publicKey, privateKey) }
 
-    fun decryptMessageWithKeyPair(message: ByteArray, publicKey: ByteArray, privateKey: ByteArray): InternalResult<ByteArray> =
+    fun decryptMessageWithKeyPair(
+        message: ByteArray,
+        publicKey: ByteArray,
+        privateKey: ByteArray,
+    ): InternalResult<ByteArray> =
         tryResult { cryptoProvider.decryptMessageWithKeyPair(message, publicKey, privateKey) }
 
-    fun encryptMessageWithSharedKey(message: String, sharedKey: ByteArray): InternalResult<ByteArray> =
+    fun encryptMessageWithSharedKey(
+        message: String,
+        sharedKey: ByteArray,
+    ): InternalResult<ByteArray> =
         flatTryResult { encryptMessageWithSharedKey(message.encodeToByteArray(), sharedKey) }
 
-    fun encryptMessageWithSharedKey(message: HexString, sharedKey: ByteArray): InternalResult<ByteArray> =
+    fun encryptMessageWithSharedKey(
+        message: HexString,
+        sharedKey: ByteArray,
+    ): InternalResult<ByteArray> =
         flatTryResult { encryptMessageWithSharedKey(message.asByteArray(), sharedKey) }
 
-    fun encryptMessageWithSharedKey(message: ByteArray, sharedKey: ByteArray): InternalResult<ByteArray> =
+    fun encryptMessageWithSharedKey(
+        message: ByteArray,
+        sharedKey: ByteArray,
+    ): InternalResult<ByteArray> =
         tryResult { cryptoProvider.encryptMessageWithSharedKey(message, sharedKey) }
 
-    fun decryptMessageWithSharedKey(message: String, sharedKey: ByteArray): InternalResult<ByteArray> =
+    fun decryptMessageWithSharedKey(
+        message: String,
+        sharedKey: ByteArray,
+    ): InternalResult<ByteArray> =
         flatTryResult { decryptMessageWithSharedKey(message.encodeToByteArray(), sharedKey) }
 
-    fun decryptMessageWithSharedKey(message: HexString, sharedKey: ByteArray): InternalResult<ByteArray> =
+    fun decryptMessageWithSharedKey(
+        message: HexString,
+        sharedKey: ByteArray,
+    ): InternalResult<ByteArray> =
         flatTryResult { decryptMessageWithSharedKey(message.asByteArray(), sharedKey) }
 
-    fun decryptMessageWithSharedKey(message: ByteArray, sharedKey: ByteArray): InternalResult<ByteArray> =
+    fun decryptMessageWithSharedKey(
+        message: ByteArray,
+        sharedKey: ByteArray,
+    ): InternalResult<ByteArray> =
         tryResult { cryptoProvider.decryptMessageWithSharedKey(message, sharedKey) }
 
     companion object {

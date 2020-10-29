@@ -35,6 +35,10 @@ android {
             buildConfigField("String", "VERSION_NAME", "\"${defaultConfig.versionName}-mock\"")
         }
     }
+
+    kotlinOptions {
+        freeCompilerArgs += '-Xexplicit-api=warning'
+    }
 }
 
 dependencies {

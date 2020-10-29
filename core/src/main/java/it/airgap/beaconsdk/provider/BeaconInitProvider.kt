@@ -4,18 +4,17 @@ import android.content.ContentProvider
 import android.content.ContentValues
 import android.database.Cursor
 import android.net.Uri
-import android.util.Log
 import it.airgap.beaconsdk.internal.BeaconApp
+import it.airgap.beaconsdk.internal.utils.logInfo
 
-class BeaconInitProvider : ContentProvider() {
+public class BeaconInitProvider : ContentProvider() {
     override fun onCreate(): Boolean {
         context?.let {
-            BeaconApp.init(it)
-            Log.i(TAG, "BeaconApp initialized")
+            BeaconApp.create(it)
+            logInfo(TAG, "BeaconApp created")
         } ?: run {
-            Log.i(TAG, "BeaconApp could not be initialized")
+            logInfo(TAG, "BeaconApp could not be created")
         }
-
 
         return false
     }
@@ -25,8 +24,9 @@ class BeaconInitProvider : ContentProvider() {
         projection: Array<out String>?,
         selection: String?,
         selectionArgs: Array<out String>?,
-        sortOrder: String?
+        sortOrder: String?,
     ): Cursor? = null
+
     override fun getType(uri: Uri): String? = null
     override fun insert(uri: Uri, values: ContentValues?): Uri? = null
     override fun delete(uri: Uri, selection: String?, selectionArgs: Array<out String>?): Int = 0
@@ -34,10 +34,10 @@ class BeaconInitProvider : ContentProvider() {
         uri: Uri,
         values: ContentValues?,
         selection: String?,
-        selectionArgs: Array<out String>?
+        selectionArgs: Array<out String>?,
     ): Int = 0
 
-    companion object {
+    private companion object {
         private const val TAG = "BeaconInitProvider"
     }
 }
