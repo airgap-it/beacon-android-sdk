@@ -51,7 +51,7 @@ internal class Base58Check(private val crypto: Crypto) {
     }
 
     private fun createChecksum(bytes: ByteArray): ByteArray {
-        val hash = crypto.hashSha256(crypto.hashSha256(bytes).getOrThrow()).getOrThrow()
+        val hash = crypto.hashSha256(crypto.hashSha256(bytes).value()).value()
 
         return hash.sliceArray(0 until 4)
     }
@@ -72,13 +72,10 @@ internal class Base58Check(private val crypto: Crypto) {
         return base58ToBigInteger(acc * biAlphabet + reminder, next.tail())
     }
 
-    private fun failWithInvalidString(): Nothing = throw IllegalArgumentException(ERROR_MESSAGE_INVALID_BASE58_STRING)
-    private fun failWithInvalidChecksum(): Nothing = throw IllegalArgumentException(ERROR_MESSAGE_INVALID_CHECKSUM)
+    private fun failWithInvalidString(): Nothing = throw IllegalArgumentException("Base58Check string contains invalid characters")
+    private fun failWithInvalidChecksum(): Nothing = throw IllegalArgumentException("Base58Check checksum is invalid")
 
     companion object {
         private const val ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
-
-        private const val ERROR_MESSAGE_INVALID_BASE58_STRING = "Base58Check string contains invalid characters"
-        private const val ERROR_MESSAGE_INVALID_CHECKSUM = "Base58Check checksum is invalid"
     }
 }

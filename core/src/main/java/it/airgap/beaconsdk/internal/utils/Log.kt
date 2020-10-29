@@ -5,6 +5,10 @@ import java.util.*
 
 private const val GLOBAL_TAG = "[Beacon SDK]"
 
+internal fun logInfo(tag: String, message: String) {
+    Log.i("$GLOBAL_TAG $tag", message.capitalize(Locale.ROOT))
+}
+
 internal fun logDebug(tag: String, message: String) {
     Log.d("$GLOBAL_TAG $tag", message.capitalize(Locale.ROOT))
 }

@@ -11,11 +11,14 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.single
 
-//@ExperimentalCoroutinesApi
 internal class MatrixEventService(private val httpClient: HttpClient) {
     private val ongoingRequests: MutableMap<String, Flow<InternalResult<*>>> = mutableMapOf()
 
-    suspend fun sync(accessToken: String, since: String? = null, timeout: Long? = null): InternalResult<MatrixSyncResponse> {
+    suspend fun sync(
+        accessToken: String,
+        since: String? = null,
+        timeout: Long? = null,
+    ): InternalResult<MatrixSyncResponse> {
         val parameters = mutableListOf<HttpParameter>().apply {
             since?.let { add("since" to it) }
             timeout?.let { add("timeout" to it.toString()) }
@@ -36,7 +39,7 @@ internal class MatrixEventService(private val httpClient: HttpClient) {
         roomId: String,
         eventType: String,
         txnId: String,
-        content: T
+        content: T,
     ): InternalResult<MatrixEventResponse> =
         httpClient.put<T, MatrixEventResponse>(
             "/rooms/$roomId/send/$eventType/$txnId",
@@ -47,7 +50,7 @@ internal class MatrixEventService(private val httpClient: HttpClient) {
     @Suppress("UNCHECKED_CAST")
     private inline fun <T : Any> getOngoingOrRun(
         name: String,
-        action: () -> Flow<InternalResult<T>>
+        action: () -> Flow<InternalResult<T>>,
     ): Flow<InternalResult<T>> = ongoingRequests.getOrPut(name) {
         action().onCompletion { ongoingRequests.remove(name) }
     } as Flow<InternalResult<T>>

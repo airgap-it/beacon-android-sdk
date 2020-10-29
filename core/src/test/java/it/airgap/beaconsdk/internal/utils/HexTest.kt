@@ -5,7 +5,7 @@ import org.junit.Test
 import java.math.BigInteger
 import kotlin.test.assertFailsWith
 
-class HexTest {
+internal class HexTest {
 
     private val hexPrefix: String = "0x"
     private val validHexStrings: List<String> = listOf(

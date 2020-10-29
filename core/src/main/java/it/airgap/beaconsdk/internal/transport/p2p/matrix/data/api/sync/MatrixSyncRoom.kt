@@ -7,11 +7,24 @@ import kotlinx.serialization.Serializable
 internal sealed class MatrixSyncRoom {
 
     @Serializable
-    data class Joined(val state: MatrixSyncState? = null, val timeline: MatrixSyncTimeline? = null) : MatrixSyncRoom()
+    @SerialName("joined")
+    data class Joined(
+        val state: MatrixSyncState? = null,
+        val timeline: MatrixSyncTimeline? = null,
+    ) : MatrixSyncRoom()
 
     @Serializable
-    data class Invited(@SerialName("invite_state") val state: MatrixSyncState? = null): MatrixSyncRoom()
+    @SerialName("invited")
+    data class Invited(@SerialName("invite_state") val state: MatrixSyncState? = null) : MatrixSyncRoom()
 
     @Serializable
-    data class Left(val state: MatrixSyncState? = null, val timeline: MatrixSyncTimeline? = null): MatrixSyncRoom()
+    @SerialName("left")
+    data class Left(val state: MatrixSyncState? = null, val timeline: MatrixSyncTimeline? = null) : MatrixSyncRoom()
 }
+
+@Serializable
+internal data class MatrixSyncRooms(
+    val join: Map<String, MatrixSyncRoom.Joined>? = null,
+    val invite: Map<String, MatrixSyncRoom.Invited>? = null,
+    val leave: Map<String, MatrixSyncRoom.Left>? = null,
+)

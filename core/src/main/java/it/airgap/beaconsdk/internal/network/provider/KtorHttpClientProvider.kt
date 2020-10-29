@@ -82,9 +82,8 @@ internal class KtorHttpClientProvider(baseUrl: String) : HttpClientProvider(base
         httpParameters: List<HttpParameter>,
         responseClass: KClass<T>,
         timeoutMillis: Long?,
-        block: HttpRequestBuilder.() -> Unit = {}): T
-    {
-
+        block: HttpRequestBuilder.() -> Unit = {},
+    ): T {
         val response = ktorClient.request<String> {
             this.method = method
             url(apiUrl(endpoint))

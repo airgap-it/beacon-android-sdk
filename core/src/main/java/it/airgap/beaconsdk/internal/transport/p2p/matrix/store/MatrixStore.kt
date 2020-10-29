@@ -1,23 +1,22 @@
 package it.airgap.beaconsdk.internal.transport.p2p.matrix.store
 
-import it.airgap.beaconsdk.internal.storage.ExtendedStorage
-import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.client.MatrixEvent
-import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.client.MatrixRoom
-import it.airgap.beaconsdk.internal.transport.p2p.matrix.store.MatrixStoreAction.*
+import it.airgap.beaconsdk.internal.storage.decorator.DecoratedExtendedStorage
+import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.MatrixEvent
+import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.MatrixRoom
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-internal class MatrixStore(private val storage: ExtendedStorage) {
+internal class MatrixStore(private val storage: DecoratedExtendedStorage) {
     private val _events: MutableSharedFlow<MatrixEvent> = MutableSharedFlow(extraBufferCapacity = 64)
     val events: Flow<MatrixEvent>
         get() = _events
 
-    private var state: MatrixState = MatrixState()
+    private var state: MatrixStoreState = MatrixStoreState()
     private val stateMutex: Mutex = Mutex()
 
-    suspend fun state(): MatrixState = stateMutex.withLock { state }
+    suspend fun state(): MatrixStoreState = stateMutex.withLock { state }
 
     suspend fun intent(action: MatrixStoreAction) {
         stateMutex.withLock {
@@ -42,7 +41,7 @@ internal class MatrixStore(private val storage: ExtendedStorage) {
 
                     events?.filterNotNull()?.forEach { _events.tryEmit(it) }
 
-                    with (storage) {
+                    with(storage) {
                         action.syncToken?.let { setMatrixSyncToken(it) }
                         mergedRooms?.values?.toList()?.let { setMatrixRooms(it) }
                     }

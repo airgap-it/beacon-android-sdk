@@ -8,7 +8,6 @@ import com.goterl.lazycode.lazysodium.utils.Key
 import it.airgap.beaconsdk.internal.crypto.data.KeyPair
 import it.airgap.beaconsdk.internal.crypto.data.SessionKeyPair
 import it.airgap.beaconsdk.internal.utils.HexString
-import it.airgap.beaconsdk.internal.utils.asHexString
 
 private typealias SodiumKeyPair = com.goterl.lazycode.lazysodium.utils.KeyPair
 
@@ -71,7 +70,11 @@ internal class LazySodiumCryptoProvider : CryptoProvider {
     }
 
     @Throws(Exception::class)
-    override fun createServerSessionKeyPair(serverPublicKey: ByteArray, serverPrivateKey: ByteArray, clientPublicKey: ByteArray): SessionKeyPair {
+    override fun createServerSessionKeyPair(
+        serverPublicKey: ByteArray,
+        serverPrivateKey: ByteArray,
+        clientPublicKey: ByteArray,
+    ): SessionKeyPair {
         val kxSodium = sodium as KeyExchange.Lazy
 
         val serverPk = Key.fromBytes(serverPublicKey)
@@ -84,7 +87,11 @@ internal class LazySodiumCryptoProvider : CryptoProvider {
     }
 
     @Throws(Exception::class)
-    override fun createClientSessionKeyPair(serverPublicKey: ByteArray, serverPrivateKey: ByteArray, clientPublicKey: ByteArray): SessionKeyPair {
+    override fun createClientSessionKeyPair(
+        serverPublicKey: ByteArray,
+        serverPrivateKey: ByteArray,
+        clientPublicKey: ByteArray,
+    ): SessionKeyPair {
         val kxSodium = sodium as KeyExchange.Lazy
 
         val serverPk = Key.fromBytes(serverPublicKey)
@@ -114,7 +121,7 @@ internal class LazySodiumCryptoProvider : CryptoProvider {
 
     override fun validateMessage(message: String): Boolean =
         try {
-            HexString.fromString(message).length(withPrefix = false) >= SecretBox.NONCEBYTES + SecretBox.MACBYTES
+            HexString.fromString(message).length() >= SecretBox.NONCEBYTES + SecretBox.MACBYTES
         } catch (e: Exception) {
             false
         }
@@ -141,7 +148,7 @@ internal class LazySodiumCryptoProvider : CryptoProvider {
     override fun decryptMessageWithKeyPair(
         message: ByteArray,
         publicKey: ByteArray,
-        privateKey: ByteArray
+        privateKey: ByteArray,
     ): ByteArray {
         val signSodium = sodium as Sign.Lazy
         val secretBoxSodium = sodium as Box.Native
@@ -151,7 +158,13 @@ internal class LazySodiumCryptoProvider : CryptoProvider {
 
         return ByteArray(message.size - Box.SEALBYTES).also {
             assertOrFail("Could not decrypt the message") {
-                secretBoxSodium.cryptoBoxSealOpen(it, message, message.size.toLong(), kxKeyPair.publicKey.asBytes, kxKeyPair.secretKey.asBytes)
+                secretBoxSodium.cryptoBoxSealOpen(
+                    it,
+                    message,
+                    message.size.toLong(),
+                    kxKeyPair.publicKey.asBytes,
+                    kxKeyPair.secretKey.asBytes,
+                )
             }
         }.trimNulls()
     }
@@ -165,11 +178,17 @@ internal class LazySodiumCryptoProvider : CryptoProvider {
 
         val encrypted = ByteArray(SecretBox.MACBYTES + message.size).also {
             assertOrFail("Could not encrypt the message with the shared key") {
-                secretBoxSodium.cryptoSecretBoxEasy(it, message, message.size.toLong(), nonce, sharedKey)
+                secretBoxSodium.cryptoSecretBoxEasy(
+                    it,
+                    message,
+                    message.size.toLong(),
+                    nonce,
+                    sharedKey,
+                )
             }
         }
 
-        return HexString.fromString("${nonce.asHexString().value()}${encrypted.asHexString().value()}").asByteArray()
+        return nonce + encrypted
     }
 
     @Throws(Exception::class)
@@ -181,7 +200,13 @@ internal class LazySodiumCryptoProvider : CryptoProvider {
 
         return ByteArray(message.size - SecretBox.MACBYTES).also {
             assertOrFail("Could not decrypt the message with the shared key") {
-                secretBoxSodium.cryptoSecretBoxOpenEasy(it, ciphertext, ciphertext.size.toLong(), nonce, sharedKey)
+                secretBoxSodium.cryptoSecretBoxOpenEasy(
+                    it,
+                    ciphertext,
+                    ciphertext.size.toLong(),
+                    nonce,
+                    sharedKey,
+                )
             }
         }.trimNulls()
     }

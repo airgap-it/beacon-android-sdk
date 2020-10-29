@@ -4,9 +4,9 @@ import android.content.Context
 import it.airgap.beaconsdk.internal.crypto.Crypto
 import it.airgap.beaconsdk.internal.crypto.data.KeyPair
 import it.airgap.beaconsdk.internal.di.DependencyRegistry
+import it.airgap.beaconsdk.internal.storage.Storage
 import it.airgap.beaconsdk.internal.utils.asHexString
 import it.airgap.beaconsdk.internal.utils.failWithUninitialized
-import it.airgap.beaconsdk.storage.BeaconStorage
 
 internal class BeaconApp(context: Context) {
     var isInitialized: Boolean = false
@@ -29,7 +29,7 @@ internal class BeaconApp(context: Context) {
     val beaconId: String
         get() = keyPair.publicKey.asHexString().value()
 
-    suspend fun init(appName: String, matrixNodes: List<String>, storage: BeaconStorage) {
+    suspend fun init(appName: String, matrixNodes: List<String>, storage: Storage) {
         if (isInitialized) return
 
         _appName = appName
@@ -44,15 +44,15 @@ internal class BeaconApp(context: Context) {
         isInitialized = true
     }
 
-    private suspend fun setSdkVersion(storage: BeaconStorage) {
-        storage.setSdkVersion(BeaconConfig.versionName)
+    private suspend fun setSdkVersion(storage: Storage) {
+        storage.setSdkVersion(BeaconConfig.sdkVersion)
     }
 
-    private suspend fun loadOrGenerateKeyPair(storage: BeaconStorage, crypto: Crypto) {
+    private suspend fun loadOrGenerateKeyPair(storage: Storage, crypto: Crypto) {
         val seed = storage.getSdkSecretSeed()
-            ?: crypto.generateRandomSeed().getOrThrow().also { storage.setSdkSecretSeed(it) }
+            ?: crypto.generateRandomSeed().value().also { storage.setSdkSecretSeed(it) }
 
-        _keyPair = crypto.getKeyPairFromSeed(seed).getOrThrow()
+        _keyPair = crypto.getKeyPairFromSeed(seed).value()
     }
 
     companion object {
@@ -62,7 +62,7 @@ internal class BeaconApp(context: Context) {
         val instance: BeaconApp
             get() = _instance ?: failWithUninitialized(TAG)
 
-        fun init(context: Context) {
+        fun create(context: Context) {
             _instance = BeaconApp(context)
         }
     }

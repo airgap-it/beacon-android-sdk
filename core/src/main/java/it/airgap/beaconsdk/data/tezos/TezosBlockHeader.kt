@@ -4,18 +4,18 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class TezosBlockHeader(
-    val level: Int,
-    val proto: Int,
-    val predecessor: String,
-    val timestamp: String,
-    @SerialName("validation_pass") val validationPass: Int,
-    @SerialName("operations_hash") val operationsHash: String,
-    val fitness: List<String>,
-    val context: String,
-    val priority: Int,
-    @SerialName("proof_of_work_nonce") val proofOfWorkNonce: String,
-    val signature: String
+public data class TezosBlockHeader(
+    public val level: Int,
+    public val proto: Int,
+    public val predecessor: String,
+    public val timestamp: String,
+    @SerialName("validation_pass") public val validationPass: Int,
+    @SerialName("operations_hash") public val operationsHash: String,
+    public val fitness: List<String>,
+    public val context: String,
+    public val priority: Int,
+    @SerialName("proof_of_work_nonce") public val proofOfWorkNonce: String,
+    public val signature: String,
 ) {
-    companion object {}
+    public companion object {}
 }

@@ -1,28 +1,30 @@
 package it.airgap.beaconsdk.compat.client
 
 import it.airgap.beaconsdk.client.BeaconClient
-import it.airgap.beaconsdk.compat.storage.BeaconCompatStorage
-import it.airgap.beaconsdk.compat.internal.CompatStorageDecorator
 import it.airgap.beaconsdk.exception.BeaconException
 import it.airgap.beaconsdk.message.BeaconMessage
-import kotlinx.coroutines.*
+import it.airgap.beaconsdk.message.BeaconResponse
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 
-interface BuildCallback {
-    fun onSuccess(beaconClient: BeaconClient)
+public interface BuildCallback {
+    public fun onSuccess(beaconClient: BeaconClient)
 }
 
-interface OnNewMessageListener {
-    fun onNewMessage(message: BeaconMessage.Request)
-    fun onError(error: Throwable)
+public interface OnNewMessageListener {
+    public fun onNewMessage(message: BeaconMessage)
+    public fun onError(error: Throwable)
 }
 
-interface ResponseCallback {
-    fun onSuccess()
-    fun onError(error: Throwable)
+public interface ResponseCallback {
+    public fun onSuccess()
+    public fun onError(error: Throwable)
 }
 
-fun BeaconClient.connect(listener: OnNewMessageListener) {
+public fun BeaconClient.connect(listener: OnNewMessageListener) {
     receiveScope {
         try {
             connect().collect {
@@ -37,7 +39,7 @@ fun BeaconClient.connect(listener: OnNewMessageListener) {
     }
 }
 
-fun BeaconClient.respond(message: BeaconMessage.Response, callback: ResponseCallback) {
+public fun BeaconClient.respond(message: BeaconResponse, callback: ResponseCallback) {
     sendScope {
         try {
             respond(message)
@@ -48,10 +50,7 @@ fun BeaconClient.respond(message: BeaconMessage.Response, callback: ResponseCall
     }
 }
 
-fun BeaconClient.Builder.storage(storage: BeaconCompatStorage): BeaconClient.Builder =
-    storage(CompatStorageDecorator(storage))
-
-fun BeaconClient.Builder.build(callback: BuildCallback) {
+public fun BeaconClient.Builder.build(callback: BuildCallback) {
     buildScope {
         val beaconClient = build()
         callback.onSuccess(beaconClient)

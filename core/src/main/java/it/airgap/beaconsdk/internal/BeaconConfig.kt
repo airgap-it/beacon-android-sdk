@@ -3,8 +3,10 @@ package it.airgap.beaconsdk.internal
 import it.airgap.beaconsdk.BuildConfig
 
 internal object BeaconConfig {
-    val versionName
+    val sdkVersion: String
         get() = BuildConfig.VERSION_NAME
+
+    val beaconVersion: String = "1"
 
     val matrixClientApi: String = "/_matrix/client/r0"
     val matrixMaxSyncRetries: Int = 3
