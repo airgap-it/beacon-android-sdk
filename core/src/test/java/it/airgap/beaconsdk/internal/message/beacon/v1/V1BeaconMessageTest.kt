@@ -1,22 +1,23 @@
 package it.airgap.beaconsdk.internal.message.beacon.v1
 
+import it.airgap.beaconsdk.data.beacon.AppMetadata
 import it.airgap.beaconsdk.data.beacon.Network
 import it.airgap.beaconsdk.data.beacon.PermissionScope
-import it.airgap.beaconsdk.data.beacon.AppMetadata
 import it.airgap.beaconsdk.data.beacon.Threshold
+import it.airgap.beaconsdk.data.tezos.TezosEndorsementOperation
 import it.airgap.beaconsdk.data.tezos.TezosOperation
 import it.airgap.beaconsdk.exception.BeaconException
 import it.airgap.beaconsdk.internal.message.v1.*
+import it.airgap.beaconsdk.internal.storage.MockStorage
 import it.airgap.beaconsdk.internal.storage.decorator.DecoratedExtendedStorage
 import it.airgap.beaconsdk.message.*
-import it.airgap.beaconsdk.internal.storage.MockBeaconStorage
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 import org.junit.Before
 import org.junit.Test
-import removeWhitespace
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -27,12 +28,12 @@ internal class V1BeaconMessageTest {
 
     @Before
     fun setup() {
-        storage = DecoratedExtendedStorage(MockBeaconStorage())
+        storage = DecoratedExtendedStorage(MockStorage())
     }
 
     @Test
     fun `is deserialized from JSON`() {
-        messagesWithJsonStrings
+        messagesWithJsonStrings() + messagesWithJsonStrings(includeNulls = false)
             .map { Json.decodeFromString<V1BeaconMessage>(it.second) to it.first }
             .forEach {
                 assertEquals(it.second, it.first)
@@ -41,8 +42,9 @@ internal class V1BeaconMessageTest {
 
     @Test
     fun `serializes to JSON`() {
-        messagesWithJsonStrings
-            .map { Json.encodeToString(it.first).removeWhitespace() to it.second.removeWhitespace() }
+        messagesWithJsonStrings()
+            .map { Json.decodeFromString(JsonObject.serializer(), Json.encodeToString(it.first)) to
+                    Json.decodeFromString(JsonObject.serializer(), it.second) }
             .forEach {
                 assertEquals(it.second, it.first)
             }
@@ -123,14 +125,15 @@ internal class V1BeaconMessageTest {
 
     // -- message to JSON --
 
-    private val messagesWithJsonStrings = listOf(
+    private fun messagesWithJsonStrings(includeNulls: Boolean = false) = listOf(
         createPermissionRequestJsonPair(),
         createPermissionRequestJsonPair(scopes = listOf(PermissionScope.Sign)),
-        createOperationRequestJsonPair(tezosOperation = TezosOperation.Endorsement("level")),
+        createOperationRequestJsonPair(tezosOperation = TezosEndorsementOperation("level")),
         createSignPayloadRequestJsonPair(),
         createBroadcastRequestJsonPair(),
 
         createPermissionResponseJsonPair(),
+        createPermissionResponseJsonPair(includeNulls = includeNulls),
         createPermissionResponseJsonPair(threshold = Threshold("amount", "timeframe")),
         createOperationResponseJsonPair(),
         createSignPayloadResponseJsonPair(),
@@ -152,7 +155,7 @@ internal class V1BeaconMessageTest {
             createOperationRequestPair(
                 version = version,
                 beaconId = beaconId,
-                tezosOperation = TezosOperation.Endorsement("level"),
+                tezosOperation = TezosEndorsementOperation("level"),
                 appMetadata = appMetadata
             ),
             createSignPayloadRequestPair(version = version, beaconId = beaconId, appMetadata = appMetadata),
@@ -255,8 +258,9 @@ internal class V1BeaconMessageTest {
         network: Network = Network.Custom(),
         scopes: List<PermissionScope> = emptyList(),
         threshold: Threshold? = null,
+        includeNulls: Boolean = false,
     ): Pair<PermissionV1BeaconResponse, String> {
-        val json = threshold?.let {
+        val json = if (threshold != null || includeNulls) {
             """
                 {
                     "type": "permission_response",
@@ -266,20 +270,22 @@ internal class V1BeaconMessageTest {
                     "publicKey": "$publicKey",
                     "network": ${Json.encodeToString(network)},
                     "scopes": ${Json.encodeToString(scopes)},
-                    "threshold": ${Json.encodeToString(it)}
+                    "threshold": ${Json.encodeToString(threshold)}
                 }
             """
-        } ?: """
-            {
-                "type": "permission_response",
-                "version": "$version",
-                "id": "$id",
-                "beaconId": "$beaconId",
-                "publicKey": "$publicKey",
-                "network": ${Json.encodeToString(network)},
-                "scopes": ${Json.encodeToString(scopes)}
-            }
-        """
+        } else {
+            """
+                {
+                    "type": "permission_response",
+                    "version": "$version",
+                    "id": "$id",
+                    "beaconId": "$beaconId",
+                    "publicKey": "$publicKey",
+                    "network": ${Json.encodeToString(network)},
+                    "scopes": ${Json.encodeToString(scopes)}
+                }
+            """
+        }
 
         return PermissionV1BeaconResponse(version, id, beaconId, publicKey, network, scopes, threshold) to json.trimIndent()
     }

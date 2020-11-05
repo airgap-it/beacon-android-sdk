@@ -8,6 +8,8 @@ import it.airgap.beaconsdk.internal.utils.InternalResult
 import it.airgap.beaconsdk.internal.utils.Success
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.take
+import java.util.concurrent.CancellationException
 
 internal class HttpClient(private val httpClientProvider: HttpClientProvider) {
     inline fun <reified T : Any> get(
@@ -64,8 +66,10 @@ internal class HttpClient(private val httpClientProvider: HttpClientProvider) {
     private fun <T> resultFlowFor(httpAction: suspend () -> T): Flow<InternalResult<T>> = flow {
         try {
             emit(Success(httpAction()))
+        } catch (e: CancellationException) {
+            /* no action */
         } catch (e: Exception) {
             emit(Failure<T>(e))
         }
-    }
+    }.take(1)
 }

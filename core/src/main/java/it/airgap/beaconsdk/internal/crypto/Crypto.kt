@@ -1,5 +1,6 @@
 package it.airgap.beaconsdk.internal.crypto
 
+import androidx.annotation.IntRange
 import it.airgap.beaconsdk.internal.crypto.data.KeyPair
 import it.airgap.beaconsdk.internal.crypto.data.SessionKeyPair
 import it.airgap.beaconsdk.internal.crypto.provider.CryptoProvider
@@ -9,14 +10,13 @@ internal class Crypto(private val cryptoProvider: CryptoProvider) {
     fun hashKey(key: HexString): InternalResult<ByteArray> = hash(key, 32)
     fun hashKey(key: ByteArray): InternalResult<ByteArray> = hash(key, 32)
 
-    fun hash(message: String, size: Int): InternalResult<ByteArray> =
-        if (message.isHex()) hash(HexString.fromString(message), size)
-        else hash(message.toByteArray(), size)
+    fun hash(message: String, @IntRange(from = 1) size: Int): InternalResult<ByteArray> =
+        hash(message.toByteArray(), size)
 
-    fun hash(message: HexString, size: Int): InternalResult<ByteArray> =
+    fun hash(message: HexString, @IntRange(from = 1) size: Int): InternalResult<ByteArray> =
         hash(message.asByteArray(), size)
 
-    fun hash(message: ByteArray, size: Int): InternalResult<ByteArray> =
+    fun hash(message: ByteArray, @IntRange(from = 1) size: Int): InternalResult<ByteArray> =
         tryResult { cryptoProvider.getHash(message, size) }
 
     fun hashSha256(message: HexString): InternalResult<ByteArray> =
@@ -44,7 +44,7 @@ internal class Crypto(private val cryptoProvider: CryptoProvider) {
 
     fun getKeyPairFromSeed(seed: String): InternalResult<KeyPair> =
         tryResult {
-            val seedHash = cryptoProvider.getHash(seed.toByteArray(), 32)
+            val seedHash = cryptoProvider.getHash(seed.encodeToByteArray(), 32)
 
             cryptoProvider.getEd25519KeyPairFromSeed(seedHash)
         }
@@ -82,10 +82,7 @@ internal class Crypto(private val cryptoProvider: CryptoProvider) {
         }
 
     fun signMessageDetached(message: String, privateKey: ByteArray): InternalResult<ByteArray> =
-        flatTryResult {
-            if (message.isHex()) signMessageDetached(HexString.fromString(message), privateKey)
-            else signMessageDetached(message.encodeToByteArray(), privateKey)
-        }
+        flatTryResult { signMessageDetached(message.encodeToByteArray(), privateKey) }
 
     fun signMessageDetached(message: HexString, privateKey: ByteArray): InternalResult<ByteArray> =
         flatTryResult { signMessageDetached(message.asByteArray(), privateKey) }

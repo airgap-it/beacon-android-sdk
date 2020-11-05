@@ -99,7 +99,7 @@ internal class Base58CheckTest {
     @Test
     fun `fails when decoding invalid base58 string`() {
         invalidBase58Strings.forEach {
-            assertFailsWith(IllegalArgumentException::class) {
+            assertFailsWith<IllegalArgumentException> {
                 base58Check.decode(it).value()
             }
         }
@@ -108,7 +108,7 @@ internal class Base58CheckTest {
     @Test
     fun `fails on checksum mismatch`() {
         invalidChecksums.forEach {
-            assertFailsWith(IllegalArgumentException::class) {
+            assertFailsWith<IllegalArgumentException> {
                 base58Check.decode(it).value()
             }
         }

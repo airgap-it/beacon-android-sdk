@@ -67,8 +67,6 @@ internal sealed class InternalResult<T> {
 }
 
 internal data class Success<T>(val value: T) : InternalResult<T>()
-internal data class Failure<T>(val error: Throwable? = null) : InternalResult<T>() {
-    override fun toString(): String = error?.toString() ?: "Error: unknown"
-}
+internal data class Failure<T>(val error: Throwable? = null) : InternalResult<T>()
 
 internal fun Success(): Success<Unit> = Success(Unit)

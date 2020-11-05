@@ -32,7 +32,7 @@ public class BeaconClient internal constructor(
             .map {
                 when (it) {
                     is Success -> Result.success(it.value)
-                    is Failure -> Result.failure(BeaconException.Internal(cause = it.error))
+                    is Failure -> Result.failure(it.error as? BeaconException ?: BeaconException.Internal(cause = it.error))
                 }
             }
     }
@@ -45,19 +45,27 @@ public class BeaconClient internal constructor(
         } catch (e: BeaconException) {
             throw e
         } catch (e: Exception) {
-            throw BeaconException.Internal(e)
+            throw BeaconException.Internal(cause = e)
         }
     }
 
     public suspend fun addPeers(vararg peers: P2pPeerInfo) {
-        storage.addP2pPeers(peers.toList())
+        addPeers(peers.toList())
+    }
+
+    public suspend fun addPeers(peers: List<P2pPeerInfo>) {
+        storage.addP2pPeers(peers)
     }
 
     public suspend fun getPeers(): List<P2pPeerInfo> =
         storage.getP2pPeers()
 
     public suspend fun removePeers(vararg peers: P2pPeerInfo) {
-        storage.removeP2pPeers(peers.toList())
+        removePeers(peers.toList())
+    }
+
+    public suspend fun removePeers(peers: List<P2pPeerInfo>) {
+        storage.removeP2pPeers(peers)
     }
 
     public suspend fun getAppsMetadata(): List<AppMetadata> =
@@ -70,8 +78,16 @@ public class BeaconClient internal constructor(
         storage.removeAppsMetadata { senderIds.contains(it.senderId) }
     }
 
+    public suspend fun removeAppsMetadataFor(senderIds: List<String>) {
+        storage.removeAppsMetadata { senderIds.contains(it.senderId) }
+    }
+
     public suspend fun removeAppsMetadata(vararg appsMetadata: AppMetadata) {
-        storage.removeAppsMetadata(appsMetadata.toList())
+        removeAppsMetadata(appsMetadata.toList())
+    }
+
+    public suspend fun removeAppsMetadata(appsMetadata: List<AppMetadata>) {
+        storage.removeAppsMetadata(appsMetadata)
     }
 
     public suspend fun getPermissions(): List<PermissionInfo> =
@@ -84,8 +100,16 @@ public class BeaconClient internal constructor(
         storage.removePermissions { accountIdentifiers.contains(it.accountIdentifier) }
     }
 
+    public suspend fun removePermissionsFor(accountIdentifiers: List<String>) {
+        storage.removePermissions { accountIdentifiers.contains(it.accountIdentifier) }
+    }
+
     public suspend fun removePermissions(vararg permissions: PermissionInfo) {
-        storage.removePermissions(permissions.toList())
+        removePermissions(permissions.toList())
+    }
+
+    public suspend fun removePermissions(permissions: List<PermissionInfo>) {
+        storage.removePermissions(permissions)
     }
 
     public companion object {}
@@ -94,8 +118,7 @@ public class BeaconClient internal constructor(
         private var _matrixNodes: List<String> = emptyList()
 
         public fun matrixNodes(nodes: List<String>): Builder = apply { _matrixNodes = nodes }
-        public fun matrixNodes(vararg nodes: String): Builder =
-            apply { _matrixNodes = nodes.toList() }
+        public fun matrixNodes(vararg nodes: String): Builder = apply { _matrixNodes = nodes.toList() }
 
         public suspend fun build(): BeaconClient {
             val beaconApp = BeaconApp.instance

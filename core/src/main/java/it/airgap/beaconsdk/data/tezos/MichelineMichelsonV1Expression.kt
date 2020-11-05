@@ -53,28 +53,25 @@ public data class MichelinePrimitiveInt(public val int: String) : MichelineMiche
 }
 
 @Serializable
-public data class MichelinePrimitiveString(public val string: String) :
-    MichelineMichelsonV1Expression() {
+public data class MichelinePrimitiveString(public val string: String) : MichelineMichelsonV1Expression() {
     public companion object {}
 }
 
 @Serializable
-public data class MichelinePrimitiveBytes(public val bytes: String) :
-    MichelineMichelsonV1Expression() {
+public data class MichelinePrimitiveBytes(public val bytes: String) : MichelineMichelsonV1Expression() {
     public companion object {}
 }
 
 @Serializable
 public data class MichelinePrimitiveApplication(
     public val prim: String,
-    public val args: List<MichelineMichelsonV1Expression>?,
-    public val annots: List<String>?,
+    public val args: List<MichelineMichelsonV1Expression>? = null,
+    public val annots: List<String>? = null,
 ) : MichelineMichelsonV1Expression() {
     public companion object {}
 }
 
 @Serializable
-public data class MichelineNode(public val expressions: List<MichelineMichelsonV1Expression>) :
-    MichelineMichelsonV1Expression() {
+public data class MichelineNode(public val expressions: List<MichelineMichelsonV1Expression>) : MichelineMichelsonV1Expression() {
     public companion object {}
 }

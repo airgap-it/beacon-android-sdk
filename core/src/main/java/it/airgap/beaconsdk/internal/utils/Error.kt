@@ -7,7 +7,7 @@ import kotlin.reflect.KClass
 
 internal fun failWith(message: String? = null, cause: Throwable? = null): Nothing =
     if (message == null && cause != null) throw cause
-    else throw BeaconException.Unknown(message, cause)
+    else throw BeaconException.Internal(message, cause)
 
 internal fun failWithUninitialized(name: String): Nothing =
     throw IllegalStateException("$name uninitialized")

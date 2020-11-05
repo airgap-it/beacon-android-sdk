@@ -40,7 +40,6 @@ internal class MessageController(
             val request = pendingRequests.pop { it.pairsWith(message) } ?: failWithNoPendingRequest()
             when (message) {
                 is PermissionBeaconResponse -> onPermissionResponse(message, request)
-                is ErrorBeaconMessage -> onErrorMessage(message)
                 else -> { /* no action */ }
             }
 

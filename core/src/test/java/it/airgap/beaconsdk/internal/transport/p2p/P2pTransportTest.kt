@@ -5,7 +5,7 @@ import io.mockk.impl.annotations.MockK
 import it.airgap.beaconsdk.data.beacon.Origin
 import it.airgap.beaconsdk.data.beacon.P2pPeerInfo
 import it.airgap.beaconsdk.internal.message.SerializedBeaconMessage
-import it.airgap.beaconsdk.internal.storage.MockBeaconStorage
+import it.airgap.beaconsdk.internal.storage.MockStorage
 import it.airgap.beaconsdk.internal.storage.decorator.DecoratedExtendedStorage
 import it.airgap.beaconsdk.internal.transport.Transport
 import it.airgap.beaconsdk.internal.transport.p2p.data.P2pMessage
@@ -13,6 +13,8 @@ import it.airgap.beaconsdk.internal.utils.*
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.runBlocking
+import mockLog
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import kotlin.test.assertEquals
@@ -30,13 +32,17 @@ internal class P2pTransportTest {
     fun setup() {
         MockKAnnotations.init(this)
 
-        mockkStatic("it.airgap.beaconsdk.internal.utils.LogKt")
-        every { logDebug(any(), any()) } returns Unit
+        mockLog()
 
         coEvery { p2pClient.sendPairingRequest(any(), any(), any()) } returns Success()
 
-        storage = DecoratedExtendedStorage(MockBeaconStorage())
+        storage = DecoratedExtendedStorage(MockStorage())
         p2pTransport = P2pTransport(storage, p2pClient)
+    }
+
+    @After
+    fun cleanUp() {
+        unmockkAll()
     }
 
     @Test
@@ -110,7 +116,7 @@ internal class P2pTransportTest {
 
         runBlocking { storage.setP2pPeers(knownPeers) }
 
-        assertFailsWith(IllegalArgumentException::class) {
+        assertFailsWith<IllegalArgumentException> {
             runBlocking { p2pTransport.send(message, recipient).value() }
         }
     }

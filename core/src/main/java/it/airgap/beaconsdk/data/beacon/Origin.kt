@@ -24,4 +24,6 @@ public sealed class Origin {
     public data class P2P(override val id: String) : Origin() {
         public companion object {}
     }
+
+    public companion object {}
 }

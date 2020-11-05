@@ -7,5 +7,7 @@ import kotlinx.serialization.Serializable
 public enum class PermissionScope {
     @SerialName("sign") Sign,
     @SerialName("operation_request") OperationRequest,
-    @SerialName("threshold") Threshold,
+    @SerialName("threshold") Threshold;
+
+    public companion object {}
 }

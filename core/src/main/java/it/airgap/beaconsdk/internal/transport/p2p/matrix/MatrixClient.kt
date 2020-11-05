@@ -1,12 +1,11 @@
 package it.airgap.beaconsdk.internal.transport.p2p.matrix
 
 import it.airgap.beaconsdk.internal.BeaconConfig
-import it.airgap.beaconsdk.internal.network.HttpPoller
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.MatrixEvent
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.MatrixRoom
+import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.MatrixSync
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.api.room.MatrixCreateRoomRequest
-import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.api.sync.MatrixSyncResponse
-import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.api.sync.MatrixSyncStateEvent
+import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.api.room.MatrixCreateRoomRequest.Preset
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.network.MatrixEventService
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.network.MatrixRoomService
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.network.MatrixUserService
@@ -15,6 +14,7 @@ import it.airgap.beaconsdk.internal.utils.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.sync.Mutex
 
 internal class MatrixClient(
@@ -22,7 +22,7 @@ internal class MatrixClient(
     private val userService: MatrixUserService,
     private val roomService: MatrixRoomService,
     private val eventService: MatrixEventService,
-    private val httpPoller: HttpPoller,
+    private val poller: Poller,
 ) {
     val events: Flow<MatrixEvent>
         get() = store.events
@@ -47,7 +47,7 @@ internal class MatrixClient(
             ?: failWith("Login failed", loginResponse.errorOrNull())
 
         store.intent(Init(userId, deviceId, accessToken))
-        syncPoll()
+        syncScope { syncPoll(it).collect() }
     }
 
     suspend fun createTrustedPrivateRoom(vararg members: String): InternalResult<MatrixRoom?> =
@@ -57,7 +57,7 @@ internal class MatrixClient(
                     accessToken,
                     MatrixCreateRoomRequest(
                         invite = members.toList(),
-                        preset = MatrixCreateRoomRequest.Preset.TrustedPrivateChat,
+                        preset = Preset.TrustedPrivateChat,
                         isDirect = true,
                     ),
                 ).map { response -> response.roomId?.let { MatrixRoom.Unknown(it) } }
@@ -103,15 +103,11 @@ internal class MatrixClient(
     suspend fun sendTextMessage(roomId: String, message: String) =
         tryResult {
             withAccessToken("sendTextMessage") { accessToken ->
-                eventService.sendEvent(
+                eventService.sendTextMessage(
                     accessToken,
                     roomId,
-                    MatrixSyncStateEvent.TYPE_MESSAGE,
                     createTxnId(),
-                    MatrixSyncStateEvent.Message.Content(
-                        MatrixSyncStateEvent.Message.TYPE_TEXT,
-                        message
-                    )
+                    message,
                 ).value()
             }
         }
@@ -119,42 +115,37 @@ internal class MatrixClient(
     suspend fun sendTextMessage(room: MatrixRoom, message: String) =
         tryResult {
             withAccessToken("sendTextMessage") { accessToken ->
-                eventService.sendEvent(
+                eventService.sendTextMessage(
                     accessToken,
                     room.id,
-                    MatrixSyncStateEvent.TYPE_MESSAGE,
                     createTxnId(),
-                    MatrixSyncStateEvent.Message.Content(
-                        MatrixSyncStateEvent.Message.TYPE_TEXT,
-                        message
-                    )
+                    message,
                 ).value()
             }
         }
 
-    private suspend fun syncPoll(interval: Long = 0) {
-        syncScope { scope ->
-            val syncMutex = Mutex()
+    suspend fun sync(): InternalResult<MatrixSync> =
+        flatTryResult {
+            withAccessToken("sync") { accessToken ->
+                eventService.sync(accessToken, store.state().syncToken, store.state().pollingTimeout)
+                    .map { MatrixSync.fromSyncResponse(it) }
+            }
+        }
 
-            httpPoller
-                .poll(interval = interval) {
-                    syncMutex.lock()
-                    sync()
-                }
-                .collect {
-                    when (it) {
-                        is Success -> onSyncSuccess(it.value)
-                        is Failure -> onSyncError(scope, it.error)
-                    }
-                    syncMutex.unlock()
-                }
+    fun syncPoll(scope: CoroutineScope, interval: Long = 0): Flow<InternalResult<MatrixSync>> {
+        val syncMutex = Mutex()
+
+        return poller.poll(interval = interval) {
+            syncMutex.lock()
+            sync()
+        }.onEach {
+            when (it) {
+                is Success -> onSyncSuccess(it.value)
+                is Failure -> onSyncError(scope, it.error)
+            }
+            syncMutex.unlock()
         }
     }
-
-    private suspend fun sync(): InternalResult<MatrixSyncResponse> =
-        withAccessToken("sync") {
-            eventService.sync(it, store.state().syncToken, store.state().pollingTimeout)
-        }
 
     private suspend inline fun <T> withAccessToken(
         name: String,
@@ -174,12 +165,13 @@ internal class MatrixClient(
         }
     }
 
-    private suspend fun onSyncSuccess(response: MatrixSyncResponse) {
+    private suspend fun onSyncSuccess(sync: MatrixSync) {
         store.intent(
             OnSyncSuccess(
-                syncToken = response.nextBatch,
+                syncToken = sync.nextBatch,
                 pollingTimeout = 30000,
-                syncRooms = response.rooms,
+                rooms = sync.rooms,
+                events = sync.events,
             )
         )
     }

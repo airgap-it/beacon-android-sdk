@@ -21,7 +21,7 @@ internal sealed class MatrixRoom {
     @Serializable
     data class Unknown(override val id: String, override val members: List<String> = emptyList()) : MatrixRoom()
 
-    internal fun update(newMembers: List<String>): MatrixRoom =
+    fun update(newMembers: List<String>): MatrixRoom =
         when (this) {
             is Joined -> copy(members = (members + newMembers).distinct())
             is Invited -> copy(members = (members + newMembers).distinct())
@@ -30,7 +30,7 @@ internal sealed class MatrixRoom {
         }
 
     companion object {
-        internal fun fromSync(syncRooms: MatrixSyncRooms): List<MatrixRoom> {
+        fun fromSync(syncRooms: MatrixSyncRooms): List<MatrixRoom> {
             val joined =
                 syncRooms.join?.entries?.map { Joined(it.key, membersFromSync(it.key, it.value)) } ?: emptyList()
 

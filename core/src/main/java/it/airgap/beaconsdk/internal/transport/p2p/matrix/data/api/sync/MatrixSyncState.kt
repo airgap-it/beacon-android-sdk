@@ -4,4 +4,4 @@ import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 
 @Serializable
-internal data class MatrixSyncState(val events: List<MatrixSyncStateEvent<@Contextual Any>>? = null)
+internal data class MatrixSyncState(val events: List<MatrixSyncStateEvent<out @Contextual Any>>? = null)
