@@ -3,14 +3,14 @@ package it.airgap.beaconsdk.internal.transport.p2p.matrix.store
 import it.airgap.beaconsdk.internal.storage.decorator.DecoratedExtendedStorage
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.MatrixEvent
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.MatrixRoom
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 internal class MatrixStore(private val storage: DecoratedExtendedStorage) {
     private val _events: MutableSharedFlow<MatrixEvent> = MutableSharedFlow(extraBufferCapacity = 64)
-    val events: Flow<MatrixEvent>
+    val events: SharedFlow<MatrixEvent>
         get() = _events
 
     private var state: MatrixStoreState = MatrixStoreState()
@@ -34,12 +34,9 @@ internal class MatrixStore(private val storage: DecoratedExtendedStorage) {
                     )
                 }
                 is OnSyncSuccess -> {
-                    val newRooms = action.syncRooms?.let { MatrixRoom.fromSync(it) }
-                    val events = action.syncRooms?.let { MatrixEvent.fromSync(it) }
+                    val mergedRooms = action.rooms?.ifNotEmpty { state.rooms.merge(it) }
 
-                    val mergedRooms = newRooms?.ifNotEmpty { state.rooms.merge(it) }
-
-                    events?.filterNotNull()?.forEach { _events.tryEmit(it) }
+                    action.events?.forEach { _events.tryEmit(it) }
 
                     with(storage) {
                         action.syncToken?.let { setMatrixSyncToken(it) }

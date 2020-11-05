@@ -37,7 +37,7 @@ public class BeaconInitProvider : ContentProvider() {
         selectionArgs: Array<out String>?,
     ): Int = 0
 
-    private companion object {
-        private const val TAG = "BeaconInitProvider"
+    internal companion object {
+        const val TAG = "BeaconInitProvider"
     }
 }

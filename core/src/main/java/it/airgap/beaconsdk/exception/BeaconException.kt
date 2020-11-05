@@ -19,7 +19,7 @@ public sealed class BeaconException(
     public class TransactionInvalid(cause: Throwable? = null) : BeaconException(Type.TransactionInvalid, MESSAGE_TRANSACTION_INVALID, cause)
     public class Aborted(cause: Throwable? = null) : BeaconException(Type.Aborted, MESSAGE_ABORTED, cause)
     public class Unknown(message: String? = null, cause: Throwable? = null) : BeaconException(Type.Unknown, message ?: MESSAGE_UNKNOWN, cause)
-    public class Internal(cause: Throwable? = null) : BeaconException(message = MESSAGE_INTERNAL, cause = cause)
+    public class Internal(message: String? = null, cause: Throwable? = null) : BeaconException(message = message ?: MESSAGE_INTERNAL, cause = cause)
 
     public companion object {
         private const val MESSAGE_BROADCAST_ERROR = "The transaction could not be broadcast to the network"

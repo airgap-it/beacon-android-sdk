@@ -30,9 +30,6 @@ internal class HexString private constructor(value: String) {
 
     fun toBigInteger(): BigInteger = BigInteger(value(), 16)
 
-    fun concat(other: HexString): HexString =
-        fromString(value + other.value)
-
     override fun equals(other: Any?): Boolean =
         if (other == null || other !is HexString) false
         else value == other.value

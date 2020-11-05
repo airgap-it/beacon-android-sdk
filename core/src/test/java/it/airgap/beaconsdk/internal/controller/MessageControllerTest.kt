@@ -1,27 +1,29 @@
 package it.airgap.beaconsdk.internal.controller
 
+import beaconMessages
+import beaconResponses
+import beaconVersionedMessages
+import errorBeaconMessage
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
-import io.mockk.mockkStatic
-import it.airgap.beaconsdk.data.beacon.AppMetadata
-import it.airgap.beaconsdk.data.beacon.Network
 import it.airgap.beaconsdk.data.beacon.PermissionInfo
-import it.airgap.beaconsdk.data.tezos.TezosOperation
 import it.airgap.beaconsdk.internal.message.VersionedBeaconMessage
 import it.airgap.beaconsdk.internal.protocol.Protocol
 import it.airgap.beaconsdk.internal.protocol.ProtocolRegistry
-import it.airgap.beaconsdk.internal.storage.MockBeaconStorage
+import it.airgap.beaconsdk.internal.storage.MockStorage
 import it.airgap.beaconsdk.internal.storage.decorator.DecoratedExtendedStorage
 import it.airgap.beaconsdk.internal.utils.AccountUtils
 import it.airgap.beaconsdk.internal.utils.Success
-import it.airgap.beaconsdk.internal.utils.currentTimestamp
-import it.airgap.beaconsdk.message.*
 import kotlinx.coroutines.runBlocking
+import mockTime
 import org.junit.Before
 import org.junit.Test
+import permissionBeaconRequest
+import permissionBeaconResponse
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 
 internal class MessageControllerTest {
 
@@ -46,42 +48,81 @@ internal class MessageControllerTest {
     fun setup() {
         MockKAnnotations.init(this)
 
-        mockkStatic("it.airgap.beaconsdk.internal.utils.TimeKt")
-        every { currentTimestamp() } returns currentTimeMillis
+        mockTime(currentTimeMillis)
 
         every { protocol.getAddressFromPublicKey(any()) } answers { Success(firstArg()) }
         every { protocolRegistry.get(any()) } returns protocol
 
         every { accountUtils.getAccountIdentifier(any(), any()) } answers { Success(firstArg()) }
 
-        storage = DecoratedExtendedStorage(MockBeaconStorage())
+        storage = DecoratedExtendedStorage(MockStorage())
         messageController = MessageController(protocolRegistry, storage, accountUtils)
     }
 
     @Test
+    fun `transforms incoming VersionedBeaconMessage to BeaconMessage`() {
+        val versionedMessages = beaconVersionedMessages(version, senderId, includeError = false)
+
+        versionedMessages.forEach {
+            val beaconMessage = runBlocking { messageController.onIncomingMessage(it).valueOrNull() }
+            val expected = runBlocking { it.toBeaconMessage(storage) }
+
+            assertEquals(expected, beaconMessage)
+        }
+    }
+
+    @Test
+    fun `transforms outgoing BeaconMessages to VersionedBeaconMessage`() {
+        val beaconMessage = beaconMessages()
+
+        beaconMessage.forEach {
+            val pendingRequest = VersionedBeaconMessage.fromBeaconMessage(version, senderId, permissionBeaconRequest(id = it.id))
+            runBlocking { messageController.onIncomingMessage(pendingRequest) }
+
+            val versionedBeaconMessage = runBlocking { messageController.onOutgoingMessage(senderId, it).valueOrNull() }
+            val expected = runBlocking { VersionedBeaconMessage.fromBeaconMessage(version, senderId, it) }
+
+            assertEquals(expected, versionedBeaconMessage)
+        }
+    }
+
+    @Test
     fun `saves app metadata on permission request`() {
-        val permissionRequest = beaconVersionedRequest<PermissionBeaconRequest>()
+        val permissionRequest = permissionBeaconRequest()
         val versionedRequest = VersionedBeaconMessage.fromBeaconMessage(version, senderId, permissionRequest)
 
-        runBlocking { messageController.onIncomingMessage(versionedRequest) }
+        val result = runBlocking { messageController.onIncomingMessage(versionedRequest) }
         val appsMetadata = runBlocking { storage.getAppsMetadata() }
 
+        assertTrue(result.isSuccess, "Expected result to be a success")
         assertEquals(listOf(permissionRequest.appMetadata), appsMetadata)
     }
 
     @Test
-    fun `fails when processing response without matching pending request`() {
-        val response = beaconResponses.shuffled().first()
+    fun `returns failure on incoming error message`() {
+        val errorMessage = errorBeaconMessage()
+        val versionedMessage = VersionedBeaconMessage.fromBeaconMessage(version, senderId, errorMessage)
 
-        assertFailsWith(IllegalArgumentException::class) {
+        val result = runBlocking { messageController.onIncomingMessage(versionedMessage) }
+
+        assertTrue(result.isFailure, "Expected result to be a failure")
+    }
+
+    @Test
+    fun `fails when processing response without matching pending request`() {
+        val response = beaconResponses().shuffled().first()
+
+        assertFailsWith<IllegalArgumentException> {
             runBlocking { messageController.onOutgoingMessage(senderId, response).value() }
         }
     }
 
     @Test
     fun `saves permissions on permission response`() {
-        val permissionRequest = beaconVersionedRequest<PermissionBeaconRequest>()
-        val permissionResponse = beaconResponse<PermissionBeaconResponse>()
+        val id = "id"
+
+        val permissionRequest = permissionBeaconRequest(id = id)
+        val permissionResponse = permissionBeaconResponse(id = id)
 
         val versionedRequest = VersionedBeaconMessage.fromBeaconMessage(version, senderId, permissionRequest)
 
@@ -109,67 +150,22 @@ internal class MessageControllerTest {
         assertEquals(expected, permissions)
     }
 
-    private val messageId: String = "1"
-    private val beaconRequests: List<BeaconRequest> = listOf(
-        PermissionBeaconRequest(
-            "1",
-            messageId,
-            AppMetadata(senderId, "mockApp"),
-            Network.Custom(),
-            emptyList(),
-        ),
-        OperationBeaconRequest(
-            "1",
-            messageId,
-            null,
-            Network.Custom(),
-            TezosOperation.Delegation(
-                "source",
-                "fee",
-                "counter",
-                "gasLimit",
-                "storageLimit",
-                null,
-            ),
-            "sourceAddress",
-        ),
-        SignPayloadBeaconRequest(
-            "1",
-            messageId,
-            null,
-            "payload",
-            "sourceAddress",
-        ),
-        BroadcastBeaconRequest(
-            "1",
-            messageId,
-            null,
-            Network.Custom(),
-            "signed",
-        ),
-    )
+    @Test
+    fun `fails to save permissions when app metadata not found`() {
+        val id = "id"
 
-    private val beaconResponses: List<BeaconResponse> = listOf(
-        PermissionBeaconResponse(
-            messageId,
-            "publicKey",
-            Network.Custom(),
-            emptyList(),
-        ),
-        OperationBeaconResponse(
-            messageId,
-            "transactionHash",
-        ),
-        SignPayloadBeaconResponse(
-            messageId,
-            "signature",
-        ),
-        BroadcastBeaconResponse(
-            messageId,
-            "transactionHash",
-        ),
-    )
+        val permissionRequest = permissionBeaconRequest(id = id)
+        val permissionResponse = permissionBeaconResponse(id = id)
 
-    private inline fun <reified T : BeaconRequest> beaconVersionedRequest(): T = beaconRequests.filterIsInstance<T>().first()
-    private inline fun <reified T : BeaconResponse> beaconResponse(): T = beaconResponses.filterIsInstance<T>().first()
+        val versionedRequest = VersionedBeaconMessage.fromBeaconMessage(version, senderId, permissionRequest)
+
+        runBlocking {
+            messageController.onIncomingMessage(versionedRequest)
+            storage.setAppsMetadata(emptyList())
+        }
+
+        val result = runBlocking { messageController.onOutgoingMessage(senderId, permissionResponse) }
+
+        assertTrue(result.isFailure, "Expected result to be a failure")
+    }
 }

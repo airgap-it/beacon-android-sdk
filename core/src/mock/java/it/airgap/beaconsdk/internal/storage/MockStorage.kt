@@ -1,12 +1,12 @@
 package it.airgap.beaconsdk.internal.storage
 
 import it.airgap.beaconsdk.data.beacon.AccountInfo
+import it.airgap.beaconsdk.data.beacon.AppMetadata
 import it.airgap.beaconsdk.data.beacon.P2pPeerInfo
 import it.airgap.beaconsdk.data.beacon.PermissionInfo
-import it.airgap.beaconsdk.data.beacon.AppMetadata
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.MatrixRoom
 
-internal class MockBeaconStorage : Storage {
+internal class MockStorage : Storage {
     private var p2pPeers: List<P2pPeerInfo> = emptyList()
     private var accounts: List<AccountInfo> = emptyList()
     private var activeAccountIdentifier: String? = null

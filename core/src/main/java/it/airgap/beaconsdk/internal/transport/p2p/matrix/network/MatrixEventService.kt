@@ -6,13 +6,16 @@ import it.airgap.beaconsdk.internal.network.data.BearerHeader
 import it.airgap.beaconsdk.internal.network.data.HttpParameter
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.api.event.MatrixEventResponse
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.api.sync.MatrixSyncResponse
+import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.api.sync.MatrixSyncStateEvent
 import it.airgap.beaconsdk.internal.utils.InternalResult
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.onCompletion
-import kotlinx.coroutines.flow.single
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.*
 
 internal class MatrixEventService(private val httpClient: HttpClient) {
-    private val ongoingRequests: MutableMap<String, Flow<InternalResult<*>>> = mutableMapOf()
+    private var ongoingSync: Flow<InternalResult<MatrixSyncResponse>>? = null
 
     suspend fun sync(
         accessToken: String,
@@ -24,7 +27,7 @@ internal class MatrixEventService(private val httpClient: HttpClient) {
             timeout?.let { add("timeout" to it.toString()) }
         }.toList()
 
-        return getOngoingOrRun<MatrixSyncResponse>("sync") {
+        return getOngoingOrRun(this::ongoingSync::get, this::ongoingSync::set) {
             httpClient.get(
                 "/sync",
                 headers = listOf(BearerHeader(accessToken), ApplicationJson()),
@@ -34,7 +37,24 @@ internal class MatrixEventService(private val httpClient: HttpClient) {
         }.single()
     }
 
-    suspend inline fun <reified T : Any> sendEvent(
+    suspend fun sendTextMessage(
+        accessToken: String,
+        roomId: String,
+        txnId: String,
+        message: String,
+    ): InternalResult<MatrixEventResponse> =
+        sendEvent(
+            accessToken,
+            roomId,
+            MatrixSyncStateEvent.TYPE_MESSAGE,
+            txnId,
+            MatrixSyncStateEvent.Message.Content(
+                MatrixSyncStateEvent.Message.TYPE_TEXT,
+                message,
+            )
+        )
+
+    private suspend inline fun <reified T : Any> sendEvent(
         accessToken: String,
         roomId: String,
         eventType: String,
@@ -47,11 +67,20 @@ internal class MatrixEventService(private val httpClient: HttpClient) {
             headers = listOf(BearerHeader(accessToken), ApplicationJson())
         ).single()
 
-    @Suppress("UNCHECKED_CAST")
     private inline fun <T : Any> getOngoingOrRun(
-        name: String,
+        getter: () -> Flow<InternalResult<T>>?,
+        crossinline setter: (Flow<InternalResult<T>>?) -> Unit,
         action: () -> Flow<InternalResult<T>>,
-    ): Flow<InternalResult<T>> = ongoingRequests.getOrPut(name) {
-        action().onCompletion { ongoingRequests.remove(name) }
-    } as Flow<InternalResult<T>>
+    ): Flow<InternalResult<T>> =
+        getter() ?: run {
+            val scope = CoroutineScope(CoroutineName("sync") + Dispatchers.Default)
+            action()
+                .shareIn(scope, SharingStarted.Eagerly, replay = 1)
+                .take(1)
+                .onCompletion {
+                    setter(null)
+                    scope.cancel()
+                }
+                .also { setter(it) }
+        }
 }

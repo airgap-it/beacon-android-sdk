@@ -1,6 +1,7 @@
 package it.airgap.beaconsdk.data.beacon
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 
 @Serializable
 public data class P2pPeerInfo internal constructor(
@@ -8,7 +9,7 @@ public data class P2pPeerInfo internal constructor(
     public val publicKey: String,
     public val relayServer: String,
     public val version: String? = null,
-    public val isPaired: Boolean = false,
+    @Transient public val isPaired: Boolean = false,
     public val icon: String? = null,
     public val appUrl: String? = null,
 ) {

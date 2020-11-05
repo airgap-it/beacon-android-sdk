@@ -46,7 +46,7 @@ internal sealed class MatrixLoginRequest(private val type: Type) {
 
 @Serializable
 internal data class MatrixLoginResponse(
-    @SerialName("user_id") val userId: String?,
-    @SerialName("device_id") val deviceId: String?,
-    @SerialName("access_token") val accessToken: String?,
+    @SerialName("user_id") val userId: String? = null,
+    @SerialName("device_id") val deviceId: String? = null,
+    @SerialName("access_token") val accessToken: String? = null,
 )

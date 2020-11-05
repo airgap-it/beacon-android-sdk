@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 
 public interface BuildCallback {
     public fun onSuccess(beaconClient: BeaconClient)
+    public fun onError(error: Throwable)
 }
 
 public interface OnNewMessageListener {
@@ -30,7 +31,7 @@ public fun BeaconClient.connect(listener: OnNewMessageListener) {
             connect().collect {
                 when {
                     it.isSuccess -> listener.onNewMessage(it.getOrThrow())
-                    it.isFailure -> listener.onError(it.exceptionOrNull() ?: BeaconException.Unknown())
+                    it.isFailure -> listener.onError(it.exceptionOrNull() ?: BeaconException.Internal())
                 }
             }
         } catch (e: Exception) {
@@ -52,8 +53,12 @@ public fun BeaconClient.respond(message: BeaconResponse, callback: ResponseCallb
 
 public fun BeaconClient.Builder.build(callback: BuildCallback) {
     buildScope {
-        val beaconClient = build()
-        callback.onSuccess(beaconClient)
+        try {
+            val beaconClient = build()
+            callback.onSuccess(beaconClient)
+        } catch (e: Exception) {
+            callback.onError(e)
+        }
     }
 }
 

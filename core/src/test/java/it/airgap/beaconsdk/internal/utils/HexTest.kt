@@ -41,7 +41,7 @@ internal class HexTest {
     @Test
     fun `fails when creating HexString form invalid string`() {
         invalidHexStrings.forEach {
-            assertFailsWith(IllegalArgumentException::class) {
+            assertFailsWith<IllegalArgumentException> {
                 HexString.fromString(it)
             }
         }
@@ -173,7 +173,7 @@ internal class HexTest {
         )
 
         negativeInts.forEach {
-            assertFailsWith(IllegalArgumentException::class) {
+            assertFailsWith<IllegalArgumentException> {
                 it.asHexString()
             }
         }

@@ -9,7 +9,6 @@ import it.airgap.beaconsdk.internal.crypto.data.KeyPair
 import it.airgap.beaconsdk.internal.crypto.provider.CryptoProvider
 import it.airgap.beaconsdk.internal.crypto.provider.LazySodiumCryptoProvider
 import it.airgap.beaconsdk.internal.network.HttpClient
-import it.airgap.beaconsdk.internal.network.HttpPoller
 import it.airgap.beaconsdk.internal.network.provider.HttpClientProvider
 import it.airgap.beaconsdk.internal.network.provider.KtorHttpClientProvider
 import it.airgap.beaconsdk.internal.protocol.ProtocolRegistry
@@ -30,6 +29,7 @@ import it.airgap.beaconsdk.internal.transport.p2p.utils.P2pCommunicationUtils
 import it.airgap.beaconsdk.internal.transport.p2p.utils.P2pServerUtils
 import it.airgap.beaconsdk.internal.utils.AccountUtils
 import it.airgap.beaconsdk.internal.utils.Base58Check
+import it.airgap.beaconsdk.internal.utils.Poller
 import it.airgap.beaconsdk.internal.utils.asHexString
 
 internal class DependencyRegistry(
@@ -95,6 +95,7 @@ internal class DependencyRegistry(
 
     val accountUtils: AccountUtils by lazy { AccountUtils(crypto, base58Check) }
     val base58Check: Base58Check by lazy { Base58Check(crypto) }
+    val poller: Poller by lazy { Poller() }
 
     private val cryptoProvider: CryptoProvider by lazy {
         when (BeaconConfig.cryptoProvider) {
@@ -114,8 +115,6 @@ internal class DependencyRegistry(
     fun httpClient(baseUrl: String): HttpClient =
         httpClients.getOrPut(baseUrl) { HttpClient(httpClientProvider(baseUrl)) }
 
-    val httpPoller: HttpPoller by lazy { HttpPoller() }
-
     private fun httpClientProvider(baseUrl: String): HttpClientProvider =
         when (BeaconConfig.httpClientProvider) {
             BeaconConfig.HttpClientProvider.Ktor -> KtorHttpClientProvider(baseUrl)
@@ -129,7 +128,7 @@ internal class DependencyRegistry(
             matrixUserService(baseUrl),
             matrixRoomService(baseUrl),
             matrixEventService(baseUrl),
-            httpPoller,
+            poller,
         )
 
     private fun matrixClients(keyPair: KeyPair, replicationCount: Int): List<MatrixClient> =

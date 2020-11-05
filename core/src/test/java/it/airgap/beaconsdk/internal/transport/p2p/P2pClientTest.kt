@@ -7,16 +7,21 @@ import it.airgap.beaconsdk.internal.crypto.data.KeyPair
 import it.airgap.beaconsdk.internal.crypto.data.SessionKeyPair
 import it.airgap.beaconsdk.internal.transport.p2p.data.P2pMessage
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.MatrixClient
-import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.api.event.MatrixEventResponse
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.MatrixEvent
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.MatrixRoom
+import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.api.event.MatrixEventResponse
 import it.airgap.beaconsdk.internal.transport.p2p.utils.P2pCommunicationUtils
 import it.airgap.beaconsdk.internal.transport.p2p.utils.P2pServerUtils
-import it.airgap.beaconsdk.internal.utils.*
+import it.airgap.beaconsdk.internal.utils.HexString
+import it.airgap.beaconsdk.internal.utils.Success
+import it.airgap.beaconsdk.internal.utils.asHexString
+import it.airgap.beaconsdk.internal.utils.encodeToHexString
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
+import mockLog
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import kotlin.test.assertEquals
@@ -28,9 +33,9 @@ internal class P2pClientTest {
     @MockK
     private lateinit var p2pCommunicationUtils: P2pCommunicationUtils
 
-    @MockK
+    @MockK(relaxUnitFun = true)
     private lateinit var matrixClient1: MatrixClient
-    @MockK
+    @MockK(relaxUnitFun = true)
     private lateinit var matrixClient2: MatrixClient
 
     @MockK
@@ -46,21 +51,10 @@ internal class P2pClientTest {
     fun setup() {
         MockKAnnotations.init(this)
 
-        mockkStatic("it.airgap.beaconsdk.internal.utils.LogKt")
-        every { logDebug(any(), any()) } answers {
-            println("[DEBUG] ${firstArg<String>()}: ${secondArg<String>()}")
-            Unit
-        }
-        every { logError(any(), any()) } answers {
-            println("[ERROR] ${firstArg<String>()}: ${secondArg<Throwable>()}")
-            Unit
-        }
+        mockLog()
 
         coEvery { matrixClient1.isLoggedIn() } returns true
         coEvery { matrixClient2.isLoggedIn() } returns true
-
-        coEvery { matrixClient1.start(any(), any(), any()) } returns Unit
-        coEvery { matrixClient2.start(any(), any(), any()) } returns Unit
 
         every { crypto.hash(any<String>(), any()) } answers {
             val arg = firstArg<String>()
@@ -101,6 +95,11 @@ internal class P2pClientTest {
             crypto,
             keyPair
         )
+    }
+
+    @After
+    fun cleanUp() {
+        unmockkAll()
     }
 
     @Test
