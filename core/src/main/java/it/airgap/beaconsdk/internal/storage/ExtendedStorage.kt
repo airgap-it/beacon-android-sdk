@@ -1,14 +1,11 @@
 package it.airgap.beaconsdk.internal.storage
 
-import it.airgap.beaconsdk.data.beacon.AccountInfo
 import it.airgap.beaconsdk.data.beacon.AppMetadata
 import it.airgap.beaconsdk.data.beacon.P2pPeerInfo
 import it.airgap.beaconsdk.data.beacon.PermissionInfo
 import kotlinx.coroutines.flow.Flow
 
 internal interface ExtendedStorage : Storage {
-    val accounts: Flow<AccountInfo>
-    val activeAccountIdentifier: Flow<String?>
     val appMetadata: Flow<AppMetadata>
     val permissions: Flow<PermissionInfo>
     val p2pPeers: Flow<P2pPeerInfo>
@@ -22,23 +19,14 @@ internal interface ExtendedStorage : Storage {
     suspend fun findP2pPeer(predicate: (P2pPeerInfo) -> Boolean): P2pPeerInfo?
     suspend fun removeP2pPeers(predicate: ((P2pPeerInfo) -> Boolean)? = null)
 
-    suspend fun addAccounts(
-        accounts: List<AccountInfo>,
-        overwrite: Boolean = false,
-        compare: (AccountInfo, AccountInfo) -> Boolean = { first, second -> first == second },
-    )
-
-    suspend fun findAccount(predicate: (AccountInfo) -> Boolean): AccountInfo?
-    suspend fun removeAccounts(predicate: ((AccountInfo) -> Boolean)? = null)
-
-    suspend fun addAppsMetadata(
+    suspend fun addAppMetadata(
         appsMetadata: List<AppMetadata>,
         overwrite: Boolean = false,
         compare: (AppMetadata, AppMetadata) -> Boolean = { first, second -> first == second },
     )
 
     suspend fun findAppMetadata(predicate: (AppMetadata) -> Boolean): AppMetadata?
-    suspend fun removeAppsMetadata(predicate: ((AppMetadata) -> Boolean)? = null)
+    suspend fun removeAppMetadata(predicate: ((AppMetadata) -> Boolean)? = null)
 
     suspend fun addPermissions(
         permissions: List<PermissionInfo>,

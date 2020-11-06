@@ -45,21 +45,14 @@ internal class BeaconClientBuilderTest {
         runBlocking {
             val customNodes = listOf("node#1", "node#2")
 
-            val beaconClient1 = BeaconClient.Builder(appName).apply {
-                matrixNodes(*customNodes.toTypedArray())
+            val beaconClient = BeaconClient.Builder(appName).apply {
+                matrixNodes = customNodes
             }.build()
 
-            val beaconClient2 = BeaconClient.Builder(appName).apply {
-                matrixNodes(customNodes)
-            }.build()
+            assertEquals(appName, beaconClient.name)
+            assertEquals(beaconId, beaconClient.beaconId)
 
-            assertEquals(appName, beaconClient1.name)
-            assertEquals(beaconId, beaconClient1.beaconId)
-
-            assertEquals(appName, beaconClient2.name)
-            assertEquals(beaconId, beaconClient2.beaconId)
-
-            coVerify(exactly = 2) {
+            coVerify(exactly = 1) {
                 beaconApp.init(appName, customNodes, ofType(SharedPreferencesStorage::class))
             }
         }
@@ -85,16 +78,12 @@ internal class BeaconClientBuilderTest {
         runBlocking {
             val customNodes = listOf("node#1", "node#2")
 
-            val beaconClient1 = BeaconClient(appName) { matrixNodes(*customNodes.toTypedArray()) }
-            val beaconClient2 = BeaconClient(appName) { matrixNodes(customNodes) }
+            val beaconClient = BeaconClient(appName) { matrixNodes = customNodes }
 
-            assertEquals(appName, beaconClient1.name)
-            assertEquals(beaconId, beaconClient1.beaconId)
+            assertEquals(appName, beaconClient.name)
+            assertEquals(beaconId, beaconClient.beaconId)
 
-            assertEquals(appName, beaconClient2.name)
-            assertEquals(beaconId, beaconClient2.beaconId)
-
-            coVerify(exactly = 2) {
+            coVerify(exactly = 1) {
                 beaconApp.init(appName, customNodes, ofType(SharedPreferencesStorage::class))
             }
         }

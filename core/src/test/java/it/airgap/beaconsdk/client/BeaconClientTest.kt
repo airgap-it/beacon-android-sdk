@@ -80,7 +80,7 @@ internal class BeaconClientTest {
 
             every { connectionController.subscribe() } answers { beaconMessageFlow }
 
-            storage.addAppsMetadata(AppMetadata(dAppId, "otherApp"))
+            storage.addAppMetadata(listOf(AppMetadata(dAppId, "otherApp")))
 
             val messages =
                 beaconClient.connect()
@@ -273,10 +273,23 @@ internal class BeaconClientTest {
     }
 
     @Test
+    fun `does not remove any P2P peer if not specified`() {
+        runBlockingTest {
+            val storagePeers = p2pPeers(4)
+            storage.setP2pPeers(storagePeers)
+            beaconClient.removePeers()
+
+            val fromStorage = storage.getP2pPeers()
+
+            assertEquals(storagePeers, fromStorage)
+        }
+    }
+
+    @Test
     fun `removes all P2P peers from storage`() {
         runBlockingTest {
             storage.setP2pPeers(p2pPeers(4))
-            beaconClient.removePeers()
+            beaconClient.removeAllPeers()
 
             val fromStorage = storage.getP2pPeers()
 
@@ -285,12 +298,12 @@ internal class BeaconClientTest {
     }
 
     @Test
-    fun `returns apps metadata from storage`() {
+    fun `returns app metadata from storage`() {
         runBlockingTest {
             val storageMetadata = appMetadata(4)
-            storage.setAppsMetadata(storageMetadata)
+            storage.setAppMetadata(storageMetadata)
 
-            val fromClient = beaconClient.getAppsMetadata()
+            val fromClient = beaconClient.getAppMetadata()
 
             assertEquals(storageMetadata, fromClient)
         }
@@ -300,7 +313,7 @@ internal class BeaconClientTest {
     fun `returns app metadata matching specified sender ID`() {
         runBlockingTest {
             val storageMetadata = appMetadata(4)
-            storage.setAppsMetadata(storageMetadata)
+            storage.setAppMetadata(storageMetadata)
 
             val toFind = storageMetadata.random()
             val fromClient = beaconClient.getAppMetadataFor(toFind.senderId)
@@ -313,16 +326,16 @@ internal class BeaconClientTest {
     fun `removes app metadata matching specified sender IDs`() {
         runBlockingTest {
             val (toKeep, toRemove) = appMetadata(4).splitAt { it.size / 2 }
-            storage.setAppsMetadata(toKeep + toRemove)
+            storage.setAppMetadata(toKeep + toRemove)
 
             val (toRemoveVararg, toRemoveList) = toRemove.map(AppMetadata::senderId)
                 .splitAt { it.size / 2 }
             with(beaconClient) {
-                removeAppsMetadataFor(*toRemoveVararg.toTypedArray())
-                removeAppsMetadataFor(toRemoveList)
+                removeAppMetadataFor(*toRemoveVararg.toTypedArray())
+                removeAppMetadataFor(toRemoveList)
             }
 
-            val fromStorage = storage.getAppsMetadata()
+            val fromStorage = storage.getAppMetadata()
 
             assertEquals(toKeep, fromStorage)
         }
@@ -332,17 +345,30 @@ internal class BeaconClientTest {
     fun `removes app metadata from storage`() {
         runBlockingTest {
             val (toKeep, toRemove) = appMetadata(4).splitAt { it.size / 2 }
-            storage.setAppsMetadata(toKeep + toRemove)
+            storage.setAppMetadata(toKeep + toRemove)
 
             val (toRemoveVararg, toRemoveList) = toRemove.splitAt { it.size / 2 }
             with(beaconClient) {
-                removeAppsMetadata(*toRemoveVararg.toTypedArray())
-                removeAppsMetadata(toRemoveList)
+                removeAppMetadata(*toRemoveVararg.toTypedArray())
+                removeAppMetadata(toRemoveList)
             }
 
-            val fromStorage = storage.getAppsMetadata()
+            val fromStorage = storage.getAppMetadata()
 
             assertEquals(toKeep, fromStorage)
+        }
+    }
+
+    @Test
+    fun `does not remove any app metadata if not specified`() {
+        runBlockingTest {
+            val storageAppMetadata = appMetadata(4)
+            storage.setAppMetadata(storageAppMetadata)
+            beaconClient.removeAppMetadata()
+
+            val fromStorage = storage.getAppMetadata()
+
+            assertEquals(storageAppMetadata, fromStorage)
         }
     }
 
@@ -350,10 +376,10 @@ internal class BeaconClientTest {
     fun `removes all app metadata from storage`() {
         runBlockingTest {
             val storageMetadata = appMetadata(4)
-            storage.setAppsMetadata(storageMetadata)
-            beaconClient.removeAppsMetadata()
+            storage.setAppMetadata(storageMetadata)
+            beaconClient.removeAllAppMetadata()
 
-            val fromStorage = storage.getAppsMetadata()
+            val fromStorage = storage.getAppMetadata()
 
             assertTrue(fromStorage.isEmpty(), "Expected app metadata list to be empty")
         }
@@ -423,11 +449,24 @@ internal class BeaconClientTest {
     }
 
     @Test
-    fun `removes all permissions from storage`() {
+    fun `does not remove any permission if not specified`() {
         runBlockingTest {
             val storagePermissions = permissions(4)
             storage.setPermissions(storagePermissions)
             beaconClient.removePermissions()
+
+            val fromStorage = storage.getPermissions()
+
+            assertEquals(storagePermissions, fromStorage)
+        }
+    }
+
+    @Test
+    fun `removes all permissions from storage`() {
+        runBlockingTest {
+            val storagePermissions = permissions(4)
+            storage.setPermissions(storagePermissions)
+            beaconClient.removeAllPermissions()
 
             val fromStorage = storage.getPermissions()
 

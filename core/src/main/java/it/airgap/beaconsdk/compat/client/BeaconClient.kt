@@ -10,21 +10,33 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
+/**
+ * Callback to be invoked when [build] finishes execution.
+ */
 public interface BuildCallback {
     public fun onSuccess(beaconClient: BeaconClient)
     public fun onError(error: Throwable)
 }
 
+/**
+ * Callback to be invoked when a new [message][BeaconMessage] is received.
+ */
 public interface OnNewMessageListener {
     public fun onNewMessage(message: BeaconMessage)
     public fun onError(error: Throwable)
 }
 
+/**
+ * Callback to be invoked when [respond] finishes execution.
+ */
 public interface ResponseCallback {
     public fun onSuccess()
     public fun onError(error: Throwable)
 }
 
+/**
+ * Connects with known peers and listens for incoming messages with the given [listener].
+ */
 public fun BeaconClient.connect(listener: OnNewMessageListener) {
     receiveScope {
         try {
@@ -40,10 +52,15 @@ public fun BeaconClient.connect(listener: OnNewMessageListener) {
     }
 }
 
-public fun BeaconClient.respond(message: BeaconResponse, callback: ResponseCallback) {
+/**
+ * Sends the [response] in reply to a previously received request and calls the [callback] when finished.
+ *
+ * The method will fail if there is no pending request that matches the [response].
+ */
+public fun BeaconClient.respond(response: BeaconResponse, callback: ResponseCallback) {
     sendScope {
         try {
-            respond(message)
+            respond(response)
             callback.onSuccess()
         } catch (e: Exception) {
             callback.onError(e)
@@ -51,6 +68,9 @@ public fun BeaconClient.respond(message: BeaconResponse, callback: ResponseCallb
     }
 }
 
+/**
+ * Builds a new instance of [BeaconClient] and calls the [callback] with the result.
+ */
 public fun BeaconClient.Builder.build(callback: BuildCallback) {
     buildScope {
         try {

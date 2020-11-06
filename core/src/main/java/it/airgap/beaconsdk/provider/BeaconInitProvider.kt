@@ -7,6 +7,9 @@ import android.net.Uri
 import it.airgap.beaconsdk.internal.BeaconApp
 import it.airgap.beaconsdk.internal.utils.logInfo
 
+/**
+ * Content provider which initializes the Beacon SDK at app startup time.
+ */
 public class BeaconInitProvider : ContentProvider() {
     override fun onCreate(): Boolean {
         context?.let {

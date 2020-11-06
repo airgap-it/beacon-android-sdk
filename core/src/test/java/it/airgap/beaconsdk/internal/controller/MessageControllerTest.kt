@@ -92,7 +92,7 @@ internal class MessageControllerTest {
         val versionedRequest = VersionedBeaconMessage.fromBeaconMessage(version, senderId, permissionRequest)
 
         val result = runBlocking { messageController.onIncomingMessage(versionedRequest) }
-        val appsMetadata = runBlocking { storage.getAppsMetadata() }
+        val appsMetadata = runBlocking { storage.getAppMetadata() }
 
         assertTrue(result.isSuccess, "Expected result to be a success")
         assertEquals(listOf(permissionRequest.appMetadata), appsMetadata)
@@ -131,7 +131,7 @@ internal class MessageControllerTest {
             messageController.onOutgoingMessage(senderId, permissionResponse)
         }
 
-        val appMetadata = runBlocking { storage.getAppsMetadata().first() }
+        val appMetadata = runBlocking { storage.getAppMetadata().first() }
         val permissions = runBlocking { storage.getPermissions() }
         val expected = listOf(
             PermissionInfo(
@@ -141,7 +141,6 @@ internal class MessageControllerTest {
                 permissionResponse.scopes,
                 appMetadata.senderId,
                 appMetadata,
-                "",
                 permissionResponse.publicKey,
                 currentTimeMillis
             )
@@ -161,7 +160,7 @@ internal class MessageControllerTest {
 
         runBlocking {
             messageController.onIncomingMessage(versionedRequest)
-            storage.setAppsMetadata(emptyList())
+            storage.setAppMetadata(emptyList())
         }
 
         val result = runBlocking { messageController.onOutgoingMessage(senderId, permissionResponse) }

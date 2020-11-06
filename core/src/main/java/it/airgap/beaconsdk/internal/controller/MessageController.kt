@@ -47,7 +47,7 @@ internal class MessageController(
         }
 
     private suspend fun onPermissionRequest(request: PermissionBeaconRequest) {
-        storage.addAppsMetadata(request.appMetadata)
+        storage.addAppMetadata(listOf(request.appMetadata))
     }
 
     private suspend fun onPermissionResponse(response: PermissionBeaconResponse, request: VersionedBeaconMessage) {
@@ -63,12 +63,11 @@ internal class MessageController(
             response.scopes,
             appMetadata.senderId,
             appMetadata,
-            "",
             publicKey,
             connectedAt = currentTimestamp()
         )
 
-        storage.addPermissions(permissionInfo)
+        storage.addPermissions(listOf(permissionInfo))
     }
 
     @Throws(BeaconException::class)

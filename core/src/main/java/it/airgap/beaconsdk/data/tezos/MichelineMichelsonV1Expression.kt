@@ -11,6 +11,12 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.jsonObject
 
+/**
+ * Base for JSON Micheline expressions.
+ *
+ * @see [Micheline White Doc](https://tezos.gitlab.io/whitedoc/micheline.html)
+ * @see [Michelson White Doc](https://tezos.gitlab.io/whitedoc/michelson.html)
+ */
 @Serializable(with = MichelineMichelsonV1Expression.Serializer::class)
 public sealed class MichelineMichelsonV1Expression {
 
