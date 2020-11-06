@@ -112,7 +112,7 @@ internal class V2BeaconMessageTest {
         val matchingAppMetadata = AppMetadata(senderId, "v2App")
         val otherAppMetadata = AppMetadata(otherId, "v2OtherApp")
 
-        runBlocking { storage.setAppsMetadata(listOf(otherAppMetadata, matchingAppMetadata)) }
+        runBlocking { storage.setAppMetadata(listOf(otherAppMetadata, matchingAppMetadata)) }
 
         runBlocking {
             versionedWithBeacon(senderId = senderId, appMetadata = matchingAppMetadata)

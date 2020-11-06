@@ -1,13 +1,11 @@
 package it.airgap.beaconsdk.internal.storage.decorator
 
-import accounts
 import appMetadata
 import it.airgap.beaconsdk.internal.storage.MockStorage
 import it.airgap.beaconsdk.internal.storage.Storage
 import it.airgap.beaconsdk.internal.utils.splitAt
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.drop
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
@@ -31,24 +29,11 @@ internal class DecoratedStorageTest {
     }
 
     @Test
-    fun `finds account based on predicate`() {
-        val accounts = accounts(4)
-        val expected = accounts.shuffled().first().copy()
-
-        runBlocking { storage.setAccounts(accounts) }
-
-        val found =
-            runBlocking { decoratedStorage.findAccount { it.accountIdentifier == expected.accountIdentifier } }
-
-        assertEquals(expected, found)
-    }
-
-    @Test
     fun `finds app metadata based on predicate`() {
         val appMetadata = appMetadata(3)
         val expected = appMetadata.shuffled().first().copy()
 
-        runBlocking { storage.setAppsMetadata(appMetadata) }
+        runBlocking { storage.setAppMetadata(appMetadata) }
 
         val found = runBlocking { decoratedStorage.findAppMetadata { it.name == expected.name } }
 
@@ -81,34 +66,6 @@ internal class DecoratedStorageTest {
     }
 
     @Test
-    fun `adds new accounts and overwrites if already exists based on predicate`() {
-        val accounts = accounts(8)
-        val expected = accounts.toMutableList()
-
-        val (toStorage, toAdd) = accounts.splitAt { it.size / 2 }
-
-        val changed = toStorage
-            .mapIndexed { index, accountInfo -> index to accountInfo }
-            .shuffled()
-            .takeHalf()
-            .map { it.first to it.second.copy(senderId = "${it.second.senderId}${it.first}") }
-            .onEach { expected[it.first] = it.second }
-            .map { it.second }
-
-        runBlocking { storage.setAccounts(toStorage) }
-        runBlocking {
-            decoratedStorage.addAccounts(
-                changed + toAdd,
-                overwrite = true
-            ) { a, b -> a.accountIdentifier == b.accountIdentifier }
-        }
-
-        val fromStorage = runBlocking { storage.getAccounts() }
-
-        assertEquals(expected, fromStorage)
-    }
-
-    @Test
     fun `adds new app metadata and overwrites if already exists based on predicate`() {
         val appMetadata = appMetadata(8)
         val expected = appMetadata.toMutableList()
@@ -123,15 +80,15 @@ internal class DecoratedStorageTest {
             .onEach { expected[it.first] = it.second }
             .map { it.second }
 
-        runBlocking { storage.setAppsMetadata(toStorage) }
+        runBlocking { storage.setAppMetadata(toStorage) }
         runBlocking {
-            decoratedStorage.addAppsMetadata(
+            decoratedStorage.addAppMetadata(
                 changed + toAdd,
                 overwrite = true
             ) { a, b -> a.name == b.name }
         }
 
-        val fromStorage = runBlocking { storage.getAppsMetadata() }
+        val fromStorage = runBlocking { storage.getAppMetadata() }
 
         assertEquals(expected, fromStorage)
     }
@@ -193,28 +150,6 @@ internal class DecoratedStorageTest {
     }
 
     @Test
-    fun `adds new accounts and does not overwrite if exists base on predicate`() {
-        val accounts = accounts(8)
-
-        val (toStorage, toAdd) = accounts.splitAt { it.size / 2 }
-        val changed = toStorage
-            .shuffled()
-            .takeHalf()
-            .mapIndexed { index, accountInfo -> accountInfo.copy(senderId = "${accountInfo.senderId}${index}") }
-
-        runBlocking { storage.setAccounts(toStorage) }
-        runBlocking {
-            decoratedStorage.addAccounts(changed + toAdd, overwrite = false) { a, b ->
-                a.accountIdentifier == b.accountIdentifier
-            }
-        }
-
-        val fromStorage = runBlocking { storage.getAccounts() }
-
-        assertEquals(toStorage + toAdd, fromStorage)
-    }
-
-    @Test
     fun `adds new app metadata and does not overwrite if exists base on predicate`() {
         val appMetadata = appMetadata(8)
 
@@ -224,14 +159,14 @@ internal class DecoratedStorageTest {
             .takeHalf()
             .mapIndexed { index, appMetadata -> appMetadata.copy(senderId = "${appMetadata.senderId}${index}") }
 
-        runBlocking { storage.setAppsMetadata(toStorage) }
+        runBlocking { storage.setAppMetadata(toStorage) }
         runBlocking {
-            decoratedStorage.addAppsMetadata(changed + toAdd, overwrite = false) { a, b ->
+            decoratedStorage.addAppMetadata(changed + toAdd, overwrite = false) { a, b ->
                 a.name == b.name
             }
         }
 
-        val fromStorage = runBlocking { storage.getAppsMetadata() }
+        val fromStorage = runBlocking { storage.getAppMetadata() }
 
         assertEquals(toStorage + toAdd, fromStorage)
     }
@@ -281,27 +216,14 @@ internal class DecoratedStorageTest {
     }
 
     @Test
-    fun `removes accounts based on predicate`() {
-        val accounts = accounts(4)
-        val (toKeep, toRemove) = accounts.splitAt { it.size / 2 }
-        val accountIdentifiersToRemove = toRemove.map { it.accountIdentifier }
-
-        runBlocking { storage.setAccounts(accounts) }
-        runBlocking { decoratedStorage.removeAccounts { accountIdentifiersToRemove.contains(it.accountIdentifier) } }
-        val fromStorage = runBlocking { storage.getAccounts() }
-
-        assertEquals(toKeep, fromStorage)
-    }
-
-    @Test
     fun `removes app metadata based on predicate`() {
         val appMetadata = appMetadata(4)
         val (toKeep, toRemove) = appMetadata.splitAt { it.size / 2 }
         val namesToRemove = toRemove.map { it.name }
 
-        runBlocking { storage.setAppsMetadata(appMetadata) }
-        runBlocking { decoratedStorage.removeAppsMetadata() { namesToRemove.contains(it.name) } }
-        val fromStorage = runBlocking { storage.getAppsMetadata() }
+        runBlocking { storage.setAppMetadata(appMetadata) }
+        runBlocking { decoratedStorage.removeAppMetadata() { namesToRemove.contains(it.name) } }
+        val fromStorage = runBlocking { storage.getAppMetadata() }
 
         assertEquals(toKeep, fromStorage)
     }
@@ -333,23 +255,12 @@ internal class DecoratedStorageTest {
     }
 
     @Test
-    fun `removes all accounts`() {
-        val accounts = accounts(2)
-        runBlocking { storage.setAccounts(accounts) }
-        runBlocking { decoratedStorage.removeAccounts() }
-
-        val fromStorage = runBlocking { storage.getAccounts() }
-
-        assertTrue(fromStorage.isEmpty())
-    }
-
-    @Test
     fun `removes all app metadata`() {
         val appMetadata = appMetadata(2)
-        runBlocking { storage.setAppsMetadata(appMetadata) }
-        runBlocking { decoratedStorage.removeAppsMetadata() }
+        runBlocking { storage.setAppMetadata(appMetadata) }
+        runBlocking { decoratedStorage.removeAppMetadata() }
 
-        val fromStorage = runBlocking { storage.getAppsMetadata() }
+        val fromStorage = runBlocking { storage.getAppMetadata() }
 
         assertTrue(fromStorage.isEmpty())
     }
@@ -377,38 +288,6 @@ internal class DecoratedStorageTest {
     }
 
     @Test
-    fun `notifies when new accounts are added`() {
-        val toAdd = accounts(2)
-
-        runBlocking {
-            val newAccounts = async {
-                decoratedStorage.accounts
-                    .take(toAdd.size)
-                    .toList()
-            }
-            decoratedStorage.addAccounts(toAdd)
-
-            assertEquals(
-                toAdd.sortedBy { it.accountIdentifier },
-                newAccounts.await().sortedBy { it.accountIdentifier })
-        }
-    }
-
-    @Test
-    fun `notifies when new active account identifier is set`() {
-        val toSet = "new active"
-
-        runBlocking {
-            val newAccountIdentifier = async {
-                decoratedStorage.activeAccountIdentifier.first()
-            }
-            decoratedStorage.setActiveAccountIdentifier(toSet)
-
-            assertEquals(toSet, newAccountIdentifier.await())
-        }
-    }
-
-    @Test
     fun `notifies when new app metadata is added`() {
         val toAdd = appMetadata(2)
 
@@ -418,7 +297,7 @@ internal class DecoratedStorageTest {
                     .take(toAdd.size)
                     .toList()
             }
-            decoratedStorage.addAppsMetadata(toAdd)
+            decoratedStorage.addAppMetadata(toAdd)
 
             assertEquals(toAdd.sortedBy { it.name }, newAppMetadata.await().sortedBy { it.name })
         }
@@ -459,35 +338,11 @@ internal class DecoratedStorageTest {
     }
 
     @Test
-    fun `notifies when accounts are updated`() {
-        val toStorage = accounts(2)
-
-        runBlocking {
-            storage.setAccounts(toStorage)
-            val subscribed = async {
-                decoratedStorage.accounts
-                    .drop(toStorage.size)
-                    .take(toStorage.size)
-                    .toList()
-            }
-
-            val updated = toStorage.mapIndexed { index, accountInfo ->
-                accountInfo.copy(accountIdentifier = "${accountInfo.accountIdentifier}$index")
-            }
-            decoratedStorage.addAccounts(updated)
-
-            assertEquals(
-                updated.sortedBy { it.accountIdentifier },
-                subscribed.await().sortedBy { it.accountIdentifier })
-        }
-    }
-
-    @Test
     fun `notifies when new app metadata is updated`() {
         val toStorage = appMetadata(2)
 
         runBlocking {
-            storage.setAppsMetadata(toStorage)
+            storage.setAppMetadata(toStorage)
             val subscribed = async {
                 decoratedStorage.appMetadata
                     .drop(toStorage.size)
@@ -498,7 +353,7 @@ internal class DecoratedStorageTest {
             val updated = toStorage.mapIndexed { index, appMetadata ->
                 appMetadata.copy(name = "${appMetadata.name}$index")
             }
-            decoratedStorage.addAppsMetadata(updated)
+            decoratedStorage.addAppMetadata(updated)
 
             assertEquals(
                 updated.sortedBy { it.name },

@@ -2,7 +2,6 @@ package it.airgap.beaconsdk.internal.storage
 
 import android.content.Context
 import android.content.SharedPreferences
-import it.airgap.beaconsdk.data.beacon.AccountInfo
 import it.airgap.beaconsdk.data.beacon.AppMetadata
 import it.airgap.beaconsdk.data.beacon.P2pPeerInfo
 import it.airgap.beaconsdk.data.beacon.PermissionInfo
@@ -19,25 +18,11 @@ internal class SharedPreferencesStorage(private val sharedPreferences: SharedPre
         sharedPreferences.putSerializable(KEY_P2P_PEERS, p2pPeers)
     }
 
-    override suspend fun getAccounts(): List<AccountInfo> =
-        sharedPreferences.getSerializable(KEY_ACCOUNTS, emptyList())
-
-    override suspend fun setAccounts(accounts: List<AccountInfo>) {
-        sharedPreferences.putSerializable(KEY_ACCOUNTS, accounts)
-    }
-
-    override suspend fun getActiveAccountIdentifier(): String? =
-        sharedPreferences.getString(KEY_ACTIVE_ACCOUNT_IDENTIFIER, null)
-
-    override suspend fun setActiveAccountIdentifier(activeAccountIdentifier: String) {
-        sharedPreferences.putSerializable(KEY_ACTIVE_ACCOUNT_IDENTIFIER, activeAccountIdentifier)
-    }
-
-    override suspend fun getAppsMetadata(): List<AppMetadata> =
+    override suspend fun getAppMetadata(): List<AppMetadata> =
         sharedPreferences.getSerializable(KEY_APPS_METADATA, emptyList())
 
-    override suspend fun setAppsMetadata(appsMetadata: List<AppMetadata>) {
-        sharedPreferences.putSerializable(KEY_APPS_METADATA, appsMetadata)
+    override suspend fun setAppMetadata(appMetadata: List<AppMetadata>) {
+        sharedPreferences.putSerializable(KEY_APPS_METADATA, appMetadata)
     }
 
     override suspend fun getPermissions(): List<PermissionInfo> =

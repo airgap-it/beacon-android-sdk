@@ -202,27 +202,6 @@ internal fun p2pPeers(
         P2pPeerInfo("name#$it", "publicKey#$it", "relayServer#$it", version, paired)
     }
 
-internal fun accounts(
-    @IntRange(from = 1) n: Int,
-    network: Network = Network.Custom(),
-    scopes: List<PermissionScope> = emptyList(),
-    origin: Origin = Origin.P2P("origin"),
-    threshold: Threshold? = null
-): List<AccountInfo> =
-    (0 until n).map {
-        AccountInfo(
-            "identifier#$it",
-            "address#$it",
-            network,
-            scopes,
-            "sender#$it",
-            origin,
-            "publicKey#$it",
-            it.toLong(),
-            threshold,
-        )
-    }
-
 internal fun appMetadata(@IntRange(from = 1) number: Int = 1): List<AppMetadata> =
     (0 until number).map { AppMetadata("sender#$it", "name#$it") }
 
@@ -239,7 +218,6 @@ internal fun permissions(
             scopes,
             "sender#$index",
             appMetadata,
-            "website#$index",
             "publicKey#$index",
             index.toLong(),
         )

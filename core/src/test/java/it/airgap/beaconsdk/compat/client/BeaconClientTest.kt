@@ -77,7 +77,7 @@ internal class BeaconClientTest {
 
             every { connectionController.subscribe() } answers { beaconMessageFlow }
 
-            storage.addAppsMetadata(AppMetadata(dAppId, "otherApp"))
+            storage.addAppMetadata(listOf(AppMetadata(dAppId, "otherApp")))
 
             runBlocking {
                 val messages = mutableListOf<BeaconMessage>()

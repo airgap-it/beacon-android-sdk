@@ -3,6 +3,11 @@ package it.airgap.beaconsdk.data.beacon
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+/**
+ * A group of values that identify the source of an incoming request.
+ *
+ * @property [id] The unique value that identifies the origin.
+ */
 @Serializable
 public sealed class Origin {
     public abstract val id: String

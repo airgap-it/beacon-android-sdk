@@ -4,6 +4,13 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 
+/**
+ * Type of networks supported in Beacon.
+ *
+ * @property [name] An optional name of the network
+ * @property [rpcUrl] An optional URL for the network RPC interface.
+ * @property [identifier] A unique value that identifies the network.
+ */
 @Serializable
 public sealed class Network {
     public abstract val name: String?

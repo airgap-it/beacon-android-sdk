@@ -32,13 +32,12 @@ internal class PermissionInfoTest {
     }
 
     private fun expectedWithJson(
-        accountIdentifier: String = "accountIdentifeir",
+        accountIdentifier: String = "accountIdentifier",
         address: String = "address",
         network: Network = Network.Custom(),
         scopes: List<PermissionScope> = emptyList(),
         senderId: String = "senderId",
         appMetadata: AppMetadata = AppMetadata(senderId, "name"),
-        website: String = "website",
         publicKey: String = "publicKey",
         connectedAt: Long = 0,
         threshold: Threshold? = null,
@@ -54,7 +53,6 @@ internal class PermissionInfoTest {
                     "accountIdentifier": "$accountIdentifier",
                     "senderId": "$senderId",
                     "appMetadata": ${Json.encodeToString(appMetadata)},
-                    "website": "$website",
                     "publicKey": "$publicKey",
                     "connectedAt": $connectedAt
                 }
@@ -68,7 +66,6 @@ internal class PermissionInfoTest {
                     "accountIdentifier": "$accountIdentifier",
                     "senderId": "$senderId",
                     "appMetadata": ${Json.encodeToString(appMetadata)},
-                    "website": "$website",
                     "publicKey": "$publicKey",
                     "connectedAt": $connectedAt
                 }
@@ -82,7 +79,6 @@ internal class PermissionInfoTest {
             scopes,
             senderId,
             appMetadata,
-            website,
             publicKey,
             connectedAt,
             threshold,

@@ -1,6 +1,5 @@
 package it.airgap.beaconsdk.internal.storage.decorator
 
-import it.airgap.beaconsdk.data.beacon.AccountInfo
 import it.airgap.beaconsdk.data.beacon.AppMetadata
 import it.airgap.beaconsdk.data.beacon.P2pPeerInfo
 import it.airgap.beaconsdk.data.beacon.PermissionInfo
@@ -15,27 +14,14 @@ private typealias StorageSelectCollection<T> = suspend Storage.() -> List<T>
 private typealias StorageInsertCollection<T> = suspend Storage.(List<T>) -> Unit
 
 internal class DecoratedStorage(private val storage: Storage) : ExtendedStorage, Storage by storage {
-    private val _accounts: MutableSharedFlow<AccountInfo> by lazy { resourceFlow() }
-    override val accounts: Flow<AccountInfo> get() = _accounts.onSubscription { emitAll(getAccounts().asFlow()) }
-
-    private val _activeAccountIdentifier: MutableSharedFlow<String?> by lazy { resourceFlow(bufferCapacity = 1) }
-    override val activeAccountIdentifier: Flow<String?> get() = _activeAccountIdentifier.onSubscription { emit(getActiveAccountIdentifier()) }
-
     private val _appMetadata: MutableSharedFlow<AppMetadata> by lazy { resourceFlow() }
-    override val appMetadata: Flow<AppMetadata> get() = _appMetadata.onSubscription { emitAll(getAppsMetadata().asFlow()) }
+    override val appMetadata: Flow<AppMetadata> get() = _appMetadata.onSubscription { emitAll(getAppMetadata().asFlow()) }
 
     private val _permissions: MutableSharedFlow<PermissionInfo> by lazy { resourceFlow() }
     override val permissions: Flow<PermissionInfo> get() = _permissions.onSubscription { emitAll(getPermissions().asFlow()) }
 
     private val _p2pPeers: MutableSharedFlow<P2pPeerInfo> by lazy { resourceFlow() }
     override val p2pPeers: Flow<P2pPeerInfo> get() = _p2pPeers.onSubscription { emitAll(getP2pPeers().asFlow()) }
-
-    override suspend fun setActiveAccountIdentifier(activeAccountIdentifier: String) {
-        storage.setActiveAccountIdentifier(activeAccountIdentifier)
-        CoroutineScope(Dispatchers.Default).launch {
-            _activeAccountIdentifier.tryEmit(activeAccountIdentifier)
-        }
-    }
 
     override suspend fun addP2pPeers(
         peers: List<P2pPeerInfo>,
@@ -60,37 +46,14 @@ internal class DecoratedStorage(private val storage: Storage) : ExtendedStorage,
         else removeAll(Storage::setP2pPeers)
     }
 
-    override suspend fun addAccounts(
-        accounts: List<AccountInfo>,
-        overwrite: Boolean,
-        compare: (AccountInfo, AccountInfo) -> Boolean,
-    ) {
-        add(
-            Storage::getAccounts,
-            Storage::setAccounts,
-            _accounts,
-            accounts,
-            overwrite,
-            compare,
-        )
-    }
-
-    override suspend fun findAccount(predicate: (AccountInfo) -> Boolean): AccountInfo? =
-        selectFirst(Storage::getAccounts, predicate)
-
-    override suspend fun removeAccounts(predicate: ((AccountInfo) -> Boolean)?) {
-        if (predicate != null) remove(Storage::getAccounts, Storage::setAccounts, predicate)
-        else removeAll(Storage::setAccounts)
-    }
-
-    override suspend fun addAppsMetadata(
+    override suspend fun addAppMetadata(
         appsMetadata: List<AppMetadata>,
         overwrite: Boolean,
         compare: (AppMetadata, AppMetadata) -> Boolean,
     ) {
         add(
-            Storage::getAppsMetadata,
-            Storage::setAppsMetadata,
+            Storage::getAppMetadata,
+            Storage::setAppMetadata,
             _appMetadata,
             appsMetadata,
             overwrite,
@@ -99,11 +62,11 @@ internal class DecoratedStorage(private val storage: Storage) : ExtendedStorage,
     }
 
     override suspend fun findAppMetadata(predicate: (AppMetadata) -> Boolean): AppMetadata? =
-        selectFirst(Storage::getAppsMetadata, predicate)
+        selectFirst(Storage::getAppMetadata, predicate)
 
-    override suspend fun removeAppsMetadata(predicate: ((AppMetadata) -> Boolean)?) {
-        if (predicate != null) remove(Storage::getAppsMetadata, Storage::setAppsMetadata, predicate)
-        else removeAll(Storage::setAppsMetadata)
+    override suspend fun removeAppMetadata(predicate: ((AppMetadata) -> Boolean)?) {
+        if (predicate != null) remove(Storage::getAppMetadata, Storage::setAppMetadata, predicate)
+        else removeAll(Storage::setAppMetadata)
     }
 
     override suspend fun addPermissions(

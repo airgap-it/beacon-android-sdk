@@ -2,6 +2,7 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlinx-serialization'
+apply plugin: 'org.jetbrains.dokka'
 
 android {
     compileSdkVersion 29
@@ -77,4 +78,12 @@ dependencies {
 
     androidTestImplementation(TestDependencies.androidxJunit)
     androidTestImplementation(TestDependencies.androidxEspresso)
+}
+
+dokkaHtml.configure {
+    dokkaSourceSets {
+        named("main") {
+            noAndroidSdkLink.set(false)
+        }
+    }
 }

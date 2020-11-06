@@ -15,6 +15,9 @@ import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
+/**
+ * Base for Tezos operations supported in Beacon.
+ */
 @Serializable(with = TezosOperation.Serializer::class)
 public sealed class TezosOperation {
     internal abstract val kind: Kind

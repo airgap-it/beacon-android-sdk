@@ -53,7 +53,7 @@ internal class P2pTransport(
         }
 
         if (result.isSuccess) {
-            storage.addP2pPeers(peerInfo.copy(isPaired = true), overwrite = true) { a, b ->
+            storage.addP2pPeers(listOf(peerInfo.copy(isPaired = true)), overwrite = true) { a, b ->
                 a.name == b.name
                         && a.publicKey == b.publicKey
                         && a.relayServer == b.relayServer

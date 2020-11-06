@@ -72,7 +72,7 @@ internal class BeaconClientBuilderTest {
         })
 
         BeaconClient.Builder(appName).apply {
-            matrixNodes(customNodes)
+            matrixNodes = customNodes
         }.build(callback)
 
         runBlocking { testDeferred.await() }
