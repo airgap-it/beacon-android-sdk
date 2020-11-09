@@ -1,9 +1,11 @@
 package it.airgap.beaconsdk.data.beacon
 
+import fromValues
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.encodeToJsonElement
 import org.junit.Test
 import kotlin.test.assertEquals
 
@@ -43,34 +45,19 @@ internal class PermissionInfoTest {
         threshold: Threshold? = null,
         includeNulls: Boolean = false,
     ): Pair<PermissionInfo, String> {
-        val json = if (threshold != null || includeNulls) {
-            """
-                {
-                    "address": "$address",
-                    "network": ${Json.encodeToString(network)},
-                    "scopes": ${Json.encodeToString(scopes)},
-                    "threshold": ${Json.encodeToString(threshold)},
-                    "accountIdentifier": "$accountIdentifier",
-                    "senderId": "$senderId",
-                    "appMetadata": ${Json.encodeToString(appMetadata)},
-                    "publicKey": "$publicKey",
-                    "connectedAt": $connectedAt
-                }
-            """.trimIndent()
-        } else {
-            """
-                {
-                    "address": "$address",
-                    "network": ${Json.encodeToString(network)},
-                    "scopes": ${Json.encodeToString(scopes)},
-                    "accountIdentifier": "$accountIdentifier",
-                    "senderId": "$senderId",
-                    "appMetadata": ${Json.encodeToString(appMetadata)},
-                    "publicKey": "$publicKey",
-                    "connectedAt": $connectedAt
-                }
-            """.trimIndent()
-        }
+        val values = mapOf(
+            "address" to address,
+            "network" to Json.encodeToJsonElement(network),
+            "scopes" to Json.encodeToJsonElement(scopes),
+            "threshold" to threshold?.let { Json.encodeToJsonElement(it) },
+            "accountIdentifier" to accountIdentifier,
+            "senderId" to senderId,
+            "appMetadata" to Json.encodeToJsonElement(appMetadata),
+            "publicKey" to publicKey,
+            "connectedAt" to connectedAt,
+        )
+
+        val json = JsonObject.fromValues(values, includeNulls).toString()
 
         return PermissionInfo(
             accountIdentifier,

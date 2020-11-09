@@ -1,11 +1,7 @@
 package it.airgap.beaconsdk.internal.message.v2
 
-import it.airgap.beaconsdk.data.beacon.AppMetadata
-import it.airgap.beaconsdk.data.beacon.Network
-import it.airgap.beaconsdk.data.beacon.PermissionScope
-import it.airgap.beaconsdk.data.beacon.Threshold
+import it.airgap.beaconsdk.data.beacon.*
 import it.airgap.beaconsdk.data.tezos.TezosOperation
-import it.airgap.beaconsdk.exception.BeaconException
 import it.airgap.beaconsdk.internal.message.VersionedBeaconMessage
 import it.airgap.beaconsdk.internal.storage.decorator.DecoratedExtendedStorage
 import it.airgap.beaconsdk.message.*
@@ -55,11 +51,11 @@ internal sealed class V2BeaconMessage : VersionedBeaconMessage() {
                     is BroadcastBeaconResponse ->
                         BroadcastV2BeaconResponse(version, id, senderId, transactionHash)
 
+                    is ErrorBeaconResponse ->
+                        ErrorV2BeaconResponse(version, id, senderId, errorType)
+
                     is DisconnectBeaconMessage ->
                         DisconnectV2BeaconMessage(version, id, senderId)
-
-                    is ErrorBeaconMessage ->
-                        ErrorV2BeaconMessage(version, id, senderId, errorType)
                 }
             }
     }
@@ -75,8 +71,8 @@ internal data class PermissionV2BeaconRequest(
     val network: Network,
     val scopes: List<PermissionScope>,
 ) : V2BeaconMessage() {
-    override suspend fun toBeaconMessage(storage: DecoratedExtendedStorage): BeaconMessage =
-        PermissionBeaconRequest(id, senderId, appMetadata.toAppMetadata(), network, scopes)
+    override suspend fun toBeaconMessage(origin: Origin, storage: DecoratedExtendedStorage): BeaconMessage =
+        PermissionBeaconRequest(id, senderId, appMetadata.toAppMetadata(), network, scopes, origin)
 }
 
 @Serializable
@@ -86,12 +82,12 @@ internal data class OperationV2BeaconRequest(
     override val id: String,
     override val senderId: String,
     val network: Network,
-    val operationDetails: TezosOperation,
+    val operationDetails: List<TezosOperation>,
     val sourceAddress: String,
 ) : V2BeaconMessage() {
-    override suspend fun toBeaconMessage(storage: DecoratedExtendedStorage): BeaconMessage {
+    override suspend fun toBeaconMessage(origin: Origin, storage: DecoratedExtendedStorage): BeaconMessage {
         val appMetadata = storage.findAppMetadata { it.senderId == senderId }
-        return OperationBeaconRequest(id, senderId, appMetadata, network, operationDetails, sourceAddress)
+        return OperationBeaconRequest(id, senderId, appMetadata, network, operationDetails, sourceAddress, origin)
     }
 }
 
@@ -104,9 +100,9 @@ internal data class SignPayloadV2BeaconRequest(
     val payload: String,
     val sourceAddress: String,
 ) : V2BeaconMessage() {
-    override suspend fun toBeaconMessage(storage: DecoratedExtendedStorage): BeaconMessage {
+    override suspend fun toBeaconMessage(origin: Origin, storage: DecoratedExtendedStorage): BeaconMessage {
         val appMetadata = storage.findAppMetadata { it.senderId == senderId }
-        return SignPayloadBeaconRequest(id, senderId, appMetadata, payload, sourceAddress)
+        return SignPayloadBeaconRequest(id, senderId, appMetadata, payload, sourceAddress, origin)
     }
 }
 
@@ -119,9 +115,9 @@ internal data class BroadcastV2BeaconRequest(
     val network: Network,
     val signedTransaction: String,
 ) : V2BeaconMessage() {
-    override suspend fun toBeaconMessage(storage: DecoratedExtendedStorage): BeaconMessage {
+    override suspend fun toBeaconMessage(origin: Origin, storage: DecoratedExtendedStorage): BeaconMessage {
         val appMetadata = storage.findAppMetadata { it.senderId == senderId }
-        return BroadcastBeaconRequest(id, senderId, appMetadata, network, signedTransaction)
+        return BroadcastBeaconRequest(id, senderId, appMetadata, network, signedTransaction, origin)
     }
 }
 
@@ -136,7 +132,7 @@ internal data class PermissionV2BeaconResponse(
     val scopes: List<PermissionScope>,
     val threshold: Threshold? = null,
 ) : V2BeaconMessage() {
-    override suspend fun toBeaconMessage(storage: DecoratedExtendedStorage): BeaconMessage =
+    override suspend fun toBeaconMessage(origin: Origin, storage: DecoratedExtendedStorage): BeaconMessage =
         PermissionBeaconResponse(id, publicKey, network, scopes, threshold)
 }
 
@@ -148,7 +144,7 @@ internal data class OperationV2BeaconResponse(
     override val senderId: String,
     val transactionHash: String,
 ) : V2BeaconMessage() {
-    override suspend fun toBeaconMessage(storage: DecoratedExtendedStorage): BeaconMessage =
+    override suspend fun toBeaconMessage(origin: Origin, storage: DecoratedExtendedStorage): BeaconMessage =
         OperationBeaconResponse(id, transactionHash)
 }
 
@@ -160,7 +156,7 @@ internal data class SignPayloadV2BeaconResponse(
     override val senderId: String,
     val signature: String,
 ) : V2BeaconMessage() {
-    override suspend fun toBeaconMessage(storage: DecoratedExtendedStorage): BeaconMessage =
+    override suspend fun toBeaconMessage(origin: Origin, storage: DecoratedExtendedStorage): BeaconMessage =
         SignPayloadBeaconResponse(id, signature)
 }
 
@@ -172,8 +168,20 @@ internal data class BroadcastV2BeaconResponse(
     override val senderId: String,
     val transactionHash: String,
 ) : V2BeaconMessage() {
-    override suspend fun toBeaconMessage(storage: DecoratedExtendedStorage): BeaconMessage =
+    override suspend fun toBeaconMessage(origin: Origin, storage: DecoratedExtendedStorage): BeaconMessage =
         BroadcastBeaconResponse(id, transactionHash)
+}
+
+@Serializable
+@SerialName("error")
+internal data class ErrorV2BeaconResponse(
+    override val version: String,
+    override val id: String,
+    override var senderId: String,
+    val errorType: BeaconError,
+) : V2BeaconMessage() {
+    override suspend fun toBeaconMessage(origin: Origin, storage: DecoratedExtendedStorage): BeaconMessage =
+        ErrorBeaconResponse(id, errorType)
 }
 
 @Serializable
@@ -183,18 +191,6 @@ internal data class DisconnectV2BeaconMessage(
     override val id: String,
     override var senderId: String,
 ) : V2BeaconMessage() {
-    override suspend fun toBeaconMessage(storage: DecoratedExtendedStorage): BeaconMessage =
+    override suspend fun toBeaconMessage(origin: Origin, storage: DecoratedExtendedStorage): BeaconMessage =
         DisconnectBeaconMessage(id, senderId)
-}
-
-@Serializable
-@SerialName("error")
-internal data class ErrorV2BeaconMessage(
-    override val version: String,
-    override val id: String,
-    override var senderId: String,
-    val errorType: BeaconException.Type,
-) : V2BeaconMessage() {
-    override suspend fun toBeaconMessage(storage: DecoratedExtendedStorage): BeaconMessage =
-        ErrorBeaconMessage(id, senderId, errorType)
 }

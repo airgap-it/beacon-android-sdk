@@ -4,7 +4,7 @@ import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import it.airgap.beaconsdk.data.beacon.Origin
 import it.airgap.beaconsdk.data.beacon.P2pPeerInfo
-import it.airgap.beaconsdk.internal.message.SerializedBeaconMessage
+import it.airgap.beaconsdk.internal.message.SerializedConnectionMessage
 import it.airgap.beaconsdk.internal.storage.MockStorage
 import it.airgap.beaconsdk.internal.storage.decorator.DecoratedExtendedStorage
 import it.airgap.beaconsdk.internal.transport.Transport
@@ -59,11 +59,12 @@ internal class P2pTransportTest {
 
         runBlocking { storage.setP2pPeers(peers) }
 
-        val expected = transportMessages.map { SerializedBeaconMessage(Origin.P2P(it.id), it.content) }
+        val expected = transportMessages.map { SerializedConnectionMessage(Origin.P2P(it.id), it.content) }
         val messages = runBlocking {
             p2pTransport.subscribe()
                 .onStart { transportMessageFlows.tryEmit(transportMessages) }
                 .mapNotNull { it.valueOrNull() }
+                .filterIsInstance<SerializedConnectionMessage>()
                 .take(transportMessages.size)
                 .toList()
         }
@@ -133,13 +134,14 @@ internal class P2pTransportTest {
             transportMessageFlows.getValue(firstArg<HexString>().value())
         }
 
-        val expected = transportMessages.map { SerializedBeaconMessage(Origin.P2P(it.id), it.content) }
+        val expected = transportMessages.map { SerializedConnectionMessage(Origin.P2P(it.id), it.content) }
 
         runBlocking {
             val messages = async {
                 p2pTransport.subscribe()
                     .onStart { transportMessageFlows.tryEmit(transportMessages) }
                     .mapNotNull { it.valueOrNull() }
+                    .filterIsInstance<SerializedConnectionMessage>()
                     .take(transportMessages.size)
                     .toList()
             }

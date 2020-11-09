@@ -1,9 +1,11 @@
 package it.airgap.beaconsdk.data.tezos
 
+import fromValues
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.encodeToJsonElement
 import org.junit.Test
 import kotlin.test.assertEquals
 
@@ -40,22 +42,13 @@ internal class TezosInlinedEndorsementTest {
         signature: String? = null,
         includeNulls: Boolean = false,
     ): Pair<TezosInlinedEndorsement, String> {
-        val json = if (signature != null || includeNulls) {
-            """
-                {
-                    "branch": "$branch",
-                    "operations": ${Json.encodeToString(operations)},
-                    "signature": ${Json.encodeToString(signature)}
-                }
-            """.trimIndent()
-        } else {
-            """
-                {
-                    "branch": "$branch",
-                    "operations": ${Json.encodeToString(operations)}
-                }
-            """.trimIndent()
-        }
+        val values = mapOf(
+            "branch" to branch,
+            "operations" to Json.encodeToJsonElement(operations),
+            "signature" to signature,
+        )
+
+        val json = JsonObject.fromValues(values, includeNulls).toString()
 
         return TezosInlinedEndorsement(
             branch,

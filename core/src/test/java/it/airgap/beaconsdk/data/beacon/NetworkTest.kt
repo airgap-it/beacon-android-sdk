@@ -1,5 +1,6 @@
 package it.airgap.beaconsdk.data.beacon
 
+import fromValues
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -53,39 +54,13 @@ internal class NetworkTest {
         name: String? = null,
         rpcUrl: String? = null,
         includeNulls: Boolean = false,
-    ): String =
-        when {
-            !includeNulls && name == null && rpcUrl == null -> {
-                """
-                    {
-                        "type": "$identifier"
-                    }
-                """.trimIndent()
-            }
-            !includeNulls && name == null -> {
-                """
-                    {
-                        "type": "$identifier",
-                        "rpcUrl": "$rpcUrl"
-                    }
-                """.trimIndent()
-            }
-            !includeNulls && rpcUrl == null -> {
-                """
-                    {
-                        "type": "$identifier",
-                        "name": "$name"
-                    }
-                """.trimIndent()
-            }
-            else -> {
-                """
-                    {
-                        "type": "$identifier",
-                        "name": ${Json.encodeToString(name)},
-                        "rpcUrl": ${Json.encodeToString(rpcUrl)}
-                    }
-                """.trimIndent()
-            }
-        }
+    ): String {
+        val values = mapOf(
+            "type" to identifier,
+            "name" to name,
+            "rpcUrl" to rpcUrl,
+        )
+
+        return JsonObject.fromValues(values, includeNulls).toString()
+    }
 }

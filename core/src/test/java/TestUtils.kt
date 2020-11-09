@@ -3,25 +3,46 @@ import androidx.annotation.IntRange
 import it.airgap.beaconsdk.data.beacon.*
 import it.airgap.beaconsdk.data.tezos.TezosActivateAccountOperation
 import it.airgap.beaconsdk.data.tezos.TezosOperation
-import it.airgap.beaconsdk.exception.BeaconException
-import it.airgap.beaconsdk.internal.message.SerializedBeaconMessage
+import it.airgap.beaconsdk.internal.message.ConnectionTransportMessage
+import it.airgap.beaconsdk.internal.message.BeaconConnectionMessage
 import it.airgap.beaconsdk.internal.message.VersionedBeaconMessage
 import it.airgap.beaconsdk.internal.utils.Failure
 import it.airgap.beaconsdk.internal.utils.InternalResult
 import it.airgap.beaconsdk.internal.utils.Success
+import it.airgap.beaconsdk.internal.utils.failWith
 import it.airgap.beaconsdk.message.*
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 
 // -- extensions --
 
 internal fun <T> List<T>.takeHalf(): List<T> = take(size / 2)
 
-internal fun <T> MutableSharedFlow<InternalResult<T>>.tryEmit(messages: List<T>) {
-    messages.forEach { tryEmit(Success(it)) }
+internal fun <T> MutableSharedFlow<InternalResult<T>>.tryEmitValues(values: List<T>) {
+    values.forEach { tryEmit(Success(it)) }
 }
 
 internal fun <T> MutableSharedFlow<InternalResult<T>>.tryEmitFailures(failures: List<Failure<T>>) {
     failures.forEach { tryEmit(it) }
+}
+
+internal fun JsonObject.Companion.fromValues(values: Map<String, Any?>, includeNulls: Boolean = false): JsonObject {
+    val content = (if (includeNulls) values else values.filterValues { it != null })
+        .mapValues {
+            when (val value = it.value) {
+                is String -> JsonPrimitive(value)
+                is Number -> JsonPrimitive(value)
+                is Boolean -> JsonPrimitive(value)
+                is JsonElement -> value
+                null -> JsonNull
+                else -> failWith("Can't create JsonObject from $value, unknown type")
+            }
+        }
+
+    return JsonObject(content)
 }
 
 // -- converters --
@@ -42,13 +63,13 @@ internal fun versionedBeaconMessages(
 
 // -- flows --
 
-internal fun versionedBeaconMessageFlow(
+internal fun beaconOriginatedMessageFlow(
     replay: Int,
-): MutableSharedFlow<InternalResult<VersionedBeaconMessage>> = MutableSharedFlow(replay)
+): MutableSharedFlow<InternalResult<BeaconConnectionMessage>> = MutableSharedFlow(replay)
 
-internal fun serializedBeaconMessageFlow(
+internal fun originatedMessageFlow(
     replay: Int,
-): MutableSharedFlow<InternalResult<SerializedBeaconMessage>> = MutableSharedFlow(replay)
+): MutableSharedFlow<InternalResult<ConnectionTransportMessage>> = MutableSharedFlow(replay)
 
 // -- factories --
 
@@ -57,17 +78,19 @@ internal fun permissionBeaconRequest(
     senderId: String = "senderId",
     appMetadata: AppMetadata = AppMetadata(senderId, "mockApp"),
     network: Network = Network.Custom(),
-    scopes: List<PermissionScope> = emptyList()
-): PermissionBeaconRequest = PermissionBeaconRequest(id, senderId, appMetadata, network, scopes)
+    scopes: List<PermissionScope> = emptyList(),
+    origin: Origin = Origin.P2P(senderId),
+): PermissionBeaconRequest = PermissionBeaconRequest(id, senderId, appMetadata, network, scopes, origin)
 
 internal fun operationBeaconRequest(
     id: String = "id",
     senderId: String = "senderId",
     appMetadata: AppMetadata? = AppMetadata(senderId, "mockApp"),
     network: Network = Network.Custom(),
-    operationDetails: TezosOperation = TezosActivateAccountOperation("pkh", "secret"),
+    operationDetails: List<TezosOperation> = listOf(TezosActivateAccountOperation("pkh", "secret")),
     sourceAddress: String = "sourceAddress",
-): OperationBeaconRequest = OperationBeaconRequest(id, senderId, appMetadata, network, operationDetails, sourceAddress)
+    origin: Origin = Origin.P2P(senderId),
+): OperationBeaconRequest = OperationBeaconRequest(id, senderId, appMetadata, network, operationDetails, sourceAddress, origin)
 
 internal fun signPayloadBeaconRequest(
     id: String = "id",
@@ -75,7 +98,8 @@ internal fun signPayloadBeaconRequest(
     appMetadata: AppMetadata? = AppMetadata(senderId, "mockApp"),
     payload: String = "payload",
     sourceAddress: String = "sourceAddress",
-): SignPayloadBeaconRequest = SignPayloadBeaconRequest(id, senderId, appMetadata, payload, sourceAddress)
+    origin: Origin = Origin.P2P(senderId),
+): SignPayloadBeaconRequest = SignPayloadBeaconRequest(id, senderId, appMetadata, payload, sourceAddress, origin)
 
 internal fun broadcastBeaconRequest(
     id: String = "id",
@@ -83,7 +107,8 @@ internal fun broadcastBeaconRequest(
     appMetadata: AppMetadata? = AppMetadata(senderId, "mockApp"),
     network: Network = Network.Custom(),
     signedTransaction: String = "signedTransaction",
-): BroadcastBeaconRequest = BroadcastBeaconRequest(id, senderId, appMetadata, network, signedTransaction)
+    origin: Origin = Origin.P2P(senderId),
+): BroadcastBeaconRequest = BroadcastBeaconRequest(id, senderId, appMetadata, network, signedTransaction, origin)
 
 internal fun permissionBeaconResponse(
     id: String = "id",
@@ -107,32 +132,28 @@ internal fun broadcastBeaconResponse(
     transactionHash: String = "transactionHash",
 ): BroadcastBeaconResponse = BroadcastBeaconResponse(id, transactionHash)
 
+internal fun errorBeaconResponse(
+    id: String = "id",
+    errorType: BeaconError = BeaconError.Unknown,
+): ErrorBeaconResponse = ErrorBeaconResponse(id, errorType)
+
 internal fun disconnectBeaconMessage(
     id: String = "id",
     senderId: String = "senderId",
 ): DisconnectBeaconMessage = DisconnectBeaconMessage(id, senderId)
 
-internal fun errorBeaconMessage(
-    id: String = "id",
-    senderId: String = "senderId",
-    errorType: BeaconException.Type = BeaconException.Type.Unknown,
-): ErrorBeaconMessage = ErrorBeaconMessage(id, senderId, errorType)
-
-internal fun beaconErrors(
-    id: String = "id",
-    senderId: String = "senderId",
-): List<ErrorBeaconMessage> =
+internal fun errorBeaconResponses(id: String = "id"): List<ErrorBeaconResponse> =
     listOf(
-        errorBeaconMessage(id, senderId, BeaconException.Type.BroadcastError),
-        errorBeaconMessage(id, senderId, BeaconException.Type.NetworkNotSupported),
-        errorBeaconMessage(id, senderId, BeaconException.Type.NoAddressError),
-        errorBeaconMessage(id, senderId, BeaconException.Type.NoPrivateKeyFound),
-        errorBeaconMessage(id, senderId, BeaconException.Type.NotGranted),
-        errorBeaconMessage(id, senderId, BeaconException.Type.ParametersInvalid),
-        errorBeaconMessage(id, senderId, BeaconException.Type.TooManyOperations),
-        errorBeaconMessage(id, senderId, BeaconException.Type.TransactionInvalid),
-        errorBeaconMessage(id, senderId, BeaconException.Type.Aborted),
-        errorBeaconMessage(id, senderId, BeaconException.Type.Unknown),
+        errorBeaconResponse(id, BeaconError.BroadcastError),
+        errorBeaconResponse(id, BeaconError.NetworkNotSupported),
+        errorBeaconResponse(id, BeaconError.NoAddressError),
+        errorBeaconResponse(id, BeaconError.NoPrivateKeyFound),
+        errorBeaconResponse(id, BeaconError.NotGranted),
+        errorBeaconResponse(id, BeaconError.ParametersInvalid),
+        errorBeaconResponse(id, BeaconError.TooManyOperations),
+        errorBeaconResponse(id, BeaconError.TransactionInvalid),
+        errorBeaconResponse(id, BeaconError.Aborted),
+        errorBeaconResponse(id, BeaconError.Unknown),
     )
 
 internal fun beaconResponses(): List<BeaconResponse> =
@@ -141,7 +162,7 @@ internal fun beaconResponses(): List<BeaconResponse> =
         operationBeaconResponse(),
         signPayloadBeaconResponse(),
         broadcastBeaconResponse(),
-    )
+    ) + errorBeaconResponses()
 
 internal fun beaconRequests(): List<BeaconRequest> =
     listOf(
@@ -160,7 +181,7 @@ internal fun beaconMessages(
     if (includeRequests) addAll(beaconRequests())
     if (includeResponses) addAll(beaconResponses())
     if (includeDisconnect) add(disconnectBeaconMessage())
-    if (includeError) add(errorBeaconMessage())
+    if (includeError) add(errorBeaconResponse())
 }
 
 internal fun beaconVersionedRequests(version: String = "version", senderId: String = "senderId"): List<VersionedBeaconMessage> =
@@ -190,7 +211,7 @@ internal fun beaconVersionedMessages(
     if (includeRequests) addAll(beaconVersionedRequests(version, senderId))
     if (includeResponses) addAll(beaconVersionedResponses(version, senderId))
     if (includeDisconnect) add(VersionedBeaconMessage.fromBeaconMessage(version, senderId, disconnectBeaconMessage(senderId = senderId)))
-    if (includeError) add(VersionedBeaconMessage.fromBeaconMessage(version, senderId, errorBeaconMessage(senderId = senderId)))
+    if (includeError) add(VersionedBeaconMessage.fromBeaconMessage(version, senderId, errorBeaconResponse()))
 }
 
 internal fun p2pPeers(
@@ -225,6 +246,6 @@ internal fun permissions(
 
 internal fun <T> failures(
     @IntRange(from = 1) number: Int = 1,
-    error: Throwable? = null,
+    error: Throwable = Exception(),
 ): List<Failure<T>> =
     (0 until number).map { Failure(error) }

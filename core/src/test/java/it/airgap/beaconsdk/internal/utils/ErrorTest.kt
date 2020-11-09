@@ -9,13 +9,13 @@ internal class ErrorTest {
 
     @Test
     fun `fails with internal error`() {
-        assertFailsWith<BeaconException.Internal> { failWith() }
+        assertFailsWith<BeaconException> { failWith() }
     }
 
     @Test
     fun `fails with internal error and specified message`() {
         val message = "message"
-        val exception = assertFailsWith<BeaconException.Internal> { failWith(message) }
+        val exception = assertFailsWith<BeaconException> { failWith(message) }
 
         assertEquals(message, exception.message)
     }
@@ -25,7 +25,7 @@ internal class ErrorTest {
         val message = "message"
         val cause = IllegalStateException()
 
-        val exception = assertFailsWith<BeaconException.Internal> { failWith(message, cause) }
+        val exception = assertFailsWith<BeaconException> { failWith(message, cause) }
 
         assertEquals(message, exception.message)
         assertEquals(cause, exception.cause)

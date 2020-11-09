@@ -137,10 +137,10 @@ internal class InternalResultTest {
     @Test
     fun `maps error if is Failure`() {
         val cause = IllegalStateException()
-        val error = BeaconException.Internal(cause = cause)
+        val error = BeaconException(cause = cause)
 
         val failure: InternalResult<String> = Failure(error)
-        val transformed = failure.mapError { it?.cause!! }
+        val transformed = failure.mapError { it.cause!! }
 
         assertEquals(Failure(cause), transformed)
     }
@@ -153,7 +153,7 @@ internal class InternalResultTest {
             val success: InternalResult<String> = Success(value)
             val transformed = success.mapErrorSuspend {
                 delay(100)
-                Exception(it?.cause)
+                Exception(it.cause)
             }
 
             assertEquals(Success(value), transformed)
@@ -163,13 +163,13 @@ internal class InternalResultTest {
     @Test
     fun `suspend maps error if is Failure`() {
         val cause = IllegalStateException()
-        val error = BeaconException.Internal(cause = cause)
+        val error = BeaconException(cause = cause)
 
         runBlockingTest {
             val failure: InternalResult<String> = Failure(error)
             val transformed = failure.mapErrorSuspend {
                 delay(100)
-                it?.cause!!
+                it.cause!!
             }
 
             assertEquals(Failure(cause), transformed)

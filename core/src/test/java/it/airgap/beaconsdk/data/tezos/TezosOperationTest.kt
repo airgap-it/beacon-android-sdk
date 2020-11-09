@@ -1,9 +1,11 @@
 package it.airgap.beaconsdk.data.tezos
 
+import fromValues
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.encodeToJsonElement
 import org.junit.Test
 import kotlin.test.assertEquals
 
@@ -14,18 +16,41 @@ internal class TezosOperationTest {
         listOf(
             activateAccountWithJson(),
             ballotWithJson(),
+
             delegationWithJson(),
+            delegationWithJson("source", "fee", "counter", "gasLimit", "storageLimit", "delegate"),
             delegationWithJson(includeNulls = true),
+
             doubleBakingEvidenceWithJson(),
+
             endorsementWithJson(),
+
             doubleBakingEvidenceWithJson(),
+
             doubleEndorsementEvidenceWithJson(),
+
             originationWithJson(),
+            originationWithJson("source", "fee", "counter", "gasLimit", "storageLimit", delegate = "delegate"),
             originationWithJson(includeNulls = true),
+
             proposalsWithJson(),
+
             revealWithJson(),
+            revealWithJson("source", "fee", "counter", "gasLimit", "storageLimit"),
+            revealWithJson(includeNulls = true),
+
             seedNonceRevelationWithJson(),
+
             transactionWithJson(),
+            transactionWithJson(
+                "source",
+                "fee",
+                "counter",
+                "gasLimit",
+                "storageLimit",
+                parameters = TezosTransactionOperation.Parameters("entrypoint", MichelinePrimitiveString("string"))
+            ),
+            transactionWithJson(includeNulls = true),
         ).map {
             Json.decodeFromString<TezosOperation>(it.second) to it.first
         }.forEach {
@@ -51,17 +76,39 @@ internal class TezosOperationTest {
     fun `serializes to JSON`() {
         listOf(
             activateAccountWithJson(),
+
             ballotWithJson(),
+
             delegationWithJson(),
+            delegationWithJson("source", "fee", "counter", "gasLimit", "storageLimit", "delegate"),
+
             doubleBakingEvidenceWithJson(),
+
             endorsementWithJson(),
+
             doubleBakingEvidenceWithJson(),
+
             doubleEndorsementEvidenceWithJson(),
+
             originationWithJson(),
+            originationWithJson("source", "fee", "counter", "gasLimit", "storageLimit", delegate = "delegate"),
+
             proposalsWithJson(),
+
             revealWithJson(),
+            revealWithJson("source", "fee", "counter", "gasLimit", "storageLimit"),
+
             seedNonceRevelationWithJson(),
+
             transactionWithJson(),
+            transactionWithJson(
+                "source",
+                "fee",
+                "counter",
+                "gasLimit",
+                "storageLimit",
+                parameters = TezosTransactionOperation.Parameters("entrypoint", MichelinePrimitiveString("string"))
+            ),
         ).map {
             Json.decodeFromString(JsonObject.serializer(), Json.encodeToString(it.first)) to
                     Json.decodeFromString(JsonObject.serializer(), it.second)
@@ -123,38 +170,25 @@ internal class TezosOperationTest {
     )
 
     private fun delegationWithJson(
-        source: String = "source",
-        fee: String = "fee",
-        counter: String = "counter",
-        gasLimit: String = "gasLimit",
-        storageLimit: String = "storageLimit",
+        source: String? = null,
+        fee: String? = null,
+        counter: String? = null,
+        gasLimit: String? = null,
+        storageLimit: String? = null,
         delegate: String? = null,
         includeNulls: Boolean = false,
     ) : Pair<TezosDelegationOperation, String> {
-        val  json = if (delegate != null || includeNulls) {
-            """
-                {
-                    "kind": "delegation",
-                    "source": "$source",
-                    "fee": "$fee",
-                    "counter": "$counter",
-                    "gas_limit": "$gasLimit",
-                    "storage_limit": "$storageLimit",
-                    "delegate": ${Json.encodeToString(delegate)}
-                }
-            """.trimIndent()
-        } else {
-            """
-               {
-                    "kind": "delegation",
-                    "source": "$source",
-                    "fee": "$fee",
-                    "counter": "$counter",
-                    "gas_limit": "$gasLimit",
-                    "storage_limit": "$storageLimit"
-               } 
-            """.trimIndent()
-        }
+        val values = mapOf(
+            "kind" to "delegation",
+            "source" to source,
+            "fee" to fee,
+            "counter" to counter,
+            "gas_limit" to gasLimit,
+            "storage_limit" to storageLimit,
+            "delegate" to delegate,
+        )
+
+        val json = JsonObject.fromValues(values, includeNulls).toString()
 
         return TezosDelegationOperation(source, fee, counter, gasLimit, storageLimit, delegate) to json
     }
@@ -216,44 +250,29 @@ internal class TezosOperationTest {
         """.trimIndent()
 
     private fun originationWithJson(
-        source: String = "source",
-        fee: String = "fee",
-        counter: String = "counter",
-        gasLimit: String = "gasLimit",
-        storageLimit: String = "storageLimit",
+        source: String? = null,
+        fee: String? = null,
+        counter: String? = null,
+        gasLimit: String? = null,
+        storageLimit: String? = null,
         balance: String = "balance",
-        script: String = "script",
         delegate: String? = null,
+        script: String = "script",
         includeNulls: Boolean = false,
     ) : Pair<TezosOriginationOperation, String> {
-        val  json = if (delegate != null || includeNulls) {
-            """
-                {
-                    "kind": "origination",
-                    "source": "$source",
-                    "fee": "$fee",
-                    "counter": "$counter",
-                    "gas_limit": "$gasLimit",
-                    "storage_limit": "$storageLimit",
-                    "balance": "$balance",
-                    "script": "$script",
-                    "delegate": ${Json.encodeToString(delegate)}
-                }
-            """.trimIndent()
-        } else {
-            """
-               {
-                    "kind": "origination",
-                    "source": "$source",
-                    "fee": "$fee",
-                    "counter": "$counter",
-                    "gas_limit": "$gasLimit",
-                    "storage_limit": "$storageLimit",
-                    "balance": "$balance",
-                    "script": "$script"
-               } 
-            """.trimIndent()
-        }
+        val values = mapOf(
+            "kind" to "origination",
+            "source" to source,
+            "fee" to fee,
+            "counter" to counter,
+            "gas_limit" to gasLimit,
+            "storage_limit" to storageLimit,
+            "balance" to balance,
+            "delegate" to delegate,
+            "script" to script,
+        )
+
+        val json = JsonObject.fromValues(values, includeNulls).toString()
 
         return TezosOriginationOperation(
             source,
@@ -262,8 +281,8 @@ internal class TezosOperationTest {
             gasLimit,
             storageLimit,
             balance,
-            script,
             delegate,
+            script,
         ) to json
     }
 
@@ -280,31 +299,35 @@ internal class TezosOperationTest {
         """.trimIndent()
 
     private fun revealWithJson(
-        source: String = "source",
-        fee: String = "fee",
-        counter: String = "counter",
-        gasLimit: String = "gasLimit",
-        storageLimit: String = "storageLimit",
+        source: String? = null,
+        fee: String? = null,
+        counter: String? = null,
+        gasLimit: String? = null,
+        storageLimit: String? = null,
         publicKey: String = "publicKey",
-    ) : Pair<TezosRevealOperation, String> =
-        TezosRevealOperation(
+        includeNulls: Boolean = false
+    ) : Pair<TezosRevealOperation, String> {
+        val values = mapOf(
+            "kind" to "reveal",
+            "source" to source,
+            "fee" to fee,
+            "counter" to counter,
+            "gas_limit" to gasLimit,
+            "storage_limit" to storageLimit,
+            "public_key" to publicKey,
+        )
+
+        val json = JsonObject.fromValues(values, includeNulls).toString()
+
+        return TezosRevealOperation(
             source,
             fee,
             counter,
             gasLimit,
             storageLimit,
             publicKey,
-        ) to """
-            {
-                "kind": "reveal",
-                "source": "$source",
-                "fee": "$fee",
-                "counter": "$counter",
-                "gas_limit": "$gasLimit",
-                "storage_limit": "$storageLimit",
-                "public_key": "$publicKey"
-            }
-        """.trimIndent()
+        ) to json
+    }
 
     private fun seedNonceRevelationWithJson(
         level: String = "level",
@@ -319,19 +342,31 @@ internal class TezosOperationTest {
         """.trimIndent()
 
     private fun transactionWithJson(
-        source: String = "source",
-        fee: String = "fee",
-        counter: String = "counter",
-        gasLimit: String = "gasLimit",
-        storageLimit: String = "storageLimit",
+        source: String? = null,
+        fee: String? = null,
+        counter: String? = null,
+        gasLimit: String? = null,
+        storageLimit: String? = null,
         amount: String = "amount",
         destination: String = "destination",
-        parameters: TezosTransactionOperation.Parameters = TezosTransactionOperation.Parameters(
-            "entrypoint",
-            MichelinePrimitiveString("string"),
-        ),
-    ) : Pair<TezosTransactionOperation, String> =
-        TezosTransactionOperation(
+        parameters: TezosTransactionOperation.Parameters? = null,
+        includeNulls: Boolean = false,
+    ) : Pair<TezosTransactionOperation, String> {
+        val values = mapOf(
+            "kind" to "transaction",
+            "source" to source,
+            "fee" to fee,
+            "counter" to counter,
+            "gas_limit" to gasLimit,
+            "storage_limit" to storageLimit,
+            "amount" to amount,
+            "destination" to destination,
+            "parameters" to parameters?.let { Json.encodeToJsonElement(it) },
+        )
+
+        val json = JsonObject.fromValues(values, includeNulls).toString()
+
+        return TezosTransactionOperation(
             source,
             fee,
             counter,
@@ -340,19 +375,8 @@ internal class TezosOperationTest {
             amount,
             destination,
             parameters,
-        ) to """
-           {
-                "kind": "transaction",
-                "source": "$source",
-                "fee": "$fee",
-                "counter": "$counter",
-                "gas_limit": "$gasLimit",
-                "storage_limit": "$storageLimit",
-                "amount": "$amount",
-                "destination": "$destination",
-                "parameters": ${Json.encodeToString(parameters)}
-           } 
-        """.trimIndent()
+        ) to json
+    }
 
     private fun transactionParametersWithJson(
         entrypoint: String = "entrypoint",

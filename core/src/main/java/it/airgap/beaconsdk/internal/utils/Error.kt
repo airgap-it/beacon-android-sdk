@@ -7,10 +7,13 @@ import kotlin.reflect.KClass
 
 internal fun failWith(message: String? = null, cause: Throwable? = null): Nothing =
     if (message == null && cause != null) throw cause
-    else throw BeaconException.Internal(message, cause)
+    else throw BeaconException(message, cause)
 
 internal fun failWithUninitialized(name: String): Nothing =
     throw IllegalStateException("$name uninitialized")
+
+internal fun failWithIllegalState(message: String): Nothing =
+    throw IllegalStateException(message)
 
 internal fun failWithExpectedJsonDecoder(actual: KClass<out Decoder>): Nothing =
     throw SerializationException("Expected Json decoder, got $actual")

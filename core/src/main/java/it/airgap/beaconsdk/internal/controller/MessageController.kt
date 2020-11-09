@@ -1,14 +1,13 @@
 package it.airgap.beaconsdk.internal.controller
 
+import it.airgap.beaconsdk.data.beacon.Origin
 import it.airgap.beaconsdk.data.beacon.PermissionInfo
-import it.airgap.beaconsdk.exception.BeaconException
 import it.airgap.beaconsdk.internal.message.VersionedBeaconMessage
 import it.airgap.beaconsdk.internal.protocol.Protocol
 import it.airgap.beaconsdk.internal.protocol.ProtocolRegistry
 import it.airgap.beaconsdk.internal.storage.decorator.DecoratedExtendedStorage
 import it.airgap.beaconsdk.internal.utils.*
 import it.airgap.beaconsdk.message.BeaconMessage
-import it.airgap.beaconsdk.message.ErrorBeaconMessage
 import it.airgap.beaconsdk.message.PermissionBeaconRequest
 import it.airgap.beaconsdk.message.PermissionBeaconResponse
 
@@ -19,12 +18,11 @@ internal class MessageController(
 ) {
     private val pendingRequests: MutableList<VersionedBeaconMessage> = mutableListOf()
 
-    suspend fun onIncomingMessage(message: VersionedBeaconMessage): InternalResult<BeaconMessage> =
+    suspend fun onIncomingMessage(origin: Origin, message: VersionedBeaconMessage): InternalResult<BeaconMessage> =
         tryResult {
-            message.toBeaconMessage(storage).also {
+            message.toBeaconMessage(origin, storage).also {
                 when (it) {
                     is PermissionBeaconRequest -> onPermissionRequest(it)
-                    is ErrorBeaconMessage -> onErrorMessage(it)
                     else -> { /* no action */ }
                 }
                 pendingRequests.add(message)
@@ -54,7 +52,8 @@ internal class MessageController(
         val publicKey = response.publicKey
         val address = protocolRegistry.get(Protocol.Type.Tezos).getAddressFromPublicKey(publicKey).value()
         val accountIdentifier = accountUtils.getAccountIdentifier(address, response.network).value()
-        val appMetadata = storage.findAppMetadata { request.comesFrom(it) } ?: failWithNoAppMetadata()
+        val appMetadata = storage.findAppMetadata { request.comesFrom(it) }
+            ?: failWithIllegalState("Granted permissions not saved, matching appMetadata could not be found.")
 
         val permissionInfo = PermissionInfo(
             accountIdentifier,
@@ -70,11 +69,5 @@ internal class MessageController(
         storage.addPermissions(listOf(permissionInfo))
     }
 
-    @Throws(BeaconException::class)
-    private fun onErrorMessage(error: ErrorBeaconMessage) {
-        throw BeaconException.fromType(error.errorType)
-    }
-
-    private fun failWithNoAppMetadata(): Nothing = throw IllegalArgumentException("No matching app metadata found")
     private fun failWithNoPendingRequest(): Nothing = throw IllegalArgumentException("No matching request found")
 }

@@ -1,12 +1,9 @@
 package it.airgap.beaconsdk.internal.message.beacon.v1
 
-import it.airgap.beaconsdk.data.beacon.AppMetadata
-import it.airgap.beaconsdk.data.beacon.Network
-import it.airgap.beaconsdk.data.beacon.PermissionScope
-import it.airgap.beaconsdk.data.beacon.Threshold
+import fromValues
+import it.airgap.beaconsdk.data.beacon.*
 import it.airgap.beaconsdk.data.tezos.TezosEndorsementOperation
 import it.airgap.beaconsdk.data.tezos.TezosOperation
-import it.airgap.beaconsdk.exception.BeaconException
 import it.airgap.beaconsdk.internal.message.v1.*
 import it.airgap.beaconsdk.internal.storage.MockStorage
 import it.airgap.beaconsdk.internal.storage.decorator.DecoratedExtendedStorage
@@ -16,6 +13,7 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.encodeToJsonElement
 import org.junit.Before
 import org.junit.Test
 import kotlin.test.assertEquals
@@ -54,9 +52,10 @@ internal class V1BeaconMessageTest {
     fun `checks if pairs with other Beacon message`() {
         val matchingId = "1"
         val otherId = "2"
+        val origin = Origin.P2P("1")
 
-        val matchingRequest = BroadcastBeaconRequest(matchingId, "senderId", null, Network.Custom(), "tx")
-        val otherRequest = BroadcastBeaconRequest(otherId, "senderId", null, Network.Custom(), "tx")
+        val matchingRequest = BroadcastBeaconRequest(matchingId, "senderId", null, Network.Custom(), "tx", origin)
+        val otherRequest = BroadcastBeaconRequest(otherId, "senderId", null, Network.Custom(), "tx", origin)
 
         val response = BroadcastV1BeaconResponse("1", matchingId, "beaconId", "txHash")
 
@@ -108,6 +107,7 @@ internal class V1BeaconMessageTest {
     fun `converts to Beacon message`() {
         val senderId = "senderId"
         val otherId = "otherId"
+        val origin = Origin.P2P("v1App")
 
         val matchingAppMetadata = AppMetadata(senderId, "v1App")
         val otherAppMetadata = AppMetadata(otherId, "v1OtherApp")
@@ -115,8 +115,8 @@ internal class V1BeaconMessageTest {
         runBlocking { storage.setAppMetadata(listOf(otherAppMetadata, matchingAppMetadata)) }
 
         runBlocking {
-            versionedWithBeacon(beaconId = senderId, appMetadata = matchingAppMetadata)
-                .map { it.first.toBeaconMessage(storage) to it.second }
+            versionedWithBeacon(beaconId = senderId, appMetadata = matchingAppMetadata, origin = origin)
+                .map { it.first.toBeaconMessage(origin, storage) to it.second }
                 .forEach {
                     assertEquals(it.second, it.first)
                 }
@@ -128,7 +128,8 @@ internal class V1BeaconMessageTest {
     private fun messagesWithJsonStrings(includeNulls: Boolean = false) = listOf(
         createPermissionRequestJsonPair(),
         createPermissionRequestJsonPair(scopes = listOf(PermissionScope.Sign)),
-        createOperationRequestJsonPair(tezosOperation = TezosEndorsementOperation("level")),
+        createOperationRequestJsonPair(),
+        createOperationRequestJsonPair(tezosOperations = listOf(TezosEndorsementOperation("level"))),
         createSignPayloadRequestJsonPair(),
         createBroadcastRequestJsonPair(),
 
@@ -148,18 +149,21 @@ internal class V1BeaconMessageTest {
     private fun versionedWithBeacon(
         version: String = "1",
         beaconId: String = "beaconId",
+        origin: Origin = Origin.P2P(beaconId),
         appMetadata: AppMetadata? = null,
     ): List<Pair<V1BeaconMessage, BeaconMessage>> =
         listOf(
-            createPermissionRequestPair(version = version, beaconId = beaconId),
+            createPermissionRequestPair(version = version, beaconId = beaconId, origin = origin),
+            createOperationRequestPair(version = version, beaconId = beaconId, appMetadata = appMetadata, origin = origin),
             createOperationRequestPair(
                 version = version,
                 beaconId = beaconId,
-                tezosOperation = TezosEndorsementOperation("level"),
-                appMetadata = appMetadata
+                tezosOperations = listOf(TezosEndorsementOperation("level")),
+                appMetadata = appMetadata,
+                origin = origin,
             ),
-            createSignPayloadRequestPair(version = version, beaconId = beaconId, appMetadata = appMetadata),
-            createBroadcastRequestPair(version = version, beaconId = beaconId, appMetadata = appMetadata),
+            createSignPayloadRequestPair(version = version, beaconId = beaconId, appMetadata = appMetadata, origin = origin),
+            createBroadcastRequestPair(version = version, beaconId = beaconId, appMetadata = appMetadata, origin = origin),
 
             createPermissionResponsePair(version = version, beaconId = beaconId),
             createOperationResponsePair(version = version, beaconId = beaconId),
@@ -167,7 +171,7 @@ internal class V1BeaconMessageTest {
             createBroadcastResponsePair(version = version, beaconId = beaconId),
 
             createDisconnectPair(version = version, beaconId = beaconId),
-            createErrorPair(version = version, beaconId = beaconId),
+            createErrorResponsePair(version = version, beaconId = beaconId),
         )
 
     // -- request to JSON --
@@ -197,17 +201,17 @@ internal class V1BeaconMessageTest {
         id: String = "id",
         beaconId: String = "beaconId",
         network: Network = Network.Custom(),
-        tezosOperation: TezosOperation,
+        tezosOperations: List<TezosOperation> = emptyList(),
         sourceAddress: String = "sourceAddress"
     ): Pair<OperationV1BeaconRequest, String> =
-        OperationV1BeaconRequest(version, id, beaconId, network, tezosOperation, sourceAddress) to """
+        OperationV1BeaconRequest(version, id, beaconId, network, tezosOperations, sourceAddress) to """
             {
                 "type": "operation_request",
                 "version": "$version",
                 "id": "$id",
                 "beaconId": "$beaconId",
                 "network": ${Json.encodeToString(network)},
-                "operationDetails": ${Json.encodeToString(tezosOperation)},
+                "operationDetails": ${Json.encodeToString(tezosOperations)},
                 "sourceAddress": "$sourceAddress"
             }
         """.trimIndent()
@@ -260,34 +264,20 @@ internal class V1BeaconMessageTest {
         threshold: Threshold? = null,
         includeNulls: Boolean = false,
     ): Pair<PermissionV1BeaconResponse, String> {
-        val json = if (threshold != null || includeNulls) {
-            """
-                {
-                    "type": "permission_response",
-                    "version": "$version",
-                    "id": "$id",
-                    "beaconId": "$beaconId",
-                    "publicKey": "$publicKey",
-                    "network": ${Json.encodeToString(network)},
-                    "scopes": ${Json.encodeToString(scopes)},
-                    "threshold": ${Json.encodeToString(threshold)}
-                }
-            """
-        } else {
-            """
-                {
-                    "type": "permission_response",
-                    "version": "$version",
-                    "id": "$id",
-                    "beaconId": "$beaconId",
-                    "publicKey": "$publicKey",
-                    "network": ${Json.encodeToString(network)},
-                    "scopes": ${Json.encodeToString(scopes)}
-                }
-            """
-        }
+        val values = mapOf(
+            "type" to "permission_response",
+            "version" to version,
+            "id" to id,
+            "beaconId" to beaconId,
+            "publicKey" to publicKey,
+            "network" to Json.encodeToJsonElement(network),
+            "scopes" to Json.encodeToJsonElement(scopes),
+            "threshold" to threshold?.let { Json.encodeToJsonElement(it) }
+        )
 
-        return PermissionV1BeaconResponse(version, id, beaconId, publicKey, network, scopes, threshold) to json.trimIndent()
+        val json = JsonObject.fromValues(values, includeNulls).toString()
+
+        return PermissionV1BeaconResponse(version, id, beaconId, publicKey, network, scopes, threshold) to json
     }
 
     private fun createOperationResponseJsonPair(
@@ -358,9 +348,9 @@ internal class V1BeaconMessageTest {
         version: String = "1",
         id: String = "id",
         beaconId: String = "beaconId",
-        errorType: BeaconException.Type = BeaconException.Type.Unknown,
-    ): Pair<ErrorV1BeaconMessage, String> =
-        ErrorV1BeaconMessage(version, id, beaconId, errorType) to """
+        errorType: BeaconError = BeaconError.Unknown,
+    ): Pair<ErrorV1BeaconResponse, String> =
+        ErrorV1BeaconResponse(version, id, beaconId, errorType) to """
             {
                 "type": "error",
                 "version": "$version",
@@ -378,22 +368,24 @@ internal class V1BeaconMessageTest {
         beaconId: String = "beaconId",
         appMetadata: V1AppMetadata = V1AppMetadata("beaconId", "v1App"),
         network: Network = Network.Custom(),
-        scopes: List<PermissionScope> = emptyList()
+        scopes: List<PermissionScope> = emptyList(),
+        origin: Origin = Origin.P2P(beaconId),
     ): Pair<PermissionV1BeaconRequest, PermissionBeaconRequest> =
         PermissionV1BeaconRequest(version, id, beaconId, appMetadata, network, scopes) to
-                PermissionBeaconRequest(id, beaconId, appMetadata.toAppMetadata(), network, scopes)
+                PermissionBeaconRequest(id, beaconId, appMetadata.toAppMetadata(), network, scopes, origin)
 
     private fun createOperationRequestPair(
         version: String = "1",
         id: String = "id",
         beaconId: String = "beaconId",
         network: Network = Network.Custom(),
-        tezosOperation: TezosOperation,
+        tezosOperations: List<TezosOperation> = emptyList(),
         sourceAddress: String = "sourceAddress",
         appMetadata: AppMetadata? = null,
+        origin: Origin = Origin.P2P(beaconId),
     ): Pair<OperationV1BeaconRequest, OperationBeaconRequest> =
-        OperationV1BeaconRequest(version, id, beaconId, network, tezosOperation, sourceAddress) to
-                OperationBeaconRequest(id, beaconId, appMetadata, network, tezosOperation, sourceAddress)
+        OperationV1BeaconRequest(version, id, beaconId, network, tezosOperations, sourceAddress) to
+                OperationBeaconRequest(id, beaconId, appMetadata, network, tezosOperations, sourceAddress, origin)
 
     private fun createSignPayloadRequestPair(
         version: String = "1",
@@ -402,9 +394,10 @@ internal class V1BeaconMessageTest {
         payload: String = "payload",
         sourceAddress: String = "sourceAddress",
         appMetadata: AppMetadata? = null,
+        origin: Origin = Origin.P2P(beaconId),
     ): Pair<SignPayloadV1BeaconRequest, SignPayloadBeaconRequest> =
         SignPayloadV1BeaconRequest(version, id, beaconId, payload, sourceAddress) to
-                SignPayloadBeaconRequest(id, beaconId, appMetadata, payload, sourceAddress)
+                SignPayloadBeaconRequest(id, beaconId, appMetadata, payload, sourceAddress, origin)
 
     private fun createBroadcastRequestPair(
         version: String = "1",
@@ -413,9 +406,10 @@ internal class V1BeaconMessageTest {
         network: Network = Network.Custom(),
         signedTransaction: String = "signedTransaction",
         appMetadata: AppMetadata? = null,
+        origin: Origin = Origin.P2P(beaconId),
     ): Pair<BroadcastV1BeaconRequest, BroadcastBeaconRequest> =
         BroadcastV1BeaconRequest(version, id, beaconId, network, signedTransaction) to
-                BroadcastBeaconRequest(id, beaconId, appMetadata, network, signedTransaction)
+                BroadcastBeaconRequest(id, beaconId, appMetadata, network, signedTransaction, origin)
 
     // -- response to BeaconMessage --
 
@@ -455,6 +449,14 @@ internal class V1BeaconMessageTest {
     ): Pair<BroadcastV1BeaconResponse, BroadcastBeaconResponse> =
         BroadcastV1BeaconResponse(version, id, beaconId, transactionHash) to BroadcastBeaconResponse(id, transactionHash)
 
+    private fun createErrorResponsePair(
+        version: String = "1",
+        id: String = "id",
+        beaconId: String = "beaconId",
+        errorType: BeaconError = BeaconError.Unknown,
+    ): Pair<ErrorV1BeaconResponse, ErrorBeaconResponse> =
+        ErrorV1BeaconResponse(version, id, beaconId, errorType) to ErrorBeaconResponse(id, errorType)
+
     // -- other to BeaconMessage --
 
     private fun createDisconnectPair(
@@ -463,12 +465,4 @@ internal class V1BeaconMessageTest {
         beaconId: String = "beaconId",
     ): Pair<DisconnectV1BeaconMessage, DisconnectBeaconMessage> =
         DisconnectV1BeaconMessage(version, id, beaconId) to DisconnectBeaconMessage(id, beaconId)
-
-    private fun createErrorPair(
-        version: String = "1",
-        id: String = "id",
-        beaconId: String = "beaconId",
-        errorType: BeaconException.Type = BeaconException.Type.Unknown,
-    ): Pair<ErrorV1BeaconMessage, ErrorBeaconMessage> =
-        ErrorV1BeaconMessage(version, id, beaconId, errorType) to ErrorBeaconMessage(id, beaconId, errorType)
 }

@@ -58,7 +58,7 @@ internal class TryTest {
         val result = tryLog<Unit>(tag) { failWith() }
 
         assertNull(result, "Expected result to be null")
-        verify(exactly = 1) { logError(tag, match { it is BeaconException.Internal }) }
+        verify(exactly = 1) { logError(tag, match { it is BeaconException }) }
     }
 
 }

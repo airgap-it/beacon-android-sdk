@@ -1,18 +1,14 @@
 package it.airgap.beaconsdk.message
 
-import it.airgap.beaconsdk.data.beacon.AppMetadata
-import it.airgap.beaconsdk.data.beacon.Network
-import it.airgap.beaconsdk.data.beacon.PermissionScope
-import it.airgap.beaconsdk.data.beacon.Threshold
+import it.airgap.beaconsdk.data.beacon.*
 import it.airgap.beaconsdk.data.tezos.TezosOperation
-import it.airgap.beaconsdk.exception.BeaconException
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
  * Base class for messages used in the Beacon communication.
  *
- * @property [id] The unique value used to identify the pair of request and response messages.
+ * @property [id] A unique value used to identify the pair of request and response messages.
  */
 @Serializable
 public sealed class BeaconMessage {
@@ -26,12 +22,14 @@ public sealed class BeaconMessage {
 /**
  * Base class for request messages used in the Beacon communication.
  *
- * @property [senderId] The unique value used to identify the sender of the message.
+ * @property [senderId] A unique value used to identify the sender of the request.
+ * @property [origin] An origination data used to identify the source of the request.
  */
 @Serializable
 @SerialName("request")
 public sealed class BeaconRequest : BeaconMessage() {
     public abstract val senderId: String
+    public abstract val origin: Origin
 
     public companion object {}
 }
@@ -46,6 +44,7 @@ public sealed class BeaconRequest : BeaconMessage() {
  * @property [appMetadata] The metadata describing the dApp asking for permissions.
  * @property [network] The network to which the permissions apply.
  * @property [scopes] The list of permissions asked to be granted.
+ * @property [origin] The origination data of this request.
  */
 @Serializable
 @SerialName("permission_request")
@@ -55,6 +54,7 @@ public data class PermissionBeaconRequest internal constructor(
     val appMetadata: AppMetadata,
     public val network: Network,
     public val scopes: List<PermissionScope>,
+    override val origin: Origin,
 ) : BeaconRequest() {
     public companion object {}
 }
@@ -71,6 +71,7 @@ public data class PermissionBeaconRequest internal constructor(
  * @property [network] The network on which the operations should be broadcast.
  * @property [operationDetails] Tezos operations which should be broadcast.
  * @property [sourceAddress] The address of the Tezos account that is requested to broadcast the operations.
+ * @property [origin] The origination data of this request.
  */
 @Serializable
 @SerialName("operation_request")
@@ -79,8 +80,9 @@ public data class OperationBeaconRequest internal constructor(
     override val senderId: String,
     val appMetadata: AppMetadata?,
     public val network: Network,
-    public val operationDetails: TezosOperation, // TODO: change to `List<TezosOperation>`
+    public val operationDetails: List<TezosOperation>,
     public val sourceAddress: String,
+    override val origin: Origin,
 ) : BeaconRequest() {
     public companion object {}
 }
@@ -95,6 +97,7 @@ public data class OperationBeaconRequest internal constructor(
  * @property [appMetadata] The metadata describing the dApp asking for the signature. May be `null` if the [senderId] is unknown.
  * @property [payload] The payload to be signed.
  * @property [sourceAddress] The address of the account with which the payload should be signed.
+ * @property [origin] The origination data of this request.
  */
 @Serializable
 @SerialName("sign_payload_request")
@@ -104,6 +107,7 @@ public data class SignPayloadBeaconRequest internal constructor(
     val appMetadata: AppMetadata?,
     public val payload: String,
     public val sourceAddress: String,
+    override val origin: Origin,
 ) : BeaconRequest() {
     public companion object {}
 }
@@ -118,6 +122,7 @@ public data class SignPayloadBeaconRequest internal constructor(
  * @property [appMetadata] The metadata describing the dApp asking for the broadcast. May be `null` if the [senderId] is unknown.
  * @property [network] The network on which the transaction should be broadcast.
  * @property [signedTransaction] The transaction to be broadcast.
+ * @property [origin] The origination data of this request.
  */
 @Serializable
 @SerialName("broadcast_request")
@@ -127,6 +132,7 @@ public data class BroadcastBeaconRequest internal constructor(
     val appMetadata: AppMetadata?,
     public val network: Network,
     public val signedTransaction: String,
+    override val origin: Origin,
 ) : BeaconRequest() {
     public companion object {}
 }
@@ -208,6 +214,19 @@ public data class BroadcastBeaconResponse(
     public companion object {}
 }
 
+/**
+ * Message responding to every [BeaconRequest] informing that the request could not be completed due to an error.
+ *
+ * @property [id] The value that identifies the request to which the message is responding.
+ * @property [errorType] The type of the error.
+ */
+@Serializable
+@SerialName("error")
+public data class ErrorBeaconResponse constructor(
+    override val id: String,
+    val errorType: BeaconError,
+) : BeaconResponse()
+
 // -- other --
 
 /**
@@ -221,19 +240,4 @@ public data class BroadcastBeaconResponse(
 internal data class DisconnectBeaconMessage internal constructor(
     override val id: String,
     val senderId: String,
-) : BeaconMessage()
-
-/**
- * Message responding to every [BeaconRequest] informing that the request could not be completed due to an error.
- *
- * @property [id] The value that identifies the request to which the message is responding.
- * @property [errorType] The type of the error.
- */
-// TODO: move to responses and remove `senderId`
-@Serializable
-@SerialName("error")
-internal data class ErrorBeaconMessage internal constructor(
-    override val id: String,
-    val senderId: String,
-    val errorType: BeaconException.Type,
 ) : BeaconMessage()

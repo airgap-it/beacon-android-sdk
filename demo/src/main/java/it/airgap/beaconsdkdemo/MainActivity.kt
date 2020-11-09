@@ -1,11 +1,11 @@
 package it.airgap.beaconsdkdemo
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.viewModels
+import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.textfield.TextInputLayout
-import it.airgap.beaconsdk.message.BeaconMessage
+import it.airgap.beaconsdk.message.BeaconRequest
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -24,7 +24,7 @@ class MainActivity : AppCompatActivity() {
         viewModel.state.observe(this) { render(it) }
 
         viewModel.startBeacon().observe(this) { result ->
-            result.getOrNull()?.let { onBeaconMessage(it) }
+            result.getOrNull()?.let { onBeaconRequest(it) }
             result.exceptionOrNull()?.let { onError(it) }
         }
 
@@ -52,8 +52,8 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    private fun onBeaconMessage(beaconMessage: BeaconMessage) {
-        messageTextView.text = json.encodeToString(beaconMessage)
+    private fun onBeaconRequest(beaconRequest: BeaconRequest) {
+        messageTextView.text = json.encodeToString(beaconRequest)
     }
 
     private fun onError(exception: Throwable) {
