@@ -1,9 +1,11 @@
 package it.airgap.beaconsdk.data.tezos
 
+import fromValues
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.encodeToJsonElement
 import org.junit.Test
 import kotlin.test.assertEquals
 
@@ -67,40 +69,13 @@ internal class MichelineMichelsonV1ExpressionTest {
         annots: List<String>? = null,
         includeNulls: Boolean = false,
     ) : Pair<MichelinePrimitiveApplication, String> {
-        val json = when {
-            !includeNulls && args == null && annots == null -> {
-                """
-                    {
-                        "prim": "$prim"
-                    }
-                """
-            }
-            !includeNulls && annots == null -> {
-                """
-                    {
-                        "prim": "$prim",
-                        "args": ${Json.encodeToString(args)}
-                    }
-                """
-            }
-            !includeNulls && args == null -> {
-                """
-                    {
-                        "prim": "$prim",
-                        "annots": ${Json.encodeToString(annots)}
-                    }
-                """
-            }
-            else -> {
-                """
-                    {
-                        "prim": "$prim",
-                        "args": ${Json.encodeToString(args)},
-                        "annots": ${Json.encodeToString(annots)}
-                    }
-                """
-            }
-        }.trimIndent()
+        val values = mapOf(
+            "prim" to prim,
+            "args" to args?.let { Json.encodeToJsonElement(it) },
+            "annots" to annots?.let { Json.encodeToJsonElement(it) },
+        )
+
+        val json = JsonObject.fromValues(values, includeNulls).toString()
 
         return MichelinePrimitiveApplication(prim, args, annots) to json
     }

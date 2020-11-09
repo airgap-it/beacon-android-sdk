@@ -1,6 +1,7 @@
 package it.airgap.beaconsdk.internal.message
 
 import it.airgap.beaconsdk.data.beacon.AppMetadata
+import it.airgap.beaconsdk.data.beacon.Origin
 import it.airgap.beaconsdk.internal.message.v1.V1BeaconMessage
 import it.airgap.beaconsdk.internal.message.v2.V2BeaconMessage
 import it.airgap.beaconsdk.internal.storage.decorator.DecoratedExtendedStorage
@@ -22,7 +23,7 @@ import kotlinx.serialization.json.jsonPrimitive
 internal abstract class VersionedBeaconMessage {
     abstract val version: String
 
-    abstract suspend fun toBeaconMessage(storage: DecoratedExtendedStorage): BeaconMessage
+    abstract suspend fun toBeaconMessage(origin: Origin, storage: DecoratedExtendedStorage): BeaconMessage
 
     abstract fun pairsWith(other: BeaconMessage): Boolean
     abstract fun pairsWith(other: VersionedBeaconMessage): Boolean

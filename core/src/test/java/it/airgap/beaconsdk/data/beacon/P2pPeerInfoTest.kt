@@ -1,5 +1,6 @@
 package it.airgap.beaconsdk.data.beacon
 
+import fromValues
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -64,92 +65,16 @@ internal class P2pPeerInfoTest {
         icon: String? = null,
         appUrl: String? = null,
         includeNulls: Boolean = false,
-    ): String =
-        when {
-            !includeNulls && version == null && icon == null && appUrl == null -> {
-                """
-                    {
-                        "name": "$name",
-                        "publicKey": "$publicKey",
-                        "relayServer": "$relayServer"
-                    }
-                """.trimIndent()
-            }
-            !includeNulls && icon == null && appUrl == null -> {
-                """
-                    {
-                        "name": "$name",
-                        "publicKey": "$publicKey",
-                        "relayServer": "$relayServer",
-                        "version": "$version"
-                    }
-                """.trimIndent()
-            }
-            !includeNulls && version == null && appUrl == null -> {
-                """
-                    {
-                        "name": "$name",
-                        "publicKey": "$publicKey",
-                        "relayServer": "$relayServer",
-                        "icon": "$icon"
-                    }
-                """.trimIndent()
-            }
-            !includeNulls && version == null && icon == null -> {
-                """
-                    {
-                        "name": "$name",
-                        "publicKey": "$publicKey",
-                        "relayServer": "$relayServer",
-                        "appUrl": "$appUrl"
-                    }
-                """.trimIndent()
-            }
-            !includeNulls && appUrl == null -> {
-                """
-                    {
-                        "name": "$name",
-                        "publicKey": "$publicKey",
-                        "relayServer": "$relayServer",
-                        "version": "$version",
-                        "icon": "$icon"
-                    }
-                """.trimIndent()
-            }
+    ): String {
+        val values = mapOf(
+            "name" to name,
+            "publicKey" to publicKey,
+            "relayServer" to relayServer,
+            "version" to version,
+            "icon" to icon,
+            "appUrl" to appUrl,
+        )
 
-            !includeNulls && icon == null -> {
-                """
-                    {
-                        "name": "$name",
-                        "publicKey": "$publicKey",
-                        "relayServer": "$relayServer",
-                        "version": "$version",
-                        "appUrl": "$appUrl"
-                    }
-                """.trimIndent()
-            }
-            !includeNulls && version == null -> {
-                """
-                    {
-                        "name": "$name",
-                        "publicKey": "$publicKey",
-                        "relayServer": "$relayServer",
-                        "icon": "$icon",
-                        "appUrl": "$appUrl"
-                    }
-                """.trimIndent()
-            }
-            else -> {
-                """
-                    {
-                        "name": "$name",
-                        "publicKey": "$publicKey",
-                        "relayServer": "$relayServer",
-                        "version": ${Json.encodeToString(version)},
-                        "icon": ${Json.encodeToString(icon)},
-                        "appUrl": ${Json.encodeToString(appUrl)}
-                    }
-                """.trimIndent()
-            }
-        }
+        return JsonObject.fromValues(values, includeNulls).toString()
+    }
 }

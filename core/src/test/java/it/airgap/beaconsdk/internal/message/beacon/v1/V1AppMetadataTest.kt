@@ -1,5 +1,6 @@
 package it.airgap.beaconsdk.internal.message.beacon.v1
 
+import fromValues
 import it.airgap.beaconsdk.data.beacon.AppMetadata
 import it.airgap.beaconsdk.internal.message.v1.V1AppMetadata
 import kotlinx.serialization.decodeFromString
@@ -50,22 +51,13 @@ internal class V1AppMetadataTest {
         icon: String? = null,
         includeNulls: Boolean = false,
     ): Pair<V1AppMetadata, String> {
-        val json = if (icon != null || includeNulls) {
-            """
-                {
-                    "beaconId": "$beaconId",
-                    "name": "$name",
-                    "icon": ${Json.encodeToString(icon)}
-                }
-            """.trimIndent()
-        } else {
-            """
-                {
-                    "beaconId": "$beaconId",
-                    "name": "$name"
-                }
-            """.trimIndent()
-        }
+        val values = mapOf(
+            "beaconId" to beaconId,
+            "name" to name,
+            "icon" to icon,
+        )
+
+        val json = JsonObject.fromValues(values, includeNulls).toString()
 
         return V1AppMetadata(beaconId, name, icon) to json
     }

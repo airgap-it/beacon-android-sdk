@@ -12,10 +12,14 @@ import it.airgap.beaconsdk.internal.storage.SharedPreferencesStorage
 import it.airgap.beaconsdk.internal.storage.decorator.DecoratedExtendedStorage
 import it.airgap.beaconsdk.internal.transport.Transport
 import it.airgap.beaconsdk.internal.utils.Failure
+import it.airgap.beaconsdk.internal.utils.InternalResult
 import it.airgap.beaconsdk.internal.utils.Success
 import it.airgap.beaconsdk.message.BeaconMessage
+import it.airgap.beaconsdk.message.BeaconRequest
 import it.airgap.beaconsdk.message.BeaconResponse
+import it.airgap.beaconsdk.message.PermissionBeaconResponse
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.Json
 
@@ -84,36 +88,33 @@ public class BeaconClient internal constructor(
 
     /**
      * Connects with known peers and subscribes to incoming messages
-     * returning a [Flow] of received [BeaconMessage] instances or occurred errors
+     * returning a [Flow] of received [BeaconRequest] instances or occurred errors
      * represented as a [Result].
      */
-    public fun connect(): Flow<Result<BeaconMessage>> =
+    public fun connect(): Flow<Result<BeaconRequest>> =
         connectionController.subscribe()
-            .map { it.flatMapSuspend(messageController::onIncomingMessage) }
+            .map { result ->
+                result.flatMapSuspend { messageController.onIncomingMessage(it.origin, it.content) }
+            }
+            .filterIsInstance<InternalResult<BeaconRequest>>()
             .map {
                 when (it) {
                     is Success -> Result.success(it.value)
-                    is Failure -> Result.failure(it.error as? BeaconException ?: BeaconException.Internal(cause = it.error))
+                    is Failure -> Result.failure(it.error as? BeaconException ?: BeaconException(cause = it.error))
                 }
             }
 
     /**
      * Sends the [response] in reply to a previously received request.
      *
-     * The method will fail if there is no pending request that matches the [response].
-     *
-     * @throws [BeaconException] if sending the [response] fails.
+     * @throws [IllegalArgumentException] if no pending request that matches the [response] was found.
+     * @throws [IllegalStateException] on [PermissionBeaconResponse] if the granted permissions could not be saved.
+     * @throws [BeaconException] if sending the [response] failed.
      */
-    @Throws(BeaconException::class)
+    @Throws(IllegalArgumentException::class, IllegalStateException::class, BeaconException::class)
     public suspend fun respond(response: BeaconResponse) {
-        try {
-            val outgoingMessage = messageController.onOutgoingMessage(beaconId, response).value()
-            connectionController.send(outgoingMessage).value()
-        } catch (e: BeaconException) {
-            throw e
-        } catch (e: Exception) {
-            throw BeaconException.Internal(cause = e)
-        }
+        val outgoingMessage = messageController.onOutgoingMessage(beaconId, response).value()
+        connectionController.send(outgoingMessage).mapError { BeaconException(cause = it) }.value()
     }
 
     /**

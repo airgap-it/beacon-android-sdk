@@ -2,7 +2,9 @@ package it.airgap.beaconsdk.internal.transport.p2p
 
 import it.airgap.beaconsdk.data.beacon.Origin
 import it.airgap.beaconsdk.data.beacon.P2pPeerInfo
-import it.airgap.beaconsdk.internal.message.SerializedBeaconMessage
+import it.airgap.beaconsdk.internal.message.ConnectionTransportMessage
+import it.airgap.beaconsdk.internal.message.ConnectionMessage
+import it.airgap.beaconsdk.internal.message.SerializedConnectionMessage
 import it.airgap.beaconsdk.internal.storage.decorator.DecoratedExtendedStorage
 import it.airgap.beaconsdk.internal.transport.Transport
 import it.airgap.beaconsdk.internal.transport.p2p.data.P2pMessage
@@ -18,14 +20,14 @@ internal class P2pTransport(
 ) : Transport() {
     override val type: Type = Type.P2P
 
-    override val connectionMessages: Flow<InternalResult<SerializedBeaconMessage>> by lazy {
+    override val connectionMessages: Flow<InternalResult<ConnectionTransportMessage>> by lazy {
         storage.p2pPeers
             .onEach { if (!it.isPaired) pairP2pPeer(it) }
             .mapNotNull { HexString.fromStringOrNull(it.publicKey) }
             .distinctUntilChanged()
             .filterNot { subscribedPeers.contains(it) }
             .flatMapMerge { subscribeToP2pPeer(it) }
-            .map { SerializedBeaconMessage.fromInternalResult(it) }
+            .map { ConnectionMessage.fromInternalResult(it) }
     }
 
     private val subscribedPeers: MutableList<HexString> = mutableListOf()
@@ -69,9 +71,9 @@ internal class P2pTransport(
         return client.subscribeTo(publicKey)
     }
 
-    private fun SerializedBeaconMessage.Companion.fromInternalResult(
+    private fun ConnectionMessage.Companion.fromInternalResult(
         p2pMessage: InternalResult<P2pMessage>,
-    ): InternalResult<SerializedBeaconMessage> = p2pMessage.map { SerializedBeaconMessage(Origin.P2P(it.id), it.content) }
+    ): InternalResult<ConnectionTransportMessage> = p2pMessage.map { SerializedConnectionMessage(Origin.P2P(it.id), it.content) }
 
     private fun List<P2pPeerInfo>.filterWithPublicKey(publicKey: String): List<P2pPeerInfo> =
         filter { it.publicKey == publicKey }

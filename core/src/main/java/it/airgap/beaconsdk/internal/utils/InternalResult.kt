@@ -1,5 +1,7 @@
 package it.airgap.beaconsdk.internal.utils
 
+import it.airgap.beaconsdk.exception.BeaconException
+
 internal sealed class InternalResult<T> {
     val isSuccess: Boolean
         get() = this is Success
@@ -38,13 +40,13 @@ internal sealed class InternalResult<T> {
             is Failure -> Failure(error)
         }
 
-    fun mapError(transform: (Throwable?) -> Throwable): InternalResult<T> =
+    fun mapError(transform: (Throwable) -> Throwable): InternalResult<T> =
         when (this) {
             is Success -> this
             is Failure -> Failure(transform(error))
         }
 
-    suspend fun mapErrorSuspend(transform: suspend (Throwable?) -> Throwable): InternalResult<T> =
+    suspend fun mapErrorSuspend(transform: suspend (Throwable) -> Throwable): InternalResult<T> =
         when (this) {
             is Success -> this
             is Failure -> Failure(transform(error))
@@ -67,6 +69,6 @@ internal sealed class InternalResult<T> {
 }
 
 internal data class Success<T>(val value: T) : InternalResult<T>()
-internal data class Failure<T>(val error: Throwable? = null) : InternalResult<T>()
+internal data class Failure<T>(val error: Throwable = BeaconException()) : InternalResult<T>()
 
 internal fun Success(): Success<Unit> = Success(Unit)

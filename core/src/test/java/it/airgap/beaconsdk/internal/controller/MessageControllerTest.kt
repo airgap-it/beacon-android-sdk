@@ -3,10 +3,10 @@ package it.airgap.beaconsdk.internal.controller
 import beaconMessages
 import beaconResponses
 import beaconVersionedMessages
-import errorBeaconMessage
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
+import it.airgap.beaconsdk.data.beacon.Origin
 import it.airgap.beaconsdk.data.beacon.PermissionInfo
 import it.airgap.beaconsdk.internal.message.VersionedBeaconMessage
 import it.airgap.beaconsdk.internal.protocol.Protocol
@@ -44,6 +44,8 @@ internal class MessageControllerTest {
     private val version: String = "2"
     private val senderId: String = "senderId"
 
+    private val origin = Origin.P2P(senderId)
+
     @Before
     fun setup() {
         MockKAnnotations.init(this)
@@ -64,8 +66,8 @@ internal class MessageControllerTest {
         val versionedMessages = beaconVersionedMessages(version, senderId, includeError = false)
 
         versionedMessages.forEach {
-            val beaconMessage = runBlocking { messageController.onIncomingMessage(it).valueOrNull() }
-            val expected = runBlocking { it.toBeaconMessage(storage) }
+            val beaconMessage = runBlocking { messageController.onIncomingMessage(origin, it).valueOrNull() }
+            val expected = runBlocking { it.toBeaconMessage(origin, storage) }
 
             assertEquals(expected, beaconMessage)
         }
@@ -77,7 +79,7 @@ internal class MessageControllerTest {
 
         beaconMessage.forEach {
             val pendingRequest = VersionedBeaconMessage.fromBeaconMessage(version, senderId, permissionBeaconRequest(id = it.id))
-            runBlocking { messageController.onIncomingMessage(pendingRequest) }
+            runBlocking { messageController.onIncomingMessage(origin, pendingRequest) }
 
             val versionedBeaconMessage = runBlocking { messageController.onOutgoingMessage(senderId, it).valueOrNull() }
             val expected = runBlocking { VersionedBeaconMessage.fromBeaconMessage(version, senderId, it) }
@@ -91,21 +93,11 @@ internal class MessageControllerTest {
         val permissionRequest = permissionBeaconRequest()
         val versionedRequest = VersionedBeaconMessage.fromBeaconMessage(version, senderId, permissionRequest)
 
-        val result = runBlocking { messageController.onIncomingMessage(versionedRequest) }
+        val result = runBlocking { messageController.onIncomingMessage(origin, versionedRequest) }
         val appsMetadata = runBlocking { storage.getAppMetadata() }
 
         assertTrue(result.isSuccess, "Expected result to be a success")
         assertEquals(listOf(permissionRequest.appMetadata), appsMetadata)
-    }
-
-    @Test
-    fun `returns failure on incoming error message`() {
-        val errorMessage = errorBeaconMessage()
-        val versionedMessage = VersionedBeaconMessage.fromBeaconMessage(version, senderId, errorMessage)
-
-        val result = runBlocking { messageController.onIncomingMessage(versionedMessage) }
-
-        assertTrue(result.isFailure, "Expected result to be a failure")
     }
 
     @Test
@@ -127,7 +119,7 @@ internal class MessageControllerTest {
         val versionedRequest = VersionedBeaconMessage.fromBeaconMessage(version, senderId, permissionRequest)
 
         runBlocking {
-            messageController.onIncomingMessage(versionedRequest)
+            messageController.onIncomingMessage(origin, versionedRequest)
             messageController.onOutgoingMessage(senderId, permissionResponse)
         }
 
@@ -159,12 +151,12 @@ internal class MessageControllerTest {
         val versionedRequest = VersionedBeaconMessage.fromBeaconMessage(version, senderId, permissionRequest)
 
         runBlocking {
-            messageController.onIncomingMessage(versionedRequest)
+            messageController.onIncomingMessage(origin, versionedRequest)
             storage.setAppMetadata(emptyList())
         }
 
-        val result = runBlocking { messageController.onOutgoingMessage(senderId, permissionResponse) }
-
-        assertTrue(result.isFailure, "Expected result to be a failure")
+        assertFailsWith<IllegalStateException> {
+            runBlocking { messageController.onOutgoingMessage(senderId, permissionResponse).value() }
+        }
     }
 }

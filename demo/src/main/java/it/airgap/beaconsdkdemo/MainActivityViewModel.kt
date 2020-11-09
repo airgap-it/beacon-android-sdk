@@ -16,7 +16,7 @@ class MainActivityViewModel : ViewModel() {
     private var beaconClient: BeaconClient? = null
     private var awaitingRequest: BeaconRequest? = null
 
-    fun startBeacon(): LiveData<Result<BeaconMessage>> = liveData {
+    fun startBeacon(): LiveData<Result<BeaconRequest>> = liveData {
         beaconClient = BeaconClient("Beacon SDK Demo")
         checkForPeers()
 

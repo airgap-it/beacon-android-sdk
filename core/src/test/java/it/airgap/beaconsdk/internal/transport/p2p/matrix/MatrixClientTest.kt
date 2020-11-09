@@ -190,7 +190,7 @@ internal class MatrixClientTest {
         coEvery { userService.login(any(), any(), any()) } returns Failure(error)
 
         runBlockingTest {
-            val exception = assertFailsWith<BeaconException.Internal> {
+            val exception = assertFailsWith<BeaconException> {
                 client.start("userId", "password", "deviceId")
             }
 
@@ -203,7 +203,7 @@ internal class MatrixClientTest {
         coEvery { userService.login(any(), any(), any()) } returns Success(MatrixLoginResponse())
 
         runBlockingTest {
-            assertFailsWith<BeaconException.Internal> {
+            assertFailsWith<BeaconException> {
                 client.start("userId", "password", "deviceId")
             }
         }

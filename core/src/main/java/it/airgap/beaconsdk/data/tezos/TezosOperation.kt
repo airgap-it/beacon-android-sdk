@@ -145,11 +145,11 @@ public data class TezosBallotOperation(
 
 @Serializable
 public data class TezosDelegationOperation(
-    public val source: String,
-    public val fee: String,
-    public val counter: String,
-    @SerialName("gas_limit") public val gasLimit: String,
-    @SerialName("storage_limit") public val storageLimit: String,
+    public val source: String? = null,
+    public val fee: String? = null,
+    public val counter: String? = null,
+    @SerialName("gas_limit") public val gasLimit: String? = null,
+    @SerialName("storage_limit") public val storageLimit: String? = null,
     public val delegate: String? = null,
 ) : TezosOperation() {
     @Required
@@ -190,14 +190,14 @@ public data class TezosDoubleEndorsementEvidenceOperation(
 
 @Serializable
 public data class TezosOriginationOperation(
-    public val source: String,
-    public val fee: String,
-    public val counter: String,
-    @SerialName("gas_limit") public val gasLimit: String,
-    @SerialName("storage_limit") public val storageLimit: String,
+    public val source: String? = null,
+    public val fee: String? = null,
+    public val counter: String? = null,
+    @SerialName("gas_limit") public val gasLimit: String? = null,
+    @SerialName("storage_limit") public val storageLimit: String? = null,
     public val balance: String,
-    public val script: String,
     public val delegate: String? = null,
+    public val script: String,
 ) : TezosOperation() {
     @Required
     override val kind: Kind = Kind.Origination
@@ -218,11 +218,11 @@ public data class TezosProposalsOpertion(
 
 @Serializable
 public data class TezosRevealOperation(
-    public val source: String,
-    public val fee: String,
-    public val counter: String,
-    @SerialName("gas_limit") public val gasLimit: String,
-    @SerialName("storage_limit") public val storageLimit: String,
+    public val source: String? = null,
+    public val fee: String? = null,
+    public val counter: String? = null,
+    @SerialName("gas_limit") public val gasLimit: String? = null,
+    @SerialName("storage_limit") public val storageLimit: String? = null,
     @SerialName("public_key") public val publicKey: String,
 ) : TezosOperation() {
     @Required
@@ -241,14 +241,14 @@ public data class TezosSeedNonceRevelationOperation(public val level: String, pu
 
 @Serializable
 public data class TezosTransactionOperation(
-    public val source: String,
-    public val fee: String,
-    public val counter: String,
-    @SerialName("gas_limit") public val gasLimit: String,
-    @SerialName("storage_limit") public val storageLimit: String,
+    public val source: String? = null,
+    public val fee: String? = null,
+    public val counter: String? = null,
+    @SerialName("gas_limit") public val gasLimit: String? = null,
+    @SerialName("storage_limit") public val storageLimit: String? = null,
     public val amount: String,
     public val destination: String,
-    public val parameters: Parameters,
+    public val parameters: Parameters? = null,
 ) : TezosOperation() {
     @Required
     override val kind: Kind = Kind.Transaction
