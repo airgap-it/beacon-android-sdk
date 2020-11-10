@@ -3,15 +3,17 @@ import androidx.annotation.IntRange
 import it.airgap.beaconsdk.data.beacon.*
 import it.airgap.beaconsdk.data.tezos.TezosActivateAccountOperation
 import it.airgap.beaconsdk.data.tezos.TezosOperation
-import it.airgap.beaconsdk.internal.message.ConnectionTransportMessage
 import it.airgap.beaconsdk.internal.message.BeaconConnectionMessage
+import it.airgap.beaconsdk.internal.message.ConnectionTransportMessage
 import it.airgap.beaconsdk.internal.message.VersionedBeaconMessage
 import it.airgap.beaconsdk.internal.utils.Failure
 import it.airgap.beaconsdk.internal.utils.InternalResult
 import it.airgap.beaconsdk.internal.utils.Success
 import it.airgap.beaconsdk.internal.utils.failWith
 import it.airgap.beaconsdk.message.*
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.onEach
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
@@ -27,6 +29,11 @@ internal fun <T> MutableSharedFlow<InternalResult<T>>.tryEmitValues(values: List
 
 internal fun <T> MutableSharedFlow<InternalResult<T>>.tryEmitFailures(failures: List<Failure<T>>) {
     failures.forEach { tryEmit(it) }
+}
+
+internal fun <T> Flow<T>.onNth(n: Int, action: suspend (T) -> Unit): Flow<T> {
+    var counter = 0
+    return onEach { if (++counter == n) action(it) }
 }
 
 internal fun JsonObject.Companion.fromValues(values: Map<String, Any?>, includeNulls: Boolean = false): JsonObject {
@@ -63,11 +70,11 @@ internal fun versionedBeaconMessages(
 
 // -- flows --
 
-internal fun beaconOriginatedMessageFlow(
+internal fun beaconConnectionMessageFlow(
     replay: Int,
 ): MutableSharedFlow<InternalResult<BeaconConnectionMessage>> = MutableSharedFlow(replay)
 
-internal fun originatedMessageFlow(
+internal fun connectionMessageFlow(
     replay: Int,
 ): MutableSharedFlow<InternalResult<ConnectionTransportMessage>> = MutableSharedFlow(replay)
 
@@ -220,7 +227,7 @@ internal fun p2pPeers(
     paired: Boolean = false,
 ): List<P2pPeerInfo> =
     (0 until number).map {
-        P2pPeerInfo("name#$it", "publicKey#$it", "relayServer#$it", version, paired)
+        P2pPeerInfo("name#$it", "publicKey#$it", "relayServer#$it", version, isPaired = paired)
     }
 
 internal fun appMetadata(@IntRange(from = 1) number: Int = 1): List<AppMetadata> =

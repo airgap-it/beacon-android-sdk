@@ -56,7 +56,7 @@ class MainActivityViewModel : ViewModel() {
 
     fun removePeers() {
         viewModelScope.launch {
-            beaconClient?.removePeers()
+            beaconClient?.removeAllPeers()
             checkForPeers()
         }
     }

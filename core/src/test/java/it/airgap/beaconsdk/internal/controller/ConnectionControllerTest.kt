@@ -23,7 +23,7 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
-import originatedMessageFlow
+import connectionMessageFlow
 import tryEmitFailures
 import tryEmitValues
 import kotlin.test.assertEquals
@@ -53,7 +53,7 @@ internal class ConnectionControllerTest {
     fun `subscribes for new messages`() {
         val requests = beaconVersionedRequests().shuffled()
         val connectionMessages = validConnectionMessages(requests)
-        val connectionMessageFlow = originatedMessageFlow(connectionMessages.size + 1)
+        val connectionMessageFlow = connectionMessageFlow(connectionMessages.size + 1)
 
         every { transport.subscribe() } answers { connectionMessageFlow }
 
@@ -73,7 +73,7 @@ internal class ConnectionControllerTest {
     @Test
     fun `propagates failure messages`() {
         val failures = failures<ConnectionTransportMessage>(2, IllegalStateException())
-        val connectionMessageFlow = originatedMessageFlow(failures.size + 1)
+        val connectionMessageFlow = connectionMessageFlow(failures.size + 1)
 
         every { transport.subscribe() } answers { connectionMessageFlow }
 
@@ -92,7 +92,7 @@ internal class ConnectionControllerTest {
         serializerProvider.shouldFail = true
 
         val connectionMessages = invalidConnectionMessages(2)
-        val connectionMessageFlow = originatedMessageFlow(connectionMessages.size + 1)
+        val connectionMessageFlow = connectionMessageFlow(connectionMessages.size + 1)
 
         every { transport.subscribe() } answers { connectionMessageFlow }
 

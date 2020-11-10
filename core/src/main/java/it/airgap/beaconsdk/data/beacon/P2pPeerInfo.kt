@@ -10,7 +10,6 @@ import kotlinx.serialization.Transient
  * @property [publicKey] The public key of the peer.
  * @property [relayServer] The address of the server through which the peer should be communicated.
  * @property [version] The Beacon version using by the peer. If not provided, the earliest version will be assumed by default.
- * @property [isPaired] The indication whether the client is already paired with the peer.
  * @property [icon] An optional URL for the peer icon.
  * @property [appUrl] An optional URL for the peer application.
  */
@@ -20,9 +19,10 @@ public data class P2pPeerInfo internal constructor(
     public val publicKey: String,
     public val relayServer: String,
     public val version: String? = null,
-    @Transient public val isPaired: Boolean = false,
     public val icon: String? = null,
     public val appUrl: String? = null,
+    @Transient public val isPaired: Boolean = false,
+    @Transient public val isRemoved: Boolean = false,
 ) {
     public constructor(
         name: String,
@@ -31,7 +31,7 @@ public data class P2pPeerInfo internal constructor(
         version: String? = null,
         icon: String? = null,
         appUrl: String? = null,
-    ) : this(name, publicKey, relayServer, version, isPaired = false, icon, appUrl)
+    ) : this(name, publicKey, relayServer, version, icon, appUrl, isPaired = false, isRemoved = false)
 
     public companion object {}
 }

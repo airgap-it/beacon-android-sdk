@@ -16,15 +16,20 @@ import it.airgap.beaconsdk.internal.utils.HexString
 import it.airgap.beaconsdk.internal.utils.Success
 import it.airgap.beaconsdk.internal.utils.asHexString
 import it.airgap.beaconsdk.internal.utils.encodeToHexString
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import mockLog
+import onNth
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 internal class P2pClientTest {
 
@@ -131,6 +136,18 @@ internal class P2pClientTest {
     }
 
     @Test
+    fun `checks if peer is already subscribed`() {
+        every { matrixClient1.events } returns flow { }
+        every { matrixClient2.events } returns flow { }
+
+        val subscribed = HexString.fromString("0x00").also { p2pClient.subscribeTo(it) }
+        val unsubscribed = HexString.fromString("0x01")
+
+        assertTrue(p2pClient.isSubscribed(subscribed), "Expected peer to be recognized as subscribed")
+        assertFalse(p2pClient.isSubscribed(unsubscribed), "Expected peer to be recognized as subscribed")
+    }
+
+    @Test
     fun `ignores text messages from unsubscribed senders`() {
         val subscribedPublicKey = HexString.fromString("0x00")
         val unsubscribedPublicKey = HexString.fromString("0x01")
@@ -225,6 +242,84 @@ internal class P2pClientTest {
             val messages = p2pClient.subscribeTo(publicKey).mapNotNull { it.valueOrNull() }.toList()
 
             assertEquals(expected.sortedBy { it.content }, messages.sortedBy { it.content })
+        }
+    }
+
+    @Test
+    fun `unsubscribes from peer`() {
+        val publicKey = HexString.fromString("0x00")
+
+        every { p2pCommunicationUtils.isMessageFrom(any(), any()) } returns true
+        every { crypto.validateEncryptedMessage(any()) } returns true
+
+        val messages1 = listOf(
+            validMatrixTextMessage("1", publicKey.value(), "content1"),
+            validMatrixTextMessage("1", publicKey.value(), "content2"),
+        )
+        val messages2 = listOf(
+            validMatrixTextMessage("2", publicKey.value(), "content1"),
+            validMatrixTextMessage("2", publicKey.value(), "content2"),
+        )
+
+        val testDeferred = CompletableDeferred<Unit>()
+
+        every { matrixClient1.events } returns flow<MatrixEvent> {
+            messages1.forEach { emit(it) }
+        }
+        every { matrixClient2.events } returns flow<MatrixEvent> {
+            testDeferred.await()
+            p2pClient.unsubscribeFrom(publicKey)
+            messages2.forEach { emit(it) }
+        }
+
+        val actual = runBlocking {
+            p2pClient.subscribeTo(publicKey)
+                .mapNotNull { it.valueOrNull() }
+                .onNth(messages1.size) { testDeferred.complete(Unit) }
+                .toList()
+        }
+
+        val expected = messages1.map { P2pMessage(publicKey.value(), it.message) }
+
+        assertFalse(p2pClient.isSubscribed(publicKey), "Expected peer to be recognized as unsubscribed")
+        assertEquals(expected.sortedBy { it.toString() }, actual.sortedBy { it.toString() })
+    }
+
+    @Test
+    fun `does not continue previous flows if resubscribed`() {
+        val publicKey = HexString.fromString("0x00")
+
+        every { p2pCommunicationUtils.isMessageFrom(any(), any()) } returns true
+        every { crypto.validateEncryptedMessage(any()) } returns true
+
+        val messages1 = listOf(
+            validMatrixTextMessage("1", publicKey.value(), "content1"),
+            validMatrixTextMessage("1", publicKey.value(), "content2"),
+        )
+        val messages2 = listOf(
+            validMatrixTextMessage("2", publicKey.value(), "content1"),
+            validMatrixTextMessage("2", publicKey.value(), "content2"),
+        )
+
+        every { matrixClient1.events } returns flow<MatrixEvent> {
+            messages1.forEach { emit(it) }
+        }
+        every { matrixClient2.events } returns flow<MatrixEvent> {
+            messages2.forEach { emit(it) }
+        }
+
+        runBlocking {
+            val unsubscribed = p2pClient.subscribeTo(publicKey).let {
+                async { it.mapNotNull { it.valueOrNull() }.toList() }
+            }
+
+            p2pClient.unsubscribeFrom(publicKey)
+            p2pClient.subscribeTo(publicKey)
+
+            println(unsubscribed.await())
+
+            assertTrue(p2pClient.isSubscribed(publicKey), "Expected peer to be recognized as subscribed")
+            assertTrue(unsubscribed.await().isEmpty(), "Expected immediately unsubscribed flow to be empty")
         }
     }
 

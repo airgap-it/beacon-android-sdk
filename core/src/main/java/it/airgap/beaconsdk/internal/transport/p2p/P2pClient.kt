@@ -10,11 +10,9 @@ import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.MatrixRoom
 import it.airgap.beaconsdk.internal.transport.p2p.utils.P2pCommunicationUtils
 import it.airgap.beaconsdk.internal.transport.p2p.utils.P2pServerUtils
 import it.airgap.beaconsdk.internal.utils.*
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
+import java.util.*
 
 internal class P2pClient(
     private val appName: String,
@@ -25,7 +23,7 @@ internal class P2pClient(
     private val crypto: Crypto,
     private val keyPair: KeyPair,
 ) {
-    private val messageFlows: MutableMap<HexString, Flow<InternalResult<String>>> = mutableMapOf()
+    private val subscribedFlows: MutableMap<HexString, MutableSet<String>> = mutableMapOf()
 
     private val serverSessionKeyPair: MutableMap<HexString, SessionKeyPair> = mutableMapOf()
     private val clientSessionKeyPair: MutableMap<HexString, SessionKeyPair> = mutableMapOf()
@@ -40,12 +38,30 @@ internal class P2pClient(
     private val matrixMessageEvents: Flow<MatrixEvent.TextMessage> get() = matrixEvents.filterIsInstance()
     private val matrixInviteEvents: Flow<MatrixEvent.Invite> get() = matrixEvents.filterIsInstance()
 
-    fun subscribeTo(publicKey: HexString): Flow<InternalResult<P2pMessage>> =
-        messageFlows.getOrPut(publicKey) {
-            matrixMessageEvents
-                .filter { it.isTextMessageFrom(publicKey) }
-                .map { decrypt(publicKey, it) }
-        }.map { P2pMessage.fromInternalResult(publicKey, it) }
+    fun isSubscribed(publicKey: HexString): Boolean = subscribedFlows.containsKey(publicKey)
+
+    fun subscribeTo(publicKey: HexString): Flow<InternalResult<P2pMessage>> {
+        val identifier = UUID.randomUUID().toString().also { subscribedFlows.addTo(publicKey, it) }
+
+        return flow {
+            try {
+                matrixMessageEvents
+                    .filter { it.isTextMessageFrom(publicKey) }
+                    .map { decrypt(publicKey, it) }
+                    .map { P2pMessage.fromInternalResult(publicKey, it) }
+                    .collect {
+                        if (subscribedFlows.containsElement(publicKey, identifier)) emit(it)
+                        else cancelFlow()
+                    }
+            } catch (e: CancellationException) {
+                /* no action */
+            }
+        }
+    }
+
+    fun unsubscribeFrom(publicKey: HexString) {
+        subscribedFlows.remove(publicKey)
+    }
 
     suspend fun sendTo(publicKey: HexString, message: String): InternalResult<Unit> =
         tryResult {
@@ -182,6 +198,15 @@ internal class P2pClient(
             createTrustedPrivateRoom(recipient)
         }
     }
+
+    private fun <K, V> MutableMap<K, MutableSet<V>>.addTo(key: K, value: V) {
+        getOrPut(key) { mutableSetOf() }.add(value)
+    }
+
+    private fun <K, V> MutableMap<K, MutableSet<V>>.containsElement(key: K, value: V): Boolean =
+        get(key)?.contains(value) ?: false
+
+    private fun cancelFlow(): Nothing = throw CancellationException()
 
     companion object {
         const val TAG = "P2pClient"

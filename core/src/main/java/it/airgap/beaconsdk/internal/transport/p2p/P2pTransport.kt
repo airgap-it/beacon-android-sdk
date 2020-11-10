@@ -2,8 +2,8 @@ package it.airgap.beaconsdk.internal.transport.p2p
 
 import it.airgap.beaconsdk.data.beacon.Origin
 import it.airgap.beaconsdk.data.beacon.P2pPeerInfo
-import it.airgap.beaconsdk.internal.message.ConnectionTransportMessage
 import it.airgap.beaconsdk.internal.message.ConnectionMessage
+import it.airgap.beaconsdk.internal.message.ConnectionTransportMessage
 import it.airgap.beaconsdk.internal.message.SerializedConnectionMessage
 import it.airgap.beaconsdk.internal.storage.decorator.DecoratedExtendedStorage
 import it.airgap.beaconsdk.internal.transport.Transport
@@ -21,16 +21,14 @@ internal class P2pTransport(
     override val type: Type = Type.P2P
 
     override val connectionMessages: Flow<InternalResult<ConnectionTransportMessage>> by lazy {
-        storage.p2pPeers
-            .onEach { if (!it.isPaired) pairP2pPeer(it) }
+        storage.updatedP2pPeers
+            .onEach { onUpdatedP2pPeer(it) }
+            .filterNot { it.isRemoved }
             .mapNotNull { HexString.fromStringOrNull(it.publicKey) }
-            .distinctUntilChanged()
-            .filterNot { subscribedPeers.contains(it) }
+            .filterNot { client.isSubscribed(it) }
             .flatMapMerge { subscribeToP2pPeer(it) }
             .map { ConnectionMessage.fromInternalResult(it) }
     }
-
-    private val subscribedPeers: MutableList<HexString> = mutableListOf()
 
     override suspend fun sendMessage(message: String, recipient: String?): InternalResult<Unit> =
         tryResult {
@@ -43,6 +41,11 @@ internal class P2pTransport(
                 client.sendTo(HexString.fromString(it.publicKey), message).value()
             }
         }
+
+    private suspend fun onUpdatedP2pPeer(peerInfo: P2pPeerInfo) {
+        if (!peerInfo.isPaired && !peerInfo.isRemoved) pairP2pPeer(peerInfo)
+        if (peerInfo.isRemoved) unsubscribeFromP2pPeer(peerInfo)
+    }
 
     private suspend fun pairP2pPeer(peerInfo: P2pPeerInfo) {
         val result = with(peerInfo)
@@ -65,10 +68,12 @@ internal class P2pTransport(
         }
     }
 
-    private fun subscribeToP2pPeer(publicKey: HexString): Flow<InternalResult<P2pMessage>> {
-        subscribedPeers.add(publicKey)
+    private fun subscribeToP2pPeer(publicKey: HexString): Flow<InternalResult<P2pMessage>> =
+        client.subscribeTo(publicKey)
 
-        return client.subscribeTo(publicKey)
+    private fun unsubscribeFromP2pPeer(peerInfo: P2pPeerInfo) {
+        val publicKey = HexString.fromString(peerInfo.publicKey)
+        client.unsubscribeFrom(publicKey)
     }
 
     private fun ConnectionMessage.Companion.fromInternalResult(
