@@ -1,7 +1,7 @@
 package it.airgap.beaconsdk.client
 
 import appMetadata
-import beaconOriginatedMessageFlow
+import beaconConnectionMessageFlow
 import beaconResponses
 import beaconVersionedRequests
 import io.mockk.*
@@ -76,7 +76,7 @@ internal class BeaconClientTest {
         runBlockingTest {
             val requests = beaconVersionedRequests(dAppVersion, dAppId).shuffled()
 
-            val beaconMessageFlow = beaconOriginatedMessageFlow(requests.size + 1)
+            val beaconMessageFlow = beaconConnectionMessageFlow(requests.size + 1)
 
             every { connectionController.subscribe() } answers { beaconMessageFlow }
 
@@ -120,7 +120,7 @@ internal class BeaconClientTest {
     fun `emits BeaconException when internal error occurred`() {
         runBlockingTest {
             val requests = beaconVersionedRequests().shuffled()
-            val beaconMessageFlow = beaconOriginatedMessageFlow(requests.size + 1)
+            val beaconMessageFlow = beaconConnectionMessageFlow(requests.size + 1)
 
             val exception = Exception()
 

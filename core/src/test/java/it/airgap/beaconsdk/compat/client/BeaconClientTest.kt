@@ -1,6 +1,6 @@
 package it.airgap.beaconsdk.compat.client
 
-import beaconOriginatedMessageFlow
+import beaconConnectionMessageFlow
 import beaconResponses
 import beaconVersionedRequests
 import io.mockk.*
@@ -72,7 +72,7 @@ internal class BeaconClientTest {
     fun `connects for messages with callback`() {
         runBlockingTest {
             val requests = beaconVersionedRequests().shuffled()
-            val beaconMessageFlow = beaconOriginatedMessageFlow(requests.size + 1)
+            val beaconMessageFlow = beaconConnectionMessageFlow(requests.size + 1)
 
             every { connectionController.subscribe() } answers { beaconMessageFlow }
 
@@ -146,7 +146,7 @@ internal class BeaconClientTest {
     fun `returns internal BeaconException when internal error occurred`() {
         runBlockingTest {
             val requests = beaconVersionedRequests().shuffled()
-            val beaconMessageFlow = beaconOriginatedMessageFlow(requests.size + 1)
+            val beaconMessageFlow = beaconConnectionMessageFlow(requests.size + 1)
 
             val exception = Exception()
 
