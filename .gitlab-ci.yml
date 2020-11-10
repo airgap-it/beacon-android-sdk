@@ -28,6 +28,7 @@ build:
       - beaconsdk-core-release-unsigned-$CI_PIPELINE_ID.aar
 
 unit:
+  allow_failure: true
   stage: test
   variables:
     UNIT_CONTAINER: unit-$CI_COMMIT_SHA
@@ -37,15 +38,17 @@ unit:
     - docker rm -f $LINT_CONTAINER || true
   script:
     - docker run --name $UNIT_CONTAINER $GOOGLE_TAG /bin/bash -c "/build/gradlew --project-dir /build testMockReleaseUnitTest"
-    - docker cp $UNIT_CONTAINER:/build/core/build/reports/tests/testMockReleaseUnitTest unit-test-report-$CI_PIPELINE_ID
     - docker run --name $LINT_CONTAINER $GOOGLE_TAG /bin/bash -c "/build/gradlew --project-dir /build lint"
-    - docker cp $LINT_CONTAINER:/build/core/build/reports/lint-results.html lint-report-$CI_PIPELINE_ID.html
   after_script:
+    - docker cp $UNIT_CONTAINER:/build/core/build/reports/tests/testMockReleaseUnitTest unit-test-report-$CI_PIPELINE_ID
+    - docker cp $LINT_CONTAINER:/build/core/build/reports/lint-results.html lint-report-$CI_PIPELINE_ID.html
     - docker rm -f $UNIT_CONTAINER || true
     - docker rm -f $LINT_CONTAINER || true
   tags:
     - docker
   artifacts:
+    when: always
+    name: "reports-$CI_PIPELINE_ID"
     paths:
       - unit-test-report-$CI_PIPELINE_ID
       - lint-report-$CI_PIPELINE_ID.html

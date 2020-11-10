@@ -1,107 +1,119 @@
 package it.airgap.beaconsdk.compat.client
 
+import beaconConnectionMessageFlow
+import beaconResponses
+import beaconVersionedRequests
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import it.airgap.beaconsdk.client.BeaconClient
-import it.airgap.beaconsdk.internal.storage.ExtendedStorage
-import it.airgap.beaconsdk.data.network.Network
-import it.airgap.beaconsdk.data.sdk.AppMetadata
-import it.airgap.beaconsdk.data.tezos.TezosOperation
-import it.airgap.beaconsdk.internal.client.ConnectionClient
+import it.airgap.beaconsdk.data.beacon.AppMetadata
+import it.airgap.beaconsdk.data.beacon.Origin
+import it.airgap.beaconsdk.exception.BeaconException
+import it.airgap.beaconsdk.internal.controller.ConnectionController
 import it.airgap.beaconsdk.internal.controller.MessageController
-import it.airgap.beaconsdk.internal.crypto.Crypto
-import it.airgap.beaconsdk.internal.crypto.data.KeyPair
-import it.airgap.beaconsdk.internal.utils.InternalResult
-import it.airgap.beaconsdk.internal.utils.internalSuccess
+import it.airgap.beaconsdk.internal.message.BeaconConnectionMessage
+import it.airgap.beaconsdk.internal.message.VersionedBeaconMessage
+import it.airgap.beaconsdk.internal.storage.MockStorage
+import it.airgap.beaconsdk.internal.storage.decorator.DecoratedExtendedStorage
+import it.airgap.beaconsdk.internal.utils.Failure
+import it.airgap.beaconsdk.internal.utils.Success
 import it.airgap.beaconsdk.message.BeaconMessage
-import it.airgap.beaconsdk.storage.MockBeaconStorage
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.Before
 import org.junit.Test
+import tryEmitValues
+import versionedBeaconMessage
+import java.io.IOException
 import kotlin.test.assertEquals
 
-class BeaconClientTest {
+internal class BeaconClientTest {
 
     @MockK
-    private lateinit var connectionClient: ConnectionClient
+    private lateinit var connectionController: ConnectionController
 
     @MockK
     private lateinit var messageController: MessageController
 
-    @MockK
-    private lateinit var crypto: Crypto
-
-    private lateinit var storage: ExtendedStorage
+    private lateinit var storage: DecoratedExtendedStorage
     private lateinit var beaconClient: BeaconClient
 
     private lateinit var testDeferred: CompletableDeferred<Unit>
 
+    private val appName: String = "mockApp"
+
     private val beaconId: String = "beaconId"
+
+    private val dAppVersion: String = "2"
+    private val dAppId: String = "dAppId"
+
+    private val origin: Origin = Origin.P2P(dAppId)
 
     @Before
     fun setup() {
         MockKAnnotations.init(this)
 
-        every { crypto.generateRandomSeed() } returns internalSuccess(secretSeed)
-        every { crypto.getKeyPairFromSeed(any()) } returns internalSuccess(KeyPair(privateKey, publicKey))
+        coEvery { messageController.onIncomingMessage(any(), any()) } coAnswers  {
+            Success(secondArg<VersionedBeaconMessage>().toBeaconMessage(origin, storage))
+        }
 
-        coEvery { messageController.onRequest(any()) } returns internalSuccess(Unit)
-        coEvery { messageController.onResponse(any()) } returns internalSuccess(Unit)
+        coEvery { messageController.onOutgoingMessage(any(), any()) } coAnswers {
+            Success(versionedBeaconMessage(secondArg(), dAppVersion, beaconId))
+        }
 
-        storage = ExtendedStorage(MockBeaconStorage())
-
-        beaconClient = BeaconClient("mockApp", beaconId, connectionClient, messageController, storage)
+        storage = DecoratedExtendedStorage(MockStorage())
+        beaconClient = BeaconClient(appName, beaconId, connectionController, messageController, storage)
 
         testDeferred = CompletableDeferred()
     }
 
     @Test
     fun `connects for messages with callback`() {
-        val requests = beaconRequests.shuffled().takeHalf()
-        val beaconRequestFlow =
-            MutableSharedFlow<InternalResult<BeaconMessage.Request>>(requests.size + 1)
-        every { connectionClient.subscribe() } answers { beaconRequestFlow }
+        runBlockingTest {
+            val requests = beaconVersionedRequests().shuffled()
+            val beaconMessageFlow = beaconConnectionMessageFlow(requests.size + 1)
 
-        val appMetadata = AppMetadata(senderId, "mockApp")
-        runBlocking { storage.addAppsMetadata(appMetadata) }
-        runBlocking {
-            val messages = mutableListOf<BeaconMessage.Request>()
-            val callback = spyk<OnNewMessageListener>(
-                object : OnNewMessageListener {
-                    override fun onNewMessage(message: BeaconMessage.Request) {
-                        messages.add(message)
+            every { connectionController.subscribe() } answers { beaconMessageFlow }
 
-                        if (messages.size == requests.size) testDeferred.complete(Unit)
+            storage.addAppMetadata(listOf(AppMetadata(dAppId, "otherApp")))
+
+            runBlocking {
+                val messages = mutableListOf<BeaconMessage>()
+                val callback = spyk<OnNewMessageListener>(
+                    object : OnNewMessageListener {
+                        override fun onNewMessage(message: BeaconMessage) {
+                            messages.add(message)
+
+                            if (messages.size == requests.size) testDeferred.complete(Unit)
+                        }
+
+                        override fun onError(error: Throwable) = Unit
                     }
+                )
+                beaconClient.connect(callback)
+                beaconMessageFlow.tryEmitValues(requests.map { BeaconConnectionMessage(origin, it) })
 
-                    override fun onError(error: Throwable) = Unit
-                }
-            )
-            beaconClient.connect(callback)
-            beaconRequestFlow.tryEmit(requests)
+                testDeferred.await()
 
-            testDeferred.await()
+                val expected = requests.map { it.toBeaconMessage(origin, storage) }
 
-            val expected = requests.map { request ->
-                request.also { it.extendWithMetadata(appMetadata) }
+                assertEquals(expected.sortedBy { it.toString() }, messages.sortedBy { it.toString() })
+
+                coVerify(exactly = expected.size) { messageController.onIncomingMessage(any(), any()) }
+                verify(exactly = requests.size) { callback.onNewMessage(any()) }
+                verify(exactly = 0) { callback.onError(any()) }
+
+                confirmVerified(messageController, callback)
             }
-
-            assertEquals(expected.sortedBy { it.toString() }, messages.sortedBy { it.toString() })
-            coVerify(exactly = expected.size) { messageController.onRequest(any()) }
-            verify(exactly = requests.size) { callback.onNewMessage(any()) }
-            verify(exactly = 0) { callback.onError(any()) }
         }
     }
 
     @Test
-    fun `responds to request with callback`() {
-        coEvery { connectionClient.send(any()) } returns internalSuccess(Unit)
+    fun `responds to request`() {
+        coEvery { connectionController.send(any()) } returns Success()
 
-        val response = beaconResponses.shuffled().first()
-        val internalResponse = response.apply { senderId = beaconId }
-
+        val responses = beaconResponses().shuffled()
         val callback = spyk<ResponseCallback>(object : ResponseCallback {
             override fun onSuccess() {
                 testDeferred.complete(Unit)
@@ -112,84 +124,103 @@ class BeaconClientTest {
             }
         })
 
-        beaconClient.respond(response, callback)
+        responses.forEach {
+            testDeferred = CompletableDeferred()
 
-        runBlocking { testDeferred.await() }
+            val expected = versionedBeaconMessage(it, dAppVersion, beaconId)
 
-        coVerify { connectionClient.send(internalResponse) }
-        verify(exactly = 1) { callback.onSuccess() }
+            beaconClient.respond(it, callback)
+            runBlocking { testDeferred.await() }
+
+            coVerify { messageController.onOutgoingMessage(any(), it) }
+            coVerify { connectionController.send(expected) }
+        }
+
+        verify(exactly = responses.size) { callback.onSuccess() }
         verify(exactly = 0) { callback.onError(any()) }
+
+        confirmVerified(messageController, connectionController, callback)
     }
 
-    private val senderId: String = "1"
-    private val secretSeed: String = "seed"
-    private val privateKey: ByteArray = byteArrayOf(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
-    private val publicKey: ByteArray = byteArrayOf(10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20)
+    @Test
+    fun `returns internal BeaconException when internal error occurred`() {
+        runBlockingTest {
+            val requests = beaconVersionedRequests().shuffled()
+            val beaconMessageFlow = beaconConnectionMessageFlow(requests.size + 1)
 
-    private val beaconRequests: List<BeaconMessage.Request> = listOf(
-        BeaconMessage.Request.Permission(
-            "1",
-            "1",
-            senderId,
-            AppMetadata(senderId, "mockApp"),
-            Network.Custom(),
-            emptyList()
-        ),
-        BeaconMessage.Request.Operation(
-            "1",
-            "1",
-            senderId,
-            Network.Custom(),
-            TezosOperation.Delegation(
-                "source",
-                "fee",
-                "counter",
-                "gasLimit",
-                "storageLimit",
-                null
-            ),
-            "sourceAddress"
-        ),
-        BeaconMessage.Request.SignPayload(
-            "1",
-            "1",
-            senderId,
-            "payload",
-            "sourceAddress"
-        ),
-        BeaconMessage.Request.Broadcast(
-            "1",
-            "1",
-            senderId,
-            Network.Custom(),
-            "signed"
-        ),
-    )
+            val exception = Exception()
 
-    private val beaconResponses: List<BeaconMessage.Response> = listOf(
-        BeaconMessage.Response.Permission(
-            "1",
-            "publicKey",
-            Network.Custom(),
-            emptyList(),
-        ),
-        BeaconMessage.Response.Operation(
-            "1",
-            "transactionHash",
-        ),
-        BeaconMessage.Response.SignPayload(
-            "1",
-            "signature",
-        ),
-        BeaconMessage.Response.Broadcast(
-            "1",
-            "transactionHash",
-        ),
-    )
+            every { connectionController.subscribe() } answers { beaconMessageFlow }
+            coEvery { messageController.onIncomingMessage(any(), any()) } returns Failure(exception)
 
-    private fun <T> MutableSharedFlow<InternalResult<T>>.tryEmit(messages: List<T>) {
-        messages.forEach { tryEmit(internalSuccess(it)) }
+            runBlocking {
+                val errors = mutableListOf<Throwable>()
+                val callback = spyk<OnNewMessageListener>(
+                    object : OnNewMessageListener {
+                        override fun onNewMessage(message: BeaconMessage) = Unit
+
+                        override fun onError(error: Throwable) {
+                            errors.add(error)
+
+                            if (errors.size == requests.size) testDeferred.complete(Unit)
+                        }
+                    }
+                )
+
+                beaconClient.connect(callback)
+                beaconMessageFlow.tryEmitValues(requests.map { BeaconConnectionMessage(origin, it) })
+
+                testDeferred.await()
+
+                val expected = errors.map { BeaconException(cause = exception) }
+
+                assertEquals(expected.map(Exception::toString).sorted(), errors.map(Throwable::toString).sorted())
+
+                coVerify(exactly = requests.size) { messageController.onIncomingMessage(any(), any()) }
+                verify(exactly = 0) { callback.onNewMessage(any()) }
+                verify(exactly = requests.size) { callback.onError(any()) }
+
+                confirmVerified(messageController, callback)
+            }
+        }
     }
 
-    private fun <T> List<T>.takeHalf(): List<T> = take(size / 2)
+    @Test
+    fun `fails to respond when message sending failed`() {
+        val error = IOException()
+        coEvery { connectionController.send(any()) } returns Failure(error)
+
+        val responses = beaconResponses().shuffled()
+
+        val expected = responses.map { BeaconException(cause = error) }
+        val exceptions = mutableListOf<Throwable>()
+
+        val callback = spyk<ResponseCallback>(object : ResponseCallback {
+            override fun onSuccess() {
+                testDeferred.complete(Unit)
+            }
+
+            override fun onError(error: Throwable) {
+                exceptions.add(error)
+                testDeferred.complete(Unit)
+            }
+        })
+
+        responses.forEach {
+            testDeferred = CompletableDeferred()
+
+            beaconClient.respond(it, callback)
+            runBlocking { testDeferred.await() }
+        }
+
+        assertEquals(expected.map(Throwable::toString).sorted(), exceptions.map(Throwable::toString).sorted())
+
+        coVerify(exactly = responses.size) { messageController.onOutgoingMessage(any(), any()) }
+        coVerify(exactly = responses.size) { connectionController.send(any()) }
+
+        verify(exactly = 0) { callback.onSuccess() }
+        verify(exactly = responses.size) { callback.onError(any()) }
+
+        confirmVerified(messageController, connectionController, callback)
+    }
 }

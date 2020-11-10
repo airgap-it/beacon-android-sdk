@@ -6,6 +6,6 @@ internal interface Protocol {
     fun getAddressFromPublicKey(publicKey: String): InternalResult<String>
 
     enum class Type {
-        Tezos
+        Tezos,
     }
 }

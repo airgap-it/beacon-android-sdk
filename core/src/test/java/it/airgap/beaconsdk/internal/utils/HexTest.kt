@@ -5,7 +5,7 @@ import org.junit.Test
 import java.math.BigInteger
 import kotlin.test.assertFailsWith
 
-class HexTest {
+internal class HexTest {
 
     private val hexPrefix: String = "0x"
     private val validHexStrings: List<String> = listOf(
@@ -41,7 +41,7 @@ class HexTest {
     @Test
     fun `fails when creating HexString form invalid string`() {
         invalidHexStrings.forEach {
-            assertFailsWith(IllegalArgumentException::class) {
+            assertFailsWith<IllegalArgumentException> {
                 HexString.fromString(it)
             }
         }
@@ -173,7 +173,7 @@ class HexTest {
         )
 
         negativeInts.forEach {
-            assertFailsWith(IllegalArgumentException::class) {
+            assertFailsWith<IllegalArgumentException> {
                 it.asHexString()
             }
         }

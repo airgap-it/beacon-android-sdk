@@ -3,11 +3,13 @@ package it.airgap.beaconsdk.internal.network
 import it.airgap.beaconsdk.internal.network.data.HttpHeader
 import it.airgap.beaconsdk.internal.network.data.HttpParameter
 import it.airgap.beaconsdk.internal.network.provider.HttpClientProvider
+import it.airgap.beaconsdk.internal.utils.Failure
 import it.airgap.beaconsdk.internal.utils.InternalResult
-import it.airgap.beaconsdk.internal.utils.internalError
-import it.airgap.beaconsdk.internal.utils.internalSuccess
+import it.airgap.beaconsdk.internal.utils.Success
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.take
+import java.util.concurrent.CancellationException
 
 internal class HttpClient(private val httpClientProvider: HttpClientProvider) {
     inline fun <reified T : Any> get(
@@ -15,8 +17,15 @@ internal class HttpClient(private val httpClientProvider: HttpClientProvider) {
         headers: List<HttpHeader> = emptyList(),
         parameters: List<HttpParameter> = emptyList(),
         timeoutMillis: Long? = null,
-    ): Flow<InternalResult<T>> =
-        resultFlowFor { httpClientProvider.get(endpoint, headers, parameters, T::class, timeoutMillis) }
+    ): Flow<InternalResult<T>> = resultFlowFor {
+        httpClientProvider.get(
+            endpoint,
+            headers,
+            parameters,
+            T::class,
+            timeoutMillis,
+        )
+    }
 
     inline fun <reified T : Any, reified R : Any> post(
         endpoint: String,
@@ -54,12 +63,13 @@ internal class HttpClient(private val httpClientProvider: HttpClientProvider) {
         )
     }
 
-
     private fun <T> resultFlowFor(httpAction: suspend () -> T): Flow<InternalResult<T>> = flow {
         try {
-            emit(internalSuccess(httpAction()))
+            emit(Success(httpAction()))
+        } catch (e: CancellationException) {
+            /* no action */
         } catch (e: Exception) {
-            emit(internalError<T>(e))
+            emit(Failure<T>(e))
         }
-    }
+    }.take(1)
 }

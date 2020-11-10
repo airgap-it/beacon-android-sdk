@@ -2,7 +2,6 @@ package it.airgap.beaconsdk.internal.network.provider
 
 import it.airgap.beaconsdk.internal.network.data.HttpHeader
 import it.airgap.beaconsdk.internal.network.data.HttpParameter
-import kotlin.Throws
 import kotlin.reflect.KClass
 
 internal abstract class HttpClientProvider(protected val baseUrl: String) {

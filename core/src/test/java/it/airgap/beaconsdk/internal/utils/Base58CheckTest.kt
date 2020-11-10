@@ -11,7 +11,7 @@ import java.security.MessageDigest
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
-class Base58CheckTest {
+internal class Base58CheckTest {
 
     @MockK
     private lateinit var crypto: Crypto
@@ -68,8 +68,8 @@ class Base58CheckTest {
 
         val messageDigest = MessageDigest.getInstance("SHA-256")
 
-        every { crypto.hashSha256(any<ByteArray>()) } answers { internalSuccess(messageDigest.digest(firstArg())) }
-        every { crypto.hashSha256(any<HexString>()) } answers { internalSuccess(messageDigest.digest(firstArg<HexString>().asByteArray())) }
+        every { crypto.hashSha256(any<ByteArray>()) } answers { Success(messageDigest.digest(firstArg())) }
+        every { crypto.hashSha256(any<HexString>()) } answers { Success(messageDigest.digest(firstArg<HexString>().asByteArray())) }
 
         base58Check = Base58Check(crypto)
     }
@@ -79,7 +79,7 @@ class Base58CheckTest {
         val bytesWithExpected = bytesWithEncodings.map { HexString.fromString(it.first).asByteArray() to it.second }
 
         bytesWithExpected
-            .map { base58Check.encode(it.first).getOrThrow() to it.second }
+            .map { base58Check.encode(it.first).value() to it.second }
             .forEach {
                 assertEquals(it.second, it.first)
             }
@@ -90,7 +90,7 @@ class Base58CheckTest {
         val encodedWithExpected = bytesWithEncodings.map { it.second to HexString.fromString(it.first).asByteArray() }
 
         encodedWithExpected
-            .map { base58Check.decode(it.first).getOrThrow() to it.second }
+            .map { base58Check.decode(it.first).value() to it.second }
             .forEach {
                 assertArrayEquals(it.second, it.first)
             }
@@ -99,8 +99,8 @@ class Base58CheckTest {
     @Test
     fun `fails when decoding invalid base58 string`() {
         invalidBase58Strings.forEach {
-            assertFailsWith(IllegalArgumentException::class) {
-                base58Check.decode(it).getOrThrow()
+            assertFailsWith<IllegalArgumentException> {
+                base58Check.decode(it).value()
             }
         }
     }
@@ -108,8 +108,8 @@ class Base58CheckTest {
     @Test
     fun `fails on checksum mismatch`() {
         invalidChecksums.forEach {
-            assertFailsWith(IllegalArgumentException::class) {
-                base58Check.decode(it).getOrThrow()
+            assertFailsWith<IllegalArgumentException> {
+                base58Check.decode(it).value()
             }
         }
     }

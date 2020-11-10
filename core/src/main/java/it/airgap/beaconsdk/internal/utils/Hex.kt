@@ -6,7 +6,8 @@ private const val HEX_PREFIX = "0x"
 private val hexRegex: Regex = Regex("^(${HEX_PREFIX})?([0-9a-fA-F]{2})+$")
 
 internal class HexString private constructor(value: String) {
-    private val value: String = if (value.startsWith(HEX_PREFIX)) value.substring(HEX_PREFIX.length) else value
+    private val value: String =
+        if (value.startsWith(HEX_PREFIX)) value.substring(HEX_PREFIX.length) else value
 
     fun length(withPrefix: Boolean = false): Int = value(withPrefix).length
 
@@ -38,9 +39,11 @@ internal class HexString private constructor(value: String) {
 
     companion object {
         @Throws(IllegalArgumentException::class)
-        fun fromString(string: String): HexString = fromStringOrNull(string) ?: failWithInvalidHexString(string)
+        fun fromString(string: String): HexString =
+            fromStringOrNull(string) ?: failWithInvalidHexString(string)
 
-        fun fromStringOrNull(string: String): HexString? = if (string.isHex()) HexString(string) else null
+        fun fromStringOrNull(string: String): HexString? =
+            if (string.isHex()) HexString(string) else null
     }
 }
 
@@ -68,11 +71,18 @@ internal fun Int.asHexStringOrNull(): HexString? =
     if (this >= 0) HexString.fromString(toString(16).padStartEven('0'))
     else null
 
-internal fun BigInteger.asHexString(): HexString = asHexStringOrNull() ?: failWithNegativeNumber(this)
+internal fun BigInteger.asHexString(): HexString =
+    asHexStringOrNull() ?: failWithNegativeNumber(this)
+
 internal fun BigInteger.asHexStringOrNull(): HexString? =
     if (this >= BigInteger.ZERO) HexString.fromString(toString(16).padStartEven('0'))
     else null
 
-private fun failWithNegativeNumber(number: Int): Nothing = throw IllegalArgumentException("cannot create HexString from a negative number $number")
-private fun failWithNegativeNumber(number: BigInteger): Nothing = throw IllegalArgumentException("cannot create HexString from a negative number $number")
-private fun failWithInvalidHexString(string: String): Nothing = throw IllegalArgumentException("$string is not a valid hex string")
+private fun failWithNegativeNumber(number: Int): Nothing =
+    throw IllegalArgumentException("cannot create HexString from a negative number $number")
+
+private fun failWithNegativeNumber(number: BigInteger): Nothing =
+    throw IllegalArgumentException("cannot create HexString from a negative number $number")
+
+private fun failWithInvalidHexString(string: String): Nothing =
+    throw IllegalArgumentException("$string is not a valid hex string")
