@@ -1,6 +1,6 @@
 # Beacon Android SDK
 
-<!-- TODO: badges -->
+[![release](https://img.shields.io/jitpack/v/github/airgap-it/beacon-android-sdk)](https://jitpack.io/#airgap-it/beacon-android-sdk)
 
 > Connect Wallets with dApps on Tezos
 
@@ -10,7 +10,26 @@
 
 The `Beacon Android SDK` provides Android developers with tools useful for setting up communication between native wallets supporting Tezos and dApps that implement [`beacon-sdk`](https://github.com/airgap-it/beacon-sdk).
 
-<!-- TODO: once published ## Installation -->
+## Installation
+
+To add `Beacon Android SDK` into your project:
+
+  1. Make sure the [JitPack](https://jitpack.io/) repository is added to your root `build.gradle` file:
+  ```groovy
+  allprojects {
+    repositories {
+      ...
+      maven { url 'https://jitpack.io' }
+    }
+  }
+  ```
+
+  2. Add the dependency:
+  ```groovy
+  def beaconVersion = "1.0.0-beta01"
+
+  implementation "com.github.airgap-it:beacon-android-sdk:$beaconVersion"
+  ```
 
 <!-- TODO: ## Documentation -->
 
@@ -31,11 +50,11 @@ For more examples or examples of how to use the SDK without coroutines or in Jav
 
 ```kotlin
 import it.airgap.beaconsdk.client.BeaconClient
-import it.airgap.beaconsdk.message.BeaconMessage
 
 class MainActivity : AppCompatActivity() {
   lateinit var client: BeaconClient
-  ...
+
+  // ...
 
   suspend fun listenForBeaconMessages() {
     // create a Beacon client
