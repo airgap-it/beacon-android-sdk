@@ -80,9 +80,6 @@ internal class SharedPreferencesStorage(private val sharedPreferences: SharedPre
 
         const val KEY_P2P_PEERS = "p2pPeers"
 
-        const val KEY_ACCOUNTS = "accounts"
-        const val KEY_ACTIVE_ACCOUNT_IDENTIFIER = "activeAccountIdentifier"
-
         const val KEY_APPS_METADATA = "appsMetadata"
         const val KEY_PERMISSIONS = "permissions"
 
