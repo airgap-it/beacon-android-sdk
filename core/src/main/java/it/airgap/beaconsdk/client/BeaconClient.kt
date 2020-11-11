@@ -21,7 +21,6 @@ import it.airgap.beaconsdk.message.PermissionBeaconResponse
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.map
-import kotlinx.serialization.json.Json
 
 /**
  * Asynchronous client that communicates with dApps.
@@ -284,10 +283,9 @@ public class BeaconClient internal constructor(
          * Builds a new instance of [BeaconClient].
          */
         public suspend fun build(): BeaconClient {
-            Json {  }
             val beaconApp = BeaconApp.instance
             val storage = SharedPreferencesStorage.create(beaconApp.applicationContext)
-            val matrixNodes = matrixNodes.ifEmpty { BeaconConfig.defaultRelayServers }
+            val matrixNodes = matrixNodes.toList().ifEmpty { BeaconConfig.defaultRelayServers }
 
             beaconApp.init(name, matrixNodes, storage)
 
