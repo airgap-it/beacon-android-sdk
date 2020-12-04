@@ -31,7 +31,7 @@ internal class InternalResultTest {
         val value = "value"
         val success: InternalResult<String> = Success(value)
 
-        assertEquals(value, success.value())
+        assertEquals(value, success.get())
     }
 
     @Test
@@ -39,7 +39,7 @@ internal class InternalResultTest {
         val error = IllegalStateException()
         val failure: InternalResult<String> = Failure(error)
 
-        val exception = assertFailsWith<IllegalStateException> { failure.value() }
+        val exception = assertFailsWith<IllegalStateException> { failure.get() }
         assertEquals(error, exception)
     }
 
@@ -48,14 +48,14 @@ internal class InternalResultTest {
         val value = "value"
         val success: InternalResult<String> = Success(value)
 
-        assertEquals(value, success.valueOrNull())
+        assertEquals(value, success.getOrNull())
     }
 
     @Test
     fun `returns null if is Failure when trying to get nullable value`() {
         val failure: InternalResult<String> = Failure()
 
-        assertNull(failure.valueOrNull(), "Expected Failure result to return null value")
+        assertNull(failure.getOrNull(), "Expected Failure result to return null value")
     }
 
     @Test
@@ -137,7 +137,7 @@ internal class InternalResultTest {
     @Test
     fun `maps error if is Failure`() {
         val cause = IllegalStateException()
-        val error = BeaconException(cause = cause)
+        val error = BeaconException.from(cause)
 
         val failure: InternalResult<String> = Failure(error)
         val transformed = failure.mapError { it.cause!! }
@@ -163,7 +163,7 @@ internal class InternalResultTest {
     @Test
     fun `suspend maps error if is Failure`() {
         val cause = IllegalStateException()
-        val error = BeaconException(cause = cause)
+        val error = BeaconException.from(cause)
 
         runBlockingTest {
             val failure: InternalResult<String> = Failure(error)

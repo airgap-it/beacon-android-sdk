@@ -1,5 +1,6 @@
 package it.airgap.beaconsdk.internal.transport.p2p
 
+import it.airgap.beaconsdk.data.beacon.P2pPeer
 import it.airgap.beaconsdk.internal.crypto.Crypto
 import it.airgap.beaconsdk.internal.crypto.data.KeyPair
 import it.airgap.beaconsdk.internal.crypto.data.SessionKeyPair
@@ -65,34 +66,31 @@ internal class P2pClient(
 
     suspend fun sendTo(publicKey: HexString, message: String): InternalResult<Unit> =
         tryResult {
-            val encrypted = encrypt(publicKey, message).value().asHexString()
+            val encrypted = encrypt(publicKey, message).get().asHexString()
             for (i in 0 until replicationCount) {
                 val relayServer = serverUtils.getRelayServer(publicKey, i.asHexString())
                 val recipient = communicationUtils.recipientIdentifier(publicKey, relayServer)
 
-                matrixClients.launch { it.sendTextMessageTo(recipient, encrypted.value()).value() }
+                matrixClients.launch { it.sendTextMessageTo(recipient, encrypted.asString()).get() }
             }
         }
 
-    suspend fun sendPairingRequest(
-        publicKey: HexString,
-        relayServer: String,
-        version: String?,
-    ): InternalResult<Unit> =
+    suspend fun sendPairingResponse(peer: P2pPeer): InternalResult<Unit> =
         tryResult {
-            val recipient = communicationUtils.recipientIdentifier(publicKey, relayServer)
+            val publicKey = HexString.fromString(peer.publicKey)
+            val recipient = communicationUtils.recipientIdentifier(publicKey, peer.relayServer)
             val payload = crypto.encryptMessageWithPublicKey(
                 communicationUtils.pairingPayload(
-                    version,
+                    peer,
                     appName,
                     keyPair.publicKey,
                     serverUtils.getRelayServer(keyPair.publicKey)
-                ),
+                ).get(),
                 publicKey.asByteArray()
-            ).value().asHexString()
-            val message = communicationUtils.channelOpeningMessage(recipient, payload.value())
+            ).get().asHexString()
+            val message = communicationUtils.channelOpeningMessage(recipient, payload.asString())
 
-            matrixClients.launch { it.sendTextMessageTo(recipient, message).value() }
+            matrixClients.launch { it.sendTextMessageTo(recipient, message).get() }
         }
 
     private fun encrypt(publicKey: HexString, message: String): InternalResult<ByteArray> =
@@ -136,7 +134,7 @@ internal class P2pClient(
         publicKey: HexString,
         message: InternalResult<String>,
     ): InternalResult<P2pMessage> =
-        message.map { P2pMessage(publicKey.value(), it) }
+        message.map { P2pMessage(publicKey.asString(), it) }
 
     private suspend fun MatrixClient.start() {
         if (isLoggedIn()) return
@@ -145,21 +143,21 @@ internal class P2pClient(
             val loginDigest = crypto.hash(
                 "login:${currentTimestamp() / 1000 / (5 * 60)}",
                 32
-            ).value()
+            ).get()
 
             val signature = crypto.signMessageDetached(loginDigest, keyPair.privateKey)
-                .value()
+                .get()
                 .asHexString()
-                .value()
+                .asString()
 
             val publicKeyHex = keyPair.publicKey
                 .asHexString()
-                .value()
+                .asString()
 
             val id = crypto.hashKey(keyPair.publicKey)
-                .value()
+                .get()
                 .asHexString()
-                .value()
+                .asString()
 
             val password = "ed:$signature:${publicKeyHex}"
             val deviceId = publicKeyHex
@@ -181,8 +179,8 @@ internal class P2pClient(
         tryResult {
             start()
 
-            val room = getRelevantRoom(recipient).value()
-            room?.let { sendTextMessage(it, message).value() }
+            val room = getRelevantRoom(recipient).get()
+            room?.let { sendTextMessage(it, message).get() }
         }
 
     private suspend fun MatrixClient.getRelevantRoom(recipient: String): InternalResult<MatrixRoom?> {

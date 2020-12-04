@@ -2,7 +2,7 @@ package it.airgap.beaconsdk.internal
 
 import it.airgap.beaconsdk.BuildConfig
 
-internal object BeaconConfig {
+internal object BeaconConfiguration {
     val sdkVersion: String
         get() = BuildConfig.VERSION_NAME
 

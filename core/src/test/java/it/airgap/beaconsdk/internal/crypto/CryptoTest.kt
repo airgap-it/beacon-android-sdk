@@ -29,7 +29,7 @@ internal class CryptoTest {
         val hash = crypto.hashKey(key.asHexString())
 
         assertTrue(hash.isSuccess, "Expected hash result to be a success")
-        verify { cryptoProvider.getHash(key, 32) }
+        verify { cryptoProvider.getHash(key, key.size) }
 
         confirmVerified(cryptoProvider)
     }
@@ -40,7 +40,7 @@ internal class CryptoTest {
         val hash = crypto.hashKey(key)
 
         assertTrue(hash.isSuccess, "Expected hash result to be a success")
-        verify { cryptoProvider.getHash(key, 32) }
+        verify { cryptoProvider.getHash(key, key.size) }
 
         confirmVerified(cryptoProvider)
     }
@@ -78,7 +78,7 @@ internal class CryptoTest {
                 val hash = crypto.hash(it.first, it.second)
 
                 assertTrue(hash.isSuccess, "Expected hash result to be a success")
-                assertEquals(it.second, hash.value().size)
+                assertEquals(it.second, hash.get().size)
 
                 verify { cryptoProvider.getHash(it.first.encodeToByteArray(), it.second) }
             }
@@ -99,7 +99,7 @@ internal class CryptoTest {
                 val hash = crypto.hash(it.first, it.second)
 
                 assertTrue(hash.isSuccess, "Expected hash result to be a success")
-                assertEquals(it.second, hash.value().size)
+                assertEquals(it.second, hash.get().size)
 
                 verify { cryptoProvider.getHash(it.first.asByteArray(), it.second) }
             }
@@ -120,7 +120,7 @@ internal class CryptoTest {
                 val hash = crypto.hash(it.first, it.second)
 
                 assertTrue(hash.isSuccess, "Expected hash result to be a success")
-                assertEquals(it.second, hash.value().size)
+                assertEquals(it.second, hash.get().size)
 
                 verify { cryptoProvider.getHash(it.first, it.second) }
             }
@@ -210,7 +210,7 @@ internal class CryptoTest {
 
     @Test
     fun `creates random seed as UUID`() {
-        val seed = crypto.generateRandomSeed().value()
+        val seed = crypto.guid().get()
 
         assertEquals("00010203-0405-0607-0809-0a0b0c0d0e0f", seed)
     }
@@ -219,7 +219,7 @@ internal class CryptoTest {
     fun `returns failure result when random seed generation failed`() {
         cryptoProvider.shouldFail = true
 
-        val seed = crypto.generateRandomSeed()
+        val seed = crypto.guid()
 
         assertTrue(seed.isFailure, "Expected seed result to be a failure")
     }
@@ -392,6 +392,7 @@ internal class CryptoTest {
         val encrypted = crypto.encryptMessageWithPublicKey(message, publicKey)
 
         assertTrue(encrypted.isSuccess, "Expected encryption result to be a success")
+        verify { cryptoProvider.convertEd25519PublicKeyToCurve25519(publicKey) }
         verify { cryptoProvider.encryptMessageWithPublicKey(message.encodeToByteArray(), publicKey) }
 
         confirmVerified(cryptoProvider)
@@ -405,6 +406,7 @@ internal class CryptoTest {
         val encrypted = crypto.encryptMessageWithPublicKey(message, publicKey)
 
         assertTrue(encrypted.isSuccess, "Expected encryption result to be a success")
+        verify { cryptoProvider.convertEd25519PublicKeyToCurve25519(publicKey) }
         verify { cryptoProvider.encryptMessageWithPublicKey(message.asByteArray(), publicKey) }
 
         confirmVerified(cryptoProvider)
@@ -418,6 +420,7 @@ internal class CryptoTest {
         val encrypted = crypto.encryptMessageWithPublicKey(message, publicKey)
 
         assertTrue(encrypted.isSuccess, "Expected encryption result to be a success")
+        verify { cryptoProvider.convertEd25519PublicKeyToCurve25519(publicKey) }
         verify { cryptoProvider.encryptMessageWithPublicKey(message, publicKey) }
 
         confirmVerified(cryptoProvider)
@@ -468,6 +471,8 @@ internal class CryptoTest {
         val decrypted = crypto.decryptMessageWithKeyPair(message, publicKey, privateKey)
 
         assertTrue(decrypted.isSuccess, "Expected decryption result to be a success")
+        verify { cryptoProvider.convertEd25519PublicKeyToCurve25519(publicKey) }
+        verify { cryptoProvider.convertEd25519PrivateKeyToCurve25519(privateKey) }
         verify { cryptoProvider.decryptMessageWithKeyPair(message.encodeToByteArray(), publicKey, privateKey) }
 
         confirmVerified(cryptoProvider)
@@ -482,6 +487,8 @@ internal class CryptoTest {
         val decrypted = crypto.decryptMessageWithKeyPair(message, publicKey, privateKey)
 
         assertTrue(decrypted.isSuccess, "Expected decryption result to be a success")
+        verify { cryptoProvider.convertEd25519PublicKeyToCurve25519(publicKey) }
+        verify { cryptoProvider.convertEd25519PrivateKeyToCurve25519(privateKey) }
         verify { cryptoProvider.decryptMessageWithKeyPair(message.asByteArray(), publicKey, privateKey) }
 
         confirmVerified(cryptoProvider)
@@ -496,6 +503,8 @@ internal class CryptoTest {
         val decrypted = crypto.decryptMessageWithKeyPair(message, publicKey, privateKey)
 
         assertTrue(decrypted.isSuccess, "Expected decryption result to be a success")
+        verify { cryptoProvider.convertEd25519PublicKeyToCurve25519(publicKey) }
+        verify { cryptoProvider.convertEd25519PrivateKeyToCurve25519(privateKey) }
         verify { cryptoProvider.decryptMessageWithKeyPair(message, publicKey, privateKey) }
 
         confirmVerified(cryptoProvider)

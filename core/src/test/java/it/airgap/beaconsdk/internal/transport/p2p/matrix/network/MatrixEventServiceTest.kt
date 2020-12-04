@@ -50,7 +50,7 @@ internal class MatrixEventServiceTest {
         runBlocking {
             val accessToken = "token"
 
-            val response = matrixEventService.sync(accessToken).value()
+            val response = matrixEventService.sync(accessToken).get()
 
             assertEquals(expectedResponse, response)
             coVerify { httpClientProvider.get(
@@ -86,7 +86,7 @@ internal class MatrixEventServiceTest {
             val since = "since"
             val timeout = 2L
 
-            val response = matrixEventService.sync(accessToken, since, timeout).value()
+            val response = matrixEventService.sync(accessToken, since, timeout).get()
 
             assertEquals(expectedResponse, response)
             coVerify { httpClientProvider.get(
@@ -111,8 +111,8 @@ internal class MatrixEventServiceTest {
         runBlocking {
             val accessToken = "token"
 
-            val sync1 = launch { matrixEventService.sync(accessToken).value() }
-            val sync2 = launch { matrixEventService.sync(accessToken).value() }
+            val sync1 = launch { matrixEventService.sync(accessToken).get() }
+            val sync2 = launch { matrixEventService.sync(accessToken).get() }
 
             testDeferred.complete(Unit)
 
@@ -154,7 +154,7 @@ internal class MatrixEventServiceTest {
                 roomId,
                 txnId,
                 message,
-            ).value()
+            ).get()
 
             assertEquals(expectedResponse, response)
             coVerify { httpClientProvider.put(

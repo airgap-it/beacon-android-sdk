@@ -81,7 +81,7 @@ public sealed class TezosOperation {
                 Kind.Endorsement -> jsonDecoder.json.decodeFromJsonElement(TezosEndorsementOperation.serializer(), jsonElement)
                 Kind.DoubleEndorsementEvidence -> jsonDecoder.json.decodeFromJsonElement(TezosDoubleEndorsementEvidenceOperation.serializer(), jsonElement)
                 Kind.Origination -> jsonDecoder.json.decodeFromJsonElement(TezosOriginationOperation.serializer(), jsonElement)
-                Kind.Proposals -> jsonDecoder.json.decodeFromJsonElement(TezosProposalsOpertion.serializer(), jsonElement)
+                Kind.Proposals -> jsonDecoder.json.decodeFromJsonElement(TezosProposalsOperation.serializer(), jsonElement)
                 Kind.Reveal -> jsonDecoder.json.decodeFromJsonElement(TezosRevealOperation.serializer(), jsonElement)
                 Kind.SeedNonceRevelation -> jsonDecoder.json.decodeFromJsonElement(TezosSeedNonceRevelationOperation.serializer(), jsonElement)
                 Kind.Transaction -> jsonDecoder.json.decodeFromJsonElement(TezosTransactionOperation.serializer(), jsonElement)
@@ -97,7 +97,7 @@ public sealed class TezosOperation {
                 is TezosEndorsementOperation -> encoder.encodeSerializableValue(TezosEndorsementOperation.serializer(), value)
                 is TezosDoubleEndorsementEvidenceOperation -> encoder.encodeSerializableValue(TezosDoubleEndorsementEvidenceOperation.serializer(), value)
                 is TezosOriginationOperation -> encoder.encodeSerializableValue(TezosOriginationOperation.serializer(), value)
-                is TezosProposalsOpertion -> encoder.encodeSerializableValue(TezosProposalsOpertion.serializer(), value)
+                is TezosProposalsOperation -> encoder.encodeSerializableValue(TezosProposalsOperation.serializer(), value)
                 is TezosRevealOperation -> encoder.encodeSerializableValue(TezosRevealOperation.serializer(), value)
                 is TezosSeedNonceRevelationOperation -> encoder.encodeSerializableValue(TezosSeedNonceRevelationOperation.serializer(), value)
                 is TezosTransactionOperation -> encoder.encodeSerializableValue(TezosTransactionOperation.serializer(), value)
@@ -206,7 +206,7 @@ public data class TezosOriginationOperation(
 }
 
 @Serializable
-public data class TezosProposalsOpertion(
+public data class TezosProposalsOperation(
     public val period: String,
     public val proposals: List<String>,
 ) : TezosOperation() {

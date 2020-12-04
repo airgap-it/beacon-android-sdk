@@ -2,7 +2,7 @@ package it.airgap.beaconsdkdemo
 
 import androidx.lifecycle.*
 import it.airgap.beaconsdk.client.BeaconClient
-import it.airgap.beaconsdk.data.beacon.P2pPeerInfo
+import it.airgap.beaconsdk.data.beacon.P2pPeer
 import it.airgap.beaconsdk.message.*
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
@@ -30,13 +30,7 @@ class MainActivityViewModel : ViewModel() {
 
         viewModelScope.launch {
             val response = when (request) {
-                is PermissionBeaconRequest ->
-                    PermissionBeaconResponse(
-                        request.id,
-                        exampleTezosPublicKey,
-                        request.network,
-                        request.scopes,
-                    )
+                is PermissionBeaconRequest -> PermissionBeaconResponse.from(request, exampleTezosPublicKey)
                 is OperationBeaconRequest -> TODO()
                 is SignPayloadBeaconRequest -> TODO()
                 is BroadcastBeaconRequest -> TODO()
@@ -46,8 +40,8 @@ class MainActivityViewModel : ViewModel() {
         }
     }
 
-    fun addPeer(name: String, publicKey: String, relayServer: String) {
-        val peer = P2pPeerInfo(name, publicKey, relayServer)
+    fun addPeer(id: String, name: String, publicKey: String, relayServer: String, version: String) {
+        val peer = P2pPeer(id = id, name = name, publicKey = publicKey, relayServer = relayServer, version = version)
         viewModelScope.launch {
             beaconClient?.addPeers(peer)
             checkForPeers()

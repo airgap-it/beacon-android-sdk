@@ -30,5 +30,11 @@ public sealed class Origin {
         public companion object {}
     }
 
-    public companion object {}
+    public companion object {
+
+        internal fun forPeer(peer: Peer): Origin =
+            when (peer) {
+                is P2pPeer -> P2P(peer.publicKey)
+            }
+    }
 }

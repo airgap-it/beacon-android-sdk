@@ -7,13 +7,14 @@ import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import it.airgap.beaconsdk.data.beacon.Origin
-import it.airgap.beaconsdk.data.beacon.PermissionInfo
+import it.airgap.beaconsdk.data.beacon.Permission
 import it.airgap.beaconsdk.internal.message.VersionedBeaconMessage
 import it.airgap.beaconsdk.internal.protocol.Protocol
 import it.airgap.beaconsdk.internal.protocol.ProtocolRegistry
 import it.airgap.beaconsdk.internal.storage.MockStorage
-import it.airgap.beaconsdk.internal.storage.decorator.DecoratedExtendedStorage
+import it.airgap.beaconsdk.internal.storage.manager.StorageManager
 import it.airgap.beaconsdk.internal.utils.AccountUtils
+import it.airgap.beaconsdk.internal.utils.HexString
 import it.airgap.beaconsdk.internal.utils.Success
 import kotlinx.coroutines.runBlocking
 import mockTime
@@ -36,13 +37,13 @@ internal class MessageControllerTest {
     @MockK
     private lateinit var accountUtils: AccountUtils
 
-    private lateinit var storage: DecoratedExtendedStorage
+    private lateinit var storageManager: StorageManager
     private lateinit var messageController: MessageController
 
     private val currentTimeMillis: Long = 1
 
     private val version: String = "2"
-    private val senderId: String = "senderId"
+    private val senderId: String = "00"
 
     private val origin = Origin.P2P(senderId)
 
@@ -56,9 +57,10 @@ internal class MessageControllerTest {
         every { protocolRegistry.get(any()) } returns protocol
 
         every { accountUtils.getAccountIdentifier(any(), any()) } answers { Success(firstArg()) }
+        every { accountUtils.getSenderId(any()) } answers { Success(firstArg<HexString>().asString()) }
 
-        storage = DecoratedExtendedStorage(MockStorage())
-        messageController = MessageController(protocolRegistry, storage, accountUtils)
+        storageManager = StorageManager(MockStorage(), accountUtils)
+        messageController = MessageController(protocolRegistry, storageManager, accountUtils)
     }
 
     @Test
@@ -66,8 +68,8 @@ internal class MessageControllerTest {
         val versionedMessages = beaconVersionedMessages(version, senderId, includeError = false)
 
         versionedMessages.forEach {
-            val beaconMessage = runBlocking { messageController.onIncomingMessage(origin, it).valueOrNull() }
-            val expected = runBlocking { it.toBeaconMessage(origin, storage) }
+            val beaconMessage = runBlocking { messageController.onIncomingMessage(origin, it).getOrNull() }
+            val expected = runBlocking { it.toBeaconMessage(origin, storageManager) }
 
             assertEquals(expected, beaconMessage)
         }
@@ -75,26 +77,28 @@ internal class MessageControllerTest {
 
     @Test
     fun `transforms outgoing BeaconMessages to VersionedBeaconMessage`() {
-        val beaconMessage = beaconMessages()
+        val origin = Origin.P2P(senderId)
+        val beaconMessage = beaconMessages(version = version, origin = origin)
 
         beaconMessage.forEach {
-            val pendingRequest = VersionedBeaconMessage.fromBeaconMessage(version, senderId, permissionBeaconRequest(id = it.id))
+            val pendingRequest = VersionedBeaconMessage.fromBeaconMessage(senderId, permissionBeaconRequest(id = it.id, senderId = senderId))
             runBlocking { messageController.onIncomingMessage(origin, pendingRequest) }
 
-            val versionedBeaconMessage = runBlocking { messageController.onOutgoingMessage(senderId, it).valueOrNull() }
-            val expected = runBlocking { VersionedBeaconMessage.fromBeaconMessage(version, senderId, it) }
+            runBlocking { println(storageManager.getAppMetadata()) }
+            val versioned = runBlocking { messageController.onOutgoingMessage(senderId, it, true).get() }
+            val expected = runBlocking { Pair(origin, VersionedBeaconMessage.fromBeaconMessage(senderId, it)) }
 
-            assertEquals(expected, versionedBeaconMessage)
+            assertEquals(expected, versioned)
         }
     }
 
     @Test
     fun `saves app metadata on permission request`() {
-        val permissionRequest = permissionBeaconRequest()
-        val versionedRequest = VersionedBeaconMessage.fromBeaconMessage(version, senderId, permissionRequest)
+        val permissionRequest = permissionBeaconRequest(version = version)
+        val versionedRequest = VersionedBeaconMessage.fromBeaconMessage(senderId, permissionRequest)
 
         val result = runBlocking { messageController.onIncomingMessage(origin, versionedRequest) }
-        val appsMetadata = runBlocking { storage.getAppMetadata() }
+        val appsMetadata = runBlocking { storageManager.getAppMetadata() }
 
         assertTrue(result.isSuccess, "Expected result to be a success")
         assertEquals(listOf(permissionRequest.appMetadata), appsMetadata)
@@ -105,7 +109,7 @@ internal class MessageControllerTest {
         val response = beaconResponses().shuffled().first()
 
         assertFailsWith<IllegalArgumentException> {
-            runBlocking { messageController.onOutgoingMessage(senderId, response).value() }
+            runBlocking { messageController.onOutgoingMessage(senderId, response, true).get() }
         }
     }
 
@@ -113,20 +117,20 @@ internal class MessageControllerTest {
     fun `saves permissions on permission response`() {
         val id = "id"
 
-        val permissionRequest = permissionBeaconRequest(id = id)
-        val permissionResponse = permissionBeaconResponse(id = id)
+        val permissionRequest = permissionBeaconRequest(id = id, version = version, senderId = senderId)
+        val permissionResponse = permissionBeaconResponse(id = id, version = version)
 
-        val versionedRequest = VersionedBeaconMessage.fromBeaconMessage(version, senderId, permissionRequest)
+        val versionedRequest = VersionedBeaconMessage.fromBeaconMessage(senderId, permissionRequest)
 
         runBlocking {
             messageController.onIncomingMessage(origin, versionedRequest)
-            messageController.onOutgoingMessage(senderId, permissionResponse)
+            messageController.onOutgoingMessage(senderId, permissionResponse, true)
         }
 
-        val appMetadata = runBlocking { storage.getAppMetadata().first() }
-        val permissions = runBlocking { storage.getPermissions() }
+        val appMetadata = runBlocking { storageManager.getAppMetadata().first() }
+        val permissions = runBlocking { storageManager.getPermissions() }
         val expected = listOf(
-            PermissionInfo(
+            Permission(
                 permissionResponse.publicKey,
                 permissionResponse.publicKey,
                 permissionResponse.network,
@@ -145,18 +149,18 @@ internal class MessageControllerTest {
     fun `fails to save permissions when app metadata not found`() {
         val id = "id"
 
-        val permissionRequest = permissionBeaconRequest(id = id)
-        val permissionResponse = permissionBeaconResponse(id = id)
+        val permissionRequest = permissionBeaconRequest(id = id, version = version)
+        val permissionResponse = permissionBeaconResponse(id = id, version = version)
 
-        val versionedRequest = VersionedBeaconMessage.fromBeaconMessage(version, senderId, permissionRequest)
+        val versionedRequest = VersionedBeaconMessage.fromBeaconMessage(senderId, permissionRequest)
 
         runBlocking {
             messageController.onIncomingMessage(origin, versionedRequest)
-            storage.setAppMetadata(emptyList())
+            storageManager.setAppMetadata(emptyList())
         }
 
         assertFailsWith<IllegalStateException> {
-            runBlocking { messageController.onOutgoingMessage(senderId, permissionResponse).value() }
+            runBlocking { messageController.onOutgoingMessage(senderId, permissionResponse, true).get() }
         }
     }
 }

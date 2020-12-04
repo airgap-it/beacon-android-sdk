@@ -28,14 +28,16 @@ class MainActivity : AppCompatActivity() {
             result.exceptionOrNull()?.let { onError(it) }
         }
 
+        peerIdTextInput.text = examplePeerId
         peerNameTextInput.text = examplePeerName
         peerPublicKeyTextInput.text = examplePeerPublicKey
         peerRelayServerTextInput.text = examplePeerRelayServer
+        peerVersionTextInput.text = examplePeerVersion
 
         respondButton.setOnClickListener { viewModel.respondExample() }
         addPeerButton.setOnClickListener {
-            val (name, publicKey, relayServer) = getPeerInput() ?: return@setOnClickListener
-            viewModel.addPeer(name, publicKey, relayServer)
+            val (id, name, publicKey, relayServer, version) = getPeerInput() ?: return@setOnClickListener
+            viewModel.addPeer(id, name, publicKey, relayServer, version)
         }
         removePeerButton.setOnClickListener { viewModel.removePeers() }
     }
@@ -64,12 +66,14 @@ class MainActivity : AppCompatActivity() {
         ).show()
     }
 
-    private fun getPeerInput(): Triple<String, String, String>? {
+    private fun getPeerInput(): PeerInput? {
+        val id = peerIdTextInput.text ?: return null
         val name = peerNameTextInput.text ?: return null
         val publicKey = peerPublicKeyTextInput.text ?: return null
         val relayServer = peerRelayServerTextInput.text ?: return null
+        val version = peerVersionTextInput.text ?: return null
 
-        return Triple(name, publicKey, relayServer)
+        return PeerInput(id, name, publicKey, relayServer, version)
     }
 
     private var TextInputLayout.text: String?
@@ -77,13 +81,17 @@ class MainActivity : AppCompatActivity() {
         set(value) { editText?.setText(value) }
 
     companion object {
+        const val examplePeerId = "b03762c3-6a72-2fcb-a3fb-b3797ad6d100"
         const val examplePeerName = "Beacon Example Dapp"
-        const val examplePeerPublicKey = "5760d150b0f6906ba98c8220cbf197a87d54631af73593b031c0175ebd29b3b0"
+        const val examplePeerPublicKey = "0979040c12c0bf9cd41349b73b3a64b11626e1cc812c7ab3deda63fdc39da7e5"
         const val examplePeerRelayServer = "matrix.papers.tech"
+        const val examplePeerVersion = "2"
     }
 
     data class State(
         val hasPeers: Boolean = false,
         val hasAwaitingRequest: Boolean = false,
     )
+
+    data class PeerInput(val id: String, val name: String, val publicKey: String, val relayServer: String, val version: String)
 }

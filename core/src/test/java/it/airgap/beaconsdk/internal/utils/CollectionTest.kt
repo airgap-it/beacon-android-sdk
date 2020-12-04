@@ -144,7 +144,7 @@ internal class CollectionTest {
     }
 
     @Test
-    fun `runs suspend block for with each element in list`() {
+    fun `runs suspend block for each element in list`() {
         val elements = listOf(1, 2, 3, 4, 5)
 
         val collected = mutableListOf<Int>()
@@ -162,20 +162,68 @@ internal class CollectionTest {
     }
 
     @Test
-    fun `finds and removes first element from list based on predicate`() {
-        val list1 = mutableListOf(1, 2, 3, 4, 5)
+    fun `runs suspend block for each element in list and returns list or results`() {
+        val elements = listOf(1, 2, 3, 4, 5)
 
-        assertEquals(2, list1.pop { it % 2 == 0 })
-        assertEquals(listOf(1, 3, 4, 5), list1.toList())
+        runBlockingTest {
+            val results = elements.async {
+                delay(abs(Random.nextInt() % 1000).toLong())
+                it * 2
+            }
 
-        val list2 = mutableListOf(1, 2, 3, 4, 5)
+            assertEquals(elements.map { it * 2 }, results)
+        }
+    }
 
-        assertEquals(null, list2.pop { it < 0 })
-        assertEquals(listOf(1, 2, 3, 4, 5), list2.toList())
+    @Test
+    fun `returns and removes element from map for specified key`() {
+        val map1 = mutableMapOf(
+            "1" to 1,
+            "2" to 2,
+            "3" to 3,
+        )
 
-        val empty = mutableListOf<Int>()
+        assertEquals(2, map1.get("2", remove = true))
+        assertEquals(mapOf("1" to 1, "3" to 3), map1.toMap())
 
-        assertEquals(null, empty.pop { it % 2 == 0 })
-        assertEquals(emptyList(), empty.toList())
+        val map2 = mutableMapOf(
+            "1" to 1,
+            "2" to 2,
+            "3" to 3,
+        )
+
+        assertEquals(null, map2.get("4", remove = true))
+        assertEquals(mapOf("1" to 1, "2" to 2, "3" to 3), map2.toMap())
+
+        val empty = mutableMapOf<String, Int>()
+
+        assertEquals(null, empty.get("1", remove = true))
+        assertEquals(emptyMap(), empty.toMap())
+    }
+
+    @Test
+    fun `returns element from map for specified key and keeps it`() {
+        val map1 = mutableMapOf(
+            "1" to 1,
+            "2" to 2,
+            "3" to 3,
+        )
+
+        assertEquals(2, map1.get("2", remove = false))
+        assertEquals(mapOf("1" to 1, "2" to 2, "3" to 3), map1.toMap())
+
+        val map2 = mutableMapOf(
+            "1" to 1,
+            "2" to 2,
+            "3" to 3,
+        )
+
+        assertEquals(null, map2.get("4", remove = false))
+        assertEquals(mapOf("1" to 1, "2" to 2, "3" to 3), map2.toMap())
+
+        val empty = mutableMapOf<String, Int>()
+
+        assertEquals(null, empty.get("1", remove = false))
+        assertEquals(emptyMap(), empty.toMap())
     }
 }

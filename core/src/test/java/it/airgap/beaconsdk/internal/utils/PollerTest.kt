@@ -27,7 +27,7 @@ internal class PollerTest {
                 poller.poll {
                     if (iterator.hasNext()) Success(iterator.next())
                     else Failure()
-                }.mapNotNull { it.valueOrNull() }
+                }.mapNotNull { it.getOrNull() }
                     .take(expected.size)
                     .toList()
             }

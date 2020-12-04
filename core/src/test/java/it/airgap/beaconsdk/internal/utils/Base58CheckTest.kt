@@ -79,7 +79,7 @@ internal class Base58CheckTest {
         val bytesWithExpected = bytesWithEncodings.map { HexString.fromString(it.first).asByteArray() to it.second }
 
         bytesWithExpected
-            .map { base58Check.encode(it.first).value() to it.second }
+            .map { base58Check.encode(it.first).get() to it.second }
             .forEach {
                 assertEquals(it.second, it.first)
             }
@@ -90,7 +90,7 @@ internal class Base58CheckTest {
         val encodedWithExpected = bytesWithEncodings.map { it.second to HexString.fromString(it.first).asByteArray() }
 
         encodedWithExpected
-            .map { base58Check.decode(it.first).value() to it.second }
+            .map { base58Check.decode(it.first).get() to it.second }
             .forEach {
                 assertArrayEquals(it.second, it.first)
             }
@@ -100,7 +100,7 @@ internal class Base58CheckTest {
     fun `fails when decoding invalid base58 string`() {
         invalidBase58Strings.forEach {
             assertFailsWith<IllegalArgumentException> {
-                base58Check.decode(it).value()
+                base58Check.decode(it).get()
             }
         }
     }
@@ -109,7 +109,7 @@ internal class Base58CheckTest {
     fun `fails on checksum mismatch`() {
         invalidChecksums.forEach {
             assertFailsWith<IllegalArgumentException> {
-                base58Check.decode(it).value()
+                base58Check.decode(it).get()
             }
         }
     }

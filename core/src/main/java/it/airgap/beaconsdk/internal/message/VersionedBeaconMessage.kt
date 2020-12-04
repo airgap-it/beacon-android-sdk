@@ -1,10 +1,9 @@
 package it.airgap.beaconsdk.internal.message
 
-import it.airgap.beaconsdk.data.beacon.AppMetadata
 import it.airgap.beaconsdk.data.beacon.Origin
 import it.airgap.beaconsdk.internal.message.v1.V1BeaconMessage
 import it.airgap.beaconsdk.internal.message.v2.V2BeaconMessage
-import it.airgap.beaconsdk.internal.storage.decorator.DecoratedExtendedStorage
+import it.airgap.beaconsdk.internal.storage.manager.StorageManager
 import it.airgap.beaconsdk.internal.utils.failWithExpectedJsonDecoder
 import it.airgap.beaconsdk.internal.utils.failWithMissingField
 import it.airgap.beaconsdk.message.BeaconMessage
@@ -23,25 +22,19 @@ import kotlinx.serialization.json.jsonPrimitive
 internal abstract class VersionedBeaconMessage {
     abstract val version: String
 
-    abstract suspend fun toBeaconMessage(origin: Origin, storage: DecoratedExtendedStorage): BeaconMessage
-
-    abstract fun pairsWith(other: BeaconMessage): Boolean
-    abstract fun pairsWith(other: VersionedBeaconMessage): Boolean
-
-    abstract fun comesFrom(appMetadata: AppMetadata): Boolean
+    abstract suspend fun toBeaconMessage(origin: Origin, storageManager: StorageManager): BeaconMessage
 
     companion object {
         fun fromBeaconMessage(
-            version: String,
             senderId: String,
             message: BeaconMessage,
         ): VersionedBeaconMessage {
-            return when (version.major) {
-                "1" -> V1BeaconMessage.fromBeaconMessage(version, senderId, message)
-                "2" -> V2BeaconMessage.fromBeaconMessage(version, senderId, message)
+            return when (message.version.major) {
+                "1" -> V1BeaconMessage.fromBeaconMessage(senderId, message)
+                "2" -> V2BeaconMessage.fromBeaconMessage(senderId, message)
 
                 // fallback to the newest version
-                else -> V2BeaconMessage.fromBeaconMessage(version, senderId, message)
+                else -> V2BeaconMessage.fromBeaconMessage(senderId, message)
             }
         }
 
@@ -49,7 +42,7 @@ internal abstract class VersionedBeaconMessage {
             get() = substringBefore('.')
     }
 
-    class Serializer : KSerializer<VersionedBeaconMessage> {
+    object Serializer : KSerializer<VersionedBeaconMessage> {
         override val descriptor: SerialDescriptor =
             PrimitiveSerialDescriptor("BeaconMessage", PrimitiveKind.STRING)
 

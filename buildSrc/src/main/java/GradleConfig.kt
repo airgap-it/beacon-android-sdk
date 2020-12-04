@@ -1,16 +1,16 @@
 object Version {
     const val kotlin = "1.4.10"
 
-    const val kotlinSerialization = "1.0.0-RC2"
+    const val kotlinSerialization = "1.0.1"
 
-    const val androidxCore = "1.3.1"
+    const val androidxCore = "1.3.2"
     const val androidxAppCompat = "1.2.0"
     const val androidxConstraintLayout = "1.1.3"
 
     const val androidxActivity = "1.1.0"
     const val androidxLifecycle = "2.2.0"
 
-    const val coroutines = "1.4.0-M1"
+    const val coroutines = "1.4.2"
 
     const val ktor = "1.4.1"
 

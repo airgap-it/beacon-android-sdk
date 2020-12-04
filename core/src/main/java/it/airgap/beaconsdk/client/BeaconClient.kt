@@ -1,26 +1,20 @@
 package it.airgap.beaconsdk.client
 
-import it.airgap.beaconsdk.data.beacon.AppMetadata
-import it.airgap.beaconsdk.data.beacon.P2pPeerInfo
-import it.airgap.beaconsdk.data.beacon.PermissionInfo
+import it.airgap.beaconsdk.data.beacon.*
 import it.airgap.beaconsdk.exception.BeaconException
 import it.airgap.beaconsdk.internal.BeaconApp
-import it.airgap.beaconsdk.internal.BeaconConfig
 import it.airgap.beaconsdk.internal.controller.ConnectionController
 import it.airgap.beaconsdk.internal.controller.MessageController
+import it.airgap.beaconsdk.internal.crypto.Crypto
+import it.airgap.beaconsdk.internal.message.BeaconConnectionMessage
 import it.airgap.beaconsdk.internal.storage.SharedPreferencesStorage
-import it.airgap.beaconsdk.internal.storage.decorator.DecoratedExtendedStorage
-import it.airgap.beaconsdk.internal.transport.Transport
-import it.airgap.beaconsdk.internal.utils.Failure
-import it.airgap.beaconsdk.internal.utils.InternalResult
-import it.airgap.beaconsdk.internal.utils.Success
-import it.airgap.beaconsdk.message.BeaconMessage
-import it.airgap.beaconsdk.message.BeaconRequest
-import it.airgap.beaconsdk.message.BeaconResponse
-import it.airgap.beaconsdk.message.PermissionBeaconResponse
+import it.airgap.beaconsdk.internal.storage.manager.StorageManager
+import it.airgap.beaconsdk.internal.utils.*
+import it.airgap.beaconsdk.message.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 
 /**
  * Asynchronous client that communicates with dApps.
@@ -60,7 +54,7 @@ import kotlinx.coroutines.flow.map
  *
  * ### Connect with a new dApp
  *
- * To connect with a new peer, create a new [peer][P2pPeerInfo] instance and register it in the [client][BeaconClient]
+ * To connect with a new peer, create a new [peer][Peer] instance and register it in the [client][BeaconClient]
  * using [addPeers], for example:
  *
  * ```
@@ -82,7 +76,8 @@ public class BeaconClient internal constructor(
     public val beaconId: String,
     private val connectionController: ConnectionController,
     private val messageController: MessageController,
-    private val storage: DecoratedExtendedStorage,
+    private val storageManager: StorageManager,
+    private val crypto: Crypto,
 ) {
 
     /**
@@ -92,106 +87,104 @@ public class BeaconClient internal constructor(
      */
     public fun connect(): Flow<Result<BeaconRequest>> =
         connectionController.subscribe()
-            .map { result ->
-                result.flatMapSuspend { messageController.onIncomingMessage(it.origin, it.content) }
-            }
+            .map { result -> result.flatMapSuspend { messageController.onIncomingMessage(it.origin, it.content) } }
+            .onEach { result -> result.getOrNull()?.let { processMessage(it) } }
             .filterIsInstance<InternalResult<BeaconRequest>>()
             .map {
                 when (it) {
                     is Success -> Result.success(it.value)
-                    is Failure -> Result.failure(it.error as? BeaconException ?: BeaconException(cause = it.error))
+                    is Failure -> Result.failure(it.error as? BeaconException ?: BeaconException.from(it.error))
                 }
             }
-
     /**
      * Sends the [response] in reply to a previously received request.
      *
-     * @throws [IllegalArgumentException] if no pending request that matches the [response] was found.
-     * @throws [IllegalStateException] on [PermissionBeaconResponse] if the granted permissions could not be saved.
-     * @throws [BeaconException] if sending the [response] failed.
+     * @throws [BeaconException] if processing and sending the [response] failed.
      */
     @Throws(IllegalArgumentException::class, IllegalStateException::class, BeaconException::class)
     public suspend fun respond(response: BeaconResponse) {
-        val outgoingMessage = messageController.onOutgoingMessage(beaconId, response).value()
-        connectionController.send(outgoingMessage).mapError { BeaconException(cause = it) }.value()
+        send(response, isTerminal = true).mapError { BeaconException.from(it) }.get()
     }
 
     /**
-     * Adds new P2P [peers].
+     * Adds new [peers].
      *
      * The new peers will be persisted and subscribed.
      */
-    public suspend fun addPeers(vararg peers: P2pPeerInfo) {
+    public suspend fun addPeers(vararg peers: Peer) {
         addPeers(peers.toList())
     }
 
     /**
-     * Adds new P2P [peers].
+     * Adds new [peers].
      *
      * The new peers will be persisted and subscribed.
      */
-    public suspend fun addPeers(peers: List<P2pPeerInfo>) {
-        storage.addP2pPeers(peers)
+    public suspend fun addPeers(peers: List<Peer>) {
+        storageManager.addPeers(peers)
     }
 
     /**
-     * Returns a list of known P2P peers.
+     * Returns a list of known peers.
      */
-    public suspend fun getPeers(): List<P2pPeerInfo> =
-        storage.getP2pPeers()
+    public suspend fun getPeers(): List<Peer> =
+        storageManager.getPeers()
 
     /**
-     * Removes the specified P2P [peers].
+     * Removes the specified [peers].
      *
      * The removed peers will be unsubscribed.
      */
-    public suspend fun removePeers(vararg peers: P2pPeerInfo) {
+    public suspend fun removePeers(vararg peers: Peer) {
         removePeers(peers.toList())
     }
 
     /**
-     * Removes the specified P2P [peers].
+     * Removes the specified [peers].
      *
      * The removed peers will be unsubscribed.
      */
-    public suspend fun removePeers(peers: List<P2pPeerInfo>) {
-        storage.removeP2pPeers(peers)
+    public suspend fun removePeers(peers: List<Peer>) {
+        storageManager.removePeers(peers)
+        peers.launch { disconnect(it) }
     }
 
     /**
-     * Removes all known P2P peers.
+     * Removes all known peers.
      *
      * All peers will be unsubscribed.
      */
     public suspend fun removeAllPeers() {
-        storage.removeP2pPeers()
+        val peers = storageManager.getPeers()
+        storageManager.removePeers()
+        peers.launch { disconnect(it) }
     }
 
     /**
      * Returns a list of stored app metadata.
      */
     public suspend fun getAppMetadata(): List<AppMetadata> =
-        storage.getAppMetadata()
+        storageManager.getAppMetadata()
 
     /**
      * Returns the first app metadata that matches the specified [senderId]
      * or `null` if no such app metadata was found.
      */
     public suspend fun getAppMetadataFor(senderId: String): AppMetadata? =
-        storage.findAppMetadata { it.senderId == senderId }
+        storageManager.findAppMetadata { it.senderId == senderId }
 
     /**
      * Removes app metadata that matches the specified [senderIds].
      */
     public suspend fun removeAppMetadataFor(vararg senderIds: String) {
-        storage.removeAppMetadata { senderIds.contains(it.senderId) }
+        storageManager.removeAppMetadata { senderIds.contains(it.senderId) }
     }
 
     /**
      * Removes app metadata that matches the specified [senderIds].
      */
     public suspend fun removeAppMetadataFor(senderIds: List<String>) {
-        storage.removeAppMetadata { senderIds.contains(it.senderId) }
+        storageManager.removeAppMetadata { senderIds.contains(it.senderId) }
     }
 
     /**
@@ -205,79 +198,108 @@ public class BeaconClient internal constructor(
      * Removes all app metadata.
      */
     public suspend fun removeAllAppMetadata() {
-        storage.removeAppMetadata()
+        storageManager.removeAppMetadata()
     }
 
     /**
      * Removes the specified [appMetadata].
      */
     public suspend fun removeAppMetadata(appMetadata: List<AppMetadata>) {
-        storage.removeAppMetadata(appMetadata)
+        storageManager.removeAppMetadata(appMetadata)
     }
 
     /**
      * Returns a list of granted permissions.
      */
-    public suspend fun getPermissions(): List<PermissionInfo> =
-        storage.getPermissions()
+    public suspend fun getPermissions(): List<Permission> =
+        storageManager.getPermissions()
 
     /**
-     * Returns a list of permissions granted for the specified [accountIdentifier].
+     * Returns permissions granted for the specified [accountIdentifier].
      */
-    public suspend fun getPermissionsFor(accountIdentifier: String): PermissionInfo? =
-        storage.findPermission { it.accountIdentifier == accountIdentifier }
+    public suspend fun getPermissionsFor(accountIdentifier: String): Permission? =
+        storageManager.findPermission { it.accountIdentifier == accountIdentifier }
 
     /**
      * Removes permissions granted for the specified [accountIdentifiers].
      */
     public suspend fun removePermissionsFor(vararg accountIdentifiers: String) {
-        storage.removePermissions { accountIdentifiers.contains(it.accountIdentifier) }
+        storageManager.removePermissions { accountIdentifiers.contains(it.accountIdentifier) }
     }
 
     /**
      * Removes permissions granted for the specified [accountIdentifiers].
      */
     public suspend fun removePermissionsFor(accountIdentifiers: List<String>) {
-        storage.removePermissions { accountIdentifiers.contains(it.accountIdentifier) }
+        storageManager.removePermissions { accountIdentifiers.contains(it.accountIdentifier) }
     }
 
     /**
      * Removes the specified [permissions].
      */
-    public suspend fun removePermissions(vararg permissions: PermissionInfo) {
+    public suspend fun removePermissions(vararg permissions: Permission) {
         removePermissions(permissions.toList())
     }
 
     /**
      * Removes the specified [permissions].
      */
-    public suspend fun removePermissions(permissions: List<PermissionInfo>) {
-        storage.removePermissions(permissions)
+    public suspend fun removePermissions(permissions: List<Permission>) {
+        storageManager.removePermissions(permissions)
     }
 
     /**
      * Removes all granted permissions.
      */
     public suspend fun removeAllPermissions() {
-        storage.removePermissions()
+        storageManager.removePermissions()
     }
+
+    private suspend fun processMessage(message: BeaconMessage): InternalResult<Unit> =
+        when (message) {
+            is BeaconRequest -> acknowledge(message)
+            is DisconnectBeaconMessage -> {
+                removePeer(message.origin.id)
+                Success()
+            }
+            else -> {
+                /* no action */
+                Success()
+            }
+        }
+
+    private suspend fun removePeer(publicKey: String) {
+        storageManager.removePeers { it.publicKey == publicKey }
+    }
+
+    private suspend fun acknowledge(request: BeaconRequest): InternalResult<Unit> {
+        val acknowledgeResponse = AcknowledgeBeaconResponse.from(request, beaconId)
+        return send(acknowledgeResponse, isTerminal = false)
+    }
+
+    private suspend fun disconnect(peer: Peer): InternalResult<Unit> =
+        flatTryResult {
+            val message = DisconnectBeaconMessage(crypto.guid().get(), beaconId, peer.version, Origin.forPeer(peer))
+            send(message, isTerminal = true)
+        }
+
+    private suspend fun send(message: BeaconMessage, isTerminal: Boolean): InternalResult<Unit> =
+        messageController.onOutgoingMessage(beaconId, message, isTerminal)
+            .flatMapSuspend { connectionController.send(BeaconConnectionMessage(it)) }
 
     public companion object {}
 
     /**
      * Asynchronous builder for [BeaconClient].
      *
-     * @constructor Creates a builder configured with the specified application [name] and empty [matrixNodes].
+     * @constructor Creates a builder configured with the specified application [name] and list of [connections] with [P2P] included by default.
      */
     public class Builder(private val name: String) {
 
         /**
-         * Custom Matrix nodes.
-         *
-         * The nodes will be used to establish a P2P connection. If no custom nodes are set,
-         * the default value provided in [BeaconConfig] will be used.
+         * Connection types that will be supported by the configured client.
          */
-        public var matrixNodes: List<String> = emptyList()
+        public var connections: List<Connection> = listOf(P2P())
 
         /**
          * Builds a new instance of [BeaconClient].
@@ -285,17 +307,17 @@ public class BeaconClient internal constructor(
         public suspend fun build(): BeaconClient {
             val beaconApp = BeaconApp.instance
             val storage = SharedPreferencesStorage.create(beaconApp.applicationContext)
-            val matrixNodes = matrixNodes.toList().ifEmpty { BeaconConfig.defaultRelayServers }
 
-            beaconApp.init(name, matrixNodes, storage)
+            beaconApp.init(name, storage)
 
             with(beaconApp.dependencyRegistry) {
                 return BeaconClient(
                     name,
                     beaconApp.beaconId,
-                    connectionController(Transport.Type.P2P),
+                    connectionController(connections),
                     messageController,
-                    extendedStorage,
+                    storageManager,
+                    crypto,
                 )
             }
         }

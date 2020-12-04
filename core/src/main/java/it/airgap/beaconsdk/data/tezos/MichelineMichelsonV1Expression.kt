@@ -22,7 +22,7 @@ public sealed class MichelineMichelsonV1Expression {
 
     public companion object {}
 
-    internal class Serializer : KSerializer<MichelineMichelsonV1Expression> {
+    internal object Serializer : KSerializer<MichelineMichelsonV1Expression> {
         override val descriptor: SerialDescriptor =
             PrimitiveSerialDescriptor("MichelineMichelsonV1Expression", PrimitiveKind.STRING)
 

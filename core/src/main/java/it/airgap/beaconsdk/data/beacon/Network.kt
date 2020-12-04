@@ -7,7 +7,7 @@ import kotlinx.serialization.Transient
 /**
  * Type of networks supported in Beacon.
  *
- * @property [name] An optional name of the network
+ * @property [name] An optional name of the network.
  * @property [rpcUrl] An optional URL for the network RPC interface.
  * @property [identifier] A unique value that identifies the network.
  */
@@ -42,6 +42,18 @@ public sealed class Network {
     }
 
     @Serializable
+    @SerialName(IDENTIFIER_DELPHINET)
+    public data class Delphinet(
+        override val name: String? = null,
+        override val rpcUrl: String? = null,
+    ) : Network() {
+        @Transient
+        override val identifier: String = IDENTIFIER_DELPHINET
+
+        public companion object {}
+    }
+
+    @Serializable
     @SerialName(IDENTIFIER_CUSTOM)
     public data class Custom(
         override val name: String? = null,
@@ -56,6 +68,7 @@ public sealed class Network {
     public companion object {
         private const val IDENTIFIER_MAINNET = "mainnet"
         private const val IDENTIFIER_CARTHAGENET = "carthagenet"
+        private const val IDENTIFIER_DELPHINET = "delphinet"
         private const val IDENTIFIER_CUSTOM = "custom"
     }
 }

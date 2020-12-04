@@ -1,21 +1,21 @@
 package it.airgap.beaconsdk.internal.storage
 
 import it.airgap.beaconsdk.data.beacon.AppMetadata
-import it.airgap.beaconsdk.data.beacon.P2pPeerInfo
-import it.airgap.beaconsdk.data.beacon.PermissionInfo
+import it.airgap.beaconsdk.data.beacon.Peer
+import it.airgap.beaconsdk.data.beacon.Permission
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.MatrixRoom
 
 internal class MockStorage : Storage {
-    private var p2pPeers: List<P2pPeerInfo> = emptyList()
+    private var p2pPeers: List<Peer> = emptyList()
     private var appsMetadata: List<AppMetadata> = emptyList()
-    private var permissions: List<PermissionInfo> = emptyList()
+    private var permissions: List<Permission> = emptyList()
     private var matrixSyncToken: String? = null
     private var matrixRooms: List<MatrixRoom> = emptyList()
     private var sdkSecretSeed: String? = null
     private var sdkVersion: String? = null
 
-    override suspend fun getP2pPeers(): List<P2pPeerInfo> = p2pPeers
-    override suspend fun setP2pPeers(p2pPeers: List<P2pPeerInfo>) {
+    override suspend fun getPeers(): List<Peer> = p2pPeers
+    override suspend fun setPeers(p2pPeers: List<Peer>) {
         this.p2pPeers = p2pPeers
     }
 
@@ -24,8 +24,8 @@ internal class MockStorage : Storage {
         this.appsMetadata = appMetadata
     }
 
-    override suspend fun getPermissions(): List<PermissionInfo> = permissions
-    override suspend fun setPermissions(permissions: List<PermissionInfo>) {
+    override suspend fun getPermissions(): List<Permission> = permissions
+    override suspend fun setPermissions(permissions: List<Permission>) {
         this.permissions = permissions
     }
 
