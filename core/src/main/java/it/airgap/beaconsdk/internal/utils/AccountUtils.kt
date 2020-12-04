@@ -17,4 +17,13 @@ internal class AccountUtils(private val crypto: Crypto, private val base58Check:
 
         return hash.flatMap { base58Check.encode(it) }
     }
+
+    fun getSenderId(publicKey: HexString): InternalResult<String> {
+        val hash = crypto.hash(publicKey, SENDER_ID_HASH_SIZE)
+        return hash.flatMap { base58Check.encode(it) }
+    }
+
+    companion object {
+        private const val SENDER_ID_HASH_SIZE = 5
+    }
 }

@@ -7,7 +7,9 @@
 
     <string name="hint_beacon_request">- Beacon Request -</string>
 
+    <string name="hint_peer_id">ID</string>
     <string name="hint_peer_name">Name</string>
     <string name="hint_peer_public_key">Public Key</string>
     <string name="hint_peer_relay_server">Relay Server</string>
+    <string name="hint_peer_version">Version</string>
 </resources>

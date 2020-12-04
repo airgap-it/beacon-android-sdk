@@ -55,7 +55,7 @@ public enum class BeaconError {
      *
      * Applicable to [OperationBeaconRequest].
      */
-    @SerialName("PARAMETERS_INVALID_TYPE")
+    @SerialName("PARAMETERS_INVALID_ERROR")
     ParametersInvalid,
 
     /**
@@ -64,7 +64,7 @@ public enum class BeaconError {
      *
      * Applicable to [OperationBeaconRequest].
      */
-    @SerialName("TOO_MANY_OPERATIONS_TYPE")
+    @SerialName("TOO_MANY_OPERATIONS_ERROR")
     TooManyOperations,
 
     /**
@@ -72,8 +72,16 @@ public enum class BeaconError {
      *
      * Applicable to [BroadcastBeaconRequest].
      */
-    @SerialName("TRANSACTION_INVALID_TYPE")
+    @SerialName("TRANSACTION_INVALID_ERROR")
     TransactionInvalid,
+
+    /**
+     * Indicates that the requested type of signature is not supported in the client.
+     *
+     * Applicable to [SignPayloadBeaconRequest].
+     */
+    @SerialName("SIGNATURE_TYPE_NOT_SUPPORTED")
+    SignatureTypeNotSupported,
 
     /**
      * Indicates that the request execution has been aborted by the user or the wallet.

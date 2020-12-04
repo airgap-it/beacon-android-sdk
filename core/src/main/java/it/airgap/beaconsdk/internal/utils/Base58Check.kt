@@ -51,7 +51,7 @@ internal class Base58Check(private val crypto: Crypto) {
     }
 
     private fun createChecksum(bytes: ByteArray): ByteArray {
-        val hash = crypto.hashSha256(crypto.hashSha256(bytes).value()).value()
+        val hash = crypto.hashSha256(crypto.hashSha256(bytes).get()).get()
 
         return hash.sliceArray(0 until 4)
     }

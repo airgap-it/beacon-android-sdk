@@ -24,6 +24,7 @@ internal class AccountUtilsTest {
         MockKAnnotations.init(this)
 
         every { crypto.hash(any<String>(), any()) } answers { Success(firstArg<String>().encodeToByteArray()) }
+        every { crypto.hash(any<HexString>(), any()) } answers { Success(firstArg<HexString>().asString().encodeToByteArray()) }
         every { base58Check.encode(any()) } answers { Success(firstArg<ByteArray>().decodeToString()) }
 
         accountUtils = AccountUtils(crypto, base58Check)
@@ -32,8 +33,16 @@ internal class AccountUtilsTest {
     @Test
     fun `creates account identifier from address and network`() {
         expectedIdentifiers()
-            .map { accountUtils.getAccountIdentifier(it.first.first, it.first.second).value() to it.second }
+            .map { accountUtils.getAccountIdentifier(it.first.first, it.first.second).get() to it.second }
             .forEach { assertEquals(it.second, it.first) }
+    }
+
+    @Test
+    fun `creates sender id from public key`() {
+        val publicKey = "00"
+        val senderId = accountUtils.getSenderId(HexString.fromString(publicKey)).get()
+
+        assertEquals(publicKey, senderId)
     }
 
     private fun expectedIdentifiers(address: String = "address"): List<Pair<Pair<String, Network>, String>> =

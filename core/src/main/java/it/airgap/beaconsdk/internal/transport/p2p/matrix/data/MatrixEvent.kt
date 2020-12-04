@@ -57,8 +57,13 @@ internal sealed class MatrixEvent {
                     }
                     is MatrixSyncStateEvent.Message -> {
                         val sender = sender ?: return null
-                        val body = content?.body ?: return null
-                        TextMessage(roomId, sender, body)
+                        val type = content?.messageType ?: return null
+                        val body = content.body ?: return null
+
+                        when (type) {
+                            MatrixSyncStateEvent.Message.TYPE_TEXT -> TextMessage(roomId, sender, body)
+                            else -> null
+                        }
                     }
                     else -> null
                 }

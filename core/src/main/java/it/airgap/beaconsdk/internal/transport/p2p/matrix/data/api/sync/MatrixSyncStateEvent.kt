@@ -76,7 +76,7 @@ internal sealed class MatrixSyncStateEvent<Content> {
         override val type: String? = TYPE_MESSAGE
 
         @Serializable
-        data class Content(val msgtype: String? = null, val body: String? = null)
+        data class Content(@SerialName("msgtype") val messageType: String? = null, val body: String? = null)
 
         companion object {
             const val TYPE_TEXT = "m.text"

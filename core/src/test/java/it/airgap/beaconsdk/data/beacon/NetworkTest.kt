@@ -46,6 +46,7 @@ internal class NetworkTest {
     ): List<Pair<Network, String>> = listOf(
         Network.Mainnet(name, rpcUrl) to json("mainnet", name, rpcUrl, includeNulls),
         Network.Carthagenet(name, rpcUrl) to json("carthagenet", name, rpcUrl, includeNulls),
+        Network.Delphinet(name, rpcUrl) to json("delphinet", name, rpcUrl, includeNulls),
         Network.Custom(name, rpcUrl) to json("custom", name, rpcUrl, includeNulls),
     )
 

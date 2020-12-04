@@ -28,7 +28,7 @@ internal class HexTest {
     fun `creates HexString from valid string`() {
         val hexStrings = validHexStrings.map(HexString.Companion::fromString)
 
-        assertEquals(validHexStrings.map(this::withoutHexPrefix), hexStrings.map(HexString::value))
+        assertEquals(validHexStrings.map(this::withoutHexPrefix), hexStrings.map(HexString::asString))
     }
 
     @Test
@@ -61,8 +61,8 @@ internal class HexTest {
         val string = validHexStrings.first()
         val hexString = HexString.fromString(string)
 
-        assertEquals(withHexPrefix(string), hexString.value(withPrefix = true))
-        assertEquals(withoutHexPrefix(string), hexString.value())
+        assertEquals(withHexPrefix(string), hexString.asString(withPrefix = true))
+        assertEquals(withoutHexPrefix(string), hexString.asString())
     }
 
     @Test
@@ -76,8 +76,8 @@ internal class HexTest {
         val sliceWithRange = hexString.slice(sliceRange)
         val sliceWithIndex = hexString.slice(sliceIndex)
 
-        assertEquals(withoutHexPrefix(string).slice(sliceRange), sliceWithRange.value())
-        assertEquals(withoutHexPrefix(string).substring(sliceIndex), sliceWithIndex.value())
+        assertEquals(withoutHexPrefix(string).slice(sliceRange), sliceWithRange.asString())
+        assertEquals(withoutHexPrefix(string).substring(sliceIndex), sliceWithIndex.asString())
     }
 
     @Test
@@ -121,7 +121,7 @@ internal class HexTest {
     @Test
     fun `parses byte as hex string`() {
         val bytes: List<Byte> = listOf(-128, -1, 0, 1, 127)
-        val hexStrings: List<String> = bytes.map { it.asHexString().value(withPrefix = true) }
+        val hexStrings: List<String> = bytes.map { it.asHexString().asString(withPrefix = true) }
 
         assertEquals(listOf("0x80", "0xff", "0x00", "0x01", "0x7f"), hexStrings)
     }
@@ -131,7 +131,7 @@ internal class HexTest {
         val bytes: List<ByteArray> = listOf(
             byteArrayOf(1, 2, 3, 4, 5)
         )
-        val hexStrings: List<String> = bytes.map { it.asHexString().value(withPrefix = true) }
+        val hexStrings: List<String> = bytes.map { it.asHexString().asString(withPrefix = true) }
 
         assertEquals(listOf("0x0102030405"), hexStrings)
     }
@@ -141,7 +141,7 @@ internal class HexTest {
         val bytes: List<List<Byte>> = listOf(
             listOf(1, 2, 3, 4, 5)
         )
-        val hexStrings: List<String> = bytes.map { it.asHexString().value(withPrefix = true) }
+        val hexStrings: List<String> = bytes.map { it.asHexString().asString(withPrefix = true) }
 
         assertEquals(listOf("0x0102030405"), hexStrings)
     }

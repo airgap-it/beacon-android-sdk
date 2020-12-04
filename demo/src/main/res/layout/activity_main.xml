@@ -1,18 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
+<ScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:padding="@dimen/size_medium"
-    android:gravity="center"
-    android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fillViewport="true"
     tools:context=".MainActivity">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:padding="@dimen/size_medium"
+        android:layout_width="match_parent"
+        android:layout_height="0dp">
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/peerIdTextInput"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:hint="@string/hint_peer_id"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+    </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/peerNameTextInput"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/peerIdTextInput"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_width="0dp"
@@ -55,10 +73,25 @@
 
     </com.google.android.material.textfield.TextInputLayout>
 
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/peerVersionTextInput"
+        app:layout_constraintTop_toBottomOf="@id/peerRelayServerTextInput"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:hint="@string/hint_peer_version"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
     <Button
         android:id="@+id/addPeerButton"
         android:text="@string/button_add_peer"
-        app:layout_constraintTop_toBottomOf="@id/peerRelayServerTextInput"
+        app:layout_constraintTop_toBottomOf="@id/peerVersionTextInput"
         app:layout_constraintEnd_toEndOf="parent"
         android:enabled="false"
         android:layout_width="wrap_content"
@@ -67,7 +100,7 @@
     <Button
         android:id="@+id/removePeerButton"
         android:text="@string/button_remove_peer"
-        app:layout_constraintTop_toBottomOf="@id/peerRelayServerTextInput"
+        app:layout_constraintTop_toBottomOf="@id/peerVersionTextInput"
         app:layout_constraintStart_toStartOf="parent"
         android:enabled="false"
         android:layout_width="wrap_content"
@@ -83,21 +116,18 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
 
-    <ScrollView
+    <TextView
+        android:id="@+id/messageTextView"
+        android:gravity="center_vertical"
+        android:padding="@dimen/size_large"
+        android:hint="@string/hint_beacon_request"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@id/respondButton"
         app:layout_constraintBottom_toBottomOf="parent"
-        android:layout_width="match_parent"
-        android:layout_height="0dp">
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
 
-        <TextView
-            android:id="@+id/messageTextView"
-            android:layout_gravity="center"
-            android:gravity="center_vertical"
-            android:padding="@dimen/size_large"
-            android:hint="@string/hint_beacon_request"
-            android:layout_width="wrap_content"
-            android:layout_height="0dp" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
-    </ScrollView>
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+</ScrollView>

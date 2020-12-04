@@ -27,15 +27,15 @@ internal class BeaconApp(context: Context) {
         get() = _keyPair ?: failWithUninitialized(TAG)
 
     val beaconId: String
-        get() = keyPair.publicKey.asHexString().value()
+        get() = keyPair.publicKey.asHexString().asString()
 
-    suspend fun init(appName: String, matrixNodes: List<String>, storage: Storage) {
+    suspend fun init(appName: String, storage: Storage) {
         if (isInitialized) return
 
         _appName = appName
-        _dependencyRegistry = DependencyRegistry(matrixNodes, storage)
+        _dependencyRegistry = DependencyRegistry(storage)
 
-        val extendedStorage = dependencyRegistry.extendedStorage
+        val extendedStorage = dependencyRegistry.storageManager
         val crypto = dependencyRegistry.crypto
 
         setSdkVersion(extendedStorage)
@@ -45,14 +45,14 @@ internal class BeaconApp(context: Context) {
     }
 
     private suspend fun setSdkVersion(storage: Storage) {
-        storage.setSdkVersion(BeaconConfig.sdkVersion)
+        storage.setSdkVersion(BeaconConfiguration.sdkVersion)
     }
 
     private suspend fun loadOrGenerateKeyPair(storage: Storage, crypto: Crypto) {
         val seed = storage.getSdkSecretSeed()
-            ?: crypto.generateRandomSeed().value().also { storage.setSdkSecretSeed(it) }
+            ?: crypto.guid().get().also { storage.setSdkSecretSeed(it) }
 
-        _keyPair = crypto.getKeyPairFromSeed(seed).value()
+        _keyPair = crypto.getKeyPairFromSeed(seed).get()
     }
 
     companion object {

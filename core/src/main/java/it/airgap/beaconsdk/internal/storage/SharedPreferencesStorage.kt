@@ -3,19 +3,19 @@ package it.airgap.beaconsdk.internal.storage
 import android.content.Context
 import android.content.SharedPreferences
 import it.airgap.beaconsdk.data.beacon.AppMetadata
-import it.airgap.beaconsdk.data.beacon.P2pPeerInfo
-import it.airgap.beaconsdk.data.beacon.PermissionInfo
+import it.airgap.beaconsdk.data.beacon.Peer
+import it.airgap.beaconsdk.data.beacon.Permission
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.MatrixRoom
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 internal class SharedPreferencesStorage(private val sharedPreferences: SharedPreferences) : Storage {
-    override suspend fun getP2pPeers(): List<P2pPeerInfo> =
-        sharedPreferences.getSerializable(KEY_P2P_PEERS, emptyList())
+    override suspend fun getPeers(): List<Peer> =
+        sharedPreferences.getSerializable(KEY_PEERS, emptyList())
 
-    override suspend fun setP2pPeers(p2pPeers: List<P2pPeerInfo>) {
-        sharedPreferences.putSerializable(KEY_P2P_PEERS, p2pPeers)
+    override suspend fun setPeers(p2pPeers: List<Peer>) {
+        sharedPreferences.putSerializable(KEY_PEERS, p2pPeers)
     }
 
     override suspend fun getAppMetadata(): List<AppMetadata> =
@@ -25,10 +25,10 @@ internal class SharedPreferencesStorage(private val sharedPreferences: SharedPre
         sharedPreferences.putSerializable(KEY_APPS_METADATA, appMetadata)
     }
 
-    override suspend fun getPermissions(): List<PermissionInfo> =
+    override suspend fun getPermissions(): List<Permission> =
         sharedPreferences.getSerializable(KEY_PERMISSIONS, emptyList())
 
-    override suspend fun setPermissions(permissions: List<PermissionInfo>) {
+    override suspend fun setPermissions(permissions: List<Permission>) {
         sharedPreferences.putSerializable(KEY_PERMISSIONS, permissions)
     }
 
@@ -78,7 +78,7 @@ internal class SharedPreferencesStorage(private val sharedPreferences: SharedPre
     companion object {
         private const val STORAGE_NAME = "beaconsdk"
 
-        const val KEY_P2P_PEERS = "p2pPeers"
+        const val KEY_PEERS = "peers"
 
         const val KEY_APPS_METADATA = "appsMetadata"
         const val KEY_PERMISSIONS = "permissions"

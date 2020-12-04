@@ -289,8 +289,8 @@ internal class TezosOperationTest {
     private fun proposalsWithJson(
         period: String = "period",
         proposals: List<String> = emptyList(),
-    ) : Pair<TezosProposalsOpertion, String> =
-        TezosProposalsOpertion(period, proposals) to """
+    ) : Pair<TezosProposalsOperation, String> =
+        TezosProposalsOperation(period, proposals) to """
             {
                 "kind": "proposals",
                 "period": "$period",

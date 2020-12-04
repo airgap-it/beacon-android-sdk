@@ -7,8 +7,8 @@ import it.airgap.beaconsdk.internal.crypto.provider.CryptoProvider
 import it.airgap.beaconsdk.internal.utils.*
 
 internal class Crypto(private val cryptoProvider: CryptoProvider) {
-    fun hashKey(key: HexString): InternalResult<ByteArray> = hash(key, 32)
-    fun hashKey(key: ByteArray): InternalResult<ByteArray> = hash(key, 32)
+    fun hashKey(key: HexString): InternalResult<ByteArray> = hashKey(key.asByteArray())
+    fun hashKey(key: ByteArray): InternalResult<ByteArray> = hash(key, key.size)
 
     fun hash(message: String, @IntRange(from = 1) size: Int): InternalResult<ByteArray> =
         hash(message.toByteArray(), size)
@@ -25,7 +25,7 @@ internal class Crypto(private val cryptoProvider: CryptoProvider) {
     fun hashSha256(message: ByteArray): InternalResult<ByteArray> =
         tryResult { cryptoProvider.getHash256(message) }
 
-    fun generateRandomSeed(): InternalResult<String> =
+    fun guid(): InternalResult<String> =
         tryResult {
             val bytes = cryptoProvider.generateRandomBytes(SEED_BYTES)
 
@@ -37,7 +37,7 @@ internal class Crypto(private val cryptoProvider: CryptoProvider) {
                 bytes.slice(10 until SEED_BYTES)
             ).joinToString("-") { slice ->
                 slice.joinToString("") {
-                    it.asHexString().value()
+                    it.asHexString().asString()
                 }
             }
         }
@@ -108,7 +108,10 @@ internal class Crypto(private val cryptoProvider: CryptoProvider) {
         message: ByteArray,
         publicKey: ByteArray,
     ): InternalResult<ByteArray> =
-        tryResult { cryptoProvider.encryptMessageWithPublicKey(message, publicKey) }
+        tryResult {
+            val curve25519Key = cryptoProvider.convertEd25519PublicKeyToCurve25519(publicKey)
+            cryptoProvider.encryptMessageWithPublicKey(message, curve25519Key)
+        }
 
     fun decryptMessageWithKeyPair(
         message: String,
@@ -129,7 +132,12 @@ internal class Crypto(private val cryptoProvider: CryptoProvider) {
         publicKey: ByteArray,
         privateKey: ByteArray,
     ): InternalResult<ByteArray> =
-        tryResult { cryptoProvider.decryptMessageWithKeyPair(message, publicKey, privateKey) }
+        tryResult {
+            val curve25519PublicKey = cryptoProvider.convertEd25519PublicKeyToCurve25519(publicKey)
+            val curve25519PrivateKey = cryptoProvider.convertEd25519PrivateKeyToCurve25519(privateKey)
+
+            cryptoProvider.decryptMessageWithKeyPair(message, curve25519PublicKey, curve25519PrivateKey)
+        }
 
     fun encryptMessageWithSharedKey(
         message: String,

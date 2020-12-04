@@ -21,7 +21,7 @@ internal class TezosProtocol(private val crypto: Crypto, private val base58Check
         }
 
     private fun publicKeyFromEncrypted(encrypted: String): ByteArray {
-        val decoded = base58Check.decode(encrypted).value()
+        val decoded = base58Check.decode(encrypted).get()
 
         return decoded.sliceArray(PREFIX_ENCRYPTED_PUBLIC_KEY.length until decoded.size)
     }

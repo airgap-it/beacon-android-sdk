@@ -98,7 +98,7 @@ internal class HttpClientTest {
             val result = httpClient.get<MockResponse>("endpoint").single()
 
             assertTrue(result.isSuccess, "Expected GET result to be a success")
-            assertEquals(response, result.value())
+            assertEquals(response, result.get())
         }
     }
 
@@ -246,7 +246,7 @@ internal class HttpClientTest {
             val result = httpClient.post<Any, MockResponse>("endpoint").single()
 
             assertTrue(result.isSuccess, "Expected POST result to be a success")
-            assertEquals(response, result.value())
+            assertEquals(response, result.get())
         }
     }
 
@@ -394,7 +394,7 @@ internal class HttpClientTest {
             val result = httpClient.put<Any, MockResponse>("endpoint").single()
 
             assertTrue(result.isSuccess, "Expected PUT result to be a success")
-            assertEquals(response, result.value())
+            assertEquals(response, result.get())
         }
     }
 

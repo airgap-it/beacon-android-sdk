@@ -9,9 +9,9 @@ internal class HexString private constructor(value: String) {
     private val value: String =
         if (value.startsWith(HEX_PREFIX)) value.substring(HEX_PREFIX.length) else value
 
-    fun length(withPrefix: Boolean = false): Int = value(withPrefix).length
+    fun length(withPrefix: Boolean = false): Int = asString(withPrefix).length
 
-    fun value(withPrefix: Boolean = false): String {
+    fun asString(withPrefix: Boolean = false): String {
         val startsWithPrefix = value.startsWith(HEX_PREFIX)
 
         return when {
@@ -24,18 +24,18 @@ internal class HexString private constructor(value: String) {
     fun slice(indices: IntRange): HexString = HexString(value.slice(indices))
     fun slice(startIndex: Int): HexString = HexString(value.substring(startIndex))
 
-    fun asByteArray(): ByteArray = value().chunked(2).map { it.toInt(16).toByte() }.toByteArray()
+    fun asByteArray(): ByteArray = asString().chunked(2).map { it.toInt(16).toByte() }.toByteArray()
 
     fun decodeToString(): String = asByteArray().decodeToString()
 
-    fun toBigInteger(): BigInteger = BigInteger(value(), 16)
+    fun toBigInteger(): BigInteger = BigInteger(asString(), 16)
 
     override fun equals(other: Any?): Boolean =
         if (other == null || other !is HexString) false
         else value == other.value
 
     override fun hashCode(): Int = value.hashCode()
-    override fun toString(): String = value()
+    override fun toString(): String = asString()
 
     companion object {
         @Throws(IllegalArgumentException::class)
@@ -57,12 +57,12 @@ internal fun Byte.asHexString(): HexString {
 }
 
 internal fun ByteArray.asHexString(): HexString {
-    val hex = joinToString("") { it.asHexString().value() }
+    val hex = joinToString("") { it.asHexString().asString() }
     return HexString.fromString(hex)
 }
 
 internal fun List<Byte>.asHexString(): HexString {
-    val hex = joinToString("") { it.asHexString().value() }
+    val hex = joinToString("") { it.asHexString().asString() }
     return HexString.fromString(hex)
 }
 
