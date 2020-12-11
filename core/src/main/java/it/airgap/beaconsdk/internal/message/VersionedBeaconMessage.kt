@@ -3,7 +3,7 @@ package it.airgap.beaconsdk.internal.message
 import it.airgap.beaconsdk.data.beacon.Origin
 import it.airgap.beaconsdk.internal.message.v1.V1BeaconMessage
 import it.airgap.beaconsdk.internal.message.v2.V2BeaconMessage
-import it.airgap.beaconsdk.internal.storage.manager.StorageManager
+import it.airgap.beaconsdk.internal.storage.StorageManager
 import it.airgap.beaconsdk.internal.utils.failWithExpectedJsonDecoder
 import it.airgap.beaconsdk.internal.utils.failWithMissingField
 import it.airgap.beaconsdk.message.BeaconMessage

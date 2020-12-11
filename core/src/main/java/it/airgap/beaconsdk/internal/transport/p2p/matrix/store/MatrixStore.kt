@@ -1,6 +1,6 @@
 package it.airgap.beaconsdk.internal.transport.p2p.matrix.store
 
-import it.airgap.beaconsdk.internal.storage.manager.StorageManager
+import it.airgap.beaconsdk.internal.storage.StorageManager
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.MatrixEvent
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.MatrixRoom
 import kotlinx.coroutines.flow.MutableSharedFlow

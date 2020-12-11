@@ -7,8 +7,9 @@ import it.airgap.beaconsdk.internal.controller.ConnectionController
 import it.airgap.beaconsdk.internal.controller.MessageController
 import it.airgap.beaconsdk.internal.crypto.Crypto
 import it.airgap.beaconsdk.internal.message.BeaconConnectionMessage
-import it.airgap.beaconsdk.internal.storage.SharedPreferencesStorage
-import it.airgap.beaconsdk.internal.storage.manager.StorageManager
+import it.airgap.beaconsdk.internal.storage.StorageManager
+import it.airgap.beaconsdk.internal.storage.sharedpreferences.SharedPreferencesSecureStorage
+import it.airgap.beaconsdk.internal.storage.sharedpreferences.SharedPreferencesStorage
 import it.airgap.beaconsdk.internal.utils.*
 import it.airgap.beaconsdk.message.*
 import kotlinx.coroutines.flow.Flow
@@ -307,8 +308,9 @@ public class BeaconClient internal constructor(
         public suspend fun build(): BeaconClient {
             val beaconApp = BeaconApp.instance
             val storage = SharedPreferencesStorage.create(beaconApp.applicationContext)
+            val secureStorage = SharedPreferencesSecureStorage.create(beaconApp.applicationContext)
 
-            beaconApp.init(name, storage)
+            beaconApp.init(name, storage, secureStorage)
 
             with(beaconApp.dependencyRegistry) {
                 return BeaconClient(

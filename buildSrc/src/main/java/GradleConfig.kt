@@ -10,6 +10,8 @@ object Version {
     const val androidxActivity = "1.1.0"
     const val androidxLifecycle = "2.2.0"
 
+    const val androidxSecurity = "1.0.0-rc03"
+
     const val coroutines = "1.4.2"
 
     const val ktor = "1.4.1"
@@ -50,6 +52,8 @@ object Dependencies {
     const val androidxLifecycleViewModel = "androidx.lifecycle:lifecycle-viewmodel-ktx:${Version.androidxLifecycle}"
     const val androidxLifecycleLiveData = "androidx.lifecycle:lifecycle-livedata-ktx:${Version.androidxLifecycle}"
     const val androidxLifecycleRuntime = "androidx.lifecycle:lifecycle-runtime-ktx:${Version.androidxLifecycle}"
+
+    const val androidxSecurity = "androidx.security:security-crypto:${Version.androidxSecurity}"
 
     const val materialComponents = "com.google.android.material:material:${Version.materialComponents}"
 

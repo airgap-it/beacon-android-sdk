@@ -1,11 +1,9 @@
-package it.airgap.beaconsdk.internal.storage.manager
+package it.airgap.beaconsdk.internal.storage
 
 import it.airgap.beaconsdk.data.beacon.AppMetadata
 import it.airgap.beaconsdk.data.beacon.Peer
 import it.airgap.beaconsdk.data.beacon.Permission
 import it.airgap.beaconsdk.data.beacon.selfRemoved
-import it.airgap.beaconsdk.internal.storage.ExtendedStorage
-import it.airgap.beaconsdk.internal.storage.Storage
 import it.airgap.beaconsdk.internal.utils.AccountUtils
 import it.airgap.beaconsdk.internal.utils.HexString
 import it.airgap.beaconsdk.internal.utils.tryResult
@@ -19,10 +17,15 @@ import kotlin.reflect.KProperty1
 
 internal class StorageManager(
     private val storage: ExtendedStorage,
+    private val secureStorage: SecureStorage,
     private val accountUtils: AccountUtils
-) : ExtendedStorage by storage {
+) : ExtendedStorage by storage, SecureStorage by secureStorage {
 
-    constructor(storage: Storage, accountUtils: AccountUtils) : this(storage.extend(), accountUtils)
+    constructor(
+        storage: Storage,
+        secureStorage: SecureStorage,
+        accountUtils: AccountUtils
+    ) : this(storage.extend(), secureStorage, accountUtils)
 
     private val removedPeers: MutableSharedFlow<Peer> by lazy { MutableSharedFlow(extraBufferCapacity = 64) }
     val updatedPeers: Flow<Peer>

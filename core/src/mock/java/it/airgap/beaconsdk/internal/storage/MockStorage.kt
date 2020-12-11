@@ -11,7 +11,6 @@ internal class MockStorage : Storage {
     private var permissions: List<Permission> = emptyList()
     private var matrixSyncToken: String? = null
     private var matrixRooms: List<MatrixRoom> = emptyList()
-    private var sdkSecretSeed: String? = null
     private var sdkVersion: String? = null
 
     override suspend fun getPeers(): List<Peer> = p2pPeers
@@ -37,11 +36,6 @@ internal class MockStorage : Storage {
     override suspend fun getMatrixRooms(): List<MatrixRoom> = matrixRooms
     override suspend fun setMatrixRooms(rooms: List<MatrixRoom>) {
         this.matrixRooms = rooms
-    }
-
-    override suspend fun getSdkSecretSeed(): String? = sdkSecretSeed
-    override suspend fun setSdkSecretSeed(sdkSecretSeed: String) {
-        this.sdkSecretSeed = sdkSecretSeed
     }
 
     override suspend fun getSdkVersion(): String? = sdkVersion

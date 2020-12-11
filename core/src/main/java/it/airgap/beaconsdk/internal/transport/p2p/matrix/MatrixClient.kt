@@ -180,7 +180,7 @@ internal class MatrixClient(
         store.intent(OnSyncError)
 
         error?.let { logError(TAG, it) }
-        if (store.state().pollingRetries >= BeaconConfiguration.matrixMaxSyncRetries) {
+        if (store.state().pollingRetries >= BeaconConfiguration.MATRIX_MAX_SYNC_RETRIES) {
             logDebug(TAG, "Max sync retries exceeded")
             scope.cancel()
         } else {
