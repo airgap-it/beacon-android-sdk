@@ -7,12 +7,14 @@ import it.airgap.beaconsdk.data.beacon.P2P
 import it.airgap.beaconsdk.internal.BeaconApp
 import it.airgap.beaconsdk.internal.BeaconConfiguration
 import it.airgap.beaconsdk.internal.di.DependencyRegistry
-import it.airgap.beaconsdk.internal.storage.SharedPreferencesStorage
+import it.airgap.beaconsdk.internal.storage.sharedpreferences.SharedPreferencesSecureStorage
+import it.airgap.beaconsdk.internal.storage.sharedpreferences.SharedPreferencesStorage
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
 import mockBeaconApp
 import org.junit.Before
 import org.junit.Test
+import java.security.KeyStore
 import kotlin.test.assertEquals
 
 internal class BeaconClientBuilderTest {
@@ -30,6 +32,9 @@ internal class BeaconClientBuilderTest {
     @Before
     fun setup() {
         MockKAnnotations.init(this)
+
+        mockkStatic(KeyStore::class)
+        every { KeyStore.getInstance(any()) } returns mockk(relaxed = true)
 
         beaconApp = mockBeaconApp(beaconId = beaconId, dependencyRegistry = dependencyRegistry)
 
@@ -57,7 +62,7 @@ internal class BeaconClientBuilderTest {
         assertEquals(appName, client?.name)
         assertEquals(beaconId, client?.beaconId)
 
-        coVerify(exactly = 1) { beaconApp.init(appName, ofType(SharedPreferencesStorage::class)) }
+        coVerify(exactly = 1) { beaconApp.init(appName, ofType(SharedPreferencesStorage::class), ofType(SharedPreferencesSecureStorage::class)) }
         verify(exactly = 1) { dependencyRegistry.connectionController(defaultConnections) }
         verify(exactly = 1) { callback.onSuccess(any()) }
         verify(exactly = 0) { callback.onError(any()) }
@@ -88,7 +93,7 @@ internal class BeaconClientBuilderTest {
         assertEquals(appName, client!!.name)
         assertEquals(beaconId, client!!.beaconId)
 
-        coVerify(exactly = 1) { beaconApp.init(appName, ofType(SharedPreferencesStorage::class)) }
+        coVerify(exactly = 1) { beaconApp.init(appName, ofType(SharedPreferencesStorage::class), ofType(SharedPreferencesSecureStorage::class)) }
         verify(exactly = 1) { dependencyRegistry.connectionController(customConnections) }
         verify(exactly = 1) { callback.onSuccess(any()) }
         verify(exactly = 0) { callback.onError(any()) }

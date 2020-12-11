@@ -546,7 +546,7 @@ internal class MatrixClientTest {
         val accessToken = "accessToken"
 
         coEvery { eventService.sync(any(), any(), any()) } returns Failure()
-        coEvery { store.state() } returns MatrixStoreState(accessToken = accessToken, pollingRetries = BeaconConfiguration.matrixMaxSyncRetries)
+        coEvery { store.state() } returns MatrixStoreState(accessToken = accessToken, pollingRetries = BeaconConfiguration.MATRIX_MAX_SYNC_RETRIES)
 
         runBlocking {
             val scope = CoroutineScope(TestCoroutineDispatcher())

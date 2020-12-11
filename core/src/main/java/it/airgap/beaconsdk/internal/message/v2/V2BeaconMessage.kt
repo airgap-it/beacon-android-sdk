@@ -3,7 +3,7 @@ package it.airgap.beaconsdk.internal.message.v2
 import it.airgap.beaconsdk.data.beacon.*
 import it.airgap.beaconsdk.data.tezos.TezosOperation
 import it.airgap.beaconsdk.internal.message.VersionedBeaconMessage
-import it.airgap.beaconsdk.internal.storage.manager.StorageManager
+import it.airgap.beaconsdk.internal.storage.StorageManager
 import it.airgap.beaconsdk.message.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -173,9 +173,9 @@ internal data class BroadcastV2BeaconResponse(
 @Serializable
 @SerialName("acknowledge")
 internal data class AcknowledgeV2BeaconResponse(
+    override val version: String,
     override val id: String,
     override val senderId: String,
-    override val version: String
 ) : V2BeaconMessage() {
     override suspend fun toBeaconMessage(origin: Origin, storageManager: StorageManager): BeaconMessage =
         AcknowledgeBeaconResponse(id, senderId, version, origin)

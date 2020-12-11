@@ -11,8 +11,9 @@ import it.airgap.beaconsdk.data.beacon.Permission
 import it.airgap.beaconsdk.internal.message.VersionedBeaconMessage
 import it.airgap.beaconsdk.internal.protocol.Protocol
 import it.airgap.beaconsdk.internal.protocol.ProtocolRegistry
+import it.airgap.beaconsdk.internal.storage.MockSecureStorage
 import it.airgap.beaconsdk.internal.storage.MockStorage
-import it.airgap.beaconsdk.internal.storage.manager.StorageManager
+import it.airgap.beaconsdk.internal.storage.StorageManager
 import it.airgap.beaconsdk.internal.utils.AccountUtils
 import it.airgap.beaconsdk.internal.utils.HexString
 import it.airgap.beaconsdk.internal.utils.Success
@@ -59,7 +60,7 @@ internal class MessageControllerTest {
         every { accountUtils.getAccountIdentifier(any(), any()) } answers { Success(firstArg()) }
         every { accountUtils.getSenderId(any()) } answers { Success(firstArg<HexString>().asString()) }
 
-        storageManager = StorageManager(MockStorage(), accountUtils)
+        storageManager = StorageManager(MockStorage(), MockSecureStorage(), accountUtils)
         messageController = MessageController(protocolRegistry, storageManager, accountUtils)
     }
 

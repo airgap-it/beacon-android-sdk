@@ -17,8 +17,9 @@ import it.airgap.beaconsdk.internal.controller.MessageController
 import it.airgap.beaconsdk.internal.crypto.Crypto
 import it.airgap.beaconsdk.internal.message.BeaconConnectionMessage
 import it.airgap.beaconsdk.internal.message.VersionedBeaconMessage
+import it.airgap.beaconsdk.internal.storage.MockSecureStorage
 import it.airgap.beaconsdk.internal.storage.MockStorage
-import it.airgap.beaconsdk.internal.storage.manager.StorageManager
+import it.airgap.beaconsdk.internal.storage.StorageManager
 import it.airgap.beaconsdk.internal.utils.AccountUtils
 import it.airgap.beaconsdk.internal.utils.Failure
 import it.airgap.beaconsdk.internal.utils.Success
@@ -81,7 +82,7 @@ internal class BeaconClientTest {
 
         every { crypto.guid() } returns Success("guid")
 
-        storageManager = StorageManager(MockStorage(), accountUtils)
+        storageManager = StorageManager(MockStorage(), MockSecureStorage(), accountUtils)
         beaconClient = BeaconClient(appName, beaconId, connectionController, messageController, storageManager, crypto)
     }
 

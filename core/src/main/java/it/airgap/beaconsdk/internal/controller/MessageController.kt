@@ -5,7 +5,7 @@ import it.airgap.beaconsdk.data.beacon.Permission
 import it.airgap.beaconsdk.internal.message.VersionedBeaconMessage
 import it.airgap.beaconsdk.internal.protocol.Protocol
 import it.airgap.beaconsdk.internal.protocol.ProtocolRegistry
-import it.airgap.beaconsdk.internal.storage.manager.StorageManager
+import it.airgap.beaconsdk.internal.storage.StorageManager
 import it.airgap.beaconsdk.internal.utils.*
 import it.airgap.beaconsdk.message.*
 

@@ -4,7 +4,7 @@ import it.airgap.beaconsdk.data.beacon.*
 import it.airgap.beaconsdk.internal.message.ConnectionMessage
 import it.airgap.beaconsdk.internal.message.ConnectionTransportMessage
 import it.airgap.beaconsdk.internal.message.SerializedConnectionMessage
-import it.airgap.beaconsdk.internal.storage.manager.StorageManager
+import it.airgap.beaconsdk.internal.storage.StorageManager
 import it.airgap.beaconsdk.internal.transport.Transport
 import it.airgap.beaconsdk.internal.transport.p2p.data.P2pMessage
 import it.airgap.beaconsdk.internal.utils.HexString

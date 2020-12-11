@@ -22,9 +22,6 @@ internal interface Storage {
     suspend fun getMatrixRooms(): List<MatrixRoom>
     suspend fun setMatrixRooms(rooms: List<MatrixRoom>)
 
-    suspend fun getSdkSecretSeed(): String?
-    suspend fun setSdkSecretSeed(sdkSecretSeed: String)
-
     suspend fun getSdkVersion(): String?
     suspend fun setSdkVersion(sdkVersion: String)
 

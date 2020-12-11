@@ -3,7 +3,7 @@ package it.airgap.beaconsdk.internal.message.v1
 import it.airgap.beaconsdk.data.beacon.*
 import it.airgap.beaconsdk.data.tezos.TezosOperation
 import it.airgap.beaconsdk.internal.message.VersionedBeaconMessage
-import it.airgap.beaconsdk.internal.storage.manager.StorageManager
+import it.airgap.beaconsdk.internal.storage.StorageManager
 import it.airgap.beaconsdk.internal.utils.failWithUnsupportedMessage
 import it.airgap.beaconsdk.message.*
 import kotlinx.serialization.SerialName

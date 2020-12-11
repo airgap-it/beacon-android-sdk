@@ -51,6 +51,9 @@ dependencies {
     implementation(Dependencies.androidxCore)
     implementation(Dependencies.androidxAppCompat)
 
+    // Security
+    implementation(Dependencies.androidxSecurity)
+
     // Reflection
     implementation(Dependencies.kotlinReflection)
 

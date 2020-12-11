@@ -83,9 +83,9 @@ class MainActivity : AppCompatActivity() {
     companion object {
         const val examplePeerId = "b03762c3-6a72-2fcb-a3fb-b3797ad6d100"
         const val examplePeerName = "Beacon Example Dapp"
-        const val examplePeerPublicKey = "0979040c12c0bf9cd41349b73b3a64b11626e1cc812c7ab3deda63fdc39da7e5"
+        const val examplePeerPublicKey = "7129d8e409033e2c6860e4e5f820cbad2672eaf99d2dff8822d9914f80f0f66e"
         const val examplePeerRelayServer = "matrix.papers.tech"
-        const val examplePeerVersion = "2"
+        const val examplePeerVersion = "1"
     }
 
     data class State(
