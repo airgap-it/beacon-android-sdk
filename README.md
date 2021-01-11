@@ -26,7 +26,7 @@ To add `Beacon Android SDK` into your project:
 
   2. Add the dependency:
   ```groovy
-  def beaconVersion = "1.0.0-beta01"
+  def beaconVersion = "1.0.0"
 
   implementation "com.github.airgap-it:beacon-android-sdk:$beaconVersion"
   ```
@@ -114,4 +114,4 @@ $ ./gradlew testMock{Release|Debug}UnitTest
 
 [Beacon SDK](https://github.com/airgap-it/beacon-sdk) - an SDK for web developers (dApp & wallet)
 
-<!-- TODO: [Beacon iOS SDK]() - an SDK for iOS developers (wallet) -->
+[Beacon iOS SDK](https://github.com/airgap-it/beacon-ios-sdk) - an SDK for iOS developers (wallet)
