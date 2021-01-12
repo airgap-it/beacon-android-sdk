@@ -128,18 +128,11 @@ internal class LazySodiumCryptoProvider : CryptoProvider {
 
     @Throws(Exception::class)
     override fun encryptMessageWithPublicKey(message: ByteArray, publicKey: ByteArray): ByteArray {
-        val signSodium = sodium as Sign.Native
         val secretBoxSodium = sodium as Box.Native
-
-        val kxPublicKey = ByteArray(Sign.CURVE25519_PUBLICKEYBYTES).also {
-            assertOrFail("Could not convert the public key") {
-                signSodium.convertPublicKeyEd25519ToCurve25519(it, publicKey)
-            }
-        }
 
         return ByteArray(Box.SEALBYTES + message.size).also {
             assertOrFail("Could not encrypt the message") {
-                secretBoxSodium.cryptoBoxSeal(it, message, message.size.toLong(), kxPublicKey)
+                secretBoxSodium.cryptoBoxSeal(it, message, message.size.toLong(), publicKey)
             }
         }
     }
@@ -150,11 +143,7 @@ internal class LazySodiumCryptoProvider : CryptoProvider {
         publicKey: ByteArray,
         privateKey: ByteArray,
     ): ByteArray {
-        val signSodium = sodium as Sign.Lazy
         val secretBoxSodium = sodium as Box.Native
-
-        val edKeyPair = SodiumKeyPair(Key.fromBytes(privateKey), Key.fromBytes(publicKey))
-        val kxKeyPair = signSodium.convertKeyPairEd25519ToCurve25519(edKeyPair)
 
         return ByteArray(message.size - Box.SEALBYTES).also {
             assertOrFail("Could not decrypt the message") {
@@ -162,8 +151,8 @@ internal class LazySodiumCryptoProvider : CryptoProvider {
                     it,
                     message,
                     message.size.toLong(),
-                    kxKeyPair.publicKey.asBytes,
-                    kxKeyPair.secretKey.asBytes,
+                    publicKey,
+                    privateKey,
                 )
             }
         }.trimNulls()

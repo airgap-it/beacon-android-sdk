@@ -1,6 +1,6 @@
 package it.airgap.beaconsdk.internal.transport.p2p.matrix.store
 
-import it.airgap.beaconsdk.internal.storage.decorator.DecoratedExtendedStorage
+import it.airgap.beaconsdk.internal.storage.StorageManager
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.MatrixEvent
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.MatrixRoom
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-internal class MatrixStore(private val storage: DecoratedExtendedStorage) {
+internal class MatrixStore(private val storageManager: StorageManager) {
     private val _events: MutableSharedFlow<MatrixEvent> = MutableSharedFlow(extraBufferCapacity = 64)
     val events: SharedFlow<MatrixEvent>
         get() = _events
@@ -22,8 +22,8 @@ internal class MatrixStore(private val storage: DecoratedExtendedStorage) {
         stateMutex.withLock {
             state = when (action) {
                 is Init -> {
-                    val syncToken = storage.getMatrixSyncToken()
-                    val rooms = storage.getMatrixRooms()
+                    val syncToken = storageManager.getMatrixSyncToken()
+                    val rooms = storageManager.getMatrixRooms()
 
                     state.copy(
                         userId = action.userId,
@@ -34,11 +34,11 @@ internal class MatrixStore(private val storage: DecoratedExtendedStorage) {
                     )
                 }
                 is OnSyncSuccess -> {
-                    val mergedRooms = action.rooms?.ifNotEmpty { state.rooms.merge(it) }
+                    val mergedRooms = action.rooms.ifNotNullOrEmpty { state.rooms.merge(it) }
 
                     action.events?.forEach { _events.tryEmit(it) }
 
-                    with(storage) {
+                    with(storageManager) {
                         action.syncToken?.let { setMatrixSyncToken(it) }
                         mergedRooms?.values?.toList()?.let { setMatrixRooms(it) }
                     }
@@ -70,13 +70,7 @@ internal class MatrixStore(private val storage: DecoratedExtendedStorage) {
         return (values + new).associateBy { it.id }
     }
 
-    private fun Map<String, MatrixRoom>.merge(vararg newRooms: MatrixRoom): Map<String, MatrixRoom> {
-        val new = newRooms.map { get(it.id)?.update(it.members) ?: it }
-
-        return (values + new).associateBy { it.id }
-    }
-
-    private fun <T, R> List<T>.ifNotEmpty(block: (List<T>) -> R): R? =
+    private fun <T, R> List<T>?.ifNotNullOrEmpty(block: (List<T>) -> R): R? =
         if (!isNullOrEmpty()) block(this)
         else null
 }

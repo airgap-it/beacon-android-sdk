@@ -1,72 +1,90 @@
 package it.airgap.beaconsdk.internal.controller
 
 import it.airgap.beaconsdk.data.beacon.Origin
-import it.airgap.beaconsdk.data.beacon.PermissionInfo
+import it.airgap.beaconsdk.data.beacon.Permission
 import it.airgap.beaconsdk.internal.message.VersionedBeaconMessage
 import it.airgap.beaconsdk.internal.protocol.Protocol
 import it.airgap.beaconsdk.internal.protocol.ProtocolRegistry
-import it.airgap.beaconsdk.internal.storage.decorator.DecoratedExtendedStorage
+import it.airgap.beaconsdk.internal.storage.StorageManager
 import it.airgap.beaconsdk.internal.utils.*
-import it.airgap.beaconsdk.message.BeaconMessage
-import it.airgap.beaconsdk.message.PermissionBeaconRequest
-import it.airgap.beaconsdk.message.PermissionBeaconResponse
+import it.airgap.beaconsdk.message.*
 
 internal class MessageController(
     private val protocolRegistry: ProtocolRegistry,
-    private val storage: DecoratedExtendedStorage,
+    private val storageManager: StorageManager,
     private val accountUtils: AccountUtils,
 ) {
-    private val pendingRequests: MutableList<VersionedBeaconMessage> = mutableListOf()
+    private val pendingRequests: MutableMap<String, BeaconRequest> = mutableMapOf()
+
+    // -- on incoming --
 
     suspend fun onIncomingMessage(origin: Origin, message: VersionedBeaconMessage): InternalResult<BeaconMessage> =
         tryResult {
-            message.toBeaconMessage(origin, storage).also {
+            message.toBeaconMessage(origin, storageManager).also {
                 when (it) {
-                    is PermissionBeaconRequest -> onPermissionRequest(it)
+                    is BeaconRequest -> onIncomingRequest(it)
                     else -> { /* no action */ }
                 }
-                pendingRequests.add(message)
             }
         }
 
+    private suspend fun onIncomingRequest(request: BeaconRequest) {
+        pendingRequests[request.id] = request
+
+        when (request) {
+            is PermissionBeaconRequest -> onPermissionRequest(request)
+            else -> { /* no action */ }
+        }
+    }
+
+    private suspend fun onPermissionRequest(request: PermissionBeaconRequest) {
+        storageManager.addAppMetadata(listOf(request.appMetadata))
+    }
+
+    // -- on outgoing --
 
     suspend fun onOutgoingMessage(
-        senderId: String,
+        beaconId: String,
         message: BeaconMessage,
-    ): InternalResult<VersionedBeaconMessage> =
+        isTerminal: Boolean,
+    ): InternalResult<Pair<Origin, VersionedBeaconMessage>> =
         tryResult {
-            val request = pendingRequests.pop { it.pairsWith(message) } ?: failWithNoPendingRequest()
             when (message) {
-                is PermissionBeaconResponse -> onPermissionResponse(message, request)
+                is BeaconResponse -> onOutgoingResponse(message, isTerminal)
                 else -> { /* no action */ }
             }
 
-            VersionedBeaconMessage.fromBeaconMessage(request.version, senderId, message)
+            val senderId = accountUtils.getSenderId(HexString.fromString(beaconId)).get()
+            Pair(message.associatedOrigin, VersionedBeaconMessage.fromBeaconMessage(senderId, message))
         }
 
-    private suspend fun onPermissionRequest(request: PermissionBeaconRequest) {
-        storage.addAppMetadata(listOf(request.appMetadata))
+    private suspend fun onOutgoingResponse(response: BeaconResponse, isTerminal: Boolean) {
+        val request = pendingRequests.get(response.id, remove = isTerminal) ?: failWithNoPendingRequest()
+        when (response) {
+            is PermissionBeaconResponse -> onPermissionResponse(response, request)
+            else -> { /* no action */ }
+        }
     }
 
-    private suspend fun onPermissionResponse(response: PermissionBeaconResponse, request: VersionedBeaconMessage) {
+    private suspend fun onPermissionResponse(response: PermissionBeaconResponse, request: BeaconRequest) {
         val publicKey = response.publicKey
-        val address = protocolRegistry.get(Protocol.Type.Tezos).getAddressFromPublicKey(publicKey).value()
-        val accountIdentifier = accountUtils.getAccountIdentifier(address, response.network).value()
-        val appMetadata = storage.findAppMetadata { request.comesFrom(it) }
+        val address = protocolRegistry.get(Protocol.Type.Tezos).getAddressFromPublicKey(publicKey).get()
+        val accountIdentifier = accountUtils.getAccountIdentifier(address, response.network).get()
+        val appMetadata = storageManager.findAppMetadata { it.senderId == request.senderId }
             ?: failWithIllegalState("Granted permissions not saved, matching appMetadata could not be found.")
 
-        val permissionInfo = PermissionInfo(
+        val permissionInfo = Permission(
             accountIdentifier,
             address,
             response.network,
             response.scopes,
-            appMetadata.senderId,
+            accountUtils.getSenderId(HexString.fromString(request.origin.id)).get(),
             appMetadata,
             publicKey,
             connectedAt = currentTimestamp()
         )
 
-        storage.addPermissions(listOf(permissionInfo))
+        storageManager.addPermissions(listOf(permissionInfo))
     }
 
     private fun failWithNoPendingRequest(): Nothing = throw IllegalArgumentException("No matching request found")

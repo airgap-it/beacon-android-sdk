@@ -1,5 +1,6 @@
 package it.airgap.beaconsdk.data.beacon
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -16,11 +17,11 @@ import kotlinx.serialization.Serializable
  * @property [threshold] An optional threshold configuration.
  */
 @Serializable
-public data class PermissionInfo(
+public data class Permission(
     public val accountIdentifier: String,
     public val address: String,
     public val network: Network,
-    public val scopes: List<PermissionScope>,
+    public val scopes: List<Scope>,
     public val senderId: String,
     public val appMetadata: AppMetadata,
     public val publicKey: String,
@@ -28,4 +29,16 @@ public data class PermissionInfo(
     public val threshold: Threshold? = null,
 ) {
     public companion object {}
+
+    /**
+     * Types of permissions supported in Beacon.
+     */
+    @Serializable
+    public enum class Scope {
+        @SerialName("sign") Sign,
+        @SerialName("operation_request") OperationRequest,
+        @SerialName("threshold") Threshold;
+
+        public companion object {}
+    }
 }

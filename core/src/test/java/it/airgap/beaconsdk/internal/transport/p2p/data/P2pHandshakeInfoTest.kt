@@ -12,7 +12,7 @@ internal class P2pHandshakeInfoTest {
     @Test
     fun `is deserialized from JSON`() {
         listOf(expectedWithJson())
-            .map { Json.decodeFromString<P2pHandshakeInfo>(it.second) to it.first }
+            .map { Json.decodeFromString<P2pPairingResponse>(it.second) to it.first }
             .forEach {
                 assertEquals(it.second, it.first)
             }
@@ -31,13 +31,17 @@ internal class P2pHandshakeInfoTest {
     }
 
     private fun expectedWithJson(
+        id: String = "id",
+        type: String = "type",
         name: String = "name",
         version: String = "version",
         publicKey: String = "publicKey",
         relayServer: String = "relayServer",
-    ): Pair<P2pHandshakeInfo, String> =
-        P2pHandshakeInfo(name, version, publicKey, relayServer) to """
+    ): Pair<P2pPairingResponse, String> =
+        P2pPairingResponse(id, type, name, version, publicKey, relayServer) to """
             {
+                "id": "$id",
+                "type": "$type",
                 "name": "$name",
                 "version": "$version",
                 "publicKey": "$publicKey",

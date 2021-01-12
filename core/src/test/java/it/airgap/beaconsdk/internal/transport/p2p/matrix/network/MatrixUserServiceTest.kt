@@ -56,7 +56,7 @@ internal class MatrixUserServiceTest {
                 password,
                 deviceId,
             )
-            val response = matrixUserService.login(user, password, deviceId).value()
+            val response = matrixUserService.login(user, password, deviceId).get()
 
             assertEquals(expectedResponse, response)
             coVerify { httpClientProvider.post(

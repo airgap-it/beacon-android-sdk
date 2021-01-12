@@ -2,6 +2,7 @@ package it.airgap.beaconsdk.internal.transport.p2p.matrix.data
 
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.api.sync.MatrixSyncRoom
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.api.sync.MatrixSyncRooms
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -10,15 +11,19 @@ internal sealed class MatrixRoom {
     abstract val members: List<String>
 
     @Serializable
+    @SerialName("joined")
     data class Joined(override val id: String, override val members: List<String>) : MatrixRoom()
 
     @Serializable
+    @SerialName("invited")
     data class Invited(override val id: String, override val members: List<String>) : MatrixRoom()
 
     @Serializable
+    @SerialName("left")
     data class Left(override val id: String, override val members: List<String>) : MatrixRoom()
 
     @Serializable
+    @SerialName("unknown")
     data class Unknown(override val id: String, override val members: List<String> = emptyList()) : MatrixRoom()
 
     fun update(newMembers: List<String>): MatrixRoom =

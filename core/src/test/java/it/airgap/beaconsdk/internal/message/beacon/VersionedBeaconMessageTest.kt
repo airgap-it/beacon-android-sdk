@@ -5,6 +5,7 @@ import it.airgap.beaconsdk.internal.message.VersionedBeaconMessage
 import it.airgap.beaconsdk.internal.message.v1.V1BeaconMessage
 import it.airgap.beaconsdk.internal.message.v2.V2BeaconMessage
 import it.airgap.beaconsdk.internal.utils.failWith
+import it.airgap.beaconsdk.message.AcknowledgeBeaconResponse
 import it.airgap.beaconsdk.message.BeaconMessage
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -12,35 +13,51 @@ import kotlinx.serialization.json.Json
 import org.junit.Test
 import kotlin.reflect.KClass
 import kotlin.test.assertEquals
+import kotlin.test.assertFails
 import kotlin.test.assertTrue
 
 internal class VersionedBeaconMessageTest {
 
+    private val notSupported = listOf(
+        AcknowledgeBeaconResponse::class to "1",
+    )
+
     @Test
     fun `proper version is created from BeaconMessage`() {
-        beaconMessages().forEach { beaconMessage ->
-            versionsWithClasses.forEach {
-                val versioned = VersionedBeaconMessage.fromBeaconMessage(it.first, "senderId", beaconMessage)
+        versionsWithClasses.forEach { (version, versionedClass) ->
+            beaconMessages(version = version).forEach { beaconMessage ->
+                val messageWithVersion = Pair(beaconMessage, version)
+                messageWithVersion.ifSupported {
+                    val versioned = VersionedBeaconMessage.fromBeaconMessage("senderId", beaconMessage)
 
-                assertTrue(
-                    it.second.isInstance(versioned),
-                    "Expected versioned message for version \"${it.first}\" to be an instance of ${it.second.simpleName}"
-                )
+                    assertTrue(
+                        versionedClass.isInstance(versioned),
+                        "Expected versioned message for version \"${version}\" to be an instance of ${versionedClass.simpleName}"
+                    )
+                }
+
+                messageWithVersion.ifNotSupported {
+                    assertFails { VersionedBeaconMessage.fromBeaconMessage("senderId", beaconMessage) }
+                }
             }
         }
     }
 
     @Test
     fun `is deserialized from JSON to proper version`() {
-        beaconMessages().forEach { beaconMessage ->
-            versionsWithClasses.forEach {
-                val json = createJson(it.first, beaconMessage)
-                val deserialized = Json.decodeFromString<VersionedBeaconMessage>(json)
+        versionsWithClasses.forEach { (version, versionedClass) ->
+            beaconMessages(version = version).forEach { beaconMessage ->
+                val messageWithVersion = Pair(beaconMessage, version)
 
-                assertTrue(
-                    it.second.isInstance(deserialized),
-                    "Expected deserialized message for version \"${it.first}\" to be an instance of ${it.second.simpleName}"
-                )
+                messageWithVersion.ifSupported {
+                    val json = createJson(version, beaconMessage)
+                    val deserialized = Json.decodeFromString<VersionedBeaconMessage>(json)
+
+                    assertTrue(
+                        versionedClass.isInstance(deserialized),
+                        "Expected deserialized message for version \"${version}\" to be an instance of ${versionedClass.simpleName}"
+                    )
+                }
             }
         }
     }
@@ -49,10 +66,14 @@ internal class VersionedBeaconMessageTest {
     fun `serializes to JSON based on version`() {
         beaconMessages().forEach { beaconMessage ->
             versionsWithClasses.forEach {
-                val (versioned, expected) = createVersionedJsonPair(it.first, beaconMessage)
-                val serialized = Json.encodeToString(versioned)
+                val messageWithVersion = Pair(beaconMessage, it.first)
 
-                assertEquals(expected, serialized)
+                messageWithVersion.ifSupported {
+                    val (versioned, expected) = createVersionedJsonPair(it.first, beaconMessage)
+                    val serialized = Json.encodeToString(versioned)
+
+                    assertEquals(expected, serialized)
+                }
             }
         }
     }
@@ -103,11 +124,22 @@ internal class VersionedBeaconMessageTest {
 
     private inline fun <reified T : VersionedBeaconMessage> BeaconMessage.versioned(version: String): T =
         when (T::class) {
-            V1BeaconMessage::class -> V1BeaconMessage.fromBeaconMessage(version, "senderId", this) as T
-            V2BeaconMessage::class -> V2BeaconMessage.fromBeaconMessage(version, "senderId", this) as T
+            V1BeaconMessage::class -> V1BeaconMessage.fromBeaconMessage("senderId", this) as T
+            V2BeaconMessage::class -> V2BeaconMessage.fromBeaconMessage( "senderId", this) as T
             else -> failWith("Unknown class")
         }
 
     private val String.major: String
         get() = substringBefore('.')
+
+    private val Pair<BeaconMessage, String>.isSupported: Boolean
+        get() = !notSupported.contains(Pair(first::class, second.major))
+
+    private inline fun Pair<BeaconMessage, String>.ifSupported(block: () -> Unit) {
+        if (isSupported) { block() }
+    }
+
+    private inline fun Pair<BeaconMessage, String>.ifNotSupported(block: () -> Unit) {
+        if (!isSupported) { block() }
+    }
 }

@@ -12,7 +12,7 @@ android {
         minSdkVersion 21
         targetSdkVersion 29
         versionCode 1
-        versionName "1.0.0-beta01"
+        versionName "1.0.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -50,6 +50,9 @@ dependencies {
 
     implementation(Dependencies.androidxCore)
     implementation(Dependencies.androidxAppCompat)
+
+    // Security
+    implementation(Dependencies.androidxSecurity)
 
     // Reflection
     implementation(Dependencies.kotlinReflection)

@@ -9,7 +9,7 @@ import kotlinx.serialization.json.encodeToJsonElement
 import org.junit.Test
 import kotlin.test.assertEquals
 
-internal class PermissionInfoTest {
+internal class PermissionTest {
     @Test
     fun `is deserialized from JSON`() {
         listOf(
@@ -17,7 +17,7 @@ internal class PermissionInfoTest {
             expectedWithJson(threshold = Threshold("amount", "frame")),
             expectedWithJson(includeNulls = true),
         ).map {
-            Json.decodeFromString<PermissionInfo>(it.second) to it.first
+            Json.decodeFromString<Permission>(it.second) to it.first
         }.forEach {
             assertEquals(it.second, it.first)
         }
@@ -37,14 +37,14 @@ internal class PermissionInfoTest {
         accountIdentifier: String = "accountIdentifier",
         address: String = "address",
         network: Network = Network.Custom(),
-        scopes: List<PermissionScope> = emptyList(),
+        scopes: List<Permission.Scope> = emptyList(),
         senderId: String = "senderId",
         appMetadata: AppMetadata = AppMetadata(senderId, "name"),
         publicKey: String = "publicKey",
         connectedAt: Long = 0,
         threshold: Threshold? = null,
         includeNulls: Boolean = false,
-    ): Pair<PermissionInfo, String> {
+    ): Pair<Permission, String> {
         val values = mapOf(
             "address" to address,
             "network" to Json.encodeToJsonElement(network),
@@ -59,7 +59,7 @@ internal class PermissionInfoTest {
 
         val json = JsonObject.fromValues(values, includeNulls).toString()
 
-        return PermissionInfo(
+        return Permission(
             accountIdentifier,
             address,
             network,

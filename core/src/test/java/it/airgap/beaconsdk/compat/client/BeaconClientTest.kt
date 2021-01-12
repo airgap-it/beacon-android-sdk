@@ -11,12 +11,16 @@ import it.airgap.beaconsdk.data.beacon.Origin
 import it.airgap.beaconsdk.exception.BeaconException
 import it.airgap.beaconsdk.internal.controller.ConnectionController
 import it.airgap.beaconsdk.internal.controller.MessageController
+import it.airgap.beaconsdk.internal.crypto.Crypto
 import it.airgap.beaconsdk.internal.message.BeaconConnectionMessage
 import it.airgap.beaconsdk.internal.message.VersionedBeaconMessage
+import it.airgap.beaconsdk.internal.storage.MockSecureStorage
 import it.airgap.beaconsdk.internal.storage.MockStorage
-import it.airgap.beaconsdk.internal.storage.decorator.DecoratedExtendedStorage
+import it.airgap.beaconsdk.internal.storage.StorageManager
+import it.airgap.beaconsdk.internal.utils.AccountUtils
 import it.airgap.beaconsdk.internal.utils.Failure
 import it.airgap.beaconsdk.internal.utils.Success
+import it.airgap.beaconsdk.message.AcknowledgeBeaconResponse
 import it.airgap.beaconsdk.message.BeaconMessage
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
@@ -36,7 +40,13 @@ internal class BeaconClientTest {
     @MockK
     private lateinit var messageController: MessageController
 
-    private lateinit var storage: DecoratedExtendedStorage
+    @MockK
+    private lateinit var accountUtils: AccountUtils
+
+    @MockK
+    private lateinit var crypto: Crypto
+
+    private lateinit var storageManager: StorageManager
     private lateinit var beaconClient: BeaconClient
 
     private lateinit var testDeferred: CompletableDeferred<Unit>
@@ -55,15 +65,17 @@ internal class BeaconClientTest {
         MockKAnnotations.init(this)
 
         coEvery { messageController.onIncomingMessage(any(), any()) } coAnswers  {
-            Success(secondArg<VersionedBeaconMessage>().toBeaconMessage(origin, storage))
+            Success(secondArg<VersionedBeaconMessage>().toBeaconMessage(origin, storageManager))
         }
 
-        coEvery { messageController.onOutgoingMessage(any(), any()) } coAnswers {
-            Success(versionedBeaconMessage(secondArg(), dAppVersion, beaconId))
+        coEvery { messageController.onOutgoingMessage(any(), any(), any()) } coAnswers {
+            Success(Pair(secondArg<BeaconMessage>().associatedOrigin, versionedBeaconMessage(secondArg(), beaconId)))
         }
 
-        storage = DecoratedExtendedStorage(MockStorage())
-        beaconClient = BeaconClient(appName, beaconId, connectionController, messageController, storage)
+        coEvery { connectionController.send(any()) } coAnswers { Success() }
+
+        storageManager = StorageManager(MockStorage(), MockSecureStorage(), accountUtils)
+        beaconClient = BeaconClient(appName, beaconId, connectionController, messageController, storageManager, crypto)
 
         testDeferred = CompletableDeferred()
     }
@@ -76,7 +88,7 @@ internal class BeaconClientTest {
 
             every { connectionController.subscribe() } answers { beaconMessageFlow }
 
-            storage.addAppMetadata(listOf(AppMetadata(dAppId, "otherApp")))
+            storageManager.addAppMetadata(listOf(AppMetadata(dAppId, "otherApp")))
 
             runBlocking {
                 val messages = mutableListOf<BeaconMessage>()
@@ -96,11 +108,12 @@ internal class BeaconClientTest {
 
                 testDeferred.await()
 
-                val expected = requests.map { it.toBeaconMessage(origin, storage) }
+                val expected = requests.map { it.toBeaconMessage(origin, storageManager) }
 
                 assertEquals(expected.sortedBy { it.toString() }, messages.sortedBy { it.toString() })
 
                 coVerify(exactly = expected.size) { messageController.onIncomingMessage(any(), any()) }
+                coVerify(exactly = expected.size) { messageController.onOutgoingMessage(beaconId, match { it is AcknowledgeBeaconResponse }, false) }
                 verify(exactly = requests.size) { callback.onNewMessage(any()) }
                 verify(exactly = 0) { callback.onError(any()) }
 
@@ -113,7 +126,9 @@ internal class BeaconClientTest {
     fun `responds to request`() {
         coEvery { connectionController.send(any()) } returns Success()
 
-        val responses = beaconResponses().shuffled()
+        val origin = Origin.P2P(dAppId)
+        val responses = beaconResponses(version = dAppVersion, requestOrigin = origin).shuffled()
+
         val callback = spyk<ResponseCallback>(object : ResponseCallback {
             override fun onSuccess() {
                 testDeferred.complete(Unit)
@@ -127,12 +142,13 @@ internal class BeaconClientTest {
         responses.forEach {
             testDeferred = CompletableDeferred()
 
-            val expected = versionedBeaconMessage(it, dAppVersion, beaconId)
+            val versioned = versionedBeaconMessage(it, beaconId)
+            val expected = BeaconConnectionMessage(origin, versioned)
 
             beaconClient.respond(it, callback)
             runBlocking { testDeferred.await() }
 
-            coVerify { messageController.onOutgoingMessage(any(), it) }
+            coVerify { messageController.onOutgoingMessage(any(), it, any()) }
             coVerify { connectionController.send(expected) }
         }
 
@@ -172,7 +188,7 @@ internal class BeaconClientTest {
 
                 testDeferred.await()
 
-                val expected = errors.map { BeaconException(cause = exception) }
+                val expected = errors.map { BeaconException.from(exception) }
 
                 assertEquals(expected.map(Exception::toString).sorted(), errors.map(Throwable::toString).sorted())
 
@@ -192,7 +208,7 @@ internal class BeaconClientTest {
 
         val responses = beaconResponses().shuffled()
 
-        val expected = responses.map { BeaconException(cause = error) }
+        val expected = responses.map { BeaconException.from(error) }
         val exceptions = mutableListOf<Throwable>()
 
         val callback = spyk<ResponseCallback>(object : ResponseCallback {
@@ -215,7 +231,7 @@ internal class BeaconClientTest {
 
         assertEquals(expected.map(Throwable::toString).sorted(), exceptions.map(Throwable::toString).sorted())
 
-        coVerify(exactly = responses.size) { messageController.onOutgoingMessage(any(), any()) }
+        coVerify(exactly = responses.size) { messageController.onOutgoingMessage(any(), any(), any()) }
         coVerify(exactly = responses.size) { connectionController.send(any()) }
 
         verify(exactly = 0) { callback.onSuccess() }

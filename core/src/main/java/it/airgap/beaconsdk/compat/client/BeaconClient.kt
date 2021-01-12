@@ -43,7 +43,7 @@ public fun BeaconClient.connect(listener: OnNewMessageListener) {
             connect().collect {
                 when {
                     it.isSuccess -> listener.onNewMessage(it.getOrThrow())
-                    it.isFailure -> listener.onError(it.exceptionOrNull() as? BeaconException ?: BeaconException(cause = it.exceptionOrNull()))
+                    it.isFailure -> listener.onError(BeaconException.from(it.exceptionOrNull()))
                 }
             }
         } catch (e: Exception) {

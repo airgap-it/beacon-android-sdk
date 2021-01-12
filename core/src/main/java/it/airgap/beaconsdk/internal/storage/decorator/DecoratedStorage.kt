@@ -1,8 +1,8 @@
 package it.airgap.beaconsdk.internal.storage.decorator
 
 import it.airgap.beaconsdk.data.beacon.AppMetadata
-import it.airgap.beaconsdk.data.beacon.P2pPeerInfo
-import it.airgap.beaconsdk.data.beacon.PermissionInfo
+import it.airgap.beaconsdk.data.beacon.Peer
+import it.airgap.beaconsdk.data.beacon.Permission
 import it.airgap.beaconsdk.internal.storage.ExtendedStorage
 import it.airgap.beaconsdk.internal.storage.Storage
 import kotlinx.coroutines.CoroutineScope
@@ -17,33 +17,33 @@ internal class DecoratedStorage(private val storage: Storage) : ExtendedStorage,
     private val _appMetadata: MutableSharedFlow<AppMetadata> by lazy { resourceFlow() }
     override val appMetadata: Flow<AppMetadata> get() = _appMetadata.onSubscription { emitAll(getAppMetadata().asFlow()) }
 
-    private val _permissions: MutableSharedFlow<PermissionInfo> by lazy { resourceFlow() }
-    override val permissions: Flow<PermissionInfo> get() = _permissions.onSubscription { emitAll(getPermissions().asFlow()) }
+    private val _permissions: MutableSharedFlow<Permission> by lazy { resourceFlow() }
+    override val permissions: Flow<Permission> get() = _permissions.onSubscription { emitAll(getPermissions().asFlow()) }
 
-    private val _p2pPeers: MutableSharedFlow<P2pPeerInfo> by lazy { resourceFlow() }
-    override val p2pPeers: Flow<P2pPeerInfo> get() = _p2pPeers.onSubscription { emitAll(getP2pPeers().asFlow()) }
+    private val _peers: MutableSharedFlow<Peer> by lazy { resourceFlow() }
+    override val peers: Flow<Peer> get() = _peers.onSubscription { emitAll(getPeers().asFlow()) }
 
-    override suspend fun addP2pPeers(
-        peers: List<P2pPeerInfo>,
+    override suspend fun addPeers(
+        peers: List<Peer>,
         overwrite: Boolean,
-        compare: (P2pPeerInfo, P2pPeerInfo) -> Boolean,
+        compare: (Peer, Peer) -> Boolean,
     ) {
         add(
-            Storage::getP2pPeers,
-            Storage::setP2pPeers,
-            _p2pPeers,
+            Storage::getPeers,
+            Storage::setPeers,
+            _peers,
             peers,
             overwrite,
             compare,
         )
     }
 
-    override suspend fun findP2pPeer(predicate: (P2pPeerInfo) -> Boolean): P2pPeerInfo? =
-        selectFirst(Storage::getP2pPeers, predicate)
+    override suspend fun findPeer(predicate: (Peer) -> Boolean): Peer? =
+        selectFirst(Storage::getPeers, predicate)
 
-    override suspend fun removeP2pPeers(predicate: ((P2pPeerInfo) -> Boolean)?) {
-        if (predicate != null) remove(Storage::getP2pPeers, Storage::setP2pPeers, predicate)
-        else removeAll(Storage::setP2pPeers)
+    override suspend fun removePeers(predicate: ((Peer) -> Boolean)?) {
+        if (predicate != null) remove(Storage::getPeers, Storage::setPeers, predicate)
+        else removeAll(Storage::setPeers)
     }
 
     override suspend fun addAppMetadata(
@@ -70,9 +70,9 @@ internal class DecoratedStorage(private val storage: Storage) : ExtendedStorage,
     }
 
     override suspend fun addPermissions(
-        permissions: List<PermissionInfo>,
+        permissions: List<Permission>,
         overwrite: Boolean,
-        compare: (PermissionInfo, PermissionInfo) -> Boolean,
+        compare: (Permission, Permission) -> Boolean,
     ) {
         add(
             Storage::getPermissions,
@@ -84,10 +84,10 @@ internal class DecoratedStorage(private val storage: Storage) : ExtendedStorage,
         )
     }
 
-    override suspend fun findPermission(predicate: (PermissionInfo) -> Boolean): PermissionInfo? =
+    override suspend fun findPermission(predicate: (Permission) -> Boolean): Permission? =
         selectFirst(Storage::getPermissions, predicate)
 
-    override suspend fun removePermissions(predicate: ((PermissionInfo) -> Boolean)?) {
+    override suspend fun removePermissions(predicate: ((Permission) -> Boolean)?) {
         if (predicate != null) remove(Storage::getPermissions, Storage::setPermissions, predicate)
         else removeAll(Storage::setPermissions)
     }
@@ -111,13 +111,9 @@ internal class DecoratedStorage(private val storage: Storage) : ExtendedStorage,
         val updatedEntities = mutableListOf<T>()
 
         val (newEntities, existingElements) = elements.partition { toInsert ->
-            !entities.map {
-                compare(
-                    toInsert,
-                    it
-                )
-            }.fold(false, Boolean::or)
+            !entities.any { compare(toInsert, it) }
         }
+
         if (overwrite) {
             existingElements
                 .map { toInsert -> entities.indexOfFirst { compare(toInsert, it) } to toInsert }

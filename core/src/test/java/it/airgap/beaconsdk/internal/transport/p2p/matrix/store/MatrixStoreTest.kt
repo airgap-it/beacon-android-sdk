@@ -1,9 +1,13 @@
 package it.airgap.beaconsdk.internal.transport.p2p.matrix.store
 
+import io.mockk.MockKAnnotations
+import io.mockk.impl.annotations.MockK
+import it.airgap.beaconsdk.internal.storage.MockSecureStorage
 import it.airgap.beaconsdk.internal.storage.MockStorage
-import it.airgap.beaconsdk.internal.storage.decorator.DecoratedExtendedStorage
+import it.airgap.beaconsdk.internal.storage.StorageManager
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.MatrixEvent
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.MatrixRoom
+import it.airgap.beaconsdk.internal.utils.AccountUtils
 import kotlinx.coroutines.flow.onSubscription
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
@@ -15,13 +19,17 @@ import kotlin.test.assertEquals
 
 internal class MatrixStoreTest {
 
-    private lateinit var storage: DecoratedExtendedStorage
+    @MockK
+    private lateinit var accountUtils: AccountUtils
+
+    private lateinit var storageManager: StorageManager
     private lateinit var matrixStore: MatrixStore
 
     @Before
     fun setup() {
-        storage = DecoratedExtendedStorage(MockStorage())
-        matrixStore = MatrixStore(storage)
+        MockKAnnotations.init(this)
+        storageManager = StorageManager(MockStorage(), MockSecureStorage(), accountUtils)
+        matrixStore = MatrixStore(storageManager)
     }
 
     @Test
@@ -60,8 +68,8 @@ internal class MatrixStoreTest {
                 MatrixRoom.Left("3", listOf("member#4", "member#5")),
             )
 
-            storage.setMatrixSyncToken(syncToken)
-            storage.setMatrixRooms(rooms)
+            storageManager.setMatrixSyncToken(syncToken)
+            storageManager.setMatrixRooms(rooms)
 
             val userId = "userId"
             val deviceId = "deviceId"
@@ -128,8 +136,8 @@ internal class MatrixStoreTest {
                 MatrixRoom.Invited("2", listOf("member#3", "member#4")),
                 MatrixRoom.Left("3", listOf("member#4", "member#5")),
             )
-            storage.setMatrixSyncToken("storageSyncToken")
-            storage.setMatrixRooms(storageRooms)
+            storageManager.setMatrixSyncToken("storageSyncToken")
+            storageManager.setMatrixRooms(storageRooms)
 
             val userId = "userId"
             val deviceId = "deviceId"

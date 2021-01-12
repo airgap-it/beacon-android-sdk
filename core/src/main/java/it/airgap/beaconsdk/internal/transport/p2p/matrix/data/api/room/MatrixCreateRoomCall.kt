@@ -10,7 +10,7 @@ internal data class MatrixCreateRoomRequest(
     val name: String? = null,
     val topic: String? = null,
     val invite: List<String>? = null,
-    val roomVersion: String? = null,
+    @SerialName("room_version") val roomVersion: String? = null,
     val preset: Preset? = null,
     @SerialName("is_direct") val isDirect: Boolean? = null,
 ) {

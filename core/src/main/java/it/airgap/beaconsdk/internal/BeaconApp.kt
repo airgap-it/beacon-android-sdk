@@ -1,10 +1,13 @@
 package it.airgap.beaconsdk.internal
 
 import android.content.Context
+import android.util.Log
 import it.airgap.beaconsdk.internal.crypto.Crypto
 import it.airgap.beaconsdk.internal.crypto.data.KeyPair
 import it.airgap.beaconsdk.internal.di.DependencyRegistry
+import it.airgap.beaconsdk.internal.storage.SecureStorage
 import it.airgap.beaconsdk.internal.storage.Storage
+import it.airgap.beaconsdk.internal.storage.StorageManager
 import it.airgap.beaconsdk.internal.utils.asHexString
 import it.airgap.beaconsdk.internal.utils.failWithUninitialized
 
@@ -27,32 +30,32 @@ internal class BeaconApp(context: Context) {
         get() = _keyPair ?: failWithUninitialized(TAG)
 
     val beaconId: String
-        get() = keyPair.publicKey.asHexString().value()
+        get() = keyPair.publicKey.asHexString().asString()
 
-    suspend fun init(appName: String, matrixNodes: List<String>, storage: Storage) {
+    suspend fun init(appName: String, storage: Storage, secureStorage: SecureStorage) {
         if (isInitialized) return
 
         _appName = appName
-        _dependencyRegistry = DependencyRegistry(matrixNodes, storage)
+        _dependencyRegistry = DependencyRegistry(storage, secureStorage)
 
-        val extendedStorage = dependencyRegistry.extendedStorage
+        val storageManager = dependencyRegistry.storageManager
         val crypto = dependencyRegistry.crypto
 
-        setSdkVersion(extendedStorage)
-        loadOrGenerateKeyPair(extendedStorage, crypto)
+        setSdkVersion(storageManager)
+        loadOrGenerateKeyPair(storageManager, crypto)
 
         isInitialized = true
     }
 
-    private suspend fun setSdkVersion(storage: Storage) {
-        storage.setSdkVersion(BeaconConfig.sdkVersion)
+    private suspend fun setSdkVersion(storageManager: StorageManager) {
+        storageManager.setSdkVersion(BeaconConfiguration.sdkVersion)
     }
 
-    private suspend fun loadOrGenerateKeyPair(storage: Storage, crypto: Crypto) {
-        val seed = storage.getSdkSecretSeed()
-            ?: crypto.generateRandomSeed().value().also { storage.setSdkSecretSeed(it) }
+    private suspend fun loadOrGenerateKeyPair(storageManager: StorageManager, crypto: Crypto) {
+        val seed = storageManager.getSdkSecretSeed()
+            ?: crypto.guid().get().also { storageManager.setSdkSecretSeed(it) }
 
-        _keyPair = crypto.getKeyPairFromSeed(seed).value()
+        _keyPair = crypto.getKeyPairFromSeed(seed).get()
     }
 
     companion object {

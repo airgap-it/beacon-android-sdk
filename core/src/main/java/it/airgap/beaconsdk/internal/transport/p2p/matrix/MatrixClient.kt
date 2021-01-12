@@ -1,6 +1,6 @@
 package it.airgap.beaconsdk.internal.transport.p2p.matrix
 
-import it.airgap.beaconsdk.internal.BeaconConfig
+import it.airgap.beaconsdk.internal.BeaconConfiguration
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.MatrixEvent
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.MatrixRoom
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.MatrixSync
@@ -43,7 +43,7 @@ internal class MatrixClient(
     suspend fun start(userId: String, password: String, deviceId: String) {
         val loginResponse = userService.login(userId, password, deviceId)
 
-        val accessToken = loginResponse.valueOrNull()?.accessToken
+        val accessToken = loginResponse.getOrNull()?.accessToken
             ?: failWith("Login failed", loginResponse.errorOrNull())
 
         store.intent(Init(userId, deviceId, accessToken))
@@ -67,8 +67,8 @@ internal class MatrixClient(
     suspend fun inviteToRooms(user: String, vararg roomIds: String): InternalResult<Unit> =
         tryResult {
             withAccessToken("inviteToRooms") { accessToken ->
-                roomIds.toList().launch { it ->
-                    roomService.inviteToRoom(accessToken, user, it).value()
+                roomIds.toList().launch {
+                    roomService.inviteToRoom(accessToken, user, it).get()
                 }
             }
         }
@@ -76,8 +76,8 @@ internal class MatrixClient(
     suspend fun inviteToRooms(user: String, vararg rooms: MatrixRoom): InternalResult<Unit> =
         tryResult {
             withAccessToken("inviteToRooms") { accessToken ->
-                rooms.toList().launch { it ->
-                    roomService.inviteToRoom(accessToken, user, it.id).value()
+                rooms.toList().launch {
+                    roomService.inviteToRoom(accessToken, user, it.id).get()
                 }
             }
         }
@@ -86,7 +86,7 @@ internal class MatrixClient(
         tryResult {
             withAccessToken("joinRooms") { accessToken ->
                 roomIds.toList().launch {
-                    roomService.joinRoom(accessToken, it).value()
+                    roomService.joinRoom(accessToken, it).get()
                 }
             }
         }
@@ -95,7 +95,7 @@ internal class MatrixClient(
         tryResult {
             withAccessToken("joinRooms") { accessToken ->
                 rooms.toList().launch {
-                    roomService.joinRoom(accessToken, it.id).value()
+                    roomService.joinRoom(accessToken, it.id).get()
                 }
             }
         }
@@ -108,7 +108,7 @@ internal class MatrixClient(
                     roomId,
                     createTxnId(),
                     message,
-                ).value()
+                ).get()
             }
         }
 
@@ -120,7 +120,7 @@ internal class MatrixClient(
                     room.id,
                     createTxnId(),
                     message,
-                ).value()
+                ).get()
             }
         }
 
@@ -180,7 +180,7 @@ internal class MatrixClient(
         store.intent(OnSyncError)
 
         error?.let { logError(TAG, it) }
-        if (store.state().pollingRetries >= BeaconConfig.matrixMaxSyncRetries) {
+        if (store.state().pollingRetries >= BeaconConfiguration.MATRIX_MAX_SYNC_RETRIES) {
             logDebug(TAG, "Max sync retries exceeded")
             scope.cancel()
         } else {

@@ -58,9 +58,9 @@ internal class DecoratedStorageTest {
         val peers = p2pPeers(3)
         val expected = peers.shuffled().first().copy()
 
-        runBlocking { storage.setP2pPeers(peers) }
+        runBlocking { storage.setPeers(peers) }
 
-        val found = runBlocking { decoratedStorage.findP2pPeer { it.name == expected.name } }
+        val found = runBlocking { decoratedStorage.findPeer { it.name == expected.name } }
 
         assertEquals(expected, found)
     }
@@ -136,15 +136,15 @@ internal class DecoratedStorageTest {
             .onEach { expected[it.first] = it.second }
             .map { it.second }
 
-        runBlocking { storage.setP2pPeers(toStorage) }
+        runBlocking { storage.setPeers(toStorage) }
         runBlocking {
-            decoratedStorage.addP2pPeers(
+            decoratedStorage.addPeers(
                 changed + toAdd,
                 overwrite = true
             ) { a, b -> a.name == b.name }
         }
 
-        val fromStorage = runBlocking { storage.getP2pPeers() }
+        val fromStorage = runBlocking { storage.getPeers() }
 
         assertEquals(expected, fromStorage)
     }
@@ -203,14 +203,14 @@ internal class DecoratedStorageTest {
             .takeHalf()
             .mapIndexed { index, peer -> peer.copy(publicKey = "${peer.publicKey}${index}") }
 
-        runBlocking { storage.setP2pPeers(toStorage) }
+        runBlocking { storage.setPeers(toStorage) }
         runBlocking {
-            decoratedStorage.addP2pPeers(changed + toAdd, overwrite = false) { a, b ->
+            decoratedStorage.addPeers(changed + toAdd, overwrite = false) { a, b ->
                 a.name == b.name
             }
         }
 
-        val fromStorage = runBlocking { storage.getP2pPeers() }
+        val fromStorage = runBlocking { storage.getPeers() }
 
         assertEquals(toStorage + toAdd, fromStorage)
     }
@@ -247,9 +247,9 @@ internal class DecoratedStorageTest {
         val (toKeep, toRemove) = peers.splitAt { it.size / 2 }
         val namesToRemove = toRemove.map { it.name }
 
-        runBlocking { storage.setP2pPeers(peers) }
-        runBlocking { decoratedStorage.removeP2pPeers { namesToRemove.contains(it.name) } }
-        val fromStorage = runBlocking { storage.getP2pPeers() }
+        runBlocking { storage.setPeers(peers) }
+        runBlocking { decoratedStorage.removePeers { namesToRemove.contains(it.name) } }
+        val fromStorage = runBlocking { storage.getPeers() }
 
         assertEquals(toKeep, fromStorage)
     }
@@ -279,10 +279,10 @@ internal class DecoratedStorageTest {
     @Test
     fun `removes all P2P peers`() {
         val peers = p2pPeers(2)
-        runBlocking { storage.setP2pPeers(peers) }
-        runBlocking { decoratedStorage.removeP2pPeers() }
+        runBlocking { storage.setPeers(peers) }
+        runBlocking { decoratedStorage.removePeers() }
 
-        val fromStorage = runBlocking { storage.getP2pPeers() }
+        val fromStorage = runBlocking { storage.getPeers() }
 
         assertTrue(fromStorage.isEmpty())
     }
@@ -327,11 +327,11 @@ internal class DecoratedStorageTest {
 
         runBlocking {
             val newPeers = async {
-                decoratedStorage.p2pPeers
+                decoratedStorage.peers
                     .take(toAdd.size)
                     .toList()
             }
-            decoratedStorage.addP2pPeers(toAdd)
+            decoratedStorage.addPeers(toAdd)
 
             assertEquals(toAdd.sortedBy { it.name }, newPeers.await().sortedBy { it.name })
         }
@@ -390,9 +390,9 @@ internal class DecoratedStorageTest {
         val toStorage = p2pPeers(2)
 
         runBlocking {
-            storage.setP2pPeers(toStorage)
+            storage.setPeers(toStorage)
             val subscribed = async {
-                decoratedStorage.p2pPeers
+                decoratedStorage.peers
                     .drop(toStorage.size)
                     .take(toStorage.size)
                     .toList()
@@ -401,7 +401,7 @@ internal class DecoratedStorageTest {
             val updated = toStorage.mapIndexed { index, peer ->
                 peer.copy(name = "${peer.name}$index")
             }
-            decoratedStorage.addP2pPeers(updated)
+            decoratedStorage.addPeers(updated)
 
             assertEquals(
                 updated.sortedBy { it.name },

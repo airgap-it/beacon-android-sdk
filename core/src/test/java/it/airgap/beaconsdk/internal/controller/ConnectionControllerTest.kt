@@ -3,12 +3,14 @@ package it.airgap.beaconsdk.internal.controller
 import androidx.annotation.IntRange
 import beaconVersionedRequests
 import beaconVersionedResponses
+import connectionMessageFlow
 import failures
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
+import it.airgap.beaconsdk.data.beacon.Connection
 import it.airgap.beaconsdk.data.beacon.Origin
-import it.airgap.beaconsdk.internal.message.ConnectionTransportMessage
 import it.airgap.beaconsdk.internal.message.BeaconConnectionMessage
+import it.airgap.beaconsdk.internal.message.ConnectionTransportMessage
 import it.airgap.beaconsdk.internal.message.SerializedConnectionMessage
 import it.airgap.beaconsdk.internal.message.VersionedBeaconMessage
 import it.airgap.beaconsdk.internal.serializer.Serializer
@@ -23,7 +25,6 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
-import connectionMessageFlow
 import tryEmitFailures
 import tryEmitValues
 import kotlin.test.assertEquals
@@ -44,9 +45,11 @@ internal class ConnectionControllerTest {
     fun setup() {
         MockKAnnotations.init(this)
 
+        every { transport.type } returns Connection.Type.P2P
+
         serializerProvider = MockSerializerProvider()
         serializer = Serializer(serializerProvider)
-        connectionClient = ConnectionController(transport, serializer)
+        connectionClient = ConnectionController(listOf(transport), serializer)
     }
 
     @Test
@@ -60,7 +63,7 @@ internal class ConnectionControllerTest {
         val messages = runBlocking {
             connectionClient.subscribe()
                 .onStart { connectionMessageFlow.tryEmitValues(connectionMessages) }
-                .mapNotNull { it.valueOrNull() }
+                .mapNotNull { it.getOrNull() }
                 .take(connectionMessages.size)
                 .toList()
         }
@@ -108,16 +111,18 @@ internal class ConnectionControllerTest {
 
     @Test
     fun `sends serialized respond`() {
-        coEvery { transport.send(any(), any()) } returns Success()
+        coEvery { transport.send(any()) } returns Success()
 
+        val origin = Origin.P2P("senderId")
         val response = beaconVersionedResponses().shuffled().first()
-        val serialized = serializer.serialize(response).value()
+        val serialized = serializer.serialize(response).get()
 
-        runBlocking { connectionClient.send(response).value() }
+        val message = BeaconConnectionMessage(origin, response)
+        val expected = SerializedConnectionMessage(origin, serialized)
 
-        coVerify(exactly = 1) { transport.send(serialized) }
+        runBlocking { connectionClient.send(message).get() }
 
-        confirmVerified(transport)
+        coVerify(exactly = 1) { transport.send(expected) }
     }
 
     @Test
@@ -125,29 +130,27 @@ internal class ConnectionControllerTest {
         serializerProvider.shouldFail = true
 
         val response = beaconVersionedResponses().shuffled().first()
-        val result = runBlocking { connectionClient.send(response) }
+        val result = runBlocking { connectionClient.send(BeaconConnectionMessage(Origin.P2P("senderId"), response)) }
 
         assertTrue(result.isFailure, "Expected result to be a failure")
-        coVerify(exactly = 0) { transport.send(any(), any()) }
+        coVerify(exactly = 0) { transport.send(any()) }
 
         confirmVerified(transport)
     }
 
     @Test
     fun `returns failure on respond when sending failed`() {
-        coEvery { transport.send(any(), any()) } returns Failure()
+        coEvery { transport.send(any()) } returns Failure()
 
         val response = beaconVersionedResponses().shuffled().first()
-        val result = runBlocking { connectionClient.send(response) }
+        val result = runBlocking { connectionClient.send(BeaconConnectionMessage(Origin.P2P("senderId"), response)) }
 
         assertTrue(result.isFailure, "Expected result to be a failure")
         coVerify(exactly = 1) { transport.send(any()) }
-
-        confirmVerified(transport)
     }
 
     private fun validConnectionMessages(beaconRequests: List<VersionedBeaconMessage>): List<ConnectionTransportMessage> =
-        beaconRequests.map { SerializedConnectionMessage(origin, serializer.serialize(it).value()) }
+        beaconRequests.map { SerializedConnectionMessage(origin, serializer.serialize(it).get()) }
 
     private fun invalidConnectionMessages(@IntRange(from = 1) number: Int = 1): List<ConnectionTransportMessage> =
         (0 until number).map { SerializedConnectionMessage(origin, it.toString()) }

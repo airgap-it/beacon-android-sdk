@@ -1,23 +1,23 @@
 package it.airgap.beaconsdk.internal.storage
 
 import it.airgap.beaconsdk.data.beacon.AppMetadata
-import it.airgap.beaconsdk.data.beacon.P2pPeerInfo
-import it.airgap.beaconsdk.data.beacon.PermissionInfo
+import it.airgap.beaconsdk.data.beacon.Peer
+import it.airgap.beaconsdk.data.beacon.Permission
 import kotlinx.coroutines.flow.Flow
 
 internal interface ExtendedStorage : Storage {
     val appMetadata: Flow<AppMetadata>
-    val permissions: Flow<PermissionInfo>
-    val p2pPeers: Flow<P2pPeerInfo>
+    val permissions: Flow<Permission>
+    val peers: Flow<Peer>
 
-    suspend fun addP2pPeers(
-        peers: List<P2pPeerInfo>,
+    suspend fun addPeers(
+        peers: List<Peer>,
         overwrite: Boolean = false,
-        compare: (P2pPeerInfo, P2pPeerInfo) -> Boolean = { first, second -> first == second },
+        compare: (Peer, Peer) -> Boolean = { first, second -> first == second },
     )
 
-    suspend fun findP2pPeer(predicate: (P2pPeerInfo) -> Boolean): P2pPeerInfo?
-    suspend fun removeP2pPeers(predicate: ((P2pPeerInfo) -> Boolean)? = null)
+    suspend fun findPeer(predicate: (Peer) -> Boolean): Peer?
+    suspend fun removePeers(predicate: ((Peer) -> Boolean)? = null)
 
     suspend fun addAppMetadata(
         appsMetadata: List<AppMetadata>,
@@ -29,13 +29,13 @@ internal interface ExtendedStorage : Storage {
     suspend fun removeAppMetadata(predicate: ((AppMetadata) -> Boolean)? = null)
 
     suspend fun addPermissions(
-        permissions: List<PermissionInfo>,
+        permissions: List<Permission>,
         overwrite: Boolean = false,
-        compare: (PermissionInfo, PermissionInfo) -> Boolean = { first, second -> first == second },
+        compare: (Permission, Permission) -> Boolean = { first, second -> first == second },
     )
 
-    suspend fun findPermission(predicate: (PermissionInfo) -> Boolean): PermissionInfo?
-    suspend fun removePermissions(predicate: ((PermissionInfo) -> Boolean)? = null)
+    suspend fun findPermission(predicate: (Permission) -> Boolean): Permission?
+    suspend fun removePermissions(predicate: ((Permission) -> Boolean)? = null)
 
     override fun extend(): ExtendedStorage = this
 }

@@ -3,7 +3,7 @@ package it.airgap.beaconsdk.internal.transport.p2p.matrix
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import it.airgap.beaconsdk.exception.BeaconException
-import it.airgap.beaconsdk.internal.BeaconConfig
+import it.airgap.beaconsdk.internal.BeaconConfiguration
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.MatrixEvent
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.MatrixRoom
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.MatrixSync
@@ -219,7 +219,7 @@ internal class MatrixClientTest {
         coEvery { store.state() } returns MatrixStoreState(accessToken = accessToken)
 
         runBlockingTest {
-            val room = client.createTrustedPrivateRoom(*members.toTypedArray()).value()
+            val room = client.createTrustedPrivateRoom(*members.toTypedArray()).get()
 
             assertEquals(MatrixRoom.Unknown(roomId), room)
             coVerify { roomService.createRoom(
@@ -471,7 +471,7 @@ internal class MatrixClientTest {
         coEvery { store.state() } returns MatrixStoreState(accessToken = accessToken, syncToken = since, pollingTimeout = timeout)
 
         runBlockingTest {
-            val response = client.sync().value()
+            val response = client.sync().get()
 
             assertEquals(MatrixSync(), response)
             coVerify { eventService.sync(accessToken, since, timeout) }
@@ -546,7 +546,7 @@ internal class MatrixClientTest {
         val accessToken = "accessToken"
 
         coEvery { eventService.sync(any(), any(), any()) } returns Failure()
-        coEvery { store.state() } returns MatrixStoreState(accessToken = accessToken, pollingRetries = BeaconConfig.matrixMaxSyncRetries)
+        coEvery { store.state() } returns MatrixStoreState(accessToken = accessToken, pollingRetries = BeaconConfiguration.MATRIX_MAX_SYNC_RETRIES)
 
         runBlocking {
             val scope = CoroutineScope(TestCoroutineDispatcher())

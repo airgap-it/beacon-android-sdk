@@ -1,5 +1,7 @@
 package it.airgap.beaconsdk.internal.utils
 
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
@@ -36,5 +38,12 @@ internal suspend fun <T> List<T>.launch(block: suspend (T) -> Unit) {
     }
 }
 
-internal fun <T> MutableList<T>.pop(predicate: (T) -> Boolean): T? =
-    find(predicate)?.also { remove(it) }
+internal suspend fun <T, R> List<T>.async(block: suspend (T) -> R): List<R> =
+    coroutineScope {
+        map {
+            async { block(it) }
+        }
+    }.awaitAll()
+
+internal fun <K, V> MutableMap<K, V>.get(key: K, remove: Boolean = false): V? =
+    if (remove) remove(key) else get(key)

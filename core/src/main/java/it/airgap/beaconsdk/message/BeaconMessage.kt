@@ -14,6 +14,9 @@ import kotlinx.serialization.Serializable
 public sealed class BeaconMessage {
     public abstract val id: String
 
+    internal abstract val version: String
+    internal abstract val associatedOrigin: Origin
+
     public companion object {}
 }
 
@@ -30,6 +33,9 @@ public sealed class BeaconMessage {
 public sealed class BeaconRequest : BeaconMessage() {
     public abstract val senderId: String
     public abstract val origin: Origin
+
+    override val associatedOrigin: Origin
+        get() = origin
 
     public companion object {}
 }
@@ -53,8 +59,9 @@ public data class PermissionBeaconRequest internal constructor(
     override val senderId: String,
     val appMetadata: AppMetadata,
     public val network: Network,
-    public val scopes: List<PermissionScope>,
+    public val scopes: List<Permission.Scope>,
     override val origin: Origin,
+    override val version: String,
 ) : BeaconRequest() {
     public companion object {}
 }
@@ -83,6 +90,7 @@ public data class OperationBeaconRequest internal constructor(
     public val operationDetails: List<TezosOperation>,
     public val sourceAddress: String,
     override val origin: Origin,
+    override val version: String,
 ) : BeaconRequest() {
     public companion object {}
 }
@@ -95,6 +103,7 @@ public data class OperationBeaconRequest internal constructor(
  * @property [id] The value that identifies this request.
  * @property [senderId] The value that identifies the sender of this request.
  * @property [appMetadata] The metadata describing the dApp asking for the signature. May be `null` if the [senderId] is unknown.
+ * @property [signingType] The requested type of signature. The client MUST fail if cannot provide the specified signature.
  * @property [payload] The payload to be signed.
  * @property [sourceAddress] The address of the account with which the payload should be signed.
  * @property [origin] The origination data of this request.
@@ -105,9 +114,11 @@ public data class SignPayloadBeaconRequest internal constructor(
     override val id: String,
     override val senderId: String,
     val appMetadata: AppMetadata?,
+    public val signingType: SigningType,
     public val payload: String,
     public val sourceAddress: String,
     override val origin: Origin,
+    override val version: String,
 ) : BeaconRequest() {
     public companion object {}
 }
@@ -133,6 +144,7 @@ public data class BroadcastBeaconRequest internal constructor(
     public val network: Network,
     public val signedTransaction: String,
     override val origin: Origin,
+    override val version: String,
 ) : BeaconRequest() {
     public companion object {}
 }
@@ -145,6 +157,10 @@ public data class BroadcastBeaconRequest internal constructor(
 @Serializable
 @SerialName("response")
 public sealed class BeaconResponse : BeaconMessage() {
+    internal abstract val requestOrigin: Origin
+    override val associatedOrigin: Origin
+        get() = requestOrigin
+
     public companion object {}
 }
 
@@ -159,14 +175,35 @@ public sealed class BeaconResponse : BeaconMessage() {
  */
 @Serializable
 @SerialName("permission_response")
-public data class PermissionBeaconResponse(
+public data class PermissionBeaconResponse internal constructor(
     override val id: String,
     public val publicKey: String,
     public val network: Network,
-    public val scopes: List<PermissionScope>,
+    public val scopes: List<Permission.Scope>,
     public val threshold: Threshold? = null,
+    override val version: String,
+    override val requestOrigin: Origin,
 ) : BeaconResponse() {
-    public companion object {}
+
+    public companion object {
+
+        /**
+         * Creates a new instance of [PermissionBeaconResponse] from the [request]
+         * with the specified [publicKey] and optional [network], [scopes] and [threshold].
+         *
+         * The response will have an id matching the one of the [request].
+         * If no custom [network] and [scopes] are provided, the values will be also taken from the [request].
+         * By default [threshold] is set to `null`.
+         */
+        public fun from(
+            request: PermissionBeaconRequest,
+            publicKey: String,
+            network: Network = request.network,
+            scopes: List<Permission.Scope> = request.scopes,
+            threshold: Threshold? = null,
+        ): PermissionBeaconResponse =
+            PermissionBeaconResponse(request.id, publicKey, network, scopes, threshold, request.version, request.origin)
+    }
 }
 
 /**
@@ -177,26 +214,54 @@ public data class PermissionBeaconResponse(
  */
 @Serializable
 @SerialName("operation_response")
-public data class OperationBeaconResponse(
+public data class OperationBeaconResponse internal constructor(
     override val id: String,
     public val transactionHash: String,
+    override val version: String,
+    override val requestOrigin: Origin,
 ) : BeaconResponse() {
-    public companion object {}
+
+    public companion object {
+
+        /**
+         * Creates a new instance of [OperationBeaconResponse] from the [request]
+         * with the specified [transactionHash].
+         *
+         * The response will have an id matching the one of the [request].
+         */
+        public fun from(request: OperationBeaconRequest, transactionHash: String): OperationBeaconResponse =
+            OperationBeaconResponse(request.id, transactionHash, request.version, request.origin)
+    }
 }
 
 /**
  * Message responding to [SignPayloadBeaconRequest].
  *
  * @property [id] The value that identifies the request to which the message is responding.
+ * @property [signingType] The signature type.
  * @property [signature] The payload signature.
  */
 @Serializable
 @SerialName("sign_payload_response")
-public data class SignPayloadBeaconResponse(
+public data class SignPayloadBeaconResponse internal constructor(
     override val id: String,
+    public val signingType: SigningType,
     public val signature: String,
+    override val version: String,
+    override val requestOrigin: Origin,
 ) : BeaconResponse() {
-    public companion object {}
+
+    public companion object {
+
+        /**
+         * Creates a new instance of [SignPayloadBeaconResponse] from the [request]
+         * with the specified [signingType] and [signature].
+         *
+         * The response will have an id matching the one of the [request].
+         */
+        public fun from(request: SignPayloadBeaconRequest, signingType: SigningType, signature: String): SignPayloadBeaconResponse =
+            SignPayloadBeaconResponse(request.id, signingType, signature, request.version, request.origin)
+    }
 }
 
 /**
@@ -207,25 +272,78 @@ public data class SignPayloadBeaconResponse(
  */
 @Serializable
 @SerialName("broadcast_response")
-public data class BroadcastBeaconResponse(
+public data class BroadcastBeaconResponse internal constructor(
     override val id: String,
     public val transactionHash: String,
+    override val version: String,
+    override val requestOrigin: Origin,
 ) : BeaconResponse() {
-    public companion object {}
+
+    public companion object {
+
+        /**
+         * Creates a new instance of [BroadcastBeaconResponse] from the [request]
+         * with the specified [transactionHash].
+         *
+         * The response will have an id matching the one of the [request].
+         */
+        public fun from(request: BroadcastBeaconRequest, transactionHash: String): BroadcastBeaconResponse =
+            BroadcastBeaconResponse(request.id, transactionHash, request.version, request.origin)
+    }
 }
 
 /**
- * Message responding to every [BeaconRequest] informing that the request could not be completed due to an error.
+ * Message responding to every [BeaconRequest], sent to confirm receiving of the request.
+ */
+@Serializable
+@SerialName("acknowledge")
+internal data class AcknowledgeBeaconResponse(
+    override val id: String,
+    val senderId: String,
+    override val version: String,
+    override val requestOrigin: Origin,
+) : BeaconResponse() {
+
+    companion object {
+
+        /**
+         * Creates a new instance of [AcknowledgeBeaconResponse] from the [request]
+         * with the specified [senderId].
+         *
+         * The response will have an id matching the one of the [request].
+         */
+        fun from(request: BeaconRequest, senderId: String): AcknowledgeBeaconResponse =
+            AcknowledgeBeaconResponse(request.id, senderId, request.version, request.origin)
+    }
+}
+
+/**
+ * Message responding to every [BeaconRequest] and informing that the request could not be completed due to an error.
  *
  * @property [id] The value that identifies the request to which the message is responding.
  * @property [errorType] The type of the error.
  */
 @Serializable
 @SerialName("error")
-public data class ErrorBeaconResponse constructor(
+public data class ErrorBeaconResponse internal constructor(
     override val id: String,
     val errorType: BeaconError,
-) : BeaconResponse()
+    override val version: String,
+    override val requestOrigin: Origin,
+) : BeaconResponse() {
+
+    public companion object {
+
+        /**
+         * Creates a new instance of [ErrorBeaconResponse] from the [request]
+         * with the specified [errorType].
+         *
+         * The response will have an id matching the one of the [request].
+         */
+        public fun from(request: BeaconRequest, errorType: BeaconError): ErrorBeaconResponse =
+            ErrorBeaconResponse(request.id, errorType, request.version, request.origin)
+    }
+}
 
 // -- other --
 
@@ -237,7 +355,13 @@ public data class ErrorBeaconResponse constructor(
  */
 @Serializable
 @SerialName("disconnect")
-internal data class DisconnectBeaconMessage internal constructor(
+internal data class DisconnectBeaconMessage(
     override val id: String,
     val senderId: String,
-) : BeaconMessage()
+    override val version: String,
+    val origin: Origin,
+) : BeaconMessage() {
+
+    override val associatedOrigin: Origin
+        get() = origin
+}

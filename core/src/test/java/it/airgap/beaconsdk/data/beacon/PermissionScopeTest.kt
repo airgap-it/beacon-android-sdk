@@ -12,7 +12,7 @@ internal class PermissionScopeTest {
     @Test
     fun `is deserialized from string`() {
         expectedWithJsonValues()
-            .map { Json.decodeFromString<PermissionScope>(it.second) to it.first }
+            .map { Json.decodeFromString<Permission.Scope>(it.second) to it.first }
             .forEach { assertEquals(it.second, it.first) }
     }
 
@@ -26,7 +26,7 @@ internal class PermissionScopeTest {
     @Test
     fun `is deserialized from list of strings`() {
         expectedWithJsonArray()
-            .map { Json.decodeFromString<List<PermissionScope>>(it.second) to it.first }
+            .map { Json.decodeFromString<List<Permission.Scope>>(it.second) to it.first }
             .forEach { assertEquals(it.second, it.first) }
     }
 
@@ -40,14 +40,14 @@ internal class PermissionScopeTest {
             }
     }
 
-    private fun expectedWithJsonValues(): List<Pair<PermissionScope, String>> = listOf(
-        PermissionScope.Sign to "\"sign\"",
-        PermissionScope.OperationRequest to "\"operation_request\"",
-        PermissionScope.Threshold to "\"threshold\"",
+    private fun expectedWithJsonValues(): List<Pair<Permission.Scope, String>> = listOf(
+        Permission.Scope.Sign to "\"sign\"",
+        Permission.Scope.OperationRequest to "\"operation_request\"",
+        Permission.Scope.Threshold to "\"threshold\"",
     )
 
-    private fun expectedWithJsonArray(): List<Pair<List<PermissionScope>, String>> = listOf(
-        listOf(PermissionScope.Sign, PermissionScope.OperationRequest, PermissionScope.Threshold) to
+    private fun expectedWithJsonArray(): List<Pair<List<Permission.Scope>, String>> = listOf(
+        listOf(Permission.Scope.Sign, Permission.Scope.OperationRequest, Permission.Scope.Threshold) to
                 """
                     [
                         "sign", 

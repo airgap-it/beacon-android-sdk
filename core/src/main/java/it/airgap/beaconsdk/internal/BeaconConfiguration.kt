@@ -2,22 +2,23 @@ package it.airgap.beaconsdk.internal
 
 import it.airgap.beaconsdk.BuildConfig
 
-internal object BeaconConfig {
+internal object BeaconConfiguration {
+    // -- SDK --
+
+    const val STORAGE_NAME = "beaconsdk"
+
     val sdkVersion: String
         get() = BuildConfig.VERSION_NAME
 
-    val beaconVersion: String = "1"
-
-    val matrixClientApi: String = "/_matrix/client/r0"
-    val matrixMaxSyncRetries: Int = 3
+    // -- P2P --
+    const val MATRIX_CLIENT_API: String = "/_matrix/client/r0"
+    const val MATRIX_MAX_SYNC_RETRIES: Int = 3
+    const val P2P_REPLICATION_COUNT: Int = 1
     val defaultRelayServers: List<String> = listOf(
         "matrix.papers.tech",
-//        "matrix.tez.ie",
-//        "matrix-dev.papers.tech",
-//        "matrix.stove-labs.com",
-//        "yadayada.cryptonomic-infra.tech",
     )
-    val p2pReplicationCount: Int = 1
+
+    // -- common --
 
     val cryptoProvider: CryptoProvider = CryptoProvider.LazySodium
     val serializerProvider: SerializerProvider = SerializerProvider.Base58Check

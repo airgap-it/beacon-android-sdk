@@ -50,7 +50,7 @@ internal class MatrixRoomServiceTest {
             val accessToken = "token"
             val request = MatrixCreateRoomRequest()
 
-            val response = matrixRoomService.createRoom(accessToken, request).value()
+            val response = matrixRoomService.createRoom(accessToken, request).get()
 
             assertEquals(expectedResponse, response)
             coVerify { httpClientProvider.post(
@@ -107,7 +107,7 @@ internal class MatrixRoomServiceTest {
             val roomId = "roomId"
 
             val request = MatrixInviteRoomRequest(user)
-            val response = matrixRoomService.inviteToRoom(accessToken, user, roomId).value()
+            val response = matrixRoomService.inviteToRoom(accessToken, user, roomId).get()
 
             assertEquals(expectedResponse, response)
             coVerify { httpClientProvider.post(
@@ -162,7 +162,7 @@ internal class MatrixRoomServiceTest {
             val accessToken = "token"
             val roomId = "roomId"
 
-            val response = matrixRoomService.joinRoom(accessToken, roomId).value()
+            val response = matrixRoomService.joinRoom(accessToken, roomId).get()
 
             assertEquals(expectedResponse, response)
             coVerify { httpClientProvider.post(

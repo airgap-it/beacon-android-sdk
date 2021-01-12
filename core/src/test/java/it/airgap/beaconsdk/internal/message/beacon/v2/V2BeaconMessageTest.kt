@@ -1,12 +1,16 @@
 package it.airgap.beaconsdk.internal.message.beacon.v2
 
 import fromValues
+import io.mockk.MockKAnnotations
+import io.mockk.impl.annotations.MockK
 import it.airgap.beaconsdk.data.beacon.*
 import it.airgap.beaconsdk.data.tezos.TezosEndorsementOperation
 import it.airgap.beaconsdk.data.tezos.TezosOperation
 import it.airgap.beaconsdk.internal.message.v2.*
+import it.airgap.beaconsdk.internal.storage.MockSecureStorage
 import it.airgap.beaconsdk.internal.storage.MockStorage
-import it.airgap.beaconsdk.internal.storage.decorator.DecoratedExtendedStorage
+import it.airgap.beaconsdk.internal.storage.StorageManager
+import it.airgap.beaconsdk.internal.utils.AccountUtils
 import it.airgap.beaconsdk.message.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.decodeFromString
@@ -17,16 +21,19 @@ import kotlinx.serialization.json.encodeToJsonElement
 import org.junit.Before
 import org.junit.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
 
 internal class V2BeaconMessageTest {
 
-    private lateinit var storage: DecoratedExtendedStorage
+    @MockK
+    private lateinit var accountUtils: AccountUtils
+
+    private lateinit var storageManager: StorageManager
 
     @Before
     fun setup() {
-        storage = DecoratedExtendedStorage(MockStorage())
+        MockKAnnotations.init(this)
+
+        storageManager = StorageManager(MockStorage(), MockSecureStorage(), accountUtils)
     }
 
     @Test
@@ -49,55 +56,12 @@ internal class V2BeaconMessageTest {
     }
 
     @Test
-    fun `checks if pairs with other Beacon message`() {
-        val matchingId = "1"
-        val otherId = "2"
-        val origin = Origin.P2P("1")
-
-        val matchingRequest = BroadcastBeaconRequest(matchingId, "senderId", null, Network.Custom(), "tx", origin)
-        val otherRequest = BroadcastBeaconRequest(otherId, "senderId", null, Network.Custom(), "tx", origin)
-
-        val response = BroadcastV2BeaconResponse("2", matchingId, "senderId", "txHash")
-
-        assertTrue(response.pairsWith(matchingRequest), "Expected response matching request")
-        assertFalse(response.pairsWith(otherRequest), "Expected response not matching other request")
-    }
-
-    @Test
-    fun `checks if pairs with other versioned message`() {
-        val matchingId = "1"
-        val otherId = "2"
-
-        val matchingRequest = BroadcastV2BeaconRequest("2", matchingId, "senderId", Network.Custom(), "tx")
-        val otherRequest = BroadcastV2BeaconRequest("2", otherId, "senderId", Network.Custom(), "tx")
-
-        val response = BroadcastV2BeaconResponse("2", matchingId, "senderId", "txHash")
-
-        assertTrue(response.pairsWith(matchingRequest), "Expected response to match request")
-        assertFalse(response.pairsWith(otherRequest), "Expected response not to match other request")
-    }
-
-    @Test
-    fun `checks if comes from app described by metadata`() {
-        val matchingSenderId = "senderId"
-        val otherSenderId = "otherId"
-
-        val matchingAppMetadata = AppMetadata(matchingSenderId, "v2App")
-        val otherAppMetadata = AppMetadata(otherSenderId, "v2OtherApp")
-
-        val message = BroadcastV2BeaconResponse("2", "id", matchingSenderId, "txHash")
-
-        assertTrue(message.comesFrom(matchingAppMetadata), "Expected message to come from app described by metadata")
-        assertFalse(message.comesFrom(otherAppMetadata), "Expected message not to come from app described by metadata")
-    }
-
-    @Test
     fun `is created from Beacon message`() {
         val version = "2"
         val senderId = "senderId"
 
         versionedWithBeacon(version, senderId)
-            .map { V2BeaconMessage.fromBeaconMessage(version, senderId, it.second) to it.first }
+            .map { V2BeaconMessage.fromBeaconMessage(senderId, it.second) to it.first }
             .forEach {
                 assertEquals(it.second, it.first)
             }
@@ -112,11 +76,11 @@ internal class V2BeaconMessageTest {
         val matchingAppMetadata = AppMetadata(senderId, "v2App")
         val otherAppMetadata = AppMetadata(otherId, "v2OtherApp")
 
-        runBlocking { storage.setAppMetadata(listOf(otherAppMetadata, matchingAppMetadata)) }
+        runBlocking { storageManager.setAppMetadata(listOf(otherAppMetadata, matchingAppMetadata)) }
 
         runBlocking {
             versionedWithBeacon(senderId = senderId, appMetadata = matchingAppMetadata, origin = origin)
-                .map { it.first.toBeaconMessage(origin, storage) to it.second }
+                .map { it.first.toBeaconMessage(origin, storageManager) to it.second }
                 .forEach {
                     assertEquals(it.second, it.first)
                 }
@@ -128,7 +92,7 @@ internal class V2BeaconMessageTest {
     private fun messagesWithJsonStrings(includeNulls: Boolean = false) =
         listOf(
             createPermissionRequestJsonPair(),
-            createPermissionRequestJsonPair(scopes = listOf(PermissionScope.Sign)),
+            createPermissionRequestJsonPair(scopes = listOf(Permission.Scope.Sign)),
             createOperationRequestJsonPair(),
             createOperationRequestJsonPair(tezosOperations = listOf(TezosEndorsementOperation("level"))),
             createSignPayloadRequestJsonPair(),
@@ -154,24 +118,25 @@ internal class V2BeaconMessageTest {
         appMetadata: AppMetadata? = null,
     ): List<Pair<V2BeaconMessage, BeaconMessage>> =
         listOf(
-            createPermissionRequestPair(version = version, senderId = senderId),
-            createOperationRequestPair(version = version, senderId = senderId, appMetadata = appMetadata),
+            createPermissionRequestPair(version = version, senderId = senderId, origin = origin),
+            createOperationRequestPair(version = version, senderId = senderId, appMetadata = appMetadata, origin = origin),
             createOperationRequestPair(
                 version = version,
                 senderId = senderId,
                 tezosOperations = listOf(TezosEndorsementOperation("level")),
-                appMetadata = appMetadata
+                appMetadata = appMetadata,
+                origin = origin,
             ),
-            createSignPayloadRequestPair(version = version, senderId = senderId, appMetadata = appMetadata),
-            createBroadcastRequestPair(version = version, senderId = senderId, appMetadata = appMetadata),
+            createSignPayloadRequestPair(version = version, senderId = senderId, appMetadata = appMetadata, origin = origin),
+            createBroadcastRequestPair(version = version, senderId = senderId, appMetadata = appMetadata, origin = origin),
 
-            createPermissionResponsePair(version = version, senderId = senderId),
-            createOperationResponsePair(version = version, senderId = senderId),
-            createSignPayloadResponsePair(version = version, senderId = senderId),
-            createBroadcastResponsePair(version = version, senderId = senderId),
+            createPermissionResponsePair(version = version, senderId = senderId, origin = origin),
+            createOperationResponsePair(version = version, senderId = senderId, origin = origin),
+            createSignPayloadResponsePair(version = version, senderId = senderId, origin = origin),
+            createBroadcastResponsePair(version = version, senderId = senderId, origin = origin),
 
-            createDisconnectPair(version = version, senderId = senderId),
-            createErrorResponsePair(version = version, senderId = senderId),
+            createDisconnectPair(version = version, senderId = senderId, origin = origin),
+            createErrorResponsePair(version = version, senderId = senderId, origin = origin),
         )
 
     // -- request to JSON --
@@ -182,7 +147,7 @@ internal class V2BeaconMessageTest {
         senderId: String = "senderId",
         appMetadata: V2AppMetadata = V2AppMetadata("senderId", "v2App"),
         network: Network = Network.Custom(),
-        scopes: List<PermissionScope> = emptyList()
+        scopes: List<Permission.Scope> = emptyList()
     ): Pair<PermissionV2BeaconRequest, String> =
         PermissionV2BeaconRequest(version, id, senderId, appMetadata, network, scopes) to """
             {
@@ -220,15 +185,17 @@ internal class V2BeaconMessageTest {
         version: String = "2",
         id: String = "id",
         senderId: String = "senderId",
+        signingType: SigningType = SigningType.Raw,
         payload: String = "payload",
         sourceAddress: String = "sourceAddress",
     ): Pair<SignPayloadV2BeaconRequest, String> =
-        SignPayloadV2BeaconRequest(version, id, senderId, payload, sourceAddress) to """
+        SignPayloadV2BeaconRequest(version, id, senderId, signingType, payload, sourceAddress) to """
             {
                 "type": "sign_payload_request",
                 "version": "$version",
                 "id": "$id",
                 "senderId": "$senderId",
+                "signingType": "raw",
                 "payload": "$payload",
                 "sourceAddress": "$sourceAddress"
             }
@@ -260,7 +227,7 @@ internal class V2BeaconMessageTest {
         senderId: String = "senderId",
         publicKey: String = "publicKey",
         network: Network = Network.Custom(),
-        scopes: List<PermissionScope> = emptyList(),
+        scopes: List<Permission.Scope> = emptyList(),
         threshold: Threshold? = null,
         includeNulls: Boolean = false,
     ): Pair<PermissionV2BeaconResponse, String> {
@@ -300,14 +267,16 @@ internal class V2BeaconMessageTest {
         version: String = "2",
         id: String = "id",
         senderId: String = "senderId",
+        signingType: SigningType = SigningType.Raw,
         signature: String = "signature",
     ): Pair<SignPayloadV2BeaconResponse, String> =
-        SignPayloadV2BeaconResponse(version, id, senderId, signature) to """
+        SignPayloadV2BeaconResponse(version, id, senderId, signingType, signature) to """
             {
                 "type": "sign_payload_response",
                 "version": "$version",
                 "id": "$id",
                 "senderId": "$senderId",
+                "signingType": "raw",
                 "signature": "$signature"
             }
         """.trimIndent()
@@ -368,11 +337,11 @@ internal class V2BeaconMessageTest {
         senderId: String = "senderId",
         appMetadata: V2AppMetadata = V2AppMetadata("senderId", "v2App"),
         network: Network = Network.Custom(),
-        scopes: List<PermissionScope> = emptyList(),
+        scopes: List<Permission.Scope> = emptyList(),
         origin: Origin = Origin.P2P(senderId),
     ): Pair<PermissionV2BeaconRequest, PermissionBeaconRequest> =
         PermissionV2BeaconRequest(version, id, senderId, appMetadata, network, scopes) to
-                PermissionBeaconRequest(id, senderId, appMetadata.toAppMetadata(), network, scopes, origin)
+                PermissionBeaconRequest(id, senderId, appMetadata.toAppMetadata(), network, scopes, origin, version)
 
     private fun createOperationRequestPair(
         version: String = "2",
@@ -385,19 +354,20 @@ internal class V2BeaconMessageTest {
         origin: Origin = Origin.P2P(senderId),
     ): Pair<OperationV2BeaconRequest, OperationBeaconRequest> =
         OperationV2BeaconRequest(version, id, senderId, network, tezosOperations, sourceAddress) to
-                OperationBeaconRequest(id, senderId, appMetadata, network, tezosOperations, sourceAddress, origin)
+                OperationBeaconRequest(id, senderId, appMetadata, network, tezosOperations, sourceAddress, origin, version)
 
     private fun createSignPayloadRequestPair(
         version: String = "2",
         id: String = "id",
         senderId: String = "senderId",
+        signingType: SigningType = SigningType.Raw,
         payload: String = "payload",
         sourceAddress: String = "sourceAddress",
         appMetadata: AppMetadata? = null,
         origin: Origin = Origin.P2P(senderId),
     ): Pair<SignPayloadV2BeaconRequest, SignPayloadBeaconRequest> =
-        SignPayloadV2BeaconRequest(version, id, senderId, payload, sourceAddress) to
-                SignPayloadBeaconRequest(id, senderId, appMetadata, payload, sourceAddress, origin)
+        SignPayloadV2BeaconRequest(version, id, senderId, signingType, payload, sourceAddress) to
+                SignPayloadBeaconRequest(id, senderId, appMetadata, signingType, payload, sourceAddress, origin, version)
 
     private fun createBroadcastRequestPair(
         version: String = "2",
@@ -409,7 +379,7 @@ internal class V2BeaconMessageTest {
         origin: Origin = Origin.P2P(senderId),
     ): Pair<BroadcastV2BeaconRequest, BroadcastBeaconRequest> =
         BroadcastV2BeaconRequest(version, id, senderId, network, signedTransaction) to
-                BroadcastBeaconRequest(id, senderId, appMetadata, network, signedTransaction, origin)
+                BroadcastBeaconRequest(id, senderId, appMetadata, network, signedTransaction, origin, version)
 
     // -- response to BeaconMessage --
 
@@ -419,43 +389,52 @@ internal class V2BeaconMessageTest {
         senderId: String = "senderId",
         publicKey: String = "publicKey",
         network: Network = Network.Custom(),
-        scopes: List<PermissionScope> = emptyList(),
+        scopes: List<Permission.Scope> = emptyList(),
         threshold: Threshold? = null,
+        origin: Origin = Origin.P2P(senderId),
     ): Pair<PermissionV2BeaconResponse, PermissionBeaconResponse> =
         PermissionV2BeaconResponse(version, id, senderId, publicKey, network, scopes, threshold) to
-                PermissionBeaconResponse(id, publicKey, network, scopes, threshold)
+                PermissionBeaconResponse(id, publicKey, network, scopes, threshold, version, origin)
 
     private fun createOperationResponsePair(
         version: String = "2",
         id: String = "id",
         senderId: String = "senderId",
-        transactionHash: String = "transactionHash"
+        transactionHash: String = "transactionHash",
+        origin: Origin = Origin.P2P(senderId),
     ): Pair<OperationV2BeaconResponse, OperationBeaconResponse> =
-        OperationV2BeaconResponse(version, id, senderId, transactionHash) to OperationBeaconResponse(id, transactionHash)
+        OperationV2BeaconResponse(version, id, senderId, transactionHash) to
+                OperationBeaconResponse(id, transactionHash, version, origin)
 
     private fun createSignPayloadResponsePair(
         version: String = "2",
         id: String = "id",
         senderId: String = "senderId",
+        signingType: SigningType = SigningType.Raw,
         signature: String = "signature",
+        origin: Origin = Origin.P2P(senderId),
     ): Pair<SignPayloadV2BeaconResponse, SignPayloadBeaconResponse> =
-        SignPayloadV2BeaconResponse(version, id, senderId, signature) to SignPayloadBeaconResponse(id, signature)
+        SignPayloadV2BeaconResponse(version, id, senderId, signingType, signature) to
+                SignPayloadBeaconResponse(id, signingType, signature, version, origin)
 
     private fun createBroadcastResponsePair(
         version: String = "2",
         id: String = "id",
         senderId: String = "senderId",
-        transactionHash: String = "transactionHash"
+        transactionHash: String = "transactionHash",
+        origin: Origin = Origin.P2P(senderId),
     ): Pair<BroadcastV2BeaconResponse, BroadcastBeaconResponse> =
-        BroadcastV2BeaconResponse(version, id, senderId, transactionHash) to BroadcastBeaconResponse(id, transactionHash)
+        BroadcastV2BeaconResponse(version, id, senderId, transactionHash) to
+                BroadcastBeaconResponse(id, transactionHash, version, origin)
 
     private fun createErrorResponsePair(
         version: String = "2",
         id: String = "id",
         senderId: String = "senderId",
         errorType: BeaconError = BeaconError.Unknown,
+        origin: Origin = Origin.P2P(senderId),
     ): Pair<ErrorV2BeaconResponse, ErrorBeaconResponse> =
-        ErrorV2BeaconResponse(version, id, senderId, errorType) to ErrorBeaconResponse(id, errorType)
+        ErrorV2BeaconResponse(version, id, senderId, errorType) to ErrorBeaconResponse(id, errorType, version, origin)
 
     // -- other to BeaconMessage --
 
@@ -463,6 +442,7 @@ internal class V2BeaconMessageTest {
         version: String = "2",
         id: String = "id",
         senderId: String = "senderId",
+        origin: Origin = Origin.P2P(senderId),
     ): Pair<DisconnectV2BeaconMessage, DisconnectBeaconMessage> =
-        DisconnectV2BeaconMessage(version, id, senderId) to DisconnectBeaconMessage(id, senderId)
+        DisconnectV2BeaconMessage(version, id, senderId) to DisconnectBeaconMessage(id, senderId, version, origin)
 }
