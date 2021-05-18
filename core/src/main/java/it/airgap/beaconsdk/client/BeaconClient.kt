@@ -97,6 +97,7 @@ public class BeaconClient internal constructor(
                     is Failure -> Result.failure(it.error as? BeaconException ?: BeaconException.from(it.error))
                 }
             }
+
     /**
      * Sends the [response] in reply to a previously received request.
      *

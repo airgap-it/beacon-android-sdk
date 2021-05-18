@@ -1,32 +1,33 @@
 object Version {
-    const val kotlin = "1.4.10"
+    // TODO: Update to Kotlin 1.5 once KT-46477 (https://youtrack.jetbrains.com/issue/KT-46477) is fixed
+    const val kotlin = "1.4.32"
 
-    const val kotlinSerialization = "1.0.1"
+    const val kotlinSerialization = "1.2.1"
 
     const val androidxCore = "1.3.2"
     const val androidxAppCompat = "1.2.0"
-    const val androidxConstraintLayout = "1.1.3"
+    const val androidxConstraintLayout = "2.0.4"
 
-    const val androidxActivity = "1.1.0"
-    const val androidxLifecycle = "2.2.0"
+    const val androidxActivity = "1.2.3"
+    const val androidxLifecycle = "2.3.1"
 
-    const val androidxSecurity = "1.0.0-rc03"
+    const val androidxSecurity = "1.0.0"
 
-    const val coroutines = "1.4.2"
+    const val coroutines = "1.5.0"
 
-    const val ktor = "1.4.1"
+    const val ktor = "1.5.4"
 
-    const val lazySodium = "4.2.0"
-    const val jna = "5.6.0"
+    const val lazySodium = "5.0.2"
+    const val jna = "5.8.0"
 
-    const val materialComponents = "1.2.1"
+    const val materialComponents = "1.3.0"
 
-    const val junit = "4.13"
+    const val junit = "4.13.2"
 
     const val androidxJunit = "1.1.2"
     const val androidxEspresso = "3.3.0"
 
-    const val mockk = "1.10.2"
+    const val mockk = "1.11.0"
 }
 
 object Dependencies {
@@ -57,7 +58,7 @@ object Dependencies {
 
     const val materialComponents = "com.google.android.material:material:${Version.materialComponents}"
 
-    const val lazySodium = "com.goterl.lazycode:lazysodium-android:${Version.lazySodium}@aar"
+    const val lazySodium = "com.goterl:lazysodium-android:${Version.lazySodium}@aar"
     const val jna = "net.java.dev.jna:jna:${Version.jna}@aar"
 }
 

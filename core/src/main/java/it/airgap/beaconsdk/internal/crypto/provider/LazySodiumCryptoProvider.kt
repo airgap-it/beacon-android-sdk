@@ -1,15 +1,15 @@
 package it.airgap.beaconsdk.internal.crypto.provider
 
-import com.goterl.lazycode.lazysodium.LazySodiumAndroid
-import com.goterl.lazycode.lazysodium.SodiumAndroid
-import com.goterl.lazycode.lazysodium.exceptions.SodiumException
-import com.goterl.lazycode.lazysodium.interfaces.*
-import com.goterl.lazycode.lazysodium.utils.Key
+import com.goterl.lazysodium.LazySodiumAndroid
+import com.goterl.lazysodium.SodiumAndroid
+import com.goterl.lazysodium.exceptions.SodiumException
+import com.goterl.lazysodium.interfaces.*
+import com.goterl.lazysodium.utils.Key
 import it.airgap.beaconsdk.internal.crypto.data.KeyPair
 import it.airgap.beaconsdk.internal.crypto.data.SessionKeyPair
 import it.airgap.beaconsdk.internal.utils.HexString
 
-private typealias SodiumKeyPair = com.goterl.lazycode.lazysodium.utils.KeyPair
+private typealias SodiumKeyPair = com.goterl.lazysodium.utils.KeyPair
 
 internal class LazySodiumCryptoProvider : CryptoProvider {
     private val sodium: LazySodiumAndroid = LazySodiumAndroid(SodiumAndroid())
