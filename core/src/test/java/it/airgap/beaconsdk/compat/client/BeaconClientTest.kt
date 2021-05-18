@@ -83,6 +83,7 @@ internal class BeaconClientTest {
     @Test
     fun `connects for messages with callback`() {
         runBlockingTest {
+
             val requests = beaconVersionedRequests().shuffled()
             val beaconMessageFlow = beaconConnectionMessageFlow(requests.size + 1)
 
@@ -100,7 +101,9 @@ internal class BeaconClientTest {
                             if (messages.size == requests.size) testDeferred.complete(Unit)
                         }
 
-                        override fun onError(error: Throwable) = Unit
+                        override fun onError(error: Throwable) {
+                            throw IllegalStateException("Expected to get a new message", error)
+                        }
                     }
                 )
                 beaconClient.connect(callback)
@@ -173,7 +176,9 @@ internal class BeaconClientTest {
                 val errors = mutableListOf<Throwable>()
                 val callback = spyk<OnNewMessageListener>(
                     object : OnNewMessageListener {
-                        override fun onNewMessage(message: BeaconMessage) = Unit
+                        override fun onNewMessage(message: BeaconMessage) {
+                            throw IllegalStateException("Expected to throw an error")
+                        }
 
                         override fun onError(error: Throwable) {
                             errors.add(error)
