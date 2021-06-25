@@ -13,9 +13,14 @@ internal object BeaconConfiguration {
     // -- P2P --
     const val MATRIX_CLIENT_API: String = "/_matrix/client/r0"
     const val MATRIX_MAX_SYNC_RETRIES: Int = 3
+
+    const val P2P_JOIN_DELAY_MS: Long = 200
+    const val P2P_MAX_JOIN_RETRIES: Int = 10
+
     const val P2P_REPLICATION_COUNT: Int = 1
     val defaultRelayServers: List<String> = listOf(
-        "matrix.papers.tech",
+        "beacon-node-1.sky.papers.tech",
+//        "beacon-node-0.papers.tech:8448",
     )
 
     // -- common --

@@ -43,6 +43,9 @@ internal class StorageManager(
         }
     }
 
+    suspend inline fun <reified T : Peer> findInstancePeer(noinline predicate: (T) -> Boolean): T? =
+        storage.findPeer(T::class.java, predicate)
+
     suspend fun removePeers(peers: List<Peer>) {
         removePeers { peer -> peers.any { it.publicKey == peer.publicKey } }
     }
