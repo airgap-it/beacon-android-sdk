@@ -69,12 +69,14 @@ internal class P2pCommunicationUtilsTest {
         val id = "id"
         val type = "p2p-pairing-response"
         val appName = "mockApp"
+        val appIcon = "mockAppIcon"
+        val appUrl = "mockAppUrl"
         val publicKey = byteArrayOf(0)
         val relayServer = "relayServer"
 
-        versionsWithPairingPayloads(id, type, appName, publicKey.asHexString().asString(), relayServer)
+        versionsWithPairingPayloads(id, type, appName, appIcon, appUrl, publicKey.asHexString().asString(), relayServer)
             .map { P2pPeer(id = id, name = "name", publicKey = "01", relayServer = "peerServer", version = it.first) to it.second }
-            .map { p2pCommunicationUtils.pairingPayload(it.first, appName, publicKey, relayServer) to it.second }
+            .map { p2pCommunicationUtils.pairingPayload(it.first, appName, appIcon, appUrl, publicKey, relayServer) to it.second }
             .forEach { assertEquals(it.second, it.first.get()) }
     }
 
@@ -92,6 +94,8 @@ internal class P2pCommunicationUtilsTest {
         id: String = "id",
         type: String = "type",
         appName: String = "mockApp",
+        appIcon: String? = null,
+        appUrl: String? = null,
         publicKey: String = "00",
         relayServer: String = "relayServer",
     ): List<Pair<String, String>> = listOf(
@@ -99,10 +103,10 @@ internal class P2pCommunicationUtilsTest {
         "1.0" to publicKey,
         "1.0.0" to publicKey,
         "1.abc" to publicKey,
-        "2" to Json.encodeToString(P2pPairingResponse(id, type, appName, "2", publicKey, relayServer)),
-        "2.0" to Json.encodeToString(P2pPairingResponse(id, type, appName, "2.0", publicKey, relayServer)),
-        "2.0.0" to Json.encodeToString(P2pPairingResponse(id, type, appName, "2.0.0", publicKey, relayServer)),
-        "2.abc" to Json.encodeToString(P2pPairingResponse(id, type, appName, "2.abc", publicKey, relayServer)),
-        "3" to Json.encodeToString(P2pPairingResponse(id, type, appName, "3", publicKey, relayServer)),
+        "2" to Json.encodeToString(P2pPairingResponse(id, type, appName, "2", publicKey, relayServer, appIcon, appUrl)),
+        "2.0" to Json.encodeToString(P2pPairingResponse(id, type, appName, "2.0", publicKey, relayServer, appIcon, appUrl)),
+        "2.0.0" to Json.encodeToString(P2pPairingResponse(id, type, appName, "2.0.0", publicKey, relayServer, appIcon, appUrl)),
+        "2.abc" to Json.encodeToString(P2pPairingResponse(id, type, appName, "2.abc", publicKey, relayServer, appIcon, appUrl)),
+        "3" to Json.encodeToString(P2pPairingResponse(id, type, appName, "3", publicKey, relayServer, appIcon, appUrl)),
     )
 }

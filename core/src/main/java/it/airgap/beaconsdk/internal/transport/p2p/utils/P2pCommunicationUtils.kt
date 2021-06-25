@@ -23,14 +23,21 @@ internal class P2pCommunicationUtils(private val crypto: Crypto) {
         return message.sender.startsWith("@${hash?.asString()}")
     }
 
-    fun pairingPayload(peer: P2pPeer, appName: String, publicKey: ByteArray, relayServer: String): InternalResult<String> =
+    fun pairingPayload(
+        peer: P2pPeer,
+        appName: String,
+        appIcon: String?,
+        appUrl: String?,
+        publicKey: ByteArray,
+        relayServer: String,
+    ): InternalResult<String> =
         tryResult {
             when (peer.version.substringBefore('.')) {
                 "1" -> pairingPayloadV1(publicKey.asHexString())
-                "2" -> pairingPayloadV2(peer, appName, publicKey.asHexString(), relayServer)
+                "2" -> pairingPayloadV2(peer, appName, appIcon, appUrl, publicKey.asHexString(), relayServer)
 
                 // fallback to the newest version
-                else -> pairingPayloadV2(peer, appName, publicKey.asHexString(), relayServer)
+                else -> pairingPayloadV2(peer, appName, appIcon, appUrl, publicKey.asHexString(), relayServer)
             }
         }
 
@@ -38,7 +45,14 @@ internal class P2pCommunicationUtils(private val crypto: Crypto) {
         "@channel-open:$recipient:$payload"
 
     private fun pairingPayloadV1(publicKey: HexString): String = publicKey.asString()
-    private fun pairingPayloadV2(peer: P2pPeer, appName: String, publicKey: HexString, relayServer: String): String =
+    private fun pairingPayloadV2(
+        peer: P2pPeer,
+        appName: String,
+        appIcon: String?,
+        appUrl: String?,
+        publicKey: HexString,
+        relayServer: String,
+    ): String =
         Json.encodeToString(
             P2pPairingResponse(
                 peer.id ?: failWithInvalidPeer(peer),
@@ -47,6 +61,8 @@ internal class P2pCommunicationUtils(private val crypto: Crypto) {
                 peer.version,
                 publicKey.asString(),
                 relayServer,
+                appIcon,
+                appUrl,
             )
         )
 

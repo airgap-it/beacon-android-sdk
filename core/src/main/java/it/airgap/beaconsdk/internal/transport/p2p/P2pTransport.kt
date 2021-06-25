@@ -10,7 +10,7 @@ import it.airgap.beaconsdk.internal.transport.p2p.data.P2pMessage
 import it.airgap.beaconsdk.internal.utils.HexString
 import it.airgap.beaconsdk.internal.utils.InternalResult
 import it.airgap.beaconsdk.internal.utils.Success
-import it.airgap.beaconsdk.internal.utils.tryResult
+import it.airgap.beaconsdk.internal.utils.flatTryResult
 import kotlinx.coroutines.flow.*
 
 internal class P2pTransport(
@@ -31,13 +31,22 @@ internal class P2pTransport(
     }
 
     override suspend fun sendMessage(message: ConnectionTransportMessage): InternalResult<Unit> =
-        when (message) {
-            is SerializedConnectionMessage -> sendSerializedMessage(message.content, message.origin.id)
-            else -> Success()
+        flatTryResult {
+            val peerPublicKey = message.origin.id
+            val peer =
+                storageManager.findInstancePeer<P2pPeer> { it.publicKey == peerPublicKey }
+                    ?: failWithUnknownPeer(peerPublicKey)
+
+            return when (message) {
+                is SerializedConnectionMessage -> sendSerializedMessage(message.content, peer)
+                else -> Success()
+            }
         }
 
-    private suspend fun sendSerializedMessage(message: String, recipient: String): InternalResult<Unit> =
-        tryResult { client.sendTo(HexString.fromString(recipient), message).get() }
+    private suspend fun sendSerializedMessage(
+        message: String,
+        recipient: P2pPeer,
+    ): InternalResult<Unit> = client.sendTo(recipient, message)
 
     private suspend fun onUpdatedP2pPeer(peer: P2pPeer) {
         if (!peer.isPaired && !peer.isRemoved) pairP2pPeer(peer)
@@ -70,7 +79,11 @@ internal class P2pTransport(
         client.unsubscribeFrom(publicKey)
     }
 
+    private fun failWithUnknownPeer(publicKey: String): Nothing =
+        throw IllegalStateException("P2P peer with public key $publicKey is not recognized.")
+
     private fun ConnectionMessage.Companion.fromInternalResult(
         p2pMessage: InternalResult<P2pMessage>,
-    ): InternalResult<ConnectionTransportMessage> = p2pMessage.map { SerializedConnectionMessage(Origin.P2P(it.id), it.content) }
+    ): InternalResult<ConnectionTransportMessage> =
+        p2pMessage.map { SerializedConnectionMessage(Origin.P2P(it.id), it.content) }
 }

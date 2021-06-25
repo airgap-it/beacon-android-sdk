@@ -1,6 +1,7 @@
 package it.airgap.beaconsdk.internal.transport.p2p
 
 import it.airgap.beaconsdk.data.beacon.P2pPeer
+import it.airgap.beaconsdk.internal.BeaconConfiguration
 import it.airgap.beaconsdk.internal.crypto.Crypto
 import it.airgap.beaconsdk.internal.crypto.data.KeyPair
 import it.airgap.beaconsdk.internal.crypto.data.SessionKeyPair
@@ -17,10 +18,11 @@ import java.util.*
 
 internal class P2pClient(
     private val appName: String,
+    private val appIcon: String?,
+    private val appUrl: String?,
     private val serverUtils: P2pServerUtils,
     private val communicationUtils: P2pCommunicationUtils,
     private val matrixClients: List<MatrixClient>,
-    private val replicationCount: Int,
     private val crypto: Crypto,
     private val keyPair: KeyPair,
 ) {
@@ -38,6 +40,7 @@ internal class P2pClient(
 
     private val matrixMessageEvents: Flow<MatrixEvent.TextMessage> get() = matrixEvents.filterIsInstance()
     private val matrixInviteEvents: Flow<MatrixEvent.Invite> get() = matrixEvents.filterIsInstance()
+    private val matrixJoinEvents: Flow<MatrixEvent.Join> get() = matrixEvents.filterIsInstance()
 
     fun isSubscribed(publicKey: HexString): Boolean = subscribedFlows.containsKey(publicKey)
 
@@ -64,15 +67,13 @@ internal class P2pClient(
         subscribedFlows.remove(publicKey)
     }
 
-    suspend fun sendTo(publicKey: HexString, message: String): InternalResult<Unit> =
+    suspend fun sendTo(peer: P2pPeer, message: String): InternalResult<Unit> =
         tryResult {
+            val publicKey = HexString.fromString(peer.publicKey)
+            val recipient = communicationUtils.recipientIdentifier(publicKey, peer.relayServer)
             val encrypted = encrypt(publicKey, message).get().asHexString()
-            for (i in 0 until replicationCount) {
-                val relayServer = serverUtils.getRelayServer(publicKey, i.asHexString())
-                val recipient = communicationUtils.recipientIdentifier(publicKey, relayServer)
 
-                matrixClients.launch { it.sendTextMessageTo(recipient, encrypted.asString()).get() }
-            }
+            matrixClients.launch { it.sendTextMessageTo(recipient, encrypted.asString()).get() }
         }
 
     suspend fun sendPairingResponse(peer: P2pPeer): InternalResult<Unit> =
@@ -83,6 +84,8 @@ internal class P2pClient(
                 communicationUtils.pairingPayload(
                     peer,
                     appName,
+                    appIcon,
+                    appUrl,
                     keyPair.publicKey,
                     serverUtils.getRelayServer(keyPair.publicKey)
                 ).get(),
@@ -103,7 +106,8 @@ internal class P2pClient(
     ): InternalResult<String> =
         getOrCreateServerSessionKeyPair(publicKey)
             .flatMap {
-                if (textMessage.message.isHex()) crypto.decryptMessageWithSharedKey(HexString.fromString(textMessage.message), it.rx)
+                if (textMessage.message.isHex()) crypto.decryptMessageWithSharedKey(HexString.fromString(
+                    textMessage.message), it.rx)
                 else crypto.decryptMessageWithSharedKey(textMessage.message, it.rx)
             }
             .map { it.decodeToString() }
@@ -166,10 +170,23 @@ internal class P2pClient(
 
             CoroutineScope(CoroutineName("collectInviteEvents") + Dispatchers.Default).launch {
                 matrixInviteEvents.collect {
-                    joinRooms(it.roomId)
+                    joinRoomsRepeated(it.roomId)
                 }
             }
         }
+    }
+
+    private tailrec suspend fun MatrixClient.joinRoomsRepeated(roomId: String, retry: Int = BeaconConfiguration.P2P_MAX_JOIN_RETRIES) {
+        if (retry < 0) return
+        logDebug(TAG, "Joining room $roomId (retries remaining: $retry)")
+
+        val error = joinRoom(roomId).errorOrNull() ?: return
+        // TODO: check error type before continuing
+
+        logDebug(TAG, "Joining room $roomId failed with error $error")
+
+        delay(BeaconConfiguration.P2P_JOIN_DELAY_MS)
+        return joinRoomsRepeated(roomId, retry - 1)
     }
 
     private suspend fun MatrixClient.sendTextMessageTo(
@@ -193,8 +210,17 @@ internal class P2pClient(
                 Success(it)
             } ?: run {
             logDebug(TAG, "No relevant rooms found")
-            createTrustedPrivateRoom(recipient)
+            createTrustedPrivateRoom(recipient).mapSuspend { room ->
+                room?.also { waitForMember(it, recipient) }
+            }
         }
+    }
+
+    private suspend fun waitForMember(room: MatrixRoom, member: String) {
+        if (room.members.contains(member)) return
+        logDebug(TAG, "Waiting for $member to join room ${room.id}")
+        matrixJoinEvents.first { it.roomId == room.id && it.userId == member }
+        logDebug(TAG, "$member joined room ${room.id}")
     }
 
     private fun <K, V> MutableMap<K, MutableSet<V>>.addTo(key: K, value: V) {

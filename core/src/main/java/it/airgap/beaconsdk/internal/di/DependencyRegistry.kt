@@ -62,6 +62,8 @@ internal class DependencyRegistry(storage: Storage, secureStorage: SecureStorage
             when (connection) {
                 is P2P -> {
                     val appName = BeaconApp.instance.appName
+                    val appIcon = BeaconApp.instance.appIcon
+                    val appUrl = BeaconApp.instance.appUrl
                     val keyPair = BeaconApp.instance.keyPair
 
                     val replicationCount = BeaconConfiguration.P2P_REPLICATION_COUNT
@@ -76,10 +78,11 @@ internal class DependencyRegistry(storage: Storage, secureStorage: SecureStorage
 
                     val client = P2pClient(
                         appName,
+                        appIcon,
+                        appUrl,
                         p2pServerUtils,
                         p2pCommunicationUtils,
                         matrixClients,
-                        replicationCount,
                         crypto,
                         keyPair
                     )

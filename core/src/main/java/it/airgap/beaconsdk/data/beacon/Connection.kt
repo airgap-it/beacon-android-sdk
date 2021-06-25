@@ -13,6 +13,10 @@ public sealed class Connection(internal val type: Type) {
 
 /**
  * P2P Connection configuration.
+ *
+ * @property [nodes] A list of Matrix nodes used in the connection, set to [BeaconConfiguration.defaultRelayServers] by default.
+ * One node will be selected randomly based on the local key pair and used as the primary connection node,
+ * the rest will be used as a fallback if the primary node goes down.
  */
 public data class P2P(
     public val nodes: List<String> = BeaconConfiguration.defaultRelayServers

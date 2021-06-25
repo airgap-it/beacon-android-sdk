@@ -10,4 +10,6 @@ internal data class P2pPairingResponse(
     val version: String,
     val publicKey: String,
     val relayServer: String,
+    val icon: String? = null,
+    val appUrl: String? = null,
 )

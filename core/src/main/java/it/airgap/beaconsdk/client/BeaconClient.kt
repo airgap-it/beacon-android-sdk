@@ -13,8 +13,8 @@ import it.airgap.beaconsdk.internal.storage.sharedpreferences.SharedPreferencesS
 import it.airgap.beaconsdk.internal.utils.*
 import it.airgap.beaconsdk.message.*
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onEach
 
 /**
@@ -90,11 +90,13 @@ public class BeaconClient internal constructor(
         connectionController.subscribe()
             .map { result -> result.flatMapSuspend { messageController.onIncomingMessage(it.origin, it.content) } }
             .onEach { result -> result.getOrNull()?.let { processMessage(it) } }
-            .filterIsInstance<InternalResult<BeaconRequest>>()
-            .map {
+            .mapNotNull {
                 when (it) {
-                    is Success -> Result.success(it.value)
-                    is Failure -> Result.failure(it.error as? BeaconException ?: BeaconException.from(it.error))
+                    is Success -> when (val message = it.value) {
+                        is BeaconRequest -> Result.success(message)
+                        else -> null
+                    }
+                    is Failure -> Result.failure(BeaconException.from(it.error))
                 }
             }
 
@@ -299,6 +301,16 @@ public class BeaconClient internal constructor(
     public class Builder(private val name: String) {
 
         /**
+         * A URL to the application's website.
+         */
+        public var appUrl: String? = null
+
+        /**
+         * A URL to the application's icon.
+         */
+        public var iconUrl: String? = null
+
+        /**
          * Connection types that will be supported by the configured client.
          */
         public var connections: List<Connection> = listOf(P2P())
@@ -311,7 +323,7 @@ public class BeaconClient internal constructor(
             val storage = SharedPreferencesStorage.create(beaconApp.applicationContext)
             val secureStorage = SharedPreferencesSecureStorage.create(beaconApp.applicationContext)
 
-            beaconApp.init(name, storage, secureStorage)
+            beaconApp.init(name, appUrl, iconUrl, storage, secureStorage)
 
             with(beaconApp.dependencyRegistry) {
                 return BeaconClient(
