@@ -1,7 +1,6 @@
 package it.airgap.beaconsdk.internal
 
 import android.content.Context
-import android.util.Log
 import it.airgap.beaconsdk.internal.crypto.Crypto
 import it.airgap.beaconsdk.internal.crypto.data.KeyPair
 import it.airgap.beaconsdk.internal.di.DependencyRegistry
@@ -25,6 +24,12 @@ internal class BeaconApp(context: Context) {
     val appName: String
         get() = _appName ?: failWithUninitialized(TAG)
 
+    var appIcon: String? = null
+        private set
+
+    var appUrl: String? = null
+        private set
+
     private var _keyPair: KeyPair? = null
     val keyPair: KeyPair
         get() = _keyPair ?: failWithUninitialized(TAG)
@@ -32,10 +37,19 @@ internal class BeaconApp(context: Context) {
     val beaconId: String
         get() = keyPair.publicKey.asHexString().asString()
 
-    suspend fun init(appName: String, storage: Storage, secureStorage: SecureStorage) {
+    suspend fun init(
+        appName: String,
+        appIcon: String?,
+        appUrl: String?,
+        storage: Storage,
+        secureStorage: SecureStorage,
+    ) {
         if (isInitialized) return
 
         _appName = appName
+        this.appIcon = appIcon
+        this.appUrl = appUrl
+
         _dependencyRegistry = DependencyRegistry(storage, secureStorage)
 
         val storageManager = dependencyRegistry.storageManager

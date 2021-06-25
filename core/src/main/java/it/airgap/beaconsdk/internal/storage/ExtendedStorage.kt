@@ -17,6 +17,7 @@ internal interface ExtendedStorage : Storage {
     )
 
     suspend fun findPeer(predicate: (Peer) -> Boolean): Peer?
+    suspend fun <T : Peer> findPeer(instanceClass: Class<T>, predicate: (T) -> Boolean): T?
     suspend fun removePeers(predicate: ((Peer) -> Boolean)? = null)
 
     suspend fun addAppMetadata(

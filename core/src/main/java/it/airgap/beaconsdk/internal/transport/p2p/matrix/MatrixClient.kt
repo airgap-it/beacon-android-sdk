@@ -59,48 +59,41 @@ internal class MatrixClient(
                         invite = members.toList(),
                         preset = Preset.TrustedPrivateChat,
                         isDirect = true,
+                        roomVersion = "5",
                     ),
                 ).map { response -> response.roomId?.let { MatrixRoom.Unknown(it) } }
             }
         }
 
-    suspend fun inviteToRooms(user: String, vararg roomIds: String): InternalResult<Unit> =
+    suspend fun inviteToRoom(user: String, roomId: String): InternalResult<Unit> =
         tryResult {
-            withAccessToken("inviteToRooms") { accessToken ->
-                roomIds.toList().launch {
-                    roomService.inviteToRoom(accessToken, user, it).get()
-                }
+            withAccessToken("inviteToRooms") {
+                roomService.inviteToRoom(it, user, roomId).get()
             }
         }
 
-    suspend fun inviteToRooms(user: String, vararg rooms: MatrixRoom): InternalResult<Unit> =
+    suspend fun inviteToRoom(user: String, room: MatrixRoom): InternalResult<Unit> =
         tryResult {
-            withAccessToken("inviteToRooms") { accessToken ->
-                rooms.toList().launch {
-                    roomService.inviteToRoom(accessToken, user, it.id).get()
-                }
+            withAccessToken("inviteToRooms") {
+                roomService.inviteToRoom(it, user, room.id).get()
             }
         }
 
-    suspend fun joinRooms(vararg roomIds: String) =
+    suspend fun joinRoom(roomId: String): InternalResult<Unit> =
         tryResult {
-            withAccessToken("joinRooms") { accessToken ->
-                roomIds.toList().launch {
-                    roomService.joinRoom(accessToken, it).get()
-                }
+            withAccessToken("joinRooms") {
+                roomService.joinRoom(it, roomId).get()
             }
         }
 
-    suspend fun joinRooms(vararg rooms: MatrixRoom) =
+    suspend fun joinRoom(room: MatrixRoom): InternalResult<Unit> =
         tryResult {
-            withAccessToken("joinRooms") { accessToken ->
-                rooms.toList().launch {
-                    roomService.joinRoom(accessToken, it.id).get()
-                }
+            withAccessToken("joinRooms") {
+                roomService.joinRoom(it, room.id).get()
             }
         }
 
-    suspend fun sendTextMessage(roomId: String, message: String) =
+    suspend fun sendTextMessage(roomId: String, message: String): InternalResult<Unit> =
         tryResult {
             withAccessToken("sendTextMessage") { accessToken ->
                 eventService.sendTextMessage(
@@ -112,7 +105,7 @@ internal class MatrixClient(
             }
         }
 
-    suspend fun sendTextMessage(room: MatrixRoom, message: String) =
+    suspend fun sendTextMessage(room: MatrixRoom, message: String): InternalResult<Unit> =
         tryResult {
             withAccessToken("sendTextMessage") { accessToken ->
                 eventService.sendTextMessage(

@@ -62,7 +62,7 @@ internal class BeaconClientBuilderTest {
         assertEquals(appName, client?.name)
         assertEquals(beaconId, client?.beaconId)
 
-        coVerify(exactly = 1) { beaconApp.init(appName, ofType(SharedPreferencesStorage::class), ofType(SharedPreferencesSecureStorage::class)) }
+        coVerify(exactly = 1) { beaconApp.init(appName, null, null, ofType(SharedPreferencesStorage::class), ofType(SharedPreferencesSecureStorage::class)) }
         verify(exactly = 1) { dependencyRegistry.connectionController(defaultConnections) }
         verify(exactly = 1) { callback.onSuccess(any()) }
         verify(exactly = 0) { callback.onError(any()) }
@@ -93,7 +93,7 @@ internal class BeaconClientBuilderTest {
         assertEquals(appName, client!!.name)
         assertEquals(beaconId, client!!.beaconId)
 
-        coVerify(exactly = 1) { beaconApp.init(appName, ofType(SharedPreferencesStorage::class), ofType(SharedPreferencesSecureStorage::class)) }
+        coVerify(exactly = 1) { beaconApp.init(appName, null, null, ofType(SharedPreferencesStorage::class), ofType(SharedPreferencesSecureStorage::class)) }
         verify(exactly = 1) { dependencyRegistry.connectionController(customConnections) }
         verify(exactly = 1) { callback.onSuccess(any()) }
         verify(exactly = 0) { callback.onError(any()) }

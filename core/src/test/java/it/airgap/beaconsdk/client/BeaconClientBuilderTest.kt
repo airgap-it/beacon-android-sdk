@@ -44,7 +44,7 @@ internal class BeaconClientBuilderTest {
             assertEquals(appName, beaconClient.name)
             assertEquals(beaconId, beaconClient.beaconId)
 
-            coVerify(exactly = 1) { beaconApp.init(appName, ofType(SharedPreferencesStorage::class), ofType(SharedPreferencesSecureStorage::class)) }
+            coVerify(exactly = 1) { beaconApp.init(appName, null, null, ofType(SharedPreferencesStorage::class), ofType(SharedPreferencesSecureStorage::class)) }
             verify(exactly = 1) { dependencyRegistry.connectionController(defaultConnections) }
         }
     }
@@ -61,7 +61,7 @@ internal class BeaconClientBuilderTest {
             assertEquals(appName, beaconClient.name)
             assertEquals(beaconId, beaconClient.beaconId)
 
-            coVerify(exactly = 1) { beaconApp.init(appName, ofType(SharedPreferencesStorage::class), ofType(SharedPreferencesSecureStorage::class)) }
+            coVerify(exactly = 1) { beaconApp.init(appName, null, null, ofType(SharedPreferencesStorage::class), ofType(SharedPreferencesSecureStorage::class)) }
             verify(exactly = 1) { dependencyRegistry.connectionController(customConnections) }
         }
     }
@@ -75,7 +75,7 @@ internal class BeaconClientBuilderTest {
             assertEquals(appName, beaconClient.name)
             assertEquals(beaconId, beaconClient.beaconId)
 
-            coVerify(exactly = 1) { beaconApp.init(appName, ofType(SharedPreferencesStorage::class), ofType(SharedPreferencesSecureStorage::class)) }
+            coVerify(exactly = 1) { beaconApp.init(appName, null, null, ofType(SharedPreferencesStorage::class), ofType(SharedPreferencesSecureStorage::class)) }
             verify(exactly = 1) { dependencyRegistry.connectionController(defaultConnections) }
         }
     }
@@ -90,7 +90,7 @@ internal class BeaconClientBuilderTest {
             assertEquals(appName, beaconClient.name)
             assertEquals(beaconId, beaconClient.beaconId)
 
-            coVerify(exactly = 1) { beaconApp.init(appName, ofType(SharedPreferencesStorage::class), ofType(SharedPreferencesSecureStorage::class)) }
+            coVerify(exactly = 1) { beaconApp.init(appName, null, null, ofType(SharedPreferencesStorage::class), ofType(SharedPreferencesSecureStorage::class)) }
             verify(exactly = 1) { dependencyRegistry.connectionController(customConnections) }
         }
     }

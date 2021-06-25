@@ -202,12 +202,16 @@ internal class BeaconClientTest {
     fun `removes peer on disconnect message received`() {
         runBlockingTest {
             val publicKey = "publicKey"
+            val origin = Origin.P2P(publicKey)
             val peer = P2pPeer(name = "name", relayServer = "relayServer", publicKey = publicKey)
             storageManager.setPeers(listOf(peer))
 
-            val disconnectMessage = disconnectBeaconMessage(senderId = dAppId, origin = Origin.P2P(publicKey))
-            val versionedMessage = VersionedBeaconMessage.fromBeaconMessage(disconnectMessage.senderId, disconnectMessage)
-            val connectionMessage = BeaconConnectionMessage(disconnectMessage.origin, versionedMessage)
+            val versionedRequest = beaconVersionedRequests(dAppVersion, dAppId).shuffled().first()
+            val connectionRequestMessage = BeaconConnectionMessage(origin, versionedRequest)
+
+            val disconnectMessage = disconnectBeaconMessage(senderId = dAppId, origin = origin)
+            val versionedDisconnectMessage = VersionedBeaconMessage.fromBeaconMessage(disconnectMessage.senderId, disconnectMessage)
+            val connectionDisconnectMessage = BeaconConnectionMessage(disconnectMessage.origin, versionedDisconnectMessage)
 
             val beaconMessageFlow = beaconConnectionMessageFlow(2)
             every { connectionController.subscribe() } answers { beaconMessageFlow }
@@ -215,7 +219,7 @@ internal class BeaconClientTest {
             storageManager.addAppMetadata(listOf(AppMetadata(dAppId, "otherApp")))
 
             beaconClient.connect()
-                .onStart { beaconMessageFlow.tryEmit(Success(connectionMessage)) }
+                .onStart { beaconMessageFlow.tryEmitValues(listOf(connectionDisconnectMessage, connectionRequestMessage)) }
                 .mapNotNull { it.getOrNull() }
                 .take(1)
                 .single()

@@ -224,7 +224,7 @@ internal class MatrixClientTest {
             assertEquals(MatrixRoom.Unknown(roomId), room)
             coVerify { roomService.createRoom(
                 accessToken,
-                MatrixCreateRoomRequest(invite = members, preset = Preset.TrustedPrivateChat, isDirect = true),
+                MatrixCreateRoomRequest(invite = members, preset = Preset.TrustedPrivateChat, isDirect = true, roomVersion = "5"),
             ) }
 
             confirmVerified(roomService)
@@ -243,19 +243,19 @@ internal class MatrixClientTest {
     }
 
     @Test
-    fun `invites user to rooms specified by their ids`() {
+    fun `invites user to room specified by its id`() {
         val accessToken = "accessToken"
         val user = "user"
-        val roomIds = listOf("1", "2", "3")
+        val roomId = "1"
 
         coEvery { roomService.inviteToRoom(any(), any(), any()) } returns Success(MatrixInviteRoomResponse())
         coEvery { store.state() } returns MatrixStoreState(accessToken = accessToken)
 
         runBlockingTest {
-            val result = client.inviteToRooms(user, *roomIds.toTypedArray())
+            val result = client.inviteToRoom(user, roomId)
 
             assertTrue(result.isSuccess, "Expected result to be a success")
-            coVerify(exactly = roomIds.size) { roomService.inviteToRoom(accessToken, user, match { roomIds.contains(it) }) }
+            coVerify(exactly = 1) { roomService.inviteToRoom(accessToken, user, roomId) }
 
             confirmVerified(roomService)
         }
@@ -265,23 +265,20 @@ internal class MatrixClientTest {
     fun `invites user to specified rooms`() {
         val accessToken = "accessToken"
         val user = "user"
-        val rooms = listOf(
-            MatrixRoom.Joined("1", emptyList()),
-            MatrixRoom.Joined("2", emptyList()),
-        )
+        val room = MatrixRoom.Joined("1", emptyList())
 
         coEvery { roomService.inviteToRoom(any(), any(), any()) } returns Success(MatrixInviteRoomResponse())
         coEvery { store.state() } returns MatrixStoreState(accessToken = accessToken)
 
         runBlockingTest {
-            val result = client.inviteToRooms(user, *rooms.toTypedArray())
+            val result = client.inviteToRoom(user, room)
 
             assertTrue(result.isSuccess, "Expected result to be a success")
-            coVerify(exactly = rooms.size) {
+            coVerify(exactly = 1) {
                 roomService.inviteToRoom(
                     accessToken,
                     user,
-                    match { rooms.map(MatrixRoom::id).contains(it) }
+                    room.id,
                 )
             }
 
@@ -294,7 +291,7 @@ internal class MatrixClientTest {
         coEvery { store.state() } returns MatrixStoreState(accessToken = null)
 
         runBlockingTest {
-            val result = client.inviteToRooms("user", "1")
+            val result = client.inviteToRoom("user", "1")
 
             assertTrue(result.isFailure, "Expected room create result to be a failure")
         }
@@ -305,7 +302,7 @@ internal class MatrixClientTest {
         coEvery { store.state() } returns MatrixStoreState(accessToken = null)
 
         runBlockingTest {
-            val result = client.inviteToRooms("user", MatrixRoom.Joined("1", emptyList()))
+            val result = client.inviteToRoom("user", MatrixRoom.Joined("1", emptyList()))
 
             assertTrue(result.isFailure, "Expected room create result to be a failure")
         }
@@ -315,16 +312,16 @@ internal class MatrixClientTest {
     fun `joins rooms specified by their ids`() {
         val accessToken = "accessToken"
         val user = "user"
-        val roomIds = listOf("1", "2", "3")
+        val roomId = "1"
 
         coEvery { roomService.joinRoom(any(), any()) } returns Success(MatrixJoinRoomResponse(user))
         coEvery { store.state() } returns MatrixStoreState(accessToken = accessToken)
 
         runBlockingTest {
-            val result = client.joinRooms(*roomIds.toTypedArray())
+            val result = client.joinRoom(roomId)
 
             assertTrue(result.isSuccess, "Expected result to be a success")
-            coVerify(exactly = roomIds.size) { roomService.joinRoom(accessToken, match { roomIds.contains(it) }) }
+            coVerify(exactly = 1) { roomService.joinRoom(accessToken, roomId) }
 
             confirmVerified(roomService)
         }
@@ -334,22 +331,19 @@ internal class MatrixClientTest {
     fun `joins specified rooms`() {
         val accessToken = "accessToken"
         val user = "user"
-        val rooms = listOf(
-            MatrixRoom.Joined("1", emptyList()),
-            MatrixRoom.Joined("2", emptyList()),
-        )
+        val room = MatrixRoom.Joined("1", emptyList())
 
         coEvery { roomService.joinRoom(any(), any()) } returns Success(MatrixJoinRoomResponse(user))
         coEvery { store.state() } returns MatrixStoreState(accessToken = accessToken)
 
         runBlockingTest {
-            val result = client.joinRooms(*rooms.toTypedArray())
+            val result = client.joinRoom(room)
 
             assertTrue(result.isSuccess, "Expected result to be a success")
-            coVerify(exactly = rooms.size) {
+            coVerify(exactly = 1) {
                 roomService.joinRoom(
                     accessToken,
-                    match { rooms.map(MatrixRoom::id).contains(it) }
+                    room.id,
                 )
             }
 
@@ -362,7 +356,7 @@ internal class MatrixClientTest {
         coEvery { store.state() } returns MatrixStoreState(accessToken = null)
 
         runBlockingTest {
-            val result = client.joinRooms("1")
+            val result = client.joinRoom("1")
 
             assertTrue(result.isFailure, "Expected room create result to be a failure")
         }
@@ -373,7 +367,7 @@ internal class MatrixClientTest {
         coEvery { store.state() } returns MatrixStoreState(accessToken = null)
 
         runBlockingTest {
-            val result = client.joinRooms(MatrixRoom.Joined("1", emptyList()))
+            val result = client.joinRoom(MatrixRoom.Joined("1", emptyList()))
 
             assertTrue(result.isFailure, "Expected room create result to be a failure")
         }
@@ -444,7 +438,7 @@ internal class MatrixClientTest {
         coEvery { store.state() } returns MatrixStoreState(accessToken = null)
 
         runBlockingTest {
-            val result = client.inviteToRooms("1", "message")
+            val result = client.inviteToRoom("1", "message")
 
             assertTrue(result.isFailure, "Expected room create result to be a failure")
         }

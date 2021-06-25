@@ -108,8 +108,8 @@ internal class P2pTransportTest {
         val peers = validKnownPeers
 
         val message = "message"
-        val recipient = peers.shuffled().first().publicKey
-        val serialized = SerializedConnectionMessage(Origin.P2P(recipient), message)
+        val recipient = peers.shuffled().first()
+        val serialized = SerializedConnectionMessage(Origin.P2P(recipient.publicKey), message)
 
         coEvery { p2pClient.sendTo(any(), any()) } returns Success()
 
@@ -117,7 +117,7 @@ internal class P2pTransportTest {
         runBlocking { p2pTransport.send(serialized) }
 
         coVerify(exactly = 1) { p2pClient.sendTo(any(), any()) }
-        coVerify { p2pClient.sendTo(HexString.fromString(recipient), message) }
+        coVerify { p2pClient.sendTo(recipient, message) }
     }
 
     @Test

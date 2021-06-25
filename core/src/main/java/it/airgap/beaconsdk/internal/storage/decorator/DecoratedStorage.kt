@@ -41,6 +41,11 @@ internal class DecoratedStorage(private val storage: Storage) : ExtendedStorage,
     override suspend fun findPeer(predicate: (Peer) -> Boolean): Peer? =
         selectFirst(Storage::getPeers, predicate)
 
+    override suspend fun <T : Peer> findPeer(
+        instanceClass: Class<T>,
+        predicate: (T) -> Boolean,
+    ): T? = selectFirstInstance(Storage::getPeers, instanceClass, predicate)
+
     override suspend fun removePeers(predicate: ((Peer) -> Boolean)?) {
         if (predicate != null) remove(Storage::getPeers, Storage::setPeers, predicate)
         else removeAll(Storage::setPeers)
@@ -98,6 +103,12 @@ internal class DecoratedStorage(private val storage: Storage) : ExtendedStorage,
         select: StorageSelectCollection<T>,
         predicate: (T) -> Boolean,
     ): T? = select(this).find(predicate)
+
+    private suspend fun <T, Instance : T> selectFirstInstance(
+        select: StorageSelectCollection<T>,
+        instanceClass: Class<Instance>,
+        predicate: (Instance) -> Boolean,
+    ): Instance? = select(this).filterIsInstance(instanceClass).find(predicate)
 
     private suspend fun <T> add(
         select: StorageSelectCollection<T>,
