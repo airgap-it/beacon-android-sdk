@@ -54,6 +54,42 @@ public sealed class Network {
     }
 
     @Serializable
+    @SerialName(IDENTIFIER_EDONET)
+    public data class Edonet(
+        override val name: String? = null,
+        override val rpcUrl: String? = null,
+    ) : Network() {
+        @Transient
+        override val identifier: String = IDENTIFIER_EDONET
+
+        public companion object {}
+    }
+
+    @Serializable
+    @SerialName(IDENTIFIER_FLORENCENET)
+    public data class Florencenet(
+        override val name: String? = null,
+        override val rpcUrl: String? = null,
+    ) : Network() {
+        @Transient
+        override val identifier: String = IDENTIFIER_FLORENCENET
+
+        public companion object {}
+    }
+
+    @Serializable
+    @SerialName(IDENTIFIER_GRANADANET)
+    public data class Granadanet(
+        override val name: String? = null,
+        override val rpcUrl: String? = null,
+    ) : Network() {
+        @Transient
+        override val identifier: String = IDENTIFIER_GRANADANET
+
+        public companion object {}
+    }
+
+    @Serializable
     @SerialName(IDENTIFIER_CUSTOM)
     public data class Custom(
         override val name: String? = null,
@@ -69,6 +105,9 @@ public sealed class Network {
         private const val IDENTIFIER_MAINNET = "mainnet"
         private const val IDENTIFIER_CARTHAGENET = "carthagenet"
         private const val IDENTIFIER_DELPHINET = "delphinet"
+        private const val IDENTIFIER_EDONET = "edonet"
+        private const val IDENTIFIER_FLORENCENET = "florencenet"
+        private const val IDENTIFIER_GRANADANET = "granadanet"
         private const val IDENTIFIER_CUSTOM = "custom"
     }
 }
