@@ -4,6 +4,8 @@ import it.airgap.beaconsdk.exception.InternalException
 import it.airgap.beaconsdk.message.BeaconMessage
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.JsonElement
 import kotlin.reflect.KClass
 
 internal fun failWith(message: String? = null, cause: Throwable? = null): Nothing =
@@ -21,6 +23,12 @@ internal fun failWithIllegalArgument(message: String): Nothing =
 
 internal fun failWithExpectedJsonDecoder(actual: KClass<out Decoder>): Nothing =
     throw SerializationException("Expected Json decoder, got $actual")
+
+internal fun failWithExpectedJsonEncoder(actual: KClass<out Encoder>): Nothing =
+    throw SerializationException("Expected Json encoder, got $actual")
+
+internal fun failWithUnexpectedJsonType(type: KClass<out JsonElement>): Nothing =
+    throw SerializationException("Could not deserialize, unexpected JSON type $type")
 
 internal fun failWithMissingField(name: String): Nothing =
     throw SerializationException("Could not deserialize, `$name` field is missing")

@@ -4,8 +4,7 @@ import fromValues
 import io.mockk.MockKAnnotations
 import io.mockk.impl.annotations.MockK
 import it.airgap.beaconsdk.data.beacon.*
-import it.airgap.beaconsdk.data.tezos.TezosEndorsementOperation
-import it.airgap.beaconsdk.data.tezos.TezosOperation
+import it.airgap.beaconsdk.data.tezos.*
 import it.airgap.beaconsdk.internal.message.v2.*
 import it.airgap.beaconsdk.internal.storage.MockSecureStorage
 import it.airgap.beaconsdk.internal.storage.MockStorage
