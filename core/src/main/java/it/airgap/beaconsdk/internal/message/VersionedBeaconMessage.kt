@@ -42,6 +42,10 @@ internal abstract class VersionedBeaconMessage {
             get() = substringBefore('.')
     }
 
+    object Field {
+        const val VERSION = "version"
+    }
+
     object Serializer : KSerializer<VersionedBeaconMessage> {
         override val descriptor: SerialDescriptor =
             PrimitiveSerialDescriptor("BeaconMessage", PrimitiveKind.STRING)
@@ -50,9 +54,8 @@ internal abstract class VersionedBeaconMessage {
             val jsonDecoder = decoder as? JsonDecoder ?: failWithExpectedJsonDecoder(decoder::class)
             val jsonElement = jsonDecoder.decodeJsonElement()
 
-            val versionField = "version"
-            val version = jsonElement.jsonObject[versionField]?.jsonPrimitive?.content
-                ?: failWithMissingField(versionField)
+            val version = jsonElement.jsonObject[Field.VERSION]?.jsonPrimitive?.content
+                ?: failWithMissingField(Field.VERSION)
 
             return when (version.major) {
                 "1" -> jsonDecoder.json.decodeFromJsonElement(V1BeaconMessage.serializer(), jsonElement)

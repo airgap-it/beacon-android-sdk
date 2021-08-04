@@ -60,6 +60,10 @@ public sealed class TezosOperation {
         Delegation,
     }
 
+    internal object Field {
+        const val KIND = "kind"
+    }
+
     internal class Serializer : KSerializer<TezosOperation> {
         override val descriptor: SerialDescriptor =
             PrimitiveSerialDescriptor("TezosOperation", PrimitiveKind.STRING)
@@ -68,9 +72,8 @@ public sealed class TezosOperation {
             val jsonDecoder = decoder as? JsonDecoder ?: failWithExpectedJsonDecoder(decoder::class)
             val jsonElement = jsonDecoder.decodeJsonElement()
 
-            val kindField = "kind"
             val kindSerialized =
-                jsonElement.jsonObject[kindField]?.jsonPrimitive ?: failWithMissingField(kindField)
+                jsonElement.jsonObject[Field.KIND]?.jsonPrimitive ?: failWithMissingField(Field.KIND)
             val kind = jsonDecoder.json.decodeFromJsonElement(Kind.serializer(), kindSerialized)
 
             return when (kind) {
