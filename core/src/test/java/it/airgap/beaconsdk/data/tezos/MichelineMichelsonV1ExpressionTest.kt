@@ -4,6 +4,7 @@ import fromValues
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.encodeToJsonElement
 import org.junit.Test
@@ -18,7 +19,8 @@ internal class MichelineMichelsonV1ExpressionTest {
             primitiveBytesWithJson(),
             primitiveApplicationWithJson(),
             primitiveApplicationWithJson(includeNulls = true),
-            nodeWithJson()
+            nodeWithJson(),
+            nodeWithJson(listOf(MichelinePrimitiveInt(0))),
         ).map {
             Json.decodeFromString<MichelineMichelsonV1Expression>(it.second) to it.first
         }.forEach {
@@ -33,16 +35,17 @@ internal class MichelineMichelsonV1ExpressionTest {
             primitiveStringWithJson(),
             primitiveBytesWithJson(),
             primitiveApplicationWithJson(),
-            nodeWithJson()
+            nodeWithJson(),
+            nodeWithJson(listOf(MichelinePrimitiveInt(0))),
         ).map {
-            Json.decodeFromString(JsonObject.serializer(), Json.encodeToString(it.first)) to
-                    Json.decodeFromString(JsonObject.serializer(), it.second)
+            Json.decodeFromString(JsonElement.serializer(), Json.encodeToString(it.first)) to
+                    Json.decodeFromString(JsonElement.serializer(), it.second)
         }.forEach {
             assertEquals(it.second, it.first)
         }
     }
 
-    private fun primitiveIntWithJson(int: String = "int") : Pair<MichelinePrimitiveInt, String> =
+    private fun primitiveIntWithJson(int: Int = 0) : Pair<MichelinePrimitiveInt, String> =
         MichelinePrimitiveInt(int) to """
             {
                 "int": "$int"
@@ -81,9 +84,5 @@ internal class MichelineMichelsonV1ExpressionTest {
     }
 
     private fun nodeWithJson(expressions: List<MichelineMichelsonV1Expression> = emptyList()) : Pair<MichelineNode, String> =
-        MichelineNode(expressions) to """
-                {
-                    "expressions": ${Json.encodeToString(expressions)}
-                }
-            """.trimIndent()
+        MichelineNode(expressions) to Json.encodeToString(expressions)
 }
