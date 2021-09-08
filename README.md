@@ -49,7 +49,7 @@ For more examples or examples of how to use the SDK without coroutines or in Jav
 ### Create a Beacon client and listen for incoming messages
 
 ```kotlin
-import it.airgap.beaconsdk.client.BeaconClient
+import it.airgap.beaconsdk.core.client.BeaconClient
 
 class MainActivity : AppCompatActivity() {
   lateinit var client: BeaconClient

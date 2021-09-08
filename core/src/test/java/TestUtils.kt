@@ -1,13 +1,13 @@
 
 import androidx.annotation.IntRange
-import it.airgap.beaconsdk.data.beacon.*
-import it.airgap.beaconsdk.data.tezos.TezosActivateAccountOperation
-import it.airgap.beaconsdk.data.tezos.TezosOperation
-import it.airgap.beaconsdk.internal.message.BeaconConnectionMessage
-import it.airgap.beaconsdk.internal.message.ConnectionTransportMessage
-import it.airgap.beaconsdk.internal.message.VersionedBeaconMessage
-import it.airgap.beaconsdk.internal.utils.failWith
-import it.airgap.beaconsdk.message.*
+import it.airgap.beaconsdk.core.data.beacon.*
+import it.airgap.beaconsdk.core.data.tezos.TezosActivateAccountOperation
+import it.airgap.beaconsdk.core.data.tezos.TezosOperation
+import it.airgap.beaconsdk.core.internal.message.BeaconConnectionMessage
+import it.airgap.beaconsdk.core.internal.message.ConnectionTransportMessage
+import it.airgap.beaconsdk.core.internal.message.VersionedBeaconMessage
+import it.airgap.beaconsdk.core.internal.utils.failWith
+import it.airgap.beaconsdk.core.message.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.onEach

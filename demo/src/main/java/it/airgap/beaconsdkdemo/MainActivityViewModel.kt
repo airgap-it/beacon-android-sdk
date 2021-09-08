@@ -1,9 +1,9 @@
 package it.airgap.beaconsdkdemo
 
 import androidx.lifecycle.*
-import it.airgap.beaconsdk.client.BeaconClient
-import it.airgap.beaconsdk.data.beacon.P2pPeer
-import it.airgap.beaconsdk.message.*
+import it.airgap.beaconsdk.core.client.BeaconClient
+import it.airgap.beaconsdk.core.data.beacon.P2pPeer
+import it.airgap.beaconsdk.core.message.*
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
