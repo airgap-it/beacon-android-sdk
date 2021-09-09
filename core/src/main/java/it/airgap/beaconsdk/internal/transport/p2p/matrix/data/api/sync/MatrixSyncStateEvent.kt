@@ -29,7 +29,7 @@ internal sealed class MatrixSyncStateEvent<Content> {
         override val sender: String? = null,
         @SerialName("state_key") override val stateKey: String? = null,
     ) : MatrixSyncStateEvent<Create.Content>() {
-        override val type: String? = TYPE_CREATE
+        override val type: String = TYPE_CREATE
 
         @Serializable
         data class Content(val creator: String)
@@ -42,7 +42,7 @@ internal sealed class MatrixSyncStateEvent<Content> {
         override val sender: String? = null,
         @SerialName("state_key") override val stateKey: String? = null,
     ) : MatrixSyncStateEvent<Member.Content>() {
-        override val type: String? = TYPE_MEMBER
+        override val type: String = TYPE_MEMBER
 
         @Serializable
         data class Content(val membership: Membership? = null)
@@ -73,7 +73,7 @@ internal sealed class MatrixSyncStateEvent<Content> {
         override val sender: String? = null,
         @SerialName("state_key") override val stateKey: String? = null,
     ) : MatrixSyncStateEvent<Message.Content>() {
-        override val type: String? = TYPE_MESSAGE
+        override val type: String = TYPE_MESSAGE
 
         @Serializable
         data class Content(@SerialName("msgtype") val messageType: String? = null, val body: String? = null)

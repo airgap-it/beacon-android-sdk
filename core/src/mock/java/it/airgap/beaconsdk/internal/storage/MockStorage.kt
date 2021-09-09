@@ -9,9 +9,12 @@ internal class MockStorage : Storage {
     private var p2pPeers: List<Peer> = emptyList()
     private var appsMetadata: List<AppMetadata> = emptyList()
     private var permissions: List<Permission> = emptyList()
+    private var matrixRelayServer: String? = null
+    private var matrixChannels: Map<String, String> = emptyMap()
     private var matrixSyncToken: String? = null
     private var matrixRooms: List<MatrixRoom> = emptyList()
     private var sdkVersion: String? = null
+    private var migrations: Set<String> = emptySet()
 
     override suspend fun getPeers(): List<Peer> = p2pPeers
     override suspend fun setPeers(p2pPeers: List<Peer>) {
@@ -28,8 +31,18 @@ internal class MockStorage : Storage {
         this.permissions = permissions
     }
 
+    override suspend fun getMatrixRelayServer(): String? = matrixRelayServer
+    override suspend fun setMatrixRelayServer(relayServer: String?) {
+        this.matrixRelayServer = relayServer
+    }
+
+    override suspend fun getMatrixChannels(): Map<String, String> = matrixChannels
+    override suspend fun setMatrixChannels(channels: Map<String, String>) {
+        this.matrixChannels = channels
+    }
+
     override suspend fun getMatrixSyncToken(): String? = matrixSyncToken
-    override suspend fun setMatrixSyncToken(syncToken: String) {
+    override suspend fun setMatrixSyncToken(syncToken: String?) {
         this.matrixSyncToken = syncToken
     }
 
@@ -41,5 +54,10 @@ internal class MockStorage : Storage {
     override suspend fun getSdkVersion(): String? = sdkVersion
     override suspend fun setSdkVersion(sdkVersion: String) {
         this.sdkVersion = sdkVersion
+    }
+
+    override suspend fun getMigrations(): Set<String> = migrations
+    override suspend fun setMigrations(migrations: Set<String>) {
+        this.migrations = migrations
     }
 }

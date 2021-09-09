@@ -4,29 +4,31 @@ import androidx.annotation.IntRange
 import it.airgap.beaconsdk.internal.crypto.data.KeyPair
 import it.airgap.beaconsdk.internal.crypto.data.SessionKeyPair
 import it.airgap.beaconsdk.internal.crypto.provider.CryptoProvider
-import it.airgap.beaconsdk.internal.utils.*
+import it.airgap.beaconsdk.internal.data.HexString
+import it.airgap.beaconsdk.internal.utils.runCatchingFlat
+import it.airgap.beaconsdk.internal.utils.toHexString
 
 internal class Crypto(private val cryptoProvider: CryptoProvider) {
-    fun hashKey(key: HexString): InternalResult<ByteArray> = hashKey(key.asByteArray())
-    fun hashKey(key: ByteArray): InternalResult<ByteArray> = hash(key, key.size)
+    fun hashKey(key: HexString): Result<ByteArray> = hashKey(key.toByteArray())
+    fun hashKey(key: ByteArray): Result<ByteArray> = hash(key, key.size)
 
-    fun hash(message: String, @IntRange(from = 1) size: Int): InternalResult<ByteArray> =
+    fun hash(message: String, @IntRange(from = 1) size: Int): Result<ByteArray> =
         hash(message.toByteArray(), size)
 
-    fun hash(message: HexString, @IntRange(from = 1) size: Int): InternalResult<ByteArray> =
-        hash(message.asByteArray(), size)
+    fun hash(message: HexString, @IntRange(from = 1) size: Int): Result<ByteArray> =
+        hash(message.toByteArray(), size)
 
-    fun hash(message: ByteArray, @IntRange(from = 1) size: Int): InternalResult<ByteArray> =
-        tryResult { cryptoProvider.getHash(message, size) }
+    fun hash(message: ByteArray, @IntRange(from = 1) size: Int): Result<ByteArray> =
+        runCatching { cryptoProvider.getHash(message, size) }
 
-    fun hashSha256(message: HexString): InternalResult<ByteArray> =
-        hashSha256(message.asByteArray())
+    fun hashSha256(message: HexString): Result<ByteArray> =
+        hashSha256(message.toByteArray())
 
-    fun hashSha256(message: ByteArray): InternalResult<ByteArray> =
-        tryResult { cryptoProvider.getHash256(message) }
+    fun hashSha256(message: ByteArray): Result<ByteArray> =
+        runCatching { cryptoProvider.getHash256(message) }
 
-    fun guid(): InternalResult<String> =
-        tryResult {
+    fun guid(): Result<String> =
+        runCatching {
             val bytes = cryptoProvider.generateRandomBytes(SEED_BYTES)
 
             listOf(
@@ -37,13 +39,13 @@ internal class Crypto(private val cryptoProvider: CryptoProvider) {
                 bytes.slice(10 until SEED_BYTES)
             ).joinToString("-") { slice ->
                 slice.joinToString("") {
-                    it.asHexString().asString()
+                    it.toHexString().asString()
                 }
             }
         }
 
-    fun getKeyPairFromSeed(seed: String): InternalResult<KeyPair> =
-        tryResult {
+    fun getKeyPairFromSeed(seed: String): Result<KeyPair> =
+        runCatching {
             val seedHash = cryptoProvider.getHash(seed.encodeToByteArray(), 32)
 
             cryptoProvider.getEd25519KeyPairFromSeed(seedHash)
@@ -52,8 +54,8 @@ internal class Crypto(private val cryptoProvider: CryptoProvider) {
     fun createServerSessionKeyPair(
         publicKey: ByteArray,
         privateKey: ByteArray,
-    ): InternalResult<SessionKeyPair> =
-        tryResult {
+    ): Result<SessionKeyPair> =
+        runCatching {
             val serverPublicKey = cryptoProvider.convertEd25519PublicKeyToCurve25519(privateKey.sliceArray(32 until 64))
             val serverPrivateKey = cryptoProvider.convertEd25519PrivateKeyToCurve25519(privateKey)
             val clientPublicKey = cryptoProvider.convertEd25519PublicKeyToCurve25519(publicKey)
@@ -68,8 +70,8 @@ internal class Crypto(private val cryptoProvider: CryptoProvider) {
     fun createClientSessionKeyPair(
         publicKey: ByteArray,
         privateKey: ByteArray,
-    ): InternalResult<SessionKeyPair> =
-        tryResult {
+    ): Result<SessionKeyPair> =
+        runCatching {
             val serverPublicKey = cryptoProvider.convertEd25519PublicKeyToCurve25519(privateKey.sliceArray(32 until 64))
             val serverPrivateKey = cryptoProvider.convertEd25519PrivateKeyToCurve25519(privateKey)
             val clientPublicKey = cryptoProvider.convertEd25519PublicKeyToCurve25519(publicKey)
@@ -81,34 +83,34 @@ internal class Crypto(private val cryptoProvider: CryptoProvider) {
             )
         }
 
-    fun signMessageDetached(message: String, privateKey: ByteArray): InternalResult<ByteArray> =
-        flatTryResult { signMessageDetached(message.encodeToByteArray(), privateKey) }
+    fun signMessageDetached(message: String, privateKey: ByteArray): Result<ByteArray> =
+        runCatchingFlat { signMessageDetached(message.encodeToByteArray(), privateKey) }
 
-    fun signMessageDetached(message: HexString, privateKey: ByteArray): InternalResult<ByteArray> =
-        flatTryResult { signMessageDetached(message.asByteArray(), privateKey) }
+    fun signMessageDetached(message: HexString, privateKey: ByteArray): Result<ByteArray> =
+        runCatchingFlat { signMessageDetached(message.toByteArray(), privateKey) }
 
-    fun signMessageDetached(message: ByteArray, privateKey: ByteArray): InternalResult<ByteArray> =
-        tryResult { cryptoProvider.signMessageDetached(message, privateKey) }
+    fun signMessageDetached(message: ByteArray, privateKey: ByteArray): Result<ByteArray> =
+        runCatching { cryptoProvider.signMessageDetached(message, privateKey) }
 
     fun validateEncryptedMessage(encrypted: String): Boolean = cryptoProvider.validateMessage(encrypted)
 
     fun encryptMessageWithPublicKey(
         message: String,
         publicKey: ByteArray,
-    ): InternalResult<ByteArray> =
-        flatTryResult { encryptMessageWithPublicKey(message.encodeToByteArray(), publicKey) }
+    ): Result<ByteArray> =
+        runCatchingFlat { encryptMessageWithPublicKey(message.encodeToByteArray(), publicKey) }
 
     fun encryptMessageWithPublicKey(
         message: HexString,
         publicKey: ByteArray,
-    ): InternalResult<ByteArray> =
-        flatTryResult { encryptMessageWithPublicKey(message.asByteArray(), publicKey) }
+    ): Result<ByteArray> =
+        runCatchingFlat { encryptMessageWithPublicKey(message.toByteArray(), publicKey) }
 
     fun encryptMessageWithPublicKey(
         message: ByteArray,
         publicKey: ByteArray,
-    ): InternalResult<ByteArray> =
-        tryResult {
+    ): Result<ByteArray> =
+        runCatching {
             val curve25519Key = cryptoProvider.convertEd25519PublicKeyToCurve25519(publicKey)
             cryptoProvider.encryptMessageWithPublicKey(message, curve25519Key)
         }
@@ -117,22 +119,22 @@ internal class Crypto(private val cryptoProvider: CryptoProvider) {
         message: String,
         publicKey: ByteArray,
         privateKey: ByteArray,
-    ): InternalResult<ByteArray> =
-        flatTryResult { decryptMessageWithKeyPair(message.encodeToByteArray(), publicKey, privateKey) }
+    ): Result<ByteArray> =
+        runCatchingFlat { decryptMessageWithKeyPair(message.encodeToByteArray(), publicKey, privateKey) }
 
     fun decryptMessageWithKeyPair(
         message: HexString,
         publicKey: ByteArray,
         privateKey: ByteArray,
-    ): InternalResult<ByteArray> =
-        flatTryResult { decryptMessageWithKeyPair(message.asByteArray(), publicKey, privateKey) }
+    ): Result<ByteArray> =
+        runCatchingFlat { decryptMessageWithKeyPair(message.toByteArray(), publicKey, privateKey) }
 
     fun decryptMessageWithKeyPair(
         message: ByteArray,
         publicKey: ByteArray,
         privateKey: ByteArray,
-    ): InternalResult<ByteArray> =
-        tryResult {
+    ): Result<ByteArray> =
+        runCatching {
             val curve25519PublicKey = cryptoProvider.convertEd25519PublicKeyToCurve25519(publicKey)
             val curve25519PrivateKey = cryptoProvider.convertEd25519PrivateKeyToCurve25519(privateKey)
 
@@ -142,38 +144,38 @@ internal class Crypto(private val cryptoProvider: CryptoProvider) {
     fun encryptMessageWithSharedKey(
         message: String,
         sharedKey: ByteArray,
-    ): InternalResult<ByteArray> =
-        flatTryResult { encryptMessageWithSharedKey(message.encodeToByteArray(), sharedKey) }
+    ): Result<ByteArray> =
+        runCatchingFlat { encryptMessageWithSharedKey(message.encodeToByteArray(), sharedKey) }
 
     fun encryptMessageWithSharedKey(
         message: HexString,
         sharedKey: ByteArray,
-    ): InternalResult<ByteArray> =
-        flatTryResult { encryptMessageWithSharedKey(message.asByteArray(), sharedKey) }
+    ): Result<ByteArray> =
+        runCatchingFlat { encryptMessageWithSharedKey(message.toByteArray(), sharedKey) }
 
     fun encryptMessageWithSharedKey(
         message: ByteArray,
         sharedKey: ByteArray,
-    ): InternalResult<ByteArray> =
-        tryResult { cryptoProvider.encryptMessageWithSharedKey(message, sharedKey) }
+    ): Result<ByteArray> =
+        runCatching { cryptoProvider.encryptMessageWithSharedKey(message, sharedKey) }
 
     fun decryptMessageWithSharedKey(
         message: String,
         sharedKey: ByteArray,
-    ): InternalResult<ByteArray> =
-        flatTryResult { decryptMessageWithSharedKey(message.encodeToByteArray(), sharedKey) }
+    ): Result<ByteArray> =
+        runCatchingFlat { decryptMessageWithSharedKey(message.encodeToByteArray(), sharedKey) }
 
     fun decryptMessageWithSharedKey(
         message: HexString,
         sharedKey: ByteArray,
-    ): InternalResult<ByteArray> =
-        flatTryResult { decryptMessageWithSharedKey(message.asByteArray(), sharedKey) }
+    ): Result<ByteArray> =
+        runCatchingFlat { decryptMessageWithSharedKey(message.toByteArray(), sharedKey) }
 
     fun decryptMessageWithSharedKey(
         message: ByteArray,
         sharedKey: ByteArray,
-    ): InternalResult<ByteArray> =
-        tryResult { cryptoProvider.decryptMessageWithSharedKey(message, sharedKey) }
+    ): Result<ByteArray> =
+        runCatching { cryptoProvider.decryptMessageWithSharedKey(message, sharedKey) }
 
     companion object {
         private const val SEED_BYTES = 16

@@ -15,8 +15,7 @@ import it.airgap.beaconsdk.internal.storage.MockSecureStorage
 import it.airgap.beaconsdk.internal.storage.MockStorage
 import it.airgap.beaconsdk.internal.storage.StorageManager
 import it.airgap.beaconsdk.internal.utils.AccountUtils
-import it.airgap.beaconsdk.internal.utils.HexString
-import it.airgap.beaconsdk.internal.utils.Success
+import it.airgap.beaconsdk.internal.utils.toHexString
 import kotlinx.coroutines.runBlocking
 import mockTime
 import org.junit.Before
@@ -54,11 +53,11 @@ internal class MessageControllerTest {
 
         mockTime(currentTimeMillis)
 
-        every { protocol.getAddressFromPublicKey(any()) } answers { Success(firstArg()) }
+        every { protocol.getAddressFromPublicKey(any()) } answers { Result.success(firstArg()) }
         every { protocolRegistry.get(any()) } returns protocol
 
-        every { accountUtils.getAccountIdentifier(any(), any()) } answers { Success(firstArg()) }
-        every { accountUtils.getSenderId(any()) } answers { Success(firstArg<HexString>().asString()) }
+        every { accountUtils.getAccountIdentifier(any(), any()) } answers { Result.success(firstArg()) }
+        every { accountUtils.getSenderId(any()) } answers { Result.success(firstArg<ByteArray>().toHexString().asString()) }
 
         storageManager = StorageManager(MockStorage(), MockSecureStorage(), accountUtils)
         messageController = MessageController(protocolRegistry, storageManager, accountUtils)
@@ -86,7 +85,7 @@ internal class MessageControllerTest {
             runBlocking { messageController.onIncomingMessage(origin, pendingRequest) }
 
             runBlocking { println(storageManager.getAppMetadata()) }
-            val versioned = runBlocking { messageController.onOutgoingMessage(senderId, it, true).get() }
+            val versioned = runBlocking { messageController.onOutgoingMessage(senderId, it, true).getOrThrow() }
             val expected = runBlocking { Pair(origin, VersionedBeaconMessage.fromBeaconMessage(senderId, it)) }
 
             assertEquals(expected, versioned)
@@ -110,7 +109,7 @@ internal class MessageControllerTest {
         val response = beaconResponses().shuffled().first()
 
         assertFailsWith<IllegalArgumentException> {
-            runBlocking { messageController.onOutgoingMessage(senderId, response, true).get() }
+            runBlocking { messageController.onOutgoingMessage(senderId, response, true).getOrThrow() }
         }
     }
 
@@ -161,7 +160,7 @@ internal class MessageControllerTest {
         }
 
         assertFailsWith<IllegalStateException> {
-            runBlocking { messageController.onOutgoingMessage(senderId, permissionResponse, true).get() }
+            runBlocking { messageController.onOutgoingMessage(senderId, permissionResponse, true).getOrThrow() }
         }
     }
 }

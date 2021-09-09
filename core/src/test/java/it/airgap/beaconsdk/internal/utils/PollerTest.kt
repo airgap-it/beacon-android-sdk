@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.TestCoroutineDispatcher
 import org.junit.Before
 import org.junit.Test
 import kotlin.test.assertEquals
@@ -24,9 +25,9 @@ internal class PollerTest {
         runBlocking {
             val iterator = expected.iterator()
             val actual = async {
-                poller.poll {
-                    if (iterator.hasNext()) Success(iterator.next())
-                    else Failure()
+                poller.poll(TestCoroutineDispatcher()) {
+                    if (iterator.hasNext()) Result.success(iterator.next())
+                    else Result.failure()
                 }.mapNotNull { it.getOrNull() }
                     .take(expected.size)
                     .toList()

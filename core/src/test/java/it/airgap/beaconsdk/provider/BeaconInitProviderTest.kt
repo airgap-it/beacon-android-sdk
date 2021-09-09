@@ -2,7 +2,7 @@ package it.airgap.beaconsdk.provider
 
 import android.content.Context
 import io.mockk.*
-import it.airgap.beaconsdk.internal.BeaconApp
+import it.airgap.beaconsdk.internal.BeaconSdk
 import it.airgap.beaconsdk.internal.utils.logInfo
 import mockLog
 import org.junit.After
@@ -31,7 +31,7 @@ internal class BeaconInitProviderTest {
         every { beaconInitProvider.context } returns context
         beaconInitProvider.onCreate()
 
-        verify { BeaconApp.create(context) }
+        verify { BeaconSdk.create(context) }
 
         // BeaconInitProvider is run by the system outside the user control
         // and it's crucial to properly inform the user of the result of its actions

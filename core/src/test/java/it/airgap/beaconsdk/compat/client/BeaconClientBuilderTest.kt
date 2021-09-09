@@ -4,8 +4,8 @@ import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import it.airgap.beaconsdk.client.BeaconClient
 import it.airgap.beaconsdk.data.beacon.P2P
-import it.airgap.beaconsdk.internal.BeaconApp
 import it.airgap.beaconsdk.internal.BeaconConfiguration
+import it.airgap.beaconsdk.internal.BeaconSdk
 import it.airgap.beaconsdk.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.internal.storage.sharedpreferences.SharedPreferencesSecureStorage
 import it.airgap.beaconsdk.internal.storage.sharedpreferences.SharedPreferencesStorage
@@ -21,7 +21,7 @@ internal class BeaconClientBuilderTest {
 
     private lateinit var testDeferred: CompletableDeferred<Unit>
 
-    private lateinit var beaconApp: BeaconApp
+    private lateinit var beaconApp: BeaconSdk
 
     @MockK(relaxed = true)
     private lateinit var dependencyRegistry: DependencyRegistry
@@ -66,6 +66,7 @@ internal class BeaconClientBuilderTest {
         verify(exactly = 1) { dependencyRegistry.connectionController(defaultConnections) }
         verify(exactly = 1) { callback.onSuccess(any()) }
         verify(exactly = 0) { callback.onError(any()) }
+        verify(exactly = 0) { callback.onCancel() }
 
         confirmVerified(callback)
     }
@@ -97,6 +98,7 @@ internal class BeaconClientBuilderTest {
         verify(exactly = 1) { dependencyRegistry.connectionController(customConnections) }
         verify(exactly = 1) { callback.onSuccess(any()) }
         verify(exactly = 0) { callback.onError(any()) }
+        verify(exactly = 0) { callback.onCancel() }
 
         confirmVerified(callback)
     }

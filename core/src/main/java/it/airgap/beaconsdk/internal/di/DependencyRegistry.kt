@@ -2,16 +2,17 @@ package it.airgap.beaconsdk.internal.di
 
 import it.airgap.beaconsdk.data.beacon.Connection
 import it.airgap.beaconsdk.data.beacon.P2P
-import it.airgap.beaconsdk.internal.BeaconApp
 import it.airgap.beaconsdk.internal.BeaconConfiguration
+import it.airgap.beaconsdk.internal.BeaconSdk
 import it.airgap.beaconsdk.internal.controller.ConnectionController
 import it.airgap.beaconsdk.internal.controller.MessageController
 import it.airgap.beaconsdk.internal.crypto.Crypto
 import it.airgap.beaconsdk.internal.crypto.provider.CryptoProvider
 import it.airgap.beaconsdk.internal.crypto.provider.LazySodiumCryptoProvider
+import it.airgap.beaconsdk.internal.migration.Migration
+import it.airgap.beaconsdk.internal.migration.v1_0_4.MigrationFromV1_0_4
 import it.airgap.beaconsdk.internal.network.HttpClient
-import it.airgap.beaconsdk.internal.network.provider.HttpClientProvider
-import it.airgap.beaconsdk.internal.network.provider.KtorHttpClientProvider
+import it.airgap.beaconsdk.internal.network.provider.KtorHttpProvider
 import it.airgap.beaconsdk.internal.protocol.ProtocolRegistry
 import it.airgap.beaconsdk.internal.serializer.Serializer
 import it.airgap.beaconsdk.internal.serializer.provider.Base58CheckSerializerProvider
@@ -23,16 +24,18 @@ import it.airgap.beaconsdk.internal.transport.Transport
 import it.airgap.beaconsdk.internal.transport.p2p.P2pClient
 import it.airgap.beaconsdk.internal.transport.p2p.P2pTransport
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.MatrixClient
-import it.airgap.beaconsdk.internal.transport.p2p.matrix.network.MatrixEventService
-import it.airgap.beaconsdk.internal.transport.p2p.matrix.network.MatrixRoomService
-import it.airgap.beaconsdk.internal.transport.p2p.matrix.network.MatrixUserService
+import it.airgap.beaconsdk.internal.transport.p2p.matrix.network.event.MatrixEventService
+import it.airgap.beaconsdk.internal.transport.p2p.matrix.network.node.MatrixNodeService
+import it.airgap.beaconsdk.internal.transport.p2p.matrix.network.room.MatrixRoomService
+import it.airgap.beaconsdk.internal.transport.p2p.matrix.network.user.MatrixUserService
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.store.MatrixStore
-import it.airgap.beaconsdk.internal.transport.p2p.utils.P2pCommunicationUtils
-import it.airgap.beaconsdk.internal.transport.p2p.utils.P2pServerUtils
+import it.airgap.beaconsdk.internal.transport.p2p.store.P2pStore
+import it.airgap.beaconsdk.internal.transport.p2p.utils.P2pCommunicator
+import it.airgap.beaconsdk.internal.transport.p2p.utils.P2pCrypto
 import it.airgap.beaconsdk.internal.utils.AccountUtils
 import it.airgap.beaconsdk.internal.utils.Base58Check
 import it.airgap.beaconsdk.internal.utils.Poller
-import it.airgap.beaconsdk.internal.utils.asHexString
+import it.airgap.beaconsdk.network.provider.HttpProvider
 
 internal class DependencyRegistry(storage: Storage, secureStorage: SecureStorage) {
 
@@ -55,40 +58,26 @@ internal class DependencyRegistry(storage: Storage, secureStorage: SecureStorage
 
     // -- transport --
 
-    private val transports: MutableMap<Connection.Type, Transport> = mutableMapOf()
-
     fun transport(connection: Connection): Transport =
-        transports.getOrPut(connection.type) {
-            when (connection) {
-                is P2P -> {
-                    val appName = BeaconApp.instance.appName
-                    val appIcon = BeaconApp.instance.appIcon
-                    val appUrl = BeaconApp.instance.appUrl
-                    val keyPair = BeaconApp.instance.keyPair
+        when (connection) {
+            is P2P -> {
+                val app = BeaconSdk.instance.app
 
-                    val replicationCount = BeaconConfiguration.P2P_REPLICATION_COUNT
+                val matrixClient = matrixClient(connection.httpProvider)
+                val matrixNodes = connection.nodes
 
-                    val p2pServerUtils = P2pServerUtils(crypto, connection.nodes)
-                    val p2pCommunicationUtils = P2pCommunicationUtils(crypto)
+                val p2pCommunicator = P2pCommunicator(app, crypto)
+                val p2pStore = P2pStore(app, p2pCommunicator, matrixClient, matrixNodes, storageManager, migration)
+                val p2pCrypto = P2pCrypto(app, crypto)
 
-                    val matrixClients = (0 until replicationCount).map {
-                        val relayServer = p2pServerUtils.getRelayServer(keyPair.publicKey, it.asHexString())
-                        matrixClient("https://$relayServer/${BeaconConfiguration.MATRIX_CLIENT_API.trimStart('/')}")
-                    }
+                val client = P2pClient(
+                    matrixClient,
+                    p2pStore,
+                    p2pCrypto,
+                    p2pCommunicator,
+                )
 
-                    val client = P2pClient(
-                        appName,
-                        appIcon,
-                        appUrl,
-                        p2pServerUtils,
-                        p2pCommunicationUtils,
-                        matrixClients,
-                        crypto,
-                        keyPair
-                    )
-
-                    return P2pTransport(storageManager, client)
-                }
+                P2pTransport(storageManager, client)
             }
         }
 
@@ -114,30 +103,42 @@ internal class DependencyRegistry(storage: Storage, secureStorage: SecureStorage
 
     // -- network --
 
-    private val httpClients: MutableMap<String, HttpClient> = mutableMapOf()
+    private val httpClients: MutableMap<Int, HttpClient> = mutableMapOf()
+    fun httpClient(httpProvider: HttpProvider?): HttpClient {
+        val httpProvider = httpProvider ?: this.httpProvider
 
-    fun httpClient(baseUrl: String): HttpClient =
-        httpClients.getOrPut(baseUrl) { HttpClient(httpClientProvider(baseUrl)) }
+        return httpClients.getOrPut(httpProvider.hashCode()) { HttpClient(this.httpProvider) }
+    }
 
-    private fun httpClientProvider(baseUrl: String): HttpClientProvider =
+    private val httpProvider: HttpProvider by lazy {
         when (BeaconConfiguration.httpClientProvider) {
-            BeaconConfiguration.HttpClientProvider.Ktor -> KtorHttpClientProvider(baseUrl)
+            BeaconConfiguration.HttpClientProvider.Ktor -> KtorHttpProvider()
         }
+    }
 
     // -- Matrix --
 
-    private fun matrixClient(baseUrl: String): MatrixClient =
-        MatrixClient(
-            matrixClientStore,
-            matrixUserService(baseUrl),
-            matrixRoomService(baseUrl),
-            matrixEventService(baseUrl),
+    private fun matrixClient(httpProvider: HttpProvider?): MatrixClient {
+        val httpClient = httpClient(httpProvider)
+
+        return MatrixClient(
+            MatrixStore(storageManager),
+            MatrixNodeService(httpClient),
+            MatrixUserService(httpClient),
+            MatrixRoomService(httpClient),
+            MatrixEventService(httpClient),
             poller,
         )
+    }
 
-    private val matrixClientStore: MatrixStore by lazy { MatrixStore(storageManager) }
+    // -- Migration --
 
-    private fun matrixUserService(baseUrl: String): MatrixUserService = MatrixUserService(httpClient(baseUrl))
-    private fun matrixRoomService(baseUrl: String): MatrixRoomService = MatrixRoomService(httpClient(baseUrl))
-    private fun matrixEventService(baseUrl: String): MatrixEventService = MatrixEventService(httpClient(baseUrl))
+    private val migration: Migration by lazy {
+        Migration(
+            storageManager,
+            listOf(
+                MigrationFromV1_0_4(storageManager),
+            )
+        )
+    }
 }

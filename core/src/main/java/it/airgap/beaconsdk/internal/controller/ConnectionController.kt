@@ -15,46 +15,50 @@ import kotlinx.coroutines.flow.merge
 
 internal class ConnectionController(private val transports: List<Transport>, private val serializer: Serializer) {
 
-    fun subscribe(): Flow<InternalResult<BeaconConnectionMessage>> =
+    fun subscribe(): Flow<Result<BeaconConnectionMessage>> =
         transports
             .map { it.subscribe() }
             .merge()
-            .map { BeaconConnectionMessage.fromInternalResult(it)}
+            .map { BeaconConnectionMessage.fromResult(it)}
 
-    suspend fun send(message: BeaconConnectionMessage): InternalResult<Unit> =
-        flatTryResult {
-            val serializedContent = serializer.serialize(message.content).get()
+    suspend fun send(message: BeaconConnectionMessage): Result<Unit> =
+        runCatchingFlat {
+            val serializedContent = serializer.serialize(message.content).getOrThrow()
             val serializedMessage = SerializedConnectionMessage(message.origin, serializedContent)
 
             return transports
-                .async { it.send(serializedMessage) }
-                .foldIndexed(Success()) { index, acc, next ->
+                .asyncMap { it.send(serializedMessage) }
+                .foldIndexed(Result.success()) { index, acc, next ->
                     acc.concat(next, transports[index].type)
                 }
         }
 
-    private fun BeaconConnectionMessage.Companion.fromInternalResult(
-        connectionMessage: InternalResult<ConnectionTransportMessage>
-    ): InternalResult<BeaconConnectionMessage> = connectionMessage.flatMap { message ->
+    private fun BeaconConnectionMessage.Companion.fromResult(
+        connectionMessage: Result<ConnectionTransportMessage>
+    ): Result<BeaconConnectionMessage> = connectionMessage.flatMap { message ->
         val content = when (message) {
             is SerializedConnectionMessage -> serializer.deserialize(message.content)
-            is BeaconConnectionMessage -> Success(message.content)
+            is BeaconConnectionMessage -> Result.success(message.content)
         }
 
         content.map { BeaconConnectionMessage(message.origin, it) }
     }
 
-    private fun InternalResult<Unit>.concat(other: InternalResult<Unit>, connectionType: Connection.Type): InternalResult<Unit> =
-        when {
-            this is Success<Unit> && other is Success<Unit> -> Success()
-            this is Failure<Unit> && other is Success<Unit> -> Failure(ConnectionException.from(connectionType, error))
-            this is Success<Unit> && other is Failure<Unit> -> Failure(ConnectionException.from(connectionType, other.error))
-            this is Failure<Unit> && other is Failure<Unit> -> {
-                val concat = error.concat(ConnectionException.from(connectionType, other.error))
-                concat?.let { Failure(concat) } ?: Failure()
-            }
-            else -> Failure()
+    private fun Result<Unit>.concat(other: Result<Unit>, connectionType: Connection.Type): Result<Unit> {
+        onSuccess {
+            other.onSuccess { return Result.success() }
+            other.onFailure { otherException -> return Result.failure(ConnectionException.from(connectionType, otherException)) }
         }
+        onFailure { thisException ->
+            other.onSuccess { return Result.failure(ConnectionException.from(connectionType, thisException)) }
+            other.onFailure { otherException ->
+                val concat = thisException.concat(ConnectionException.from(connectionType, otherException))
+                concat?.let { Result.failure<Unit>(concat) } ?: Result.failure()
+            }
+        }
+
+        return Result.failure()
+    }
 
     private fun Throwable.concat(other: Throwable): Throwable? =
         when {

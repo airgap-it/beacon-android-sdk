@@ -40,6 +40,7 @@ internal class MatrixRoomTest {
 
     @Test
     fun `creates list of rooms from sync rooms response`() {
+        val node = "node"
         val syncRooms = MatrixSyncRooms(
             join = mapOf(
                 "1" to MatrixSyncRoom.Joined(
@@ -76,7 +77,7 @@ internal class MatrixRoomTest {
             )
         )
 
-        val rooms = MatrixRoom.fromSync(syncRooms)
+        val rooms = MatrixRoom.fromSync(node, syncRooms)
 
         assertEquals(
             listOf(

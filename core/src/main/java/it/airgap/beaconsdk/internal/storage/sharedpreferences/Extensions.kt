@@ -11,8 +11,12 @@ internal inline fun <reified T> SharedPreferences.getSerializable(key: String, d
     return encoded?.let { Json.decodeFromString(encoded) } ?: default
 }
 
-internal fun SharedPreferences.putString(key: String, value: String) {
+internal fun SharedPreferences.putString(key: String, value: String?) {
     edit().putString(key, value).apply()
+}
+
+internal fun SharedPreferences.putStringSet(key: String, value: Set<String>) {
+    edit().putStringSet(key, value).apply()
 }
 
 internal inline fun <reified T> SharedPreferences.putSerializable(key: String, value: T) {

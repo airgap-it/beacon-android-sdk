@@ -6,9 +6,10 @@ import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.MatrixRoom
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.MatrixSync
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.api.room.MatrixCreateRoomRequest
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.api.room.MatrixCreateRoomRequest.Preset
-import it.airgap.beaconsdk.internal.transport.p2p.matrix.network.MatrixEventService
-import it.airgap.beaconsdk.internal.transport.p2p.matrix.network.MatrixRoomService
-import it.airgap.beaconsdk.internal.transport.p2p.matrix.network.MatrixUserService
+import it.airgap.beaconsdk.internal.transport.p2p.matrix.network.event.MatrixEventService
+import it.airgap.beaconsdk.internal.transport.p2p.matrix.network.node.MatrixNodeService
+import it.airgap.beaconsdk.internal.transport.p2p.matrix.network.room.MatrixRoomService
+import it.airgap.beaconsdk.internal.transport.p2p.matrix.network.user.MatrixUserService
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.store.*
 import it.airgap.beaconsdk.internal.utils.*
 import kotlinx.coroutines.*
@@ -19,6 +20,7 @@ import kotlinx.coroutines.sync.Mutex
 
 internal class MatrixClient(
     private val store: MatrixStore,
+    private val nodeService: MatrixNodeService,
     private val userService: MatrixUserService,
     private val roomService: MatrixRoomService,
     private val eventService: MatrixEventService,
@@ -27,115 +29,145 @@ internal class MatrixClient(
     val events: Flow<MatrixEvent>
         get() = store.events
 
-    private var syncScope: CoroutineScope? = null
+    private val syncScopes: MutableMap<String, CoroutineScope> = mutableMapOf()
 
     suspend fun joinedRooms(): List<MatrixRoom.Joined> =
-        store.state().rooms.values.filterIsInstance<MatrixRoom.Joined>()
+        store.state().getOrNull()?.rooms?.values?.filterIsInstance<MatrixRoom.Joined>() ?: emptyList()
 
     suspend fun invitedRooms(): List<MatrixRoom.Invited> =
-        store.state().rooms.values.filterIsInstance<MatrixRoom.Invited>()
+        store.state().getOrNull()?.rooms?.values?.filterIsInstance<MatrixRoom.Invited>() ?: emptyList()
 
     suspend fun leftRooms(): List<MatrixRoom.Left> =
-        store.state().rooms.values.filterIsInstance<MatrixRoom.Left>()
+        store.state().getOrNull()?.rooms?.values?.filterIsInstance<MatrixRoom.Left>() ?: emptyList()
 
-    suspend fun isLoggedIn(): Boolean = store.state().accessToken != null
+    suspend fun isLoggedIn(): Boolean = store.state().getOrNull()?.accessToken != null
 
-    suspend fun start(userId: String, password: String, deviceId: String) {
-        val loginResponse = userService.login(userId, password, deviceId)
+    suspend fun isUp(node: String): Boolean = nodeService.isUp(node)
 
-        val accessToken = loginResponse.getOrNull()?.accessToken
-            ?: failWith("Login failed", loginResponse.errorOrNull())
+    suspend fun start(node: String, userId: String, password: String, deviceId: String): Result<Unit> =
+        runCatching {
+            val loginResponse = userService.login(node, userId, password, deviceId)
 
-        store.intent(Init(userId, deviceId, accessToken))
-        syncScope { syncPoll(it).collect() }
+            val accessToken = loginResponse.getOrNull()?.accessToken
+                ?: failWith("Login failed", loginResponse.exceptionOrNull())
+
+            store.intent(Init(userId, deviceId, accessToken))
+            syncScope(node) { syncPoll(it, node).collect() }
+        }
+
+    suspend fun stop(node: String? = null) {
+        with(syncScopes) {
+            if (node != null) {
+                get(node)?.cancel("Sync for node $node canceled.")
+                remove(node)
+            } else {
+                forEach { it.value.cancel("Sync for node ${it.key} canceled.") }
+                clear()
+            }
+
+            if (isEmpty()) {
+                store.intent(Reset)
+            }
+        }
     }
 
-    suspend fun createTrustedPrivateRoom(vararg members: String): InternalResult<MatrixRoom?> =
-        flatTryResult {
+    suspend fun resetHard(node: String? = null) {
+        stop(node)
+        store.intent(HardReset)
+    }
+
+    suspend fun createTrustedPrivateRoom(node: String, vararg members: String): Result<MatrixRoom?> =
+        runCatchingFlat {
             withAccessToken("createTrustedPrivateRoom") { accessToken ->
                 roomService.createRoom(
+                    node,
                     accessToken,
                     MatrixCreateRoomRequest(
                         invite = members.toList(),
                         preset = Preset.TrustedPrivateChat,
                         isDirect = true,
-                        roomVersion = "5",
+                        roomVersion = BeaconConfiguration.MATRIX_CLIENT_ROOM_VERSION,
                     ),
                 ).map { response -> response.roomId?.let { MatrixRoom.Unknown(it) } }
             }
         }
 
-    suspend fun inviteToRoom(user: String, roomId: String): InternalResult<Unit> =
-        tryResult {
+    suspend fun inviteToRoom(node: String, user: String, roomId: String): Result<Unit> =
+        runCatching {
             withAccessToken("inviteToRooms") {
-                roomService.inviteToRoom(it, user, roomId).get()
+                roomService.inviteToRoom(node, it, user, roomId).getOrThrow()
             }
         }
 
-    suspend fun inviteToRoom(user: String, room: MatrixRoom): InternalResult<Unit> =
-        tryResult {
+    suspend fun inviteToRoom(node: String, user: String, room: MatrixRoom): Result<Unit> =
+        runCatching {
             withAccessToken("inviteToRooms") {
-                roomService.inviteToRoom(it, user, room.id).get()
+                roomService.inviteToRoom(node, it, user, room.id).getOrThrow()
             }
         }
 
-    suspend fun joinRoom(roomId: String): InternalResult<Unit> =
-        tryResult {
+    suspend fun joinRoom(node: String, roomId: String): Result<Unit> =
+        runCatching {
             withAccessToken("joinRooms") {
-                roomService.joinRoom(it, roomId).get()
+                roomService.joinRoom(node, it, roomId).getOrThrow()
             }
         }
 
-    suspend fun joinRoom(room: MatrixRoom): InternalResult<Unit> =
-        tryResult {
+    suspend fun joinRoom(node: String, room: MatrixRoom): Result<Unit> =
+        runCatching {
             withAccessToken("joinRooms") {
-                roomService.joinRoom(it, room.id).get()
+                roomService.joinRoom(node, it, room.id).getOrThrow()
             }
         }
 
-    suspend fun sendTextMessage(roomId: String, message: String): InternalResult<Unit> =
-        tryResult {
+    suspend fun sendTextMessage(node: String, roomId: String, message: String): Result<Unit> =
+        runCatching {
             withAccessToken("sendTextMessage") { accessToken ->
                 eventService.sendTextMessage(
+                    node,
                     accessToken,
                     roomId,
                     createTxnId(),
                     message,
-                ).get()
+                ).getOrThrow()
             }
         }
 
-    suspend fun sendTextMessage(room: MatrixRoom, message: String): InternalResult<Unit> =
-        tryResult {
+    suspend fun sendTextMessage(node: String, room: MatrixRoom, message: String): Result<Unit> =
+        runCatching {
             withAccessToken("sendTextMessage") { accessToken ->
                 eventService.sendTextMessage(
+                    node,
                     accessToken,
                     room.id,
                     createTxnId(),
                     message,
-                ).get()
+                ).getOrThrow()
             }
         }
 
-    suspend fun sync(): InternalResult<MatrixSync> =
-        flatTryResult {
+    suspend fun sync(node: String): Result<MatrixSync> =
+        runCatchingFlat {
+            val state = store.state().getOrThrow()
+
             withAccessToken("sync") { accessToken ->
-                eventService.sync(accessToken, store.state().syncToken, store.state().pollingTimeout)
-                    .map { MatrixSync.fromSyncResponse(it) }
+                eventService
+                    .sync(node, accessToken, state.syncToken, state.pollingTimeout)
+                    .map { MatrixSync.fromSyncResponse(node, it) }
             }
         }
 
-    fun syncPoll(scope: CoroutineScope, interval: Long = 0): Flow<InternalResult<MatrixSync>> {
+    fun syncPoll(scope: CoroutineScope, node: String, interval: Long = 0): Flow<Result<MatrixSync>> {
         val syncMutex = Mutex()
 
-        return poller.poll(interval = interval) {
+        return poller.poll(Dispatchers.IO, interval) {
             syncMutex.lock()
-            sync()
-        }.onEach {
-            when (it) {
-                is Success -> onSyncSuccess(it.value)
-                is Failure -> onSyncError(scope, it.error)
-            }
+            sync(node)
+        }.onEach { result ->
+            result
+                .onSuccess { onSyncSuccess(it) }
+                .onFailure { onSyncError(scope, it) }
+
             syncMutex.unlock()
         }
     }
@@ -144,19 +176,20 @@ internal class MatrixClient(
         name: String,
         block: (accessToken: String) -> T,
     ): T {
-        val accessToken = store.state().accessToken ?: failWithRequiresAuthorization(name)
+        val accessToken = store.state().getOrNull()?.accessToken ?: failWithRequiresAuthorization(name)
         return block(accessToken)
     }
 
-    private fun syncScope(block: suspend (CoroutineScope) -> Unit) {
-        val scope = syncScope
-            ?: CoroutineScope(CoroutineName("sync") + Dispatchers.IO).also { syncScope = it }
-
-        scope.launch {
-            block(scope)
-            syncScope = null
-        }
+    private suspend fun syncScope(node: String, block: suspend (CoroutineScope) -> Unit) {
+        syncScopes
+            .getOrPut(node) { CoroutineScope(CoroutineName(syncScopeName(node))) }
+            .launch {
+                block(this)
+                syncScopes.remove(node)
+            }
     }
+
+    private fun syncScopeName(node: String): String = "sync@$node"
 
     private suspend fun onSyncSuccess(sync: MatrixSync) {
         store.intent(
@@ -173,7 +206,9 @@ internal class MatrixClient(
         store.intent(OnSyncError)
 
         error?.let { logError(TAG, it) }
-        if (store.state().pollingRetries >= BeaconConfiguration.MATRIX_MAX_SYNC_RETRIES) {
+
+        val pollingRetries = store.state().getOrNull()?.pollingRetries
+        if (pollingRetries == null || pollingRetries >= BeaconConfiguration.MATRIX_MAX_SYNC_RETRIES) {
             logDebug(TAG, "Max sync retries exceeded")
             scope.cancel()
         } else {
@@ -183,7 +218,7 @@ internal class MatrixClient(
 
     private suspend fun createTxnId(): String {
         val timestamp = currentTimestamp()
-        val counter = store.state().transactionCounter
+        val counter = store.state().getOrThrow().transactionCounter
 
         store.intent(OnTxnIdCreated)
 

@@ -26,6 +26,8 @@ internal sealed class MatrixRoom {
     @SerialName("unknown")
     data class Unknown(override val id: String, override val members: List<String> = emptyList()) : MatrixRoom()
 
+    fun hasMember(member: String): Boolean = members.contains(member)
+
     fun update(newMembers: List<String>): MatrixRoom =
         when (this) {
             is Joined -> copy(members = (members + newMembers).distinct())
@@ -35,20 +37,20 @@ internal sealed class MatrixRoom {
         }
 
     companion object {
-        fun fromSync(syncRooms: MatrixSyncRooms): List<MatrixRoom> {
+        fun fromSync(node: String, syncRooms: MatrixSyncRooms): List<MatrixRoom> {
             val joined =
-                syncRooms.join?.entries?.map { Joined(it.key, membersFromSync(it.key, it.value)) } ?: emptyList()
+                syncRooms.join?.entries?.map { Joined(it.key, membersFromSync(node, it.key, it.value)) } ?: emptyList()
 
             val invited =
-                syncRooms.invite?.entries?.map { Invited(it.key, membersFromSync(it.key, it.value)) } ?: emptyList()
+                syncRooms.invite?.entries?.map { Invited(it.key, membersFromSync(node, it.key, it.value)) } ?: emptyList()
 
             val left =
-                syncRooms.leave?.entries?.map { Left(it.key, membersFromSync(it.key, it.value)) } ?: emptyList()
+                syncRooms.leave?.entries?.map { Left(it.key, membersFromSync(node, it.key, it.value)) } ?: emptyList()
 
             return joined + invited + left
         }
 
-        private fun membersFromSync(id: String, syncRoom: MatrixSyncRoom): List<String> =
-            MatrixEvent.fromSync(id, syncRoom).filterIsInstance<MatrixEvent.Join>().map(MatrixEvent.Join::userId)
+        private fun membersFromSync(node: String, id: String, syncRoom: MatrixSyncRoom): List<String> =
+            MatrixEvent.fromSync(node, id, syncRoom).filterIsInstance<MatrixEvent.Join>().map(MatrixEvent.Join::userId)
     }
 }

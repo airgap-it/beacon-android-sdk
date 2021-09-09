@@ -3,7 +3,7 @@ package it.airgap.beaconsdk.client
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import it.airgap.beaconsdk.data.beacon.P2P
-import it.airgap.beaconsdk.internal.BeaconApp
+import it.airgap.beaconsdk.internal.BeaconSdk
 import it.airgap.beaconsdk.internal.BeaconConfiguration
 import it.airgap.beaconsdk.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.internal.storage.sharedpreferences.SharedPreferencesSecureStorage
@@ -17,7 +17,7 @@ import kotlin.test.assertEquals
 
 internal class BeaconClientBuilderTest {
 
-    private lateinit var beaconApp: BeaconApp
+    private lateinit var beaconApp: BeaconSdk
 
     @MockK(relaxed = true)
     private lateinit var dependencyRegistry: DependencyRegistry

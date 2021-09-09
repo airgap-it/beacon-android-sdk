@@ -97,6 +97,30 @@ internal class DecoratedStorage(private val storage: Storage) : ExtendedStorage,
         else removeAll(Storage::setPermissions)
     }
 
+    override suspend fun removeMatrixRelayServer() {
+        setMatrixRelayServer(null)
+    }
+
+    override suspend fun removeMatrixChannels() {
+        setMatrixChannels(emptyMap())
+    }
+
+    override suspend fun removeMatrixSyncToken() {
+        setMatrixSyncToken(null)
+    }
+
+    override suspend fun removeMatrixRooms() {
+        setMatrixRooms(emptyList())
+    }
+
+    override suspend fun addMigrations(migrations: Set<String>) {
+        val storageMigrations = getMigrations()
+            .toMutableSet()
+            .also { it.addAll(migrations) }
+
+        setMigrations(storageMigrations)
+    }
+
     override fun extend(): ExtendedStorage = this
 
     private suspend fun <T> selectFirst(

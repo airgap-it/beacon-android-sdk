@@ -68,18 +68,17 @@ internal class Base58CheckTest {
 
         val messageDigest = MessageDigest.getInstance("SHA-256")
 
-        every { crypto.hashSha256(any<ByteArray>()) } answers { Success(messageDigest.digest(firstArg())) }
-        every { crypto.hashSha256(any<HexString>()) } answers { Success(messageDigest.digest(firstArg<HexString>().asByteArray())) }
+        every { crypto.hashSha256(any<ByteArray>()) } answers { Result.success(messageDigest.digest(firstArg())) }
 
         base58Check = Base58Check(crypto)
     }
 
     @Test
     fun `encodes bytes to Base58Check string`() {
-        val bytesWithExpected = bytesWithEncodings.map { HexString.fromString(it.first).asByteArray() to it.second }
+        val bytesWithExpected = bytesWithEncodings.map { it.first.asHexString().toByteArray() to it.second }
 
         bytesWithExpected
-            .map { base58Check.encode(it.first).get() to it.second }
+            .map { base58Check.encode(it.first).getOrThrow() to it.second }
             .forEach {
                 assertEquals(it.second, it.first)
             }
@@ -87,10 +86,10 @@ internal class Base58CheckTest {
 
     @Test
     fun `decodes Base58Check string to bytes`() {
-        val encodedWithExpected = bytesWithEncodings.map { it.second to HexString.fromString(it.first).asByteArray() }
+        val encodedWithExpected = bytesWithEncodings.map { it.second to it.first.asHexString().toByteArray() }
 
         encodedWithExpected
-            .map { base58Check.decode(it.first).get() to it.second }
+            .map { base58Check.decode(it.first).getOrThrow() to it.second }
             .forEach {
                 assertArrayEquals(it.second, it.first)
             }
@@ -100,7 +99,7 @@ internal class Base58CheckTest {
     fun `fails when decoding invalid base58 string`() {
         invalidBase58Strings.forEach {
             assertFailsWith<IllegalArgumentException> {
-                base58Check.decode(it).get()
+                base58Check.decode(it).getOrThrow()
             }
         }
     }
@@ -109,7 +108,7 @@ internal class Base58CheckTest {
     fun `fails on checksum mismatch`() {
         invalidChecksums.forEach {
             assertFailsWith<IllegalArgumentException> {
-                base58Check.decode(it).get()
+                base58Check.decode(it).getOrThrow()
             }
         }
     }

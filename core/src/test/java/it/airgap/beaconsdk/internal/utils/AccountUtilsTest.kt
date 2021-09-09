@@ -23,9 +23,9 @@ internal class AccountUtilsTest {
     fun setup() {
         MockKAnnotations.init(this)
 
-        every { crypto.hash(any<String>(), any()) } answers { Success(firstArg<String>().encodeToByteArray()) }
-        every { crypto.hash(any<HexString>(), any()) } answers { Success(firstArg<HexString>().asString().encodeToByteArray()) }
-        every { base58Check.encode(any()) } answers { Success(firstArg<ByteArray>().decodeToString()) }
+        every { crypto.hash(any<String>(), any()) } answers { Result.success(firstArg<String>().encodeToByteArray()) }
+        every { crypto.hash(any<ByteArray>(), any()) } answers { Result.success(firstArg<ByteArray>().toHexString().asString().encodeToByteArray()) }
+        every { base58Check.encode(any()) } answers { Result.success(firstArg<ByteArray>().decodeToString()) }
 
         accountUtils = AccountUtils(crypto, base58Check)
     }
@@ -33,14 +33,14 @@ internal class AccountUtilsTest {
     @Test
     fun `creates account identifier from address and network`() {
         expectedIdentifiers()
-            .map { accountUtils.getAccountIdentifier(it.first.first, it.first.second).get() to it.second }
+            .map { accountUtils.getAccountIdentifier(it.first.first, it.first.second).getOrThrow() to it.second }
             .forEach { assertEquals(it.second, it.first) }
     }
 
     @Test
     fun `creates sender id from public key`() {
         val publicKey = "00"
-        val senderId = accountUtils.getSenderId(HexString.fromString(publicKey)).get()
+        val senderId = accountUtils.getSenderId(publicKey.asHexString().toByteArray()).getOrThrow()
 
         assertEquals(publicKey, senderId)
     }

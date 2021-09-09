@@ -7,10 +7,10 @@ import it.airgap.beaconsdk.internal.message.SerializedConnectionMessage
 import it.airgap.beaconsdk.internal.storage.StorageManager
 import it.airgap.beaconsdk.internal.transport.Transport
 import it.airgap.beaconsdk.internal.transport.p2p.data.P2pMessage
-import it.airgap.beaconsdk.internal.utils.HexString
-import it.airgap.beaconsdk.internal.utils.InternalResult
-import it.airgap.beaconsdk.internal.utils.Success
-import it.airgap.beaconsdk.internal.utils.flatTryResult
+import it.airgap.beaconsdk.internal.utils.asHexString
+import it.airgap.beaconsdk.internal.utils.asHexStringOrNull
+import it.airgap.beaconsdk.internal.utils.runCatchingFlat
+import it.airgap.beaconsdk.internal.utils.success
 import kotlinx.coroutines.flow.*
 
 internal class P2pTransport(
@@ -19,19 +19,19 @@ internal class P2pTransport(
 ) : Transport() {
     override val type: Connection.Type = Connection.Type.P2P
 
-    override val connectionMessages: Flow<InternalResult<ConnectionTransportMessage>> by lazy {
+    override val connectionMessages: Flow<Result<ConnectionTransportMessage>> by lazy {
         storageManager.updatedPeers
             .filterIsInstance<P2pPeer>()
             .onEach { onUpdatedP2pPeer(it) }
             .filterNot { it.isRemoved }
-            .mapNotNull { HexString.fromStringOrNull(it.publicKey) }
+            .mapNotNull { it.publicKey.asHexStringOrNull()?.toByteArray() }
             .filterNot { client.isSubscribed(it) }
             .flatMapMerge { subscribeToP2pPeer(it) }
-            .map { ConnectionMessage.fromInternalResult(it) }
+            .map { ConnectionMessage.fromResult(it) }
     }
 
-    override suspend fun sendMessage(message: ConnectionTransportMessage): InternalResult<Unit> =
-        flatTryResult {
+    override suspend fun sendMessage(message: ConnectionTransportMessage): Result<Unit> =
+        runCatchingFlat {
             val peerPublicKey = message.origin.id
             val peer =
                 storageManager.findInstancePeer<P2pPeer> { it.publicKey == peerPublicKey }
@@ -39,14 +39,14 @@ internal class P2pTransport(
 
             return when (message) {
                 is SerializedConnectionMessage -> sendSerializedMessage(message.content, peer)
-                else -> Success()
+                else -> Result.success()
             }
         }
 
     private suspend fun sendSerializedMessage(
         message: String,
         recipient: P2pPeer,
-    ): InternalResult<Unit> = client.sendTo(recipient, message)
+    ): Result<Unit> = client.sendTo(recipient, message)
 
     private suspend fun onUpdatedP2pPeer(peer: P2pPeer) {
         if (!peer.isPaired && !peer.isRemoved) pairP2pPeer(peer)
@@ -71,19 +71,19 @@ internal class P2pTransport(
         }
     }
 
-    private fun subscribeToP2pPeer(publicKey: HexString): Flow<InternalResult<P2pMessage>> =
+    private fun subscribeToP2pPeer(publicKey: ByteArray): Flow<Result<P2pMessage>> =
         client.subscribeTo(publicKey)
 
-    private fun unsubscribeFromP2pPeer(peerInfo: Peer) {
-        val publicKey = HexString.fromString(peerInfo.publicKey)
+    private suspend fun unsubscribeFromP2pPeer(peerInfo: Peer) {
+        val publicKey = peerInfo.publicKey.asHexString().toByteArray()
         client.unsubscribeFrom(publicKey)
     }
 
     private fun failWithUnknownPeer(publicKey: String): Nothing =
         throw IllegalStateException("P2P peer with public key $publicKey is not recognized.")
 
-    private fun ConnectionMessage.Companion.fromInternalResult(
-        p2pMessage: InternalResult<P2pMessage>,
-    ): InternalResult<ConnectionTransportMessage> =
+    private fun ConnectionMessage.Companion.fromResult(
+        p2pMessage: Result<P2pMessage>,
+    ): Result<ConnectionTransportMessage> =
         p2pMessage.map { SerializedConnectionMessage(Origin.P2P(it.id), it.content) }
 }
