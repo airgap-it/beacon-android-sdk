@@ -1,11 +1,13 @@
 package it.airgap.beaconsdk.core.internal.utils
 
+import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.data.beacon.Network
 import it.airgap.beaconsdk.core.internal.crypto.Crypto
 
-internal class AccountUtils(private val crypto: Crypto, private val base58Check: Base58Check) {
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+public class AccountUtils(private val crypto: Crypto, private val base58Check: Base58Check) {
 
-    fun getAccountIdentifier(address: String, network: Network): Result<String> {
+    public fun getAccountIdentifier(address: String, network: Network): Result<String> {
         val data = with(network) {
             mutableListOf(address, identifier).apply {
                 name?.let { add("name:$it") }
@@ -18,12 +20,12 @@ internal class AccountUtils(private val crypto: Crypto, private val base58Check:
         return hash.flatMap { base58Check.encode(it) }
     }
 
-    fun getSenderId(publicKey: ByteArray): Result<String> {
+    public fun getSenderId(publicKey: ByteArray): Result<String> {
         val hash = crypto.hash(publicKey, SENDER_ID_HASH_SIZE)
         return hash.flatMap { base58Check.encode(it) }
     }
 
-    companion object {
+    public companion object {
         private const val SENDER_ID_HASH_SIZE = 5
     }
 }

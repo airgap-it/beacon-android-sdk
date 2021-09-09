@@ -8,30 +8,33 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.JsonElement
 import kotlin.reflect.KClass
 
-internal fun failWith(message: String? = null, cause: Throwable? = null): Nothing =
+public fun failWith(message: String? = null, cause: Throwable? = null): Nothing =
     if (message == null && cause != null) throw cause
     else throw InternalException(message, cause)
 
-internal fun failWithUninitialized(name: String): Nothing =
+public fun failWithUninitialized(name: String): Nothing =
     throw IllegalStateException("$name uninitialized")
 
-internal fun failWithIllegalState(message: String): Nothing =
+public fun failWithIllegalState(message: String? = null): Nothing =
     throw IllegalStateException(message)
 
-internal fun failWithIllegalArgument(message: String): Nothing =
+public fun failWithIllegalArgument(message: String? = null): Nothing =
     throw IllegalArgumentException(message)
 
-internal fun failWithExpectedJsonDecoder(actual: KClass<out Decoder>): Nothing =
+public fun failWithChainNotFound(identifier: String): Nothing =
+    throw IllegalStateException("Chain \"$identifier\" could not be found")
+
+public fun failWithExpectedJsonDecoder(actual: KClass<out Decoder>): Nothing =
     throw SerializationException("Expected Json decoder, got $actual")
 
-internal fun failWithExpectedJsonEncoder(actual: KClass<out Encoder>): Nothing =
+public fun failWithExpectedJsonEncoder(actual: KClass<out Encoder>): Nothing =
     throw SerializationException("Expected Json encoder, got $actual")
 
-internal fun failWithUnexpectedJsonType(type: KClass<out JsonElement>): Nothing =
+public fun failWithUnexpectedJsonType(type: KClass<out JsonElement>): Nothing =
     throw SerializationException("Could not deserialize, unexpected JSON type $type")
 
-internal fun failWithMissingField(name: String): Nothing =
+public fun failWithMissingField(name: String): Nothing =
     throw SerializationException("Could not deserialize, `$name` field is missing")
 
-internal fun failWithUnsupportedMessage(message: BeaconMessage, version: String): Nothing =
+public fun failWithUnsupportedMessage(message: BeaconMessage, version: String): Nothing =
     throw IllegalArgumentException("Message $message is not supported in version $version")

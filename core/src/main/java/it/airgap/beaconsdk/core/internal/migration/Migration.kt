@@ -4,7 +4,7 @@ import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.utils.failWithIllegalState
 import it.airgap.beaconsdk.core.internal.utils.logDebug
 
-internal class Migration(private val storageManager: StorageManager, migrations: List<VersionedMigration>) {
+public class Migration(private val storageManager: StorageManager, migrations: List<VersionedMigration>) {
     init {
         requireUniqueMigrations(migrations)
     }

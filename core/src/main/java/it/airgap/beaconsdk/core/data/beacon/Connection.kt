@@ -6,7 +6,7 @@ import it.airgap.beaconsdk.core.network.provider.HttpProvider
 /**
  * Connection types supported in Beacon.
  */
-public sealed class Connection(internal val type: Type) {
+public sealed class Connection(public val type: Type) {
     public enum class Type {
         P2P
     }

@@ -40,7 +40,7 @@ public class BeaconInitProvider : ContentProvider() {
         selectionArgs: Array<out String>?,
     ): Int = 0
 
-    internal companion object {
+    public companion object {
         const val TAG = "BeaconInitProvider"
     }
 }

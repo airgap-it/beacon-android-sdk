@@ -1,35 +1,48 @@
 package it.airgap.beaconsdk.core.internal.utils
 
+import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.internal.data.HexString
 import java.math.BigInteger
 
 private val hexRegex: Regex = Regex("^(${HexString.PREFIX})?([0-9a-fA-F]{2})+$")
 
-internal fun String.isHex(): Boolean = this.matches(hexRegex)
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+public fun String.isHex(): Boolean = this.matches(hexRegex)
 
-internal fun String.asHexStringOrNull(): HexString? = if (isHex()) HexString(this) else null
-internal fun String.asHexString(): HexString = asHexStringOrNull() ?: failWithInvalidHexString(this)
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+public fun String.asHexStringOrNull(): HexString? = if (isHex()) HexString(this) else null
 
-internal fun String.encodeToHexString(): HexString = encodeToByteArray().toHexString()
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+public fun String.asHexString(): HexString = asHexStringOrNull() ?: failWithInvalidHexString(this)
 
-internal fun Byte.toHexString(): HexString =
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+public fun String.encodeToHexString(): HexString = encodeToByteArray().toHexString()
+
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+public fun Byte.toHexString(): HexString =
     toUByte().toString(16).padStartEven('0').asHexString()
 
-internal fun ByteArray.toHexString(): HexString =
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+public fun ByteArray.toHexString(): HexString =
     joinToString("") { it.toHexString().asString() }.asHexString()
 
-internal fun ByteArray.toBigInteger(): BigInteger = BigInteger(this)
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+public fun ByteArray.toBigInteger(): BigInteger = BigInteger(this)
 
-internal fun List<Byte>.toHexString(): HexString =
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+public fun List<Byte>.toHexString(): HexString =
     joinToString("") { it.toHexString().asString() }.asHexString()
 
-internal fun Int.toHexString(): HexString =
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+public fun Int.toHexString(): HexString =
     toUInt().toString(16).padStartEven('0').asHexString()
 
-internal fun BigInteger.toHexString(): HexString =
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+public fun BigInteger.toHexString(): HexString =
     asHexStringOrNull() ?: failWithNegativeNumber(this)
 
-internal fun BigInteger.asHexStringOrNull(): HexString? =
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+public fun BigInteger.asHexStringOrNull(): HexString? =
     if (this >= BigInteger.ZERO) toString(16).padStartEven('0').asHexString()
     else null
 

@@ -6,18 +6,21 @@ import beaconVersionedMessages
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
+import io.mockk.unmockkAll
 import it.airgap.beaconsdk.core.data.beacon.Origin
 import it.airgap.beaconsdk.core.data.beacon.Permission
+import it.airgap.beaconsdk.core.internal.chain.ChainRegistry
+import it.airgap.beaconsdk.core.internal.chain.MockChain
 import it.airgap.beaconsdk.core.internal.message.VersionedBeaconMessage
-import it.airgap.beaconsdk.core.internal.protocol.Protocol
-import it.airgap.beaconsdk.core.internal.protocol.ProtocolRegistry
 import it.airgap.beaconsdk.core.internal.storage.MockSecureStorage
 import it.airgap.beaconsdk.core.internal.storage.MockStorage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.utils.AccountUtils
 import it.airgap.beaconsdk.core.internal.utils.toHexString
 import kotlinx.coroutines.runBlocking
+import mockChainRegistry
 import mockTime
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import permissionBeaconRequest
@@ -29,13 +32,12 @@ import kotlin.test.assertTrue
 internal class MessageControllerTest {
 
     @MockK
-    private lateinit var protocol: Protocol
-
-    @MockK
-    private lateinit var protocolRegistry: ProtocolRegistry
+    private lateinit var chainRegistry: ChainRegistry
 
     @MockK
     private lateinit var accountUtils: AccountUtils
+
+    private val chain: MockChain = MockChain()
 
     private lateinit var storageManager: StorageManager
     private lateinit var messageController: MessageController
@@ -51,16 +53,21 @@ internal class MessageControllerTest {
     fun setup() {
         MockKAnnotations.init(this)
 
+        mockChainRegistry()
         mockTime(currentTimeMillis)
 
-        every { protocol.getAddressFromPublicKey(any()) } answers { Result.success(firstArg()) }
-        every { protocolRegistry.get(any()) } returns protocol
+        every { chainRegistry.get(any()) } returns chain
 
         every { accountUtils.getAccountIdentifier(any(), any()) } answers { Result.success(firstArg()) }
         every { accountUtils.getSenderId(any()) } answers { Result.success(firstArg<ByteArray>().toHexString().asString()) }
 
         storageManager = StorageManager(MockStorage(), MockSecureStorage(), accountUtils)
-        messageController = MessageController(protocolRegistry, storageManager, accountUtils)
+        messageController = MessageController(chainRegistry, storageManager, accountUtils)
+    }
+
+    @After
+    fun cleanUp() {
+        unmockkAll()
     }
 
     @Test
@@ -81,12 +88,12 @@ internal class MessageControllerTest {
         val beaconMessage = beaconMessages(version = version, origin = origin)
 
         beaconMessage.forEach {
-            val pendingRequest = VersionedBeaconMessage.fromBeaconMessage(senderId, permissionBeaconRequest(id = it.id, senderId = senderId))
+            val pendingRequest = VersionedBeaconMessage.from(senderId, permissionBeaconRequest(id = it.id, senderId = senderId))
             runBlocking { messageController.onIncomingMessage(origin, pendingRequest) }
 
             runBlocking { println(storageManager.getAppMetadata()) }
             val versioned = runBlocking { messageController.onOutgoingMessage(senderId, it, true).getOrThrow() }
-            val expected = runBlocking { Pair(origin, VersionedBeaconMessage.fromBeaconMessage(senderId, it)) }
+            val expected = runBlocking { Pair(origin, VersionedBeaconMessage.from(senderId, it)) }
 
             assertEquals(expected, versioned)
         }
@@ -95,7 +102,7 @@ internal class MessageControllerTest {
     @Test
     fun `saves app metadata on permission request`() {
         val permissionRequest = permissionBeaconRequest(version = version)
-        val versionedRequest = VersionedBeaconMessage.fromBeaconMessage(senderId, permissionRequest)
+        val versionedRequest = VersionedBeaconMessage.from(senderId, permissionRequest)
 
         val result = runBlocking { messageController.onIncomingMessage(origin, versionedRequest) }
         val appsMetadata = runBlocking { storageManager.getAppMetadata() }
@@ -120,7 +127,7 @@ internal class MessageControllerTest {
         val permissionRequest = permissionBeaconRequest(id = id, version = version, senderId = senderId)
         val permissionResponse = permissionBeaconResponse(id = id, version = version)
 
-        val versionedRequest = VersionedBeaconMessage.fromBeaconMessage(senderId, permissionRequest)
+        val versionedRequest = VersionedBeaconMessage.from(senderId, permissionRequest)
 
         runBlocking {
             messageController.onIncomingMessage(origin, versionedRequest)
@@ -131,8 +138,8 @@ internal class MessageControllerTest {
         val permissions = runBlocking { storageManager.getPermissions() }
         val expected = listOf(
             Permission(
-                permissionResponse.publicKey,
-                permissionResponse.publicKey,
+                "@${permissionResponse.publicKey}",
+                "@${permissionResponse.publicKey}",
                 permissionResponse.network,
                 permissionResponse.scopes,
                 appMetadata.senderId,
@@ -152,7 +159,7 @@ internal class MessageControllerTest {
         val permissionRequest = permissionBeaconRequest(id = id, version = version)
         val permissionResponse = permissionBeaconResponse(id = id, version = version)
 
-        val versionedRequest = VersionedBeaconMessage.fromBeaconMessage(senderId, permissionRequest)
+        val versionedRequest = VersionedBeaconMessage.from(senderId, permissionRequest)
 
         runBlocking {
             messageController.onIncomingMessage(origin, versionedRequest)

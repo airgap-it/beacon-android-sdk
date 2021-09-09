@@ -1,3 +1,6 @@
-include ':core'
-include ':demo'
 rootProject.name = "Beacon SDK"
+
+include ':core'
+include ':chain-tezos'
+
+include ':demo'

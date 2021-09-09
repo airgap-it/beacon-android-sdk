@@ -1,7 +1,6 @@
 package it.airgap.beaconsdk.core.message
 
 import it.airgap.beaconsdk.core.data.beacon.*
-import it.airgap.beaconsdk.core.data.tezos.TezosOperation
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -14,8 +13,8 @@ import kotlinx.serialization.Serializable
 public sealed class BeaconMessage {
     public abstract val id: String
 
-    internal abstract val version: String
-    internal abstract val associatedOrigin: Origin
+    public abstract val version: String
+    public abstract val associatedOrigin: Origin
 
     public companion object {}
 }
@@ -32,6 +31,7 @@ public sealed class BeaconMessage {
 @SerialName("request")
 public sealed class BeaconRequest : BeaconMessage() {
     public abstract val senderId: String
+    public abstract val appMetadata: AppMetadata?
     public abstract val origin: Origin
 
     override val associatedOrigin: Origin
@@ -54,10 +54,10 @@ public sealed class BeaconRequest : BeaconMessage() {
  */
 @Serializable
 @SerialName("permission_request")
-public data class PermissionBeaconRequest internal constructor(
+public data class PermissionBeaconRequest(
     override val id: String,
     override val senderId: String,
-    val appMetadata: AppMetadata,
+    override val appMetadata: AppMetadata,
     public val network: Network,
     public val scopes: List<Permission.Scope>,
     override val origin: Origin,
@@ -67,85 +67,23 @@ public data class PermissionBeaconRequest internal constructor(
 }
 
 /**
- * Message requesting the broadcast of the given [Tezos operations][operationDetails].
- * The operations may be only partially filled by the dApp and lack certain information.
  *
- * Expects [OperationBeaconResponse] as a response.
- *
- * @property [id] The value that identifies this request.
- * @property [senderId] The value that identifies the sender of this request.
- * @property [appMetadata] The metadata describing the dApp asking for the broadcast. May be `null` if the [senderId] is unknown.
- * @property [network] The network on which the operations should be broadcast.
- * @property [operationDetails] Tezos operations which should be broadcast.
- * @property [sourceAddress] The address of the Tezos account that is requested to broadcast the operations.
- * @property [origin] The origination data of this request.
  */
 @Serializable
-@SerialName("operation_request")
-public data class OperationBeaconRequest internal constructor(
+@SerialName("chain_request")
+public data class ChainBeaconRequest(
     override val id: String,
     override val senderId: String,
-    val appMetadata: AppMetadata?,
-    public val network: Network,
-    public val operationDetails: List<TezosOperation>,
-    public val sourceAddress: String,
+    override val appMetadata: AppMetadata?,
+    val identifier: String,
+    val payload: Payload,
     override val origin: Origin,
     override val version: String,
 ) : BeaconRequest() {
-    public companion object {}
-}
 
-/**
- * Message requesting the signature of the given [payload].
- *
- * Expects [SignPayloadBeaconResponse] as a response.
- *
- * @property [id] The value that identifies this request.
- * @property [senderId] The value that identifies the sender of this request.
- * @property [appMetadata] The metadata describing the dApp asking for the signature. May be `null` if the [senderId] is unknown.
- * @property [signingType] The requested type of signature. The client MUST fail if cannot provide the specified signature.
- * @property [payload] The payload to be signed.
- * @property [sourceAddress] The address of the account with which the payload should be signed.
- * @property [origin] The origination data of this request.
- */
-@Serializable
-@SerialName("sign_payload_request")
-public data class SignPayloadBeaconRequest internal constructor(
-    override val id: String,
-    override val senderId: String,
-    val appMetadata: AppMetadata?,
-    public val signingType: SigningType,
-    public val payload: String,
-    public val sourceAddress: String,
-    override val origin: Origin,
-    override val version: String,
-) : BeaconRequest() {
-    public companion object {}
-}
+    @Serializable
+    public abstract class Payload {}
 
-/**
- * Message requesting the broadcast of the given [transaction][signedTransaction].
- *
- * Expects [BroadcastBeaconResponse] as a response.
- *
- * @property [id] The value that identifies this request.
- * @property [senderId] The value that identifies the sender of this request.
- * @property [appMetadata] The metadata describing the dApp asking for the broadcast. May be `null` if the [senderId] is unknown.
- * @property [network] The network on which the transaction should be broadcast.
- * @property [signedTransaction] The transaction to be broadcast.
- * @property [origin] The origination data of this request.
- */
-@Serializable
-@SerialName("broadcast_request")
-public data class BroadcastBeaconRequest internal constructor(
-    override val id: String,
-    override val senderId: String,
-    val appMetadata: AppMetadata?,
-    public val network: Network,
-    public val signedTransaction: String,
-    override val origin: Origin,
-    override val version: String,
-) : BeaconRequest() {
     public companion object {}
 }
 
@@ -175,7 +113,7 @@ public sealed class BeaconResponse : BeaconMessage() {
  */
 @Serializable
 @SerialName("permission_response")
-public data class PermissionBeaconResponse internal constructor(
+public data class PermissionBeaconResponse(
     override val id: String,
     public val publicKey: String,
     public val network: Network,
@@ -207,88 +145,34 @@ public data class PermissionBeaconResponse internal constructor(
 }
 
 /**
- * Message responding to [OperationBeaconRequest].
  *
- * @property [id] The value that identifies the request to which the message is responding.
- * @property [transactionHash] The hash of the broadcast operations.
  */
 @Serializable
-@SerialName("operation_response")
-public data class OperationBeaconResponse internal constructor(
+@SerialName("chain_response")
+public data class ChainBeaconResponse(
     override val id: String,
-    public val transactionHash: String,
+    public val identifier: String,
+    public val payload: Payload,
     override val version: String,
     override val requestOrigin: Origin,
 ) : BeaconResponse() {
 
-    public companion object {
-
-        /**
-         * Creates a new instance of [OperationBeaconResponse] from the [request]
-         * with the specified [transactionHash].
-         *
-         * The response will have an id matching the one of the [request].
-         */
-        public fun from(request: OperationBeaconRequest, transactionHash: String): OperationBeaconResponse =
-            OperationBeaconResponse(request.id, transactionHash, request.version, request.origin)
-    }
-}
-
-/**
- * Message responding to [SignPayloadBeaconRequest].
- *
- * @property [id] The value that identifies the request to which the message is responding.
- * @property [signingType] The signature type.
- * @property [signature] The payload signature.
- */
-@Serializable
-@SerialName("sign_payload_response")
-public data class SignPayloadBeaconResponse internal constructor(
-    override val id: String,
-    public val signingType: SigningType,
-    public val signature: String,
-    override val version: String,
-    override val requestOrigin: Origin,
-) : BeaconResponse() {
+    @Serializable
+    public abstract class Payload {}
 
     public companion object {
 
         /**
-         * Creates a new instance of [SignPayloadBeaconResponse] from the [request]
-         * with the specified [signingType] and [signature].
+         * Creates a new instance of [ChainBeaconResponse] from the [request]
+         * with the specified payload.
          *
          * The response will have an id matching the one of the [request].
          */
-        public fun from(request: SignPayloadBeaconRequest, signingType: SigningType, signature: String): SignPayloadBeaconResponse =
-            SignPayloadBeaconResponse(request.id, signingType, signature, request.version, request.origin)
-    }
-}
-
-/**
- * Message responding to [BroadcastBeaconRequest].
- *
- * @property [id] The value that identifies the request to which the message is responding.
- * @property [transactionHash] The hash of the broadcast transaction.
- */
-@Serializable
-@SerialName("broadcast_response")
-public data class BroadcastBeaconResponse internal constructor(
-    override val id: String,
-    public val transactionHash: String,
-    override val version: String,
-    override val requestOrigin: Origin,
-) : BeaconResponse() {
-
-    public companion object {
-
-        /**
-         * Creates a new instance of [BroadcastBeaconResponse] from the [request]
-         * with the specified [transactionHash].
-         *
-         * The response will have an id matching the one of the [request].
-         */
-        public fun from(request: BroadcastBeaconRequest, transactionHash: String): BroadcastBeaconResponse =
-            BroadcastBeaconResponse(request.id, transactionHash, request.version, request.origin)
+        public fun from(
+            request: ChainBeaconRequest,
+            payload: Payload,
+        ): ChainBeaconResponse =
+            ChainBeaconResponse(request.id, request.identifier, payload, request.version, request.origin)
     }
 }
 

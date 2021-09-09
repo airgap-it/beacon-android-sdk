@@ -18,7 +18,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.sync.Mutex
 
-internal class MatrixClient(
+public class MatrixClient(
     private val store: MatrixStore,
     private val nodeService: MatrixNodeService,
     private val userService: MatrixUserService,

@@ -7,7 +7,7 @@ import it.airgap.beaconsdk.core.internal.transport.p2p.matrix.network.MatrixServ
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.single
 
-internal class MatrixNodeService(httpClient: HttpClient) : MatrixService(httpClient) {
+public class MatrixNodeService(httpClient: HttpClient) : MatrixService(httpClient) {
 
     suspend fun isUp(node: String): Boolean =
         withApiBase(node) { baseUrl ->

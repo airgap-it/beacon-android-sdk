@@ -2,7 +2,7 @@ package it.airgap.beaconsdk.core.client
 
 import it.airgap.beaconsdk.core.data.beacon.*
 import it.airgap.beaconsdk.core.exception.BeaconException
-import it.airgap.beaconsdk.core.internal.BeaconSdk
+import it.airgap.beaconsdk.core.internal.chain.Chain
 import it.airgap.beaconsdk.core.internal.controller.ConnectionController
 import it.airgap.beaconsdk.core.internal.controller.MessageController
 import it.airgap.beaconsdk.core.internal.crypto.Crypto
@@ -300,7 +300,7 @@ public class BeaconClient internal constructor(
      *
      * @constructor Creates a builder configured with the specified application [name] and list of [connections] with [P2P] included by default.
      */
-    public class Builder(private val name: String) {
+    public class Builder(private val name: String, private val chains: List<Chain.Factory<*>>) {
 
         /**
          * A URL to the application's website.
@@ -321,16 +321,15 @@ public class BeaconClient internal constructor(
          * Builds a new instance of [BeaconClient].
          */
         public suspend fun build(): BeaconClient {
-            val beaconApp = BeaconSdk.instance
-            val storage = SharedPreferencesStorage.create(beaconApp.applicationContext)
-            val secureStorage = SharedPreferencesSecureStorage.create(beaconApp.applicationContext)
+            val storage = SharedPreferencesStorage.create(applicationContext)
+            val secureStorage = SharedPreferencesSecureStorage.create(applicationContext)
 
-            beaconApp.init(name, appUrl, iconUrl, storage, secureStorage)
+            beaconSdk.init(name, appUrl, iconUrl, chains, storage, secureStorage)
 
-            with(beaconApp.dependencyRegistry) {
+            with(dependencyRegistry) {
                 return BeaconClient(
                     name,
-                    beaconApp.beaconId,
+                    beaconSdk.beaconId,
                     connectionController(connections),
                     messageController,
                     storageManager,
@@ -348,6 +347,7 @@ public class BeaconClient internal constructor(
  */
 public suspend fun BeaconClient(
     name: String,
+    chains: List<Chain.Factory<*>>,
     builderAction: BeaconClient.Builder.() -> Unit = {},
-): BeaconClient = BeaconClient.Builder(name).apply(builderAction).build()
+): BeaconClient = BeaconClient.Builder(name, chains).apply(builderAction).build()
 

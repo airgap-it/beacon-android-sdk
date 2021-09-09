@@ -1,9 +1,11 @@
 package it.airgap.beaconsdk.core.internal.di
 
+import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.data.beacon.Connection
 import it.airgap.beaconsdk.core.data.beacon.P2P
 import it.airgap.beaconsdk.core.internal.BeaconConfiguration
-import it.airgap.beaconsdk.core.internal.BeaconSdk
+import it.airgap.beaconsdk.core.internal.chain.Chain
+import it.airgap.beaconsdk.core.internal.chain.ChainRegistry
 import it.airgap.beaconsdk.core.internal.controller.ConnectionController
 import it.airgap.beaconsdk.core.internal.controller.MessageController
 import it.airgap.beaconsdk.core.internal.crypto.Crypto
@@ -13,7 +15,6 @@ import it.airgap.beaconsdk.core.internal.migration.Migration
 import it.airgap.beaconsdk.core.internal.migration.v1_0_4.MigrationFromV1_0_4
 import it.airgap.beaconsdk.core.internal.network.HttpClient
 import it.airgap.beaconsdk.core.internal.network.provider.KtorHttpProvider
-import it.airgap.beaconsdk.core.internal.protocol.ProtocolRegistry
 import it.airgap.beaconsdk.core.internal.serializer.Serializer
 import it.airgap.beaconsdk.core.internal.serializer.provider.Base58CheckSerializerProvider
 import it.airgap.beaconsdk.core.internal.serializer.provider.SerializerProvider
@@ -35,20 +36,28 @@ import it.airgap.beaconsdk.core.internal.transport.p2p.utils.P2pCrypto
 import it.airgap.beaconsdk.core.internal.utils.AccountUtils
 import it.airgap.beaconsdk.core.internal.utils.Base58Check
 import it.airgap.beaconsdk.core.internal.utils.Poller
+import it.airgap.beaconsdk.core.internal.utils.app
 import it.airgap.beaconsdk.core.network.provider.HttpProvider
 
-internal class DependencyRegistry(storage: Storage, secureStorage: SecureStorage) {
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+public class DependencyRegistry(chainFactories: List<Chain.Factory<*>>, storage: Storage, secureStorage: SecureStorage) {
 
     // -- storage --
     val storageManager: StorageManager by lazy { StorageManager(storage, secureStorage, accountUtils) }
 
-    // -- protocol --
+    // -- chain --
 
-    val protocolRegistry: ProtocolRegistry by lazy { ProtocolRegistry(crypto, base58Check) }
+    val chainRegistry: ChainRegistry by lazy {
+        val chainFactories = chainFactories
+            .map { it.identifier to { it.create(this) } }
+            .toMap()
+
+        ChainRegistry(chainFactories)
+    }
 
     // -- controller --
 
-    val messageController: MessageController by lazy { MessageController(protocolRegistry, storageManager, accountUtils) }
+    val messageController: MessageController by lazy { MessageController(chainRegistry, storageManager, accountUtils) }
 
     fun connectionController(connections: List<Connection>): ConnectionController {
             val transports = connections.map { transport(it) }
@@ -61,8 +70,6 @@ internal class DependencyRegistry(storage: Storage, secureStorage: SecureStorage
     fun transport(connection: Connection): Transport =
         when (connection) {
             is P2P -> {
-                val app = BeaconSdk.instance.app
-
                 val matrixClient = matrixClient(connection.httpProvider)
                 val matrixNodes = connection.nodes
 

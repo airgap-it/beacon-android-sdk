@@ -8,7 +8,7 @@ private const val SEPARATOR = ":"
 private val identifierRegex: Regex = Regex("^$PREFIX(.+)$SEPARATOR(.+)$")
 
 @JvmInline
-internal value class P2pIdentifier(private val value: String) {
+public value class P2pIdentifier(private val value: String) {
     init {
         require(isValid(value))
     }
@@ -24,8 +24,8 @@ internal value class P2pIdentifier(private val value: String) {
     }
 }
 
-internal fun P2pIdentifier(publicKeyHash: ByteArray, relayServer: String): P2pIdentifier =
+public fun P2pIdentifier(publicKeyHash: ByteArray, relayServer: String): P2pIdentifier =
     P2pIdentifier("$PREFIX${publicKeyHash.toHexString().asString()}$SEPARATOR$relayServer")
 
-internal fun p2pIdentifierOrNull(value: String): P2pIdentifier? =
+public fun p2pIdentifierOrNull(value: String): P2pIdentifier? =
     if (P2pIdentifier.isValid(value)) P2pIdentifier(value) else null

@@ -12,7 +12,7 @@ import it.airgap.beaconsdk.core.internal.utils.*
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
-internal class P2pStore(
+public class P2pStore(
     private val app: BeaconApplication,
     private val communicator: P2pCommunicator,
     private val matrixClient: MatrixClient,

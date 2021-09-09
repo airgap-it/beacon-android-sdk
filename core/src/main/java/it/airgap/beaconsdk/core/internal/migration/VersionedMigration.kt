@@ -2,7 +2,7 @@ package it.airgap.beaconsdk.core.internal.migration
 
 import it.airgap.beaconsdk.core.internal.utils.success
 
-internal abstract class VersionedMigration {
+public abstract class VersionedMigration {
     abstract val fromVersion: String
 
     fun migrationIdentifier(target: Target): String =

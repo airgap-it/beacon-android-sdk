@@ -4,7 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-internal data class MatrixCreateRoomRequest(
+public data class MatrixCreateRoomRequest(
     val visibility: Visibility? = null,
     @SerialName("room_alias_name") val roomAliasName: String? = null,
     val name: String? = null,
@@ -38,4 +38,4 @@ internal data class MatrixCreateRoomRequest(
 }
 
 @Serializable
-internal data class MatrixCreateRoomResponse(@SerialName("room_id") val roomId: String? = null)
+public data class MatrixCreateRoomResponse(@SerialName("room_id") val roomId: String? = null)

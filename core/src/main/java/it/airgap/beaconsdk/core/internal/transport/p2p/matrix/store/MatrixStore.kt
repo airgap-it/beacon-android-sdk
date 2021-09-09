@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 
-internal class MatrixStore(private val storageManager: StorageManager) : Store<MatrixStoreState, MatrixStoreAction>() {
+public class MatrixStore(private val storageManager: StorageManager) : Store<MatrixStoreState, MatrixStoreAction>() {
     private var initialEvents: List<MatrixEvent>? by disposable()
     private val _events: MutableSharedFlow<MatrixEvent> = MutableSharedFlow(extraBufferCapacity = 64)
     val events: Flow<MatrixEvent>

@@ -28,6 +28,8 @@ import it.airgap.beaconsdk.core.message.BeaconMessage
 import it.airgap.beaconsdk.core.message.DisconnectBeaconMessage
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.test.runBlockingTest
+import mockChainRegistry
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import p2pPeers
@@ -69,6 +71,8 @@ internal class BeaconClientTest {
     fun setup() {
         MockKAnnotations.init(this)
 
+        mockChainRegistry()
+
         coEvery { messageController.onIncomingMessage(any(), any()) } coAnswers {
             Result.success(secondArg<VersionedBeaconMessage>().toBeaconMessage(firstArg(), storageManager))
         }
@@ -83,6 +87,11 @@ internal class BeaconClientTest {
 
         storageManager = StorageManager(MockStorage(), MockSecureStorage(), accountUtils)
         beaconClient = BeaconClient(appName, beaconId, connectionController, messageController, storageManager, crypto)
+    }
+
+    @After
+    fun cleanUp() {
+        unmockkAll()
     }
 
     @Test
@@ -209,7 +218,7 @@ internal class BeaconClientTest {
             val connectionRequestMessage = BeaconConnectionMessage(origin, versionedRequest)
 
             val disconnectMessage = disconnectBeaconMessage(senderId = dAppId, origin = origin)
-            val versionedDisconnectMessage = VersionedBeaconMessage.fromBeaconMessage(disconnectMessage.senderId, disconnectMessage)
+            val versionedDisconnectMessage = VersionedBeaconMessage.from(disconnectMessage.senderId, disconnectMessage)
             val connectionDisconnectMessage = BeaconConnectionMessage(disconnectMessage.origin, versionedDisconnectMessage)
 
             val beaconMessageFlow = beaconConnectionMessageFlow(2)
@@ -268,7 +277,7 @@ internal class BeaconClientTest {
             val expectedDisconnectMessages =
                 toRemove.map { DisconnectBeaconMessage(crypto.guid().getOrThrow(), beaconId, it.version, Origin.forPeer(it)) }
             val expectedConnectionMessages =
-                expectedDisconnectMessages.map { BeaconConnectionMessage(it.origin to VersionedBeaconMessage.fromBeaconMessage(beaconId, it)) }
+                expectedDisconnectMessages.map { BeaconConnectionMessage(it.origin to VersionedBeaconMessage.from(beaconId, it)) }
 
             storageManager.setPeers(toKeep + toRemove)
 
@@ -307,7 +316,7 @@ internal class BeaconClientTest {
             val expectedDisconnectMessages =
                 peers.map { DisconnectBeaconMessage(crypto.guid().getOrThrow(), beaconId, it.version, Origin.forPeer(it)) }
             val expectedConnectionMessages =
-                expectedDisconnectMessages.map { BeaconConnectionMessage(it.origin to VersionedBeaconMessage.fromBeaconMessage(beaconId, it)) }
+                expectedDisconnectMessages.map { BeaconConnectionMessage(it.origin to VersionedBeaconMessage.from(beaconId, it)) }
 
             storageManager.setPeers(peers)
             beaconClient.removeAllPeers()

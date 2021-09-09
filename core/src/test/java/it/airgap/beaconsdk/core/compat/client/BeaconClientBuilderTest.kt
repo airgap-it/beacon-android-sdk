@@ -6,12 +6,14 @@ import it.airgap.beaconsdk.core.client.BeaconClient
 import it.airgap.beaconsdk.core.data.beacon.P2P
 import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.BeaconSdk
+import it.airgap.beaconsdk.core.internal.chain.Chain
+import it.airgap.beaconsdk.core.internal.chain.MockChain
 import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.SharedPreferencesSecureStorage
 import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.SharedPreferencesStorage
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
-import mockBeaconApp
+import mockBeaconSdk
 import org.junit.Before
 import org.junit.Test
 import java.security.KeyStore
@@ -27,6 +29,7 @@ internal class BeaconClientBuilderTest {
     private lateinit var dependencyRegistry: DependencyRegistry
 
     private val appName: String = "mockApp"
+    private val chains: List<Chain.Factory<*>> = listOf(MockChain.Factory())
     private val beaconId: String = "beaconId"
 
     @Before
@@ -36,7 +39,7 @@ internal class BeaconClientBuilderTest {
         mockkStatic(KeyStore::class)
         every { KeyStore.getInstance(any()) } returns mockk(relaxed = true)
 
-        beaconApp = mockBeaconApp(beaconId = beaconId, dependencyRegistry = dependencyRegistry)
+        beaconApp = mockBeaconSdk(beaconId = beaconId, dependencyRegistry = dependencyRegistry)
 
         testDeferred = CompletableDeferred()
     }
@@ -55,14 +58,14 @@ internal class BeaconClientBuilderTest {
             override fun onError(error: Throwable) = Unit
         })
 
-        BeaconClient.Builder(appName).build(callback)
+        BeaconClient.Builder(appName, chains).build(callback)
 
         runBlocking { testDeferred.await() }
 
         assertEquals(appName, client?.name)
         assertEquals(beaconId, client?.beaconId)
 
-        coVerify(exactly = 1) { beaconApp.init(appName, null, null, ofType(SharedPreferencesStorage::class), ofType(SharedPreferencesSecureStorage::class)) }
+        coVerify(exactly = 1) { beaconApp.init(appName, null, null, chains, ofType(SharedPreferencesStorage::class), ofType(SharedPreferencesSecureStorage::class)) }
         verify(exactly = 1) { dependencyRegistry.connectionController(defaultConnections) }
         verify(exactly = 1) { callback.onSuccess(any()) }
         verify(exactly = 0) { callback.onError(any()) }
@@ -85,7 +88,7 @@ internal class BeaconClientBuilderTest {
             override fun onError(error: Throwable) = Unit
         })
 
-        BeaconClient.Builder(appName).apply {
+        BeaconClient.Builder(appName, chains).apply {
             connections = customConnections
         }.build(callback)
 
@@ -94,7 +97,7 @@ internal class BeaconClientBuilderTest {
         assertEquals(appName, client!!.name)
         assertEquals(beaconId, client!!.beaconId)
 
-        coVerify(exactly = 1) { beaconApp.init(appName, null, null, ofType(SharedPreferencesStorage::class), ofType(SharedPreferencesSecureStorage::class)) }
+        coVerify(exactly = 1) { beaconApp.init(appName, null, null, chains, ofType(SharedPreferencesStorage::class), ofType(SharedPreferencesSecureStorage::class)) }
         verify(exactly = 1) { dependencyRegistry.connectionController(customConnections) }
         verify(exactly = 1) { callback.onSuccess(any()) }
         verify(exactly = 0) { callback.onError(any()) }

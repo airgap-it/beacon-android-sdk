@@ -4,6 +4,7 @@ import androidx.lifecycle.*
 import it.airgap.beaconsdk.core.client.BeaconClient
 import it.airgap.beaconsdk.core.data.beacon.P2pPeer
 import it.airgap.beaconsdk.core.message.*
+import it.airgap.beaconsdk.core.message.response.permission.PermissionBeaconResponse
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch

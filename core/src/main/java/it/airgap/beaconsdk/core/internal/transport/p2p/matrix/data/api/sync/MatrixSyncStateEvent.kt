@@ -15,7 +15,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
 @Serializable(with = MatrixSyncStateEvent.Serializer::class)
-internal sealed class MatrixSyncStateEvent<Content> {
+public sealed class MatrixSyncStateEvent<Content> {
     abstract val content: Content?
     abstract val type: String?
     abstract val eventId: String?

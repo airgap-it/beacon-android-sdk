@@ -16,7 +16,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
 @Serializable(with = MatrixError.Serializer::class)
-internal sealed class MatrixError : Exception() {
+public sealed class MatrixError : Exception() {
     abstract val code: String
     abstract val error: String
 
@@ -30,13 +30,13 @@ internal sealed class MatrixError : Exception() {
     }
 
     @Serializable
-    data class Other(@SerialName(Field.ERRCODE) override val code: String, override val error: String) : MatrixError()
+    data class Other(@SerialName(Serializer.Field.ERRCODE) override val code: String, override val error: String) : MatrixError()
 
-    private object Field {
-        const val ERRCODE = "errcode"
-    }
+    object Serializer : KSerializer<MatrixError> {
+        object Field {
+            const val ERRCODE = "errcode"
+        }
 
-    class Serializer : KSerializer<MatrixError> {
         override val descriptor: SerialDescriptor =
             PrimitiveSerialDescriptor("MatrixError", PrimitiveKind.STRING)
 

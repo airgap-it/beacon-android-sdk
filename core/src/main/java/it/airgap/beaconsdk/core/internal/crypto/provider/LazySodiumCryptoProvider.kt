@@ -9,7 +9,7 @@ import it.airgap.beaconsdk.core.internal.crypto.data.KeyPair
 import it.airgap.beaconsdk.core.internal.crypto.data.SessionKeyPair
 import it.airgap.beaconsdk.core.internal.utils.asHexString
 
-internal class LazySodiumCryptoProvider : CryptoProvider {
+public class LazySodiumCryptoProvider : CryptoProvider {
     private val sodium: LazySodiumAndroid = LazySodiumAndroid(SodiumAndroid())
 
     @Throws(Exception::class)

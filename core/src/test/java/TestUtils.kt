@@ -1,8 +1,6 @@
 
 import androidx.annotation.IntRange
 import it.airgap.beaconsdk.core.data.beacon.*
-import it.airgap.beaconsdk.core.data.tezos.TezosActivateAccountOperation
-import it.airgap.beaconsdk.core.data.tezos.TezosOperation
 import it.airgap.beaconsdk.core.internal.message.BeaconConnectionMessage
 import it.airgap.beaconsdk.core.internal.message.ConnectionTransportMessage
 import it.airgap.beaconsdk.core.internal.message.VersionedBeaconMessage
@@ -57,13 +55,13 @@ internal fun versionedBeaconMessage(
     message: BeaconMessage,
     senderId: String = "senderId",
 ): VersionedBeaconMessage =
-    VersionedBeaconMessage.fromBeaconMessage(senderId, message)
+    VersionedBeaconMessage.from(senderId, message)
 
 internal fun versionedBeaconMessages(
     messages: List<BeaconMessage>,
     senderId: String = "senderId",
 ): List<VersionedBeaconMessage> =
-    messages.map { VersionedBeaconMessage.fromBeaconMessage(senderId, it) }
+    messages.map { VersionedBeaconMessage.from(senderId, it) }
 
 // -- flows --
 
@@ -87,37 +85,15 @@ internal fun permissionBeaconRequest(
     version: String = "version",
 ): PermissionBeaconRequest = PermissionBeaconRequest(id, senderId, appMetadata, network, scopes, origin, version)
 
-internal fun operationBeaconRequest(
+internal fun chainBeaconRequest(
     id: String = "id",
     senderId: String = "senderId",
-    appMetadata: AppMetadata? = AppMetadata(senderId, "mockApp"),
-    network: Network = Network.Custom(),
-    operationDetails: List<TezosOperation> = listOf(TezosActivateAccountOperation("pkh", "secret")),
-    sourceAddress: String = "sourceAddress",
+    appMetadata: AppMetadata = AppMetadata(senderId, "mockApp"),
+    identifier: String = "chain",
+    payload: ChainBeaconRequest.Payload = object : ChainBeaconRequest.Payload() {},
     origin: Origin = Origin.P2P(senderId),
-    version: String = "version",
-): OperationBeaconRequest = OperationBeaconRequest(id, senderId, appMetadata, network, operationDetails, sourceAddress, origin, version)
-
-internal fun signPayloadBeaconRequest(
-    id: String = "id",
-    senderId: String = "senderId",
-    appMetadata: AppMetadata? = AppMetadata(senderId, "mockApp"),
-    signingType: SigningType = SigningType.Raw,
-    payload: String = "payload",
-    sourceAddress: String = "sourceAddress",
-    origin: Origin = Origin.P2P(senderId),
-    version: String = "version",
-): SignPayloadBeaconRequest = SignPayloadBeaconRequest(id, senderId, appMetadata, signingType, payload, sourceAddress, origin, version)
-
-internal fun broadcastBeaconRequest(
-    id: String = "id",
-    senderId: String = "senderId",
-    appMetadata: AppMetadata? = AppMetadata(senderId, "mockApp"),
-    network: Network = Network.Custom(),
-    signedTransaction: String = "signedTransaction",
-    origin: Origin = Origin.P2P(senderId),
-    version: String = "version",
-): BroadcastBeaconRequest = BroadcastBeaconRequest(id, senderId, appMetadata, network, signedTransaction, origin, version)
+    version: String = "version"
+): ChainBeaconRequest = ChainBeaconRequest(id, senderId, appMetadata, identifier, payload, origin, version)
 
 internal fun permissionBeaconResponse(
     id: String = "id",
@@ -129,27 +105,13 @@ internal fun permissionBeaconResponse(
     requestOrigin: Origin = Origin.P2P("senderId"),
 ): PermissionBeaconResponse = PermissionBeaconResponse(id, publicKey, network, scopes, threshold, version, requestOrigin)
 
-internal fun operationBeaconResponse(
+internal fun chainBeaconResponse(
     id: String = "id",
-    transactionHash: String = "transactionHash",
+    identifier: String = "chain",
+    payload: ChainBeaconResponse.Payload = object : ChainBeaconResponse.Payload() {},
     version: String = "version",
     requestOrigin: Origin = Origin.P2P("senderId"),
-): OperationBeaconResponse = OperationBeaconResponse(id, transactionHash, version, requestOrigin)
-
-internal fun signPayloadBeaconResponse(
-    id: String = "id",
-    signingType: SigningType = SigningType.Raw,
-    signature: String = "signature",
-    version: String = "version",
-    requestOrigin: Origin = Origin.P2P("senderId"),
-): SignPayloadBeaconResponse = SignPayloadBeaconResponse(id, signingType, signature, version, requestOrigin)
-
-internal fun broadcastBeaconResponse(
-    id: String = "id",
-    transactionHash: String = "transactionHash",
-    version: String = "version",
-    requestOrigin: Origin = Origin.P2P("senderId"),
-): BroadcastBeaconResponse = BroadcastBeaconResponse(id, transactionHash, version, requestOrigin)
+): ChainBeaconResponse = ChainBeaconResponse(id, identifier, payload, version, requestOrigin)
 
 internal fun acknowledgeBeaconResponse(
     id: String = "id",
@@ -195,18 +157,14 @@ internal fun errorBeaconResponses(
 internal fun beaconResponses(version: String = "version", requestOrigin: Origin = Origin.P2P("senderId")): List<BeaconResponse> =
     listOf(
         permissionBeaconResponse(version = version, requestOrigin = requestOrigin),
-        operationBeaconResponse(version = version, requestOrigin = requestOrigin),
-        signPayloadBeaconResponse(version = version, requestOrigin = requestOrigin),
-        broadcastBeaconResponse(version = version, requestOrigin = requestOrigin),
+        chainBeaconResponse(version = version, requestOrigin = requestOrigin),
         acknowledgeBeaconResponse(version = version, requestOrigin = requestOrigin),
     ) + errorBeaconResponses(version = version, requestOrigin = requestOrigin)
 
 internal fun beaconRequests(version: String = "version", origin: Origin = Origin.P2P("senderId")): List<BeaconRequest> =
     listOf(
         permissionBeaconRequest(version = version, origin = origin),
-        operationBeaconRequest(version = version, origin = origin),
-        signPayloadBeaconRequest(version = version, origin = origin),
-        broadcastBeaconRequest(version = version, origin = origin),
+        chainBeaconRequest(version = version, origin = origin),
     )
 
 internal fun beaconMessages(
@@ -225,18 +183,14 @@ internal fun beaconMessages(
 
 internal fun beaconVersionedRequests(version: String = "version", senderId: String = "senderId"): List<VersionedBeaconMessage> =
     listOf(
-        VersionedBeaconMessage.fromBeaconMessage(senderId, permissionBeaconRequest(senderId = senderId, version = version)),
-        VersionedBeaconMessage.fromBeaconMessage(senderId, operationBeaconRequest(senderId = senderId, version = version)),
-        VersionedBeaconMessage.fromBeaconMessage(senderId, signPayloadBeaconRequest(senderId = senderId, version = version)),
-        VersionedBeaconMessage.fromBeaconMessage(senderId, broadcastBeaconRequest(senderId = senderId, version = version)),
+        VersionedBeaconMessage.from(senderId, permissionBeaconRequest(senderId = senderId, version = version)),
+        VersionedBeaconMessage.from(senderId, chainBeaconRequest(senderId = senderId, version = version)),
     )
 
 internal fun beaconVersionedResponses(version: String = "version", senderId: String = "senderId"): List<VersionedBeaconMessage> =
     listOf(
-        VersionedBeaconMessage.fromBeaconMessage(senderId, permissionBeaconResponse(version = version)),
-        VersionedBeaconMessage.fromBeaconMessage(senderId, operationBeaconResponse(version = version)),
-        VersionedBeaconMessage.fromBeaconMessage(senderId, signPayloadBeaconResponse(version = version)),
-        VersionedBeaconMessage.fromBeaconMessage(senderId, broadcastBeaconResponse(version = version)),
+        VersionedBeaconMessage.from(senderId, permissionBeaconResponse(version = version)),
+        VersionedBeaconMessage.from(senderId, chainBeaconResponse(version = version)),
     )
 
 internal fun beaconVersionedMessages(
@@ -249,8 +203,8 @@ internal fun beaconVersionedMessages(
 ): List<VersionedBeaconMessage> = mutableListOf<VersionedBeaconMessage>().apply {
     if (includeRequests) addAll(beaconVersionedRequests(version, senderId))
     if (includeResponses) addAll(beaconVersionedResponses(version, senderId))
-    if (includeDisconnect) add(VersionedBeaconMessage.fromBeaconMessage(senderId, disconnectBeaconMessage(senderId = senderId, version = version)))
-    if (includeError) add(VersionedBeaconMessage.fromBeaconMessage(senderId, errorBeaconResponse(version = version)))
+    if (includeDisconnect) add(VersionedBeaconMessage.from(senderId, disconnectBeaconMessage(senderId = senderId, version = version)))
+    if (includeError) add(VersionedBeaconMessage.from(senderId, errorBeaconResponse(version = version)))
 }
 
 internal fun p2pPeers(

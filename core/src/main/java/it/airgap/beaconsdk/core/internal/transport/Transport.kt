@@ -6,7 +6,7 @@ import it.airgap.beaconsdk.core.internal.utils.logDebug
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.onStart
 
-internal abstract class Transport {
+public abstract class Transport {
     abstract val type: Connection.Type
 
     protected abstract val connectionMessages: Flow<Result<ConnectionTransportMessage>>

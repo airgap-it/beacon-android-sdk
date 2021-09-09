@@ -20,12 +20,12 @@ import kotlinx.serialization.json.jsonPrimitive
  */
 @Serializable(with = TezosOperation.Serializer::class)
 public sealed class TezosOperation {
-    internal abstract val kind: Kind
+    public abstract val kind: Kind
 
     public companion object {}
 
     @Serializable
-    internal enum class Kind {
+    public enum class Kind {
         @SerialName("endorsement")
         Endorsement,
 
@@ -60,11 +60,11 @@ public sealed class TezosOperation {
         Delegation,
     }
 
-    internal object Field {
-        const val KIND = "kind"
-    }
+    public object Serializer : KSerializer<TezosOperation> {
+        object Field {
+            const val KIND = "kind"
+        }
 
-    internal class Serializer : KSerializer<TezosOperation> {
         override val descriptor: SerialDescriptor =
             PrimitiveSerialDescriptor("TezosOperation", PrimitiveKind.STRING)
 

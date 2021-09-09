@@ -2,7 +2,7 @@ package it.airgap.beaconsdk.core.internal.transport.p2p.matrix.store
 
 import it.airgap.beaconsdk.core.internal.transport.p2p.matrix.data.MatrixRoom
 
-internal data class MatrixStoreState(
+public data class MatrixStoreState(
     val isPolling: Boolean = false,
     val userId: String? = null,
     val deviceId: String? = null,

@@ -1,6 +1,6 @@
 package it.airgap.beaconsdk.core.internal.storage
 
-internal interface SecureStorage {
-    suspend fun getSdkSecretSeed(): String?
-    suspend fun setSdkSecretSeed(sdkSecretSeed: String)
+public interface SecureStorage {
+    public suspend fun getSdkSecretSeed(): String?
+    public suspend fun setSdkSecretSeed(sdkSecretSeed: String)
 }

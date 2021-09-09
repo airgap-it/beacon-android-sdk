@@ -1,6 +1,7 @@
 package it.airgap.beaconsdk.core.internal.message.beacon
 
 import beaconMessages
+import io.mockk.unmockkAll
 import it.airgap.beaconsdk.core.internal.message.VersionedBeaconMessage
 import it.airgap.beaconsdk.core.internal.message.v1.V1BeaconMessage
 import it.airgap.beaconsdk.core.internal.message.v2.V2BeaconMessage
@@ -10,6 +11,9 @@ import it.airgap.beaconsdk.core.message.BeaconMessage
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import mockChainRegistry
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
 import kotlin.reflect.KClass
 import kotlin.test.assertEquals
@@ -22,13 +26,23 @@ internal class VersionedBeaconMessageTest {
         AcknowledgeBeaconResponse::class to "1",
     )
 
+    @Before
+    fun setup() {
+        mockChainRegistry()
+    }
+
+    @After
+    fun cleanUp() {
+        unmockkAll()
+    }
+
     @Test
     fun `proper version is created from BeaconMessage`() {
         versionsWithClasses.forEach { (version, versionedClass) ->
             beaconMessages(version = version).forEach { beaconMessage ->
                 val messageWithVersion = Pair(beaconMessage, version)
                 messageWithVersion.ifSupported {
-                    val versioned = VersionedBeaconMessage.fromBeaconMessage("senderId", beaconMessage)
+                    val versioned = VersionedBeaconMessage.from("senderId", beaconMessage)
 
                     assertTrue(
                         versionedClass.isInstance(versioned),
@@ -37,7 +51,7 @@ internal class VersionedBeaconMessageTest {
                 }
 
                 messageWithVersion.ifNotSupported {
-                    assertFails { VersionedBeaconMessage.fromBeaconMessage("senderId", beaconMessage) }
+                    assertFails { VersionedBeaconMessage.from("senderId", beaconMessage) }
                 }
             }
         }
@@ -124,8 +138,8 @@ internal class VersionedBeaconMessageTest {
 
     private inline fun <reified T : VersionedBeaconMessage> BeaconMessage.versioned(version: String): T =
         when (T::class) {
-            V1BeaconMessage::class -> V1BeaconMessage.fromBeaconMessage("senderId", this) as T
-            V2BeaconMessage::class -> V2BeaconMessage.fromBeaconMessage( "senderId", this) as T
+            V1BeaconMessage::class -> V1BeaconMessage.from("senderId", this) as T
+            V2BeaconMessage::class -> V2BeaconMessage.from( "senderId", this) as T
             else -> failWith("Unknown class")
         }
 

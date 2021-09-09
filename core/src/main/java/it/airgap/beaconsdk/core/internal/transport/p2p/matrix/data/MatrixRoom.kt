@@ -6,7 +6,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-internal sealed class MatrixRoom {
+public sealed class MatrixRoom {
     abstract val id: String
     abstract val members: List<String>
 

@@ -7,7 +7,7 @@ import it.airgap.beaconsdk.core.internal.data.BeaconApplication
 import it.airgap.beaconsdk.core.internal.data.HexString
 import it.airgap.beaconsdk.core.internal.utils.*
 
-internal class P2pCrypto(private val app: BeaconApplication, private val crypto: Crypto) {
+public class P2pCrypto(private val app: BeaconApplication, private val crypto: Crypto) {
     private val keyPair: KeyPair get() = app.keyPair
 
     private val serverSessionKeyPair: MutableMap<HexString, SessionKeyPair> = mutableMapOf()

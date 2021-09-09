@@ -5,7 +5,7 @@ import it.airgap.beaconsdk.core.data.beacon.Peer
 import it.airgap.beaconsdk.core.data.beacon.Permission
 import it.airgap.beaconsdk.core.internal.transport.p2p.matrix.data.MatrixRoom
 
-internal class MockStorage : Storage {
+public class MockStorage : Storage {
     private var p2pPeers: List<Peer> = emptyList()
     private var appsMetadata: List<AppMetadata> = emptyList()
     private var permissions: List<Permission> = emptyList()

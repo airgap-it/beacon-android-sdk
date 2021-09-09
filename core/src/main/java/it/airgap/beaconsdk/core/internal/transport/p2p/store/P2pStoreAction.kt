@@ -1,17 +1,17 @@
 package it.airgap.beaconsdk.core.internal.transport.p2p.store
 
-internal sealed interface P2pStoreAction
+public sealed interface P2pStoreAction
 
-internal data class OnChannelCreated(
+public data class OnChannelCreated(
     val recipient: String,
     val channelId: String,
 ) : P2pStoreAction
 
-internal data class OnChannelEvent(
+public data class OnChannelEvent(
     val sender: String,
     val channelId: String,
 ) : P2pStoreAction
 
-internal data class OnChannelClosed(val channelId: String) : P2pStoreAction
+public data class OnChannelClosed(val channelId: String) : P2pStoreAction
 
-internal object HardReset : P2pStoreAction
+public object HardReset : P2pStoreAction

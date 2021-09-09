@@ -14,11 +14,11 @@ public sealed class Peer {
     public abstract val publicKey: String
     public abstract val version: String
 
-    internal abstract val isPaired: Boolean
-    internal abstract val isRemoved: Boolean
+    public abstract val isPaired: Boolean
+    public abstract val isRemoved: Boolean
 
-    internal abstract fun paired(): Peer
-    internal abstract fun removed(): Peer
+    public abstract fun paired(): Peer
+    public abstract fun removed(): Peer
 }
 
 // -- P2P --
@@ -66,7 +66,7 @@ public data class P2pPeer internal constructor(
 // -- extensions --
 
 @Suppress("UNCHECKED_CAST")
-internal fun <T: Peer> T.selfPaired(): T = paired() as T
+public fun <T: Peer> T.selfPaired(): T = paired() as T
 
 @Suppress("UNCHECKED_CAST")
-internal fun <T: Peer> T.selfRemoved(): T = removed() as T
+public fun <T: Peer> T.selfRemoved(): T = removed() as T

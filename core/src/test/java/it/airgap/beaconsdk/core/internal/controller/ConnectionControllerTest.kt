@@ -23,6 +23,8 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
+import mockChainRegistry
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import tryEmitFailures
@@ -45,11 +47,18 @@ internal class ConnectionControllerTest {
     fun setup() {
         MockKAnnotations.init(this)
 
+        mockChainRegistry()
+
         every { transport.type } returns Connection.Type.P2P
 
         serializerProvider = MockSerializerProvider()
         serializer = Serializer(serializerProvider)
         connectionClient = ConnectionController(listOf(transport), serializer)
+    }
+
+    @After
+    fun cleanUp() {
+        unmockkAll()
     }
 
     @Test

@@ -13,7 +13,7 @@ import kotlinx.coroutines.launch
 private typealias StorageSelectCollection<T> = suspend Storage.() -> List<T>
 private typealias StorageInsertCollection<T> = suspend Storage.(List<T>) -> Unit
 
-internal class DecoratedStorage(private val storage: Storage) : ExtendedStorage, Storage by storage {
+public class DecoratedStorage(private val storage: Storage) : ExtendedStorage, Storage by storage {
     private val _appMetadata: MutableSharedFlow<AppMetadata> by lazy { resourceFlow() }
     override val appMetadata: Flow<AppMetadata> get() = _appMetadata.onSubscription { emitAll(getAppMetadata().asFlow()) }
 

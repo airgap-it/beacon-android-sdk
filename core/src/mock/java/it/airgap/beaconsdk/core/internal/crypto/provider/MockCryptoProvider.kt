@@ -4,7 +4,7 @@ import it.airgap.beaconsdk.core.internal.crypto.data.KeyPair
 import it.airgap.beaconsdk.core.internal.crypto.data.SessionKeyPair
 import it.airgap.beaconsdk.core.internal.utils.failWith
 
-internal class MockCryptoProvider(
+public class MockCryptoProvider(
     var shouldFail: Boolean = false,
     var messageValid: Boolean = true,
 ) : CryptoProvider {

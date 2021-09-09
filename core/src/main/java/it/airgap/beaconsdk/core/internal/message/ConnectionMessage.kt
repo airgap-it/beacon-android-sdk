@@ -2,15 +2,15 @@ package it.airgap.beaconsdk.core.internal.message
 
 import it.airgap.beaconsdk.core.data.beacon.Origin
 
-internal typealias ConnectionTransportMessage = ConnectionMessage<*>
-internal sealed interface ConnectionMessage<T> {
+public typealias ConnectionTransportMessage = ConnectionMessage<*>
+public sealed interface ConnectionMessage<T> {
     val origin: Origin
     val content: T
 
     companion object {}
 }
 
-internal data class SerializedConnectionMessage(
+public data class SerializedConnectionMessage(
     override val origin: Origin,
     override val content: String,
 ) : ConnectionMessage<String> {
@@ -19,7 +19,7 @@ internal data class SerializedConnectionMessage(
     companion object {}
 }
 
-internal data class BeaconConnectionMessage(
+public data class BeaconConnectionMessage(
     override val origin: Origin,
     override val content: VersionedBeaconMessage,
 ) : ConnectionMessage<VersionedBeaconMessage> {

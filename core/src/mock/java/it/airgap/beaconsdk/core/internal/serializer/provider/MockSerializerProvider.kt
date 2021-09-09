@@ -6,7 +6,7 @@ import it.airgap.beaconsdk.core.internal.utils.failWith
 import kotlinx.serialization.json.Json
 import kotlin.reflect.KClass
 
-internal class MockSerializerProvider(var shouldFail: Boolean = false) : SerializerProvider {
+public class MockSerializerProvider(var shouldFail: Boolean = false) : SerializerProvider {
     private val json: Json by lazy { Json { classDiscriminator = "_type" } }
 
     @Throws(Exception::class)

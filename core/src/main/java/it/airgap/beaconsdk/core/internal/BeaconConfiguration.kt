@@ -2,7 +2,7 @@ package it.airgap.beaconsdk.core.internal
 
 import it.airgap.beaconsdk.BuildConfig
 
-internal object BeaconConfiguration {
+public object BeaconConfiguration {
     // -- SDK --
 
     const val STORAGE_NAME = "beaconsdk"

@@ -1,16 +1,17 @@
 package it.airgap.beaconsdk.core.internal.controller
 
+import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.data.beacon.Origin
 import it.airgap.beaconsdk.core.data.beacon.Permission
+import it.airgap.beaconsdk.core.internal.chain.ChainRegistry
 import it.airgap.beaconsdk.core.internal.message.VersionedBeaconMessage
-import it.airgap.beaconsdk.core.internal.protocol.Protocol
-import it.airgap.beaconsdk.core.internal.protocol.ProtocolRegistry
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.utils.*
 import it.airgap.beaconsdk.core.message.*
 
-internal class MessageController(
-    private val protocolRegistry: ProtocolRegistry,
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+public class MessageController(
+    private val chainRegistry: ChainRegistry,
     private val storageManager: StorageManager,
     private val accountUtils: AccountUtils,
 ) {
@@ -55,7 +56,7 @@ internal class MessageController(
             }
 
             val senderId = accountUtils.getSenderId(beaconId.asHexString().toByteArray()).getOrThrow()
-            Pair(message.associatedOrigin, VersionedBeaconMessage.fromBeaconMessage(senderId, message))
+            Pair(message.associatedOrigin, VersionedBeaconMessage.from(senderId, message))
         }
 
     private suspend fun onOutgoingResponse(response: BeaconResponse, isTerminal: Boolean) {
@@ -68,7 +69,9 @@ internal class MessageController(
 
     private suspend fun onPermissionResponse(response: PermissionBeaconResponse, request: BeaconRequest) {
         val publicKey = response.publicKey
-        val address = protocolRegistry.get(Protocol.Type.Tezos).getAddressFromPublicKey(publicKey).getOrThrow()
+        // TODO: get type from response/request
+        val chain = chainRegistry.get("tezos") ?: failWithChainNotFound("tezos")
+        val address = chain.wallet.addressFromPublicKey(publicKey).getOrThrow()
         val accountIdentifier = accountUtils.getAccountIdentifier(address, response.network).getOrThrow()
         val appMetadata = storageManager.findAppMetadata { it.senderId == request.senderId }
             ?: failWithIllegalState("Granted permissions not saved, matching appMetadata could not be found.")

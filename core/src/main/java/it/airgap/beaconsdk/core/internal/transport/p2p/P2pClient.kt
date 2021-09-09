@@ -18,7 +18,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.util.*
 
-internal class P2pClient(
+public class P2pClient(
     private val matrixClient: MatrixClient,
     private val store: P2pStore,
     private val crypto: P2pCrypto,

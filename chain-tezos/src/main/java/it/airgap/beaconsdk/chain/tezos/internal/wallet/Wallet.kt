@@ -1,12 +1,12 @@
-package it.airgap.beaconsdk.core.internal.protocol
+package it.airgap.beaconsdk.chain.tezos.internal.wallet
 
+import it.airgap.beaconsdk.chain.tezos.Tezos
+import it.airgap.beaconsdk.core.internal.chain.Chain
 import it.airgap.beaconsdk.core.internal.crypto.Crypto
 import it.airgap.beaconsdk.core.internal.utils.*
 
-internal class Tezos(private val crypto: Crypto, private val base58Check: Base58Check) : Protocol {
-    private val tz1Prefix: ByteArray = byteArrayOf(6, 161.toByte(), 159.toByte())
-
-    override fun getAddressFromPublicKey(publicKey: String): Result<String> =
+public class Wallet internal constructor(private val crypto: Crypto, private val base58Check: Base58Check) : Chain.Wallet {
+    override fun addressFromPublicKey(publicKey: String): Result<String> =
         runCatchingFlat {
             val publicKeyBytes = with(publicKey) {
                 when {
@@ -17,23 +17,18 @@ internal class Tezos(private val crypto: Crypto, private val base58Check: Base58
             }
 
             val payload = crypto.hash(publicKeyBytes, 20)
-            payload.flatMap { base58Check.encode(tz1Prefix + it) }
+            payload.flatMap { base58Check.encode(Tezos.PrefixBytes.tz1 + it) }
         }
 
     private fun publicKeyFromEncrypted(encrypted: String): ByteArray {
         val decoded = base58Check.decode(encrypted).getOrThrow()
 
-        return decoded.sliceArray(PREFIX_ENCRYPTED_PUBLIC_KEY.length until decoded.size)
+        return decoded.sliceArray(Tezos.Prefix.edpk.length until decoded.size)
     }
 
     private fun String.isPlainPublicKey(): Boolean = ((length == 64 || length == 66) && isHex())
-    private fun String.isEncryptedPublicKey(): Boolean =
-        (length == 54 && startsWith(PREFIX_ENCRYPTED_PUBLIC_KEY))
+    private fun String.isEncryptedPublicKey(): Boolean = (length == 54 && startsWith(Tezos.Prefix.edpk))
 
     private fun failWithInvalidPublicKey(): Nothing =
         throw IllegalArgumentException("Public key is invalid, expected a plain hex string or encrypted key")
-
-    companion object {
-        private const val PREFIX_ENCRYPTED_PUBLIC_KEY = "edpk"
-    }
 }

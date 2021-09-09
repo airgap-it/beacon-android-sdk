@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.flowOn
 
-internal class Poller {
+public class Poller {
     fun <T> poll(
         dispatcher: CoroutineDispatcher = Dispatchers.Default,
         interval: Long = 0,

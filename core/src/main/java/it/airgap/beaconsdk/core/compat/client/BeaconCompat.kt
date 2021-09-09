@@ -2,7 +2,7 @@ package it.airgap.beaconsdk.core.compat.client
 
 import kotlinx.coroutines.*
 
-internal object BeaconCompat {
+public object BeaconCompat {
     private val _listeners: MutableMap<Int, OnNewMessageListener> = mutableMapOf()
     val listeners: Map<Int, OnNewMessageListener> get() = _listeners
 

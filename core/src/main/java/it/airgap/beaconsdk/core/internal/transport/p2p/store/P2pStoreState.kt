@@ -1,6 +1,6 @@
 package it.airgap.beaconsdk.core.internal.transport.p2p.store
 
-internal data class P2pStoreState(
+public data class P2pStoreState(
     val relayServer: String,
     val availableNodes: Int,
     val activeChannels: Map<String, String> = mapOf(),

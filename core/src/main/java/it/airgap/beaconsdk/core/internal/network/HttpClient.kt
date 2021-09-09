@@ -1,14 +1,14 @@
 package it.airgap.beaconsdk.core.internal.network
 
-import it.airgap.beaconsdk.core.network.provider.HttpProvider
 import it.airgap.beaconsdk.core.network.data.HttpHeader
 import it.airgap.beaconsdk.core.network.data.HttpParameter
+import it.airgap.beaconsdk.core.network.provider.HttpProvider
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.take
 import java.util.concurrent.CancellationException
 
-internal class HttpClient(private val httpProvider: HttpProvider) {
+public class HttpClient(public val httpProvider: HttpProvider) {
     inline fun <reified T : Any, reified E : Throwable> get(
         baseUrl: String,
         endpoint: String,
@@ -69,7 +69,7 @@ internal class HttpClient(private val httpProvider: HttpProvider) {
         )
     }
 
-    private fun <T> resultFlowFor(httpAction: suspend () -> T): Flow<Result<T>> = flow {
+    public fun <T> resultFlowFor(httpAction: suspend () -> T): Flow<Result<T>> = flow {
         try {
             emit(Result.success(httpAction()))
         } catch (e: CancellationException) {

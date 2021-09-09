@@ -17,7 +17,7 @@ import it.airgap.beaconsdk.core.network.provider.HttpProvider
 import kotlinx.serialization.json.Json
 import kotlin.reflect.KClass
 
-internal class KtorHttpProvider : HttpProvider {
+public class KtorHttpProvider : HttpProvider {
     private val ktorClient by lazy {
         HttpClient(OkHttp) {
             install(JsonFeature) {

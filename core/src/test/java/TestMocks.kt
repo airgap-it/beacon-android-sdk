@@ -2,6 +2,8 @@
 import android.content.Context
 import io.mockk.*
 import it.airgap.beaconsdk.core.internal.BeaconSdk
+import it.airgap.beaconsdk.core.internal.chain.ChainRegistry
+import it.airgap.beaconsdk.core.internal.chain.MockChain
 import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.core.internal.utils.currentTimestamp
 import it.airgap.beaconsdk.core.internal.utils.logDebug
@@ -10,7 +12,7 @@ import it.airgap.beaconsdk.core.internal.utils.logInfo
 
 // -- class --
 
-internal fun mockBeaconApp(
+internal fun mockBeaconSdk(
     beaconId: String = "beaconId",
     dependencyRegistry: DependencyRegistry = mockk(relaxed = true),
 ): BeaconSdk =
@@ -20,7 +22,7 @@ internal fun mockBeaconApp(
 
         val contextMock = mockk<Context>(relaxed = true)
 
-        coEvery { it.init(any(), any(), any(), any(), any()) } returns Unit
+        coEvery { it.init(any(), any(), any(), any(), any(), any()) } returns Unit
 
         every { it.applicationContext } returns contextMock
         every { it.beaconId } returns beaconId
@@ -28,6 +30,16 @@ internal fun mockBeaconApp(
     }
 
 // -- static --
+
+internal fun mockChainRegistry(): ChainRegistry =
+    mockkClass(ChainRegistry::class).also {
+        val dependencyRegistry = mockkClass(DependencyRegistry::class)
+
+        every { it.get(any()) } returns MockChain()
+        every { dependencyRegistry.chainRegistry } returns it
+
+        mockBeaconSdk(dependencyRegistry = dependencyRegistry)
+    }
 
 internal fun mockLog() {
     mockkStatic("it.airgap.beaconsdk.core.internal.utils.LogKt")

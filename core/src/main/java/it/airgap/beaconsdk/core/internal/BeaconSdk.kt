@@ -1,6 +1,7 @@
 package it.airgap.beaconsdk.core.internal
 
 import android.content.Context
+import it.airgap.beaconsdk.core.internal.chain.Chain
 import it.airgap.beaconsdk.core.internal.crypto.Crypto
 import it.airgap.beaconsdk.core.internal.crypto.data.KeyPair
 import it.airgap.beaconsdk.core.internal.data.BeaconApplication
@@ -11,7 +12,7 @@ import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.utils.failWithUninitialized
 import it.airgap.beaconsdk.core.internal.utils.toHexString
 
-internal class BeaconSdk(context: Context) {
+public class BeaconSdk(context: Context) {
     var isInitialized: Boolean = false
         private set
 
@@ -32,12 +33,13 @@ internal class BeaconSdk(context: Context) {
         appName: String,
         appIcon: String?,
         appUrl: String?,
+        chainFactories: List<Chain.Factory<*>>,
         storage: Storage,
         secureStorage: SecureStorage,
     ) {
         if (isInitialized) return
 
-        _dependencyRegistry = DependencyRegistry(storage, secureStorage)
+        _dependencyRegistry = DependencyRegistry(chainFactories, storage, secureStorage)
 
         val storageManager = dependencyRegistry.storageManager
         val crypto = dependencyRegistry.crypto

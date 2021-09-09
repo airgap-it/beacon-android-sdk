@@ -15,7 +15,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.*
 
-internal class MatrixEventService(httpClient: HttpClient) : MatrixService(httpClient) {
+public class MatrixEventService(httpClient: HttpClient) : MatrixService(httpClient) {
     private var ongoingSync: Flow<Result<MatrixSyncResponse>>? = null
 
     suspend fun sync(

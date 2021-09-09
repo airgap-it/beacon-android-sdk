@@ -25,6 +25,8 @@ import it.airgap.beaconsdk.core.message.BeaconMessage
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runBlockingTest
+import mockChainRegistry
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import tryEmitValues
@@ -64,6 +66,7 @@ internal class BeaconClientTest {
     fun setup() {
         MockKAnnotations.init(this)
 
+        mockChainRegistry()
         mockkObject(BeaconCompat)
 
         coEvery { messageController.onIncomingMessage(any(), any()) } coAnswers  {
@@ -80,6 +83,11 @@ internal class BeaconClientTest {
         beaconClient = BeaconClient(appName, beaconId, connectionController, messageController, storageManager, crypto)
 
         testDeferred = CompletableDeferred()
+    }
+
+    @After
+    fun cleanUp() {
+        unmockkAll()
     }
 
     @Test

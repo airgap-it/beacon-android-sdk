@@ -24,7 +24,7 @@ public sealed class MichelineMichelsonV1Expression {
 
     public companion object {}
 
-    internal object Serializer : KSerializer<MichelineMichelsonV1Expression> {
+    public object Serializer : KSerializer<MichelineMichelsonV1Expression> {
         override val descriptor: SerialDescriptor =
             PrimitiveSerialDescriptor("MichelineMichelsonV1Expression", PrimitiveKind.STRING)
 
@@ -43,10 +43,10 @@ public sealed class MichelineMichelsonV1Expression {
 
         private fun deserializeJsonObject(decoder: JsonDecoder, jsonObject: JsonObject): MichelineMichelsonV1Expression =
             when {
-                jsonObject.containsKey(MichelinePrimitiveInt.Field.INT) -> decoder.json.decodeFromJsonElement(MichelinePrimitiveInt.serializer(), jsonObject)
-                jsonObject.containsKey(MichelinePrimitiveString.Field.STRING) -> decoder.json.decodeFromJsonElement(MichelinePrimitiveString.serializer(), jsonObject)
-                jsonObject.containsKey(MichelinePrimitiveBytes.Field.BYTES) -> decoder.json.decodeFromJsonElement(MichelinePrimitiveBytes.serializer(), jsonObject)
-                jsonObject.containsKey(MichelineNode.Field.EXPRESSIONS) -> decoder.json.decodeFromJsonElement(MichelineNode.serializer(), jsonObject)
+                jsonObject.containsKey(MichelinePrimitiveInt.Serializer.Field.INT) -> decoder.json.decodeFromJsonElement(MichelinePrimitiveInt.serializer(), jsonObject)
+                jsonObject.containsKey(MichelinePrimitiveString.Serializer.Field.STRING) -> decoder.json.decodeFromJsonElement(MichelinePrimitiveString.serializer(), jsonObject)
+                jsonObject.containsKey(MichelinePrimitiveBytes.Serializer.Field.BYTES) -> decoder.json.decodeFromJsonElement(MichelinePrimitiveBytes.serializer(), jsonObject)
+                jsonObject.containsKey(MichelineNode.Serializer.Field.EXPRESSIONS) -> decoder.json.decodeFromJsonElement(MichelineNode.serializer(), jsonObject)
                 else -> decoder.json.decodeFromJsonElement(MichelinePrimitiveApplication.serializer(), jsonObject)
             }
 
@@ -66,11 +66,11 @@ public sealed class MichelineMichelsonV1Expression {
 public data class MichelinePrimitiveInt(public val int: Int) : MichelineMichelsonV1Expression() {
     public companion object {}
 
-    internal object Field {
-        const val INT = "int"
-    }
+    public object Serializer : KSerializer<MichelinePrimitiveInt> {
+        object Field {
+            const val INT = "int"
+        }
 
-    internal object Serializer : KSerializer<MichelinePrimitiveInt> {
         override val descriptor: SerialDescriptor =
             PrimitiveSerialDescriptor("MichelineNode", PrimitiveKind.STRING)
 
@@ -97,8 +97,10 @@ public data class MichelinePrimitiveInt(public val int: Int) : MichelineMichelso
 public data class MichelinePrimitiveString(public val string: String) : MichelineMichelsonV1Expression() {
     public companion object {}
 
-    internal object Field {
-        const val STRING = "string"
+    object Serializer {
+        object Field {
+            const val STRING = "string"
+        }
     }
 }
 
@@ -106,8 +108,10 @@ public data class MichelinePrimitiveString(public val string: String) : Michelin
 public data class MichelinePrimitiveBytes(public val bytes: String) : MichelineMichelsonV1Expression() {
     public companion object {}
 
-    internal object Field {
-        const val BYTES = "bytes"
+    object Serializer {
+        object Field {
+            const val BYTES = "bytes"
+        }
     }
 }
 
@@ -124,11 +128,11 @@ public data class MichelinePrimitiveApplication(
 public data class MichelineNode(public val expressions: List<MichelineMichelsonV1Expression>) : MichelineMichelsonV1Expression() {
     public companion object {}
 
-    internal object Field {
-        const val EXPRESSIONS = "expressions"
-    }
+    public object Serializer : KSerializer<MichelineNode> {
+        object Field {
+            const val EXPRESSIONS = "expressions"
+        }
 
-    internal object Serializer : KSerializer<MichelineNode> {
         override val descriptor: SerialDescriptor =
             PrimitiveSerialDescriptor("MichelineNode", PrimitiveKind.STRING)
 

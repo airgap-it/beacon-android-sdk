@@ -1,5 +1,6 @@
 package it.airgap.beaconsdk.core.internal.storage
 
+import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.data.beacon.AppMetadata
 import it.airgap.beaconsdk.core.data.beacon.Peer
 import it.airgap.beaconsdk.core.data.beacon.Permission
@@ -14,23 +15,24 @@ import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
 import kotlin.reflect.KProperty1
 
-internal class StorageManager(
-    private val storage: ExtendedStorage,
-    private val secureStorage: SecureStorage,
-    private val accountUtils: AccountUtils
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+public class StorageManager(
+    public val storage: ExtendedStorage,
+    public val secureStorage: SecureStorage,
+    public val accountUtils: AccountUtils
 ) : ExtendedStorage by storage, SecureStorage by secureStorage {
 
-    constructor(
+    public constructor(
         storage: Storage,
         secureStorage: SecureStorage,
         accountUtils: AccountUtils
     ) : this(storage.extend(), secureStorage, accountUtils)
 
     private val removedPeers: MutableSharedFlow<Peer> by lazy { MutableSharedFlow(extraBufferCapacity = 64) }
-    val updatedPeers: Flow<Peer>
+    public val updatedPeers: Flow<Peer>
         get() = merge(storage.peers, removedPeers)
 
-    suspend inline fun <reified T: Peer> updatePeers(
+    public suspend inline fun <reified T: Peer> updatePeers(
         peers: List<T>,
         compareWith: List<KProperty1<T, *>>
     ) {
@@ -42,10 +44,10 @@ internal class StorageManager(
         }
     }
 
-    suspend inline fun <reified T : Peer> findInstancePeer(noinline predicate: (T) -> Boolean): T? =
+    public suspend inline fun <reified T : Peer> findInstancePeer(noinline predicate: (T) -> Boolean): T? =
         storage.findPeer(T::class.java, predicate)
 
-    suspend fun removePeers(peers: List<Peer>) {
+    public suspend fun removePeers(peers: List<Peer>) {
         removePeers { peer -> peers.any { it.publicKey == peer.publicKey } }
     }
 
@@ -70,11 +72,11 @@ internal class StorageManager(
         }
     }
 
-    suspend fun removeAppMetadata(appsMetadata: List<AppMetadata>) {
+    public suspend fun removeAppMetadata(appsMetadata: List<AppMetadata>) {
         removeAppMetadata { metadata -> appsMetadata.any { it.senderId == metadata.senderId } }
     }
 
-    suspend fun removePermissions(permissions: List<Permission>) {
+    public suspend fun removePermissions(permissions: List<Permission>) {
         removePermissions { permission -> permissions.any { it == permission } }
     }
 }

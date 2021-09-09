@@ -1,3 +1,6 @@
 package it.airgap.beaconsdk.core.internal.crypto.data
 
-internal class KeyPair(val privateKey: ByteArray, val publicKey: ByteArray)
+import androidx.annotation.RestrictTo
+
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+public class KeyPair(public val privateKey: ByteArray, public val publicKey: ByteArray)

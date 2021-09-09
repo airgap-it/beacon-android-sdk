@@ -2,7 +2,7 @@ package it.airgap.beaconsdk.core.internal.transport.p2p.matrix.data
 
 import it.airgap.beaconsdk.core.internal.transport.p2p.matrix.data.api.sync.MatrixSyncResponse
 
-internal data class MatrixSync(
+public data class MatrixSync(
     val nextBatch: String? = null,
     val rooms: List<MatrixRoom>? = null,
     val events: List<MatrixEvent>? = null,

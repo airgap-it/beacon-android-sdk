@@ -4,7 +4,7 @@ import it.airgap.beaconsdk.core.data.beacon.AppMetadata
 import kotlinx.serialization.Serializable
 
 @Serializable
-internal data class V2AppMetadata(
+public data class V2AppMetadata(
     val senderId: String,
     val name: String,
     val icon: String? = null,

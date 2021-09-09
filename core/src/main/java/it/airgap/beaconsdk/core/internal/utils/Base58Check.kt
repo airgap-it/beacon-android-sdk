@@ -1,15 +1,17 @@
 package it.airgap.beaconsdk.core.internal.utils
 
+import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.internal.crypto.Crypto
 import java.math.BigInteger
 
-internal class Base58Check(private val crypto: Crypto) {
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+public class Base58Check(private val crypto: Crypto) {
     private val bs58Regex = Regex("^[${ALPHABET}]+$")
 
     private val bi0: BigInteger by lazy { BigInteger.ZERO }
     private val biAlphabet: BigInteger by lazy { BigInteger.valueOf(ALPHABET.length.toLong()) }
 
-    fun encode(bytes: ByteArray): Result<String> =
+    public fun encode(bytes: ByteArray): Result<String> =
         runCatching {
             val checksum = createChecksum(bytes)
             val encoded = bytesToBase58(bytes + checksum)
@@ -17,7 +19,7 @@ internal class Base58Check(private val crypto: Crypto) {
             encoded
         }
 
-    fun decode(base58check: String): Result<ByteArray> =
+    public fun decode(base58check: String): Result<ByteArray> =
         runCatching {
             if (!base58check.matches(bs58Regex)) failWithInvalidString()
 
@@ -75,7 +77,7 @@ internal class Base58Check(private val crypto: Crypto) {
     private fun failWithInvalidString(): Nothing = throw IllegalArgumentException("Base58Check string contains invalid characters")
     private fun failWithInvalidChecksum(): Nothing = throw IllegalArgumentException("Base58Check checksum is invalid")
 
-    companion object {
+    public companion object {
         private const val ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
     }
 }
