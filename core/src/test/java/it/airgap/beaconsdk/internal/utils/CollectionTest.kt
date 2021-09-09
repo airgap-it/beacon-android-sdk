@@ -149,7 +149,7 @@ internal class CollectionTest {
 
         val collected = mutableListOf<Int>()
         runBlockingTest {
-            elements.launch {
+            elements.launchForEach {
                 delay(abs(Random.nextInt() % 1000).toLong())
                 collected.add(it)
                 if (collected.size == elements.size) testDeferred.complete(Unit)
@@ -166,13 +166,26 @@ internal class CollectionTest {
         val elements = listOf(1, 2, 3, 4, 5)
 
         runBlockingTest {
-            val results = elements.async {
+            val results = elements.asyncMap {
                 delay(abs(Random.nextInt() % 1000).toLong())
                 it * 2
             }
 
             assertEquals(elements.map { it * 2 }, results)
         }
+    }
+
+    @Test
+    fun `shifts list by offset`() {
+        val elements = listOf(1, 2, 3, 4, 5)
+
+        val shifted0 = elements.shiftedBy(0)
+        val shiftedInSize = elements.shiftedBy(1)
+        val shiftedExceedsSize = elements.shiftedBy(9)
+
+        assertEquals(listOf(1, 2, 3, 4, 5), shifted0)
+        assertEquals(listOf(2, 3, 4, 5, 1), shiftedInSize)
+        assertEquals(listOf(5, 1, 2, 3, 4), shiftedExceedsSize)
     }
 
     @Test

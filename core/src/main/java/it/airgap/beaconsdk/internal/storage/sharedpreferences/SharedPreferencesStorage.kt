@@ -31,10 +31,24 @@ internal class SharedPreferencesStorage(private val sharedPreferences: SharedPre
         sharedPreferences.putSerializable(KEY_PERMISSIONS, permissions)
     }
 
+    override suspend fun getMatrixRelayServer(): String? =
+        sharedPreferences.getString(KEY_MATRIX_RELAY_SERVER, null)
+
+    override suspend fun setMatrixRelayServer(relayServer: String?) {
+        sharedPreferences.putString(KEY_MATRIX_RELAY_SERVER, relayServer)
+    }
+
+    override suspend fun getMatrixChannels(): Map<String, String> =
+        sharedPreferences.getSerializable(KEY_MATRIX_CHANNELS, emptyMap())
+
+    override suspend fun setMatrixChannels(channels: Map<String, String>) {
+        sharedPreferences.putSerializable(KEY_MATRIX_CHANNELS, channels)
+    }
+
     override suspend fun getMatrixSyncToken(): String? =
         sharedPreferences.getString(KEY_MATRIX_SYNC_TOKEN, null)
 
-    override suspend fun setMatrixSyncToken(syncToken: String) {
+    override suspend fun setMatrixSyncToken(syncToken: String?) {
         sharedPreferences.putString(KEY_MATRIX_SYNC_TOKEN, syncToken)
     }
 
@@ -52,16 +66,27 @@ internal class SharedPreferencesStorage(private val sharedPreferences: SharedPre
         sharedPreferences.putString(KEY_SDK_VERSION, sdkVersion)
     }
 
+    override suspend fun getMigrations(): Set<String> =
+        sharedPreferences.getStringSet(KEY_MIGRATIONS, emptySet()) ?: emptySet()
+
+    override suspend fun setMigrations(migrations: Set<String>) {
+        sharedPreferences.putStringSet(KEY_MIGRATIONS, migrations)
+    }
+
     companion object {
         private const val KEY_PEERS = "peers"
 
         private const val KEY_APPS_METADATA = "appsMetadata"
         private const val KEY_PERMISSIONS = "permissions"
 
+        private const val KEY_MATRIX_RELAY_SERVER = "matrixRelayServer"
+        private const val KEY_MATRIX_CHANNELS = "matrixChannels"
         private const val KEY_MATRIX_SYNC_TOKEN = "matrixSyncToken"
         private const val KEY_MATRIX_ROOM_IDS = "matrixRoomIds"
 
         private const val KEY_SDK_VERSION = "sdkVersion"
+
+        private const val KEY_MIGRATIONS = "migrations"
 
         fun create(context: Context): SharedPreferencesStorage {
             val sharedPreferences = context.getSharedPreferences(BeaconConfiguration.STORAGE_NAME, Context.MODE_PRIVATE)

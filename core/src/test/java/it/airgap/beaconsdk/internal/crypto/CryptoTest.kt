@@ -4,9 +4,9 @@ import io.mockk.confirmVerified
 import io.mockk.spyk
 import io.mockk.verify
 import it.airgap.beaconsdk.internal.crypto.provider.MockCryptoProvider
-import it.airgap.beaconsdk.internal.utils.HexString
 import it.airgap.beaconsdk.internal.utils.asHexString
 import it.airgap.beaconsdk.internal.utils.splitAt
+import it.airgap.beaconsdk.internal.utils.toHexString
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
@@ -26,7 +26,7 @@ internal class CryptoTest {
     @Test
     fun `hashes key provided as HexString`() {
         val key = ByteArray(1) { 0 }
-        val hash = crypto.hashKey(key.asHexString())
+        val hash = crypto.hashKey(key.toHexString())
 
         assertTrue(hash.isSuccess, "Expected hash result to be a success")
         verify { cryptoProvider.getHash(key, key.size) }
@@ -50,7 +50,7 @@ internal class CryptoTest {
         cryptoProvider.shouldFail = true
 
         val key = ByteArray(1) { 0 }
-        val hash = crypto.hashKey(key.asHexString())
+        val hash = crypto.hashKey(key.toHexString())
 
         assertTrue(hash.isFailure, "Expected hash result to be a failure")
     }
@@ -78,7 +78,7 @@ internal class CryptoTest {
                 val hash = crypto.hash(it.first, it.second)
 
                 assertTrue(hash.isSuccess, "Expected hash result to be a success")
-                assertEquals(it.second, hash.get().size)
+                assertEquals(it.second, hash.getOrThrow().size)
 
                 verify { cryptoProvider.getHash(it.first.encodeToByteArray(), it.second) }
             }
@@ -89,19 +89,19 @@ internal class CryptoTest {
     @Test
     fun `hashes HexString message with specified size`() {
         val messagesWithSize = listOf(
-            HexString.fromString("9434dc98") to 1,
-            HexString.fromString("9434dc98") to 16,
-            HexString.fromString("9434dc98") to 100,
-        )
+            "9434dc98" to 1,
+            "9434dc98" to 16,
+            "9434dc98" to 100,
+        ).map { it.first.asHexString() to it.second }
 
         messagesWithSize
             .forEach {
                 val hash = crypto.hash(it.first, it.second)
 
                 assertTrue(hash.isSuccess, "Expected hash result to be a success")
-                assertEquals(it.second, hash.get().size)
+                assertEquals(it.second, hash.getOrThrow().size)
 
-                verify { cryptoProvider.getHash(it.first.asByteArray(), it.second) }
+                verify { cryptoProvider.getHash(it.first.toByteArray(), it.second) }
             }
 
         confirmVerified(cryptoProvider)
@@ -110,17 +110,17 @@ internal class CryptoTest {
     @Test
     fun `hashes ByteArray message with specified size`() {
         val messagesWithSize = listOf(
-            HexString.fromString("9434dc98").asByteArray() to 1,
-            HexString.fromString("9434dc98").asByteArray() to 16,
-            HexString.fromString("9434dc98").asByteArray() to 100,
-        )
+            "9434dc98" to 1,
+            "9434dc98" to 16,
+            "9434dc98" to 100,
+        ).map { it.first.asHexString().toByteArray() to it.second }
 
         messagesWithSize
             .forEach {
                 val hash = crypto.hash(it.first, it.second)
 
                 assertTrue(hash.isSuccess, "Expected hash result to be a success")
-                assertEquals(it.second, hash.get().size)
+                assertEquals(it.second, hash.getOrThrow().size)
 
                 verify { cryptoProvider.getHash(it.first, it.second) }
             }
@@ -144,7 +144,7 @@ internal class CryptoTest {
     fun `returns failure result when HexString message hash failed`() {
         cryptoProvider.shouldFail = true
 
-        val message = HexString.fromString("9434dc98")
+        val message = "9434dc98".asHexString()
         val size = 32
 
         val hash = crypto.hash(message, size)
@@ -156,7 +156,7 @@ internal class CryptoTest {
     fun `returns failure result when ByteArray message hash failed`() {
         cryptoProvider.shouldFail = true
 
-        val message = HexString.fromString("9434dc98").asByteArray()
+        val message = "9434dc98".asHexString().toByteArray()
         val size = 32
 
         val hash = crypto.hash(message, size)
@@ -166,19 +166,19 @@ internal class CryptoTest {
 
     @Test
     fun `creates SHA-256 hash from HexString message`() {
-        val message = HexString.fromString("9434dc98")
+        val message = "9434dc98".asHexString()
 
         val hash = crypto.hashSha256(message)
 
         assertTrue(hash.isSuccess, "Expected hash result to be a success")
-        verify { cryptoProvider.getHash256(message.asByteArray()) }
+        verify { cryptoProvider.getHash256(message.toByteArray()) }
 
         confirmVerified(cryptoProvider)
     }
 
     @Test
     fun `creates SHA-256 hash from ByteArray message`() {
-        val message = HexString.fromString("9434dc98").asByteArray()
+        val message = "9434dc98".asHexString().toByteArray()
 
         val hash = crypto.hashSha256(message)
 
@@ -192,7 +192,7 @@ internal class CryptoTest {
     fun `returns failure result if failed to generate SHA-256 hash from HexString message`() {
         cryptoProvider.shouldFail = true
 
-        val message = HexString.fromString("9434dc98")
+        val message = "9434dc98".asHexString()
         val hash = crypto.hashSha256(message)
 
         assertTrue(hash.isFailure, "Expected hash result to be a failure")
@@ -202,7 +202,7 @@ internal class CryptoTest {
     fun `returns failure result if failed to generate SHA-256 hash from ByteArray message`() {
         cryptoProvider.shouldFail = true
 
-        val message = HexString.fromString("9434dc98").asByteArray()
+        val message = "9434dc98".asHexString().toByteArray()
         val hash = crypto.hashSha256(message)
 
         assertTrue(hash.isFailure, "Expected hash result to be a failure")
@@ -210,7 +210,7 @@ internal class CryptoTest {
 
     @Test
     fun `creates random seed as UUID`() {
-        val seed = crypto.guid().get()
+        val seed = crypto.guid().getOrThrow()
 
         assertEquals("00010203-0405-0607-0809-0a0b0c0d0e0f", seed)
     }
@@ -315,20 +315,20 @@ internal class CryptoTest {
 
     @Test
     fun `create signature for HexString message`() {
-        val message = HexString.fromString("9434dc98")
+        val message = "9434dc98".asHexString()
         val privateKey = ByteArray(0)
 
         val signature = crypto.signMessageDetached(message, privateKey)
 
         assertTrue(signature.isSuccess, "Expected signature result to be a success")
-        verify { cryptoProvider.signMessageDetached(message.asByteArray(), privateKey) }
+        verify { cryptoProvider.signMessageDetached(message.toByteArray(), privateKey) }
 
         confirmVerified(cryptoProvider)
     }
 
     @Test
     fun `create signature for ByteArray message`() {
-        val message = HexString.fromString("9434dc98").asByteArray()
+        val message = "9434dc98".asHexString().toByteArray()
         val privateKey = ByteArray(0)
 
         val signature = crypto.signMessageDetached(message, privateKey)
@@ -355,7 +355,7 @@ internal class CryptoTest {
     fun `returns failure result if failed to create signature for HexString message`() {
         cryptoProvider.shouldFail = true
 
-        val message = HexString.fromString("9434dc98")
+        val message = "9434dc98".asHexString()
         val privateKey = ByteArray(0)
 
         val signature = crypto.signMessageDetached(message, privateKey)
@@ -367,7 +367,7 @@ internal class CryptoTest {
     fun `returns failure result if failed to create signature for ByteArray message`() {
         cryptoProvider.shouldFail = true
 
-        val message = HexString.fromString("9434dc98").asByteArray()
+        val message = "9434dc98".asHexString().toByteArray()
         val privateKey = ByteArray(0)
 
         val signature = crypto.signMessageDetached(message, privateKey)
@@ -400,21 +400,21 @@ internal class CryptoTest {
 
     @Test
     fun `encrypts HexString message with public key`() {
-        val message = HexString.fromString("9434dc98")
+        val message = "9434dc98".asHexString()
         val publicKey = ByteArray(0)
 
         val encrypted = crypto.encryptMessageWithPublicKey(message, publicKey)
 
         assertTrue(encrypted.isSuccess, "Expected encryption result to be a success")
         verify { cryptoProvider.convertEd25519PublicKeyToCurve25519(publicKey) }
-        verify { cryptoProvider.encryptMessageWithPublicKey(message.asByteArray(), publicKey) }
+        verify { cryptoProvider.encryptMessageWithPublicKey(message.toByteArray(), publicKey) }
 
         confirmVerified(cryptoProvider)
     }
 
     @Test
     fun `encrypts ByteArray message with public key`() {
-        val message = HexString.fromString("9434dc98").asByteArray()
+        val message = "9434dc98".asHexString().toByteArray()
         val publicKey = ByteArray(0)
 
         val encrypted = crypto.encryptMessageWithPublicKey(message, publicKey)
@@ -442,7 +442,7 @@ internal class CryptoTest {
     fun `returns failure result if failed to encrypt HexString message with public key`() {
         cryptoProvider.shouldFail = true
 
-        val message = HexString.fromString("9434dc98")
+        val message = "9434dc98".asHexString()
         val publicKey = ByteArray(0)
 
         val encrypted = crypto.encryptMessageWithPublicKey(message, publicKey)
@@ -454,7 +454,7 @@ internal class CryptoTest {
     fun `returns failure result if failed to encrypt ByteArray message with public key`() {
         cryptoProvider.shouldFail = true
 
-        val message = HexString.fromString("9434dc98").asByteArray()
+        val message = "9434dc98".asHexString().toByteArray()
         val publicKey = ByteArray(0)
 
         val encrypted = crypto.encryptMessageWithPublicKey(message, publicKey)
@@ -480,7 +480,7 @@ internal class CryptoTest {
 
     @Test
     fun `decrypts HexString message with public key`() {
-        val message = HexString.fromString("9434dc98")
+        val message = "9434dc98".asHexString()
         val publicKey = ByteArray(0)
         val privateKey = ByteArray(0)
 
@@ -489,14 +489,14 @@ internal class CryptoTest {
         assertTrue(decrypted.isSuccess, "Expected decryption result to be a success")
         verify { cryptoProvider.convertEd25519PublicKeyToCurve25519(publicKey) }
         verify { cryptoProvider.convertEd25519PrivateKeyToCurve25519(privateKey) }
-        verify { cryptoProvider.decryptMessageWithKeyPair(message.asByteArray(), publicKey, privateKey) }
+        verify { cryptoProvider.decryptMessageWithKeyPair(message.toByteArray(), publicKey, privateKey) }
 
         confirmVerified(cryptoProvider)
     }
 
     @Test
     fun `decrypts ByteArray message with public key`() {
-        val message = HexString.fromString("9434dc98").asByteArray()
+        val message = "9434dc98".asHexString().toByteArray()
         val publicKey = ByteArray(0)
         val privateKey = ByteArray(0)
 
@@ -527,7 +527,7 @@ internal class CryptoTest {
     fun `returns failure result if failed to decrypt HexString message with key pair`() {
         cryptoProvider.shouldFail = true
 
-        val message = HexString.fromString("9434dc98")
+        val message = "9434dc98".asHexString()
         val publicKey = ByteArray(0)
         val privateKey = ByteArray(0)
 
@@ -540,7 +540,7 @@ internal class CryptoTest {
     fun `returns failure result if failed to decrypt ByteArray message with key pair`() {
         cryptoProvider.shouldFail = true
 
-        val message = HexString.fromString("9434dc98").asByteArray()
+        val message = "9434dc98".asHexString().toByteArray()
         val publicKey = ByteArray(0)
         val privateKey = ByteArray(0)
 
@@ -564,20 +564,20 @@ internal class CryptoTest {
 
     @Test
     fun `encrypts HexString message with shared key`() {
-        val message = HexString.fromString("9434dc98")
+        val message = "9434dc98".asHexString()
         val sharedKey = ByteArray(0)
 
         val encrypted = crypto.encryptMessageWithSharedKey(message, sharedKey)
 
         assertTrue(encrypted.isSuccess, "Expected encryption result to be a success")
-        verify { cryptoProvider.encryptMessageWithSharedKey(message.asByteArray(), sharedKey) }
+        verify { cryptoProvider.encryptMessageWithSharedKey(message.toByteArray(), sharedKey) }
 
         confirmVerified(cryptoProvider)
     }
 
     @Test
     fun `encrypts ByteArray message with shared key`() {
-        val message = HexString.fromString("9434dc98").asByteArray()
+        val message = "9434dc98".asHexString().toByteArray()
         val sharedKey = ByteArray(0)
 
         val encrypted = crypto.encryptMessageWithSharedKey(message, sharedKey)
@@ -604,7 +604,7 @@ internal class CryptoTest {
     fun `returns failure result if failed to encrypt HexString message with shared key`() {
         cryptoProvider.shouldFail = true
 
-        val message = HexString.fromString("9434dc98")
+        val message = "9434dc98".asHexString()
         val publicKey = ByteArray(0)
 
         val encrypted = crypto.encryptMessageWithSharedKey(message, publicKey)
@@ -616,7 +616,7 @@ internal class CryptoTest {
     fun `returns failure result if failed to encrypt ByteArray message with shared key`() {
         cryptoProvider.shouldFail = true
 
-        val message = HexString.fromString("9434dc98").asByteArray()
+        val message = "9434dc98".asHexString().toByteArray()
         val publicKey = ByteArray(0)
 
         val encrypted = crypto.encryptMessageWithSharedKey(message, publicKey)
@@ -639,20 +639,20 @@ internal class CryptoTest {
 
     @Test
     fun `decrypts HexString message with shared key`() {
-        val message = HexString.fromString("9434dc98")
+        val message = "9434dc98".asHexString()
         val sharedKey = ByteArray(0)
 
         val decrypted = crypto.decryptMessageWithSharedKey(message, sharedKey)
 
         assertTrue(decrypted.isSuccess, "Expected decryption result to be a success")
-        verify { cryptoProvider.decryptMessageWithSharedKey(message.asByteArray(), sharedKey) }
+        verify { cryptoProvider.decryptMessageWithSharedKey(message.toByteArray(), sharedKey) }
 
         confirmVerified(cryptoProvider)
     }
 
     @Test
     fun `decrypts ByteArray message with shared key`() {
-        val message = HexString.fromString("9434dc98").asByteArray()
+        val message = "9434dc98".asHexString().toByteArray()
         val sharedKey = ByteArray(0)
 
         val decrypted = crypto.decryptMessageWithSharedKey(message, sharedKey)
@@ -679,7 +679,7 @@ internal class CryptoTest {
     fun `returns failure result if failed to decrypt HexString message with shared key`() {
         cryptoProvider.shouldFail = true
 
-        val message = HexString.fromString("9434dc98")
+        val message = "9434dc98".asHexString()
         val sharedKey = ByteArray(0)
 
         val decrypted = crypto.decryptMessageWithSharedKey(message, sharedKey)
@@ -691,7 +691,7 @@ internal class CryptoTest {
     fun `returns failure result if failed to decrypt ByteArray message with shared key`() {
         cryptoProvider.shouldFail = true
 
-        val message = HexString.fromString("9434dc98").asByteArray()
+        val message = "9434dc98".asHexString().toByteArray()
         val sharedKey = ByteArray(0)
 
         val decrypted = crypto.decryptMessageWithSharedKey(message, sharedKey)

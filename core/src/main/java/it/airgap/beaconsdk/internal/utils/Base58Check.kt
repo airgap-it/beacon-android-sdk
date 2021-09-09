@@ -9,16 +9,16 @@ internal class Base58Check(private val crypto: Crypto) {
     private val bi0: BigInteger by lazy { BigInteger.ZERO }
     private val biAlphabet: BigInteger by lazy { BigInteger.valueOf(ALPHABET.length.toLong()) }
 
-    fun encode(bytes: ByteArray): InternalResult<String> =
-        tryResult {
+    fun encode(bytes: ByteArray): Result<String> =
+        runCatching {
             val checksum = createChecksum(bytes)
             val encoded = bytesToBase58(bytes + checksum)
 
             encoded
         }
 
-    fun decode(base58check: String): InternalResult<ByteArray> =
-        tryResult {
+    fun decode(base58check: String): Result<ByteArray> =
+        runCatching {
             if (!base58check.matches(bs58Regex)) failWithInvalidString()
 
             val (payloadList, checksumList) = bytesFromBase58(base58check).toList()
@@ -33,7 +33,7 @@ internal class Base58Check(private val crypto: Crypto) {
         }
 
     private fun bytesToBase58(bytes: ByteArray): String {
-        val hex = bytes.asHexString()
+        val hex = bytes.toHexString()
         val base58 = bigIntegerToBase58("", hex.toBigInteger()).reversed()
 
         val leadingZeros = bytes.takeWhile { it == 0.toByte() }.size
@@ -43,7 +43,7 @@ internal class Base58Check(private val crypto: Crypto) {
 
     private fun bytesFromBase58(base58: String): ByteArray {
         val chars = base58.toCharArray().toList()
-        val bytes = base58ToBigInteger(bi0, chars).asHexString().asByteArray()
+        val bytes = base58ToBigInteger(bi0, chars).toHexString().toByteArray()
 
         val leadingZeros = base58.takeWhile { it == ALPHABET[0] }.length
 
@@ -51,7 +51,7 @@ internal class Base58Check(private val crypto: Crypto) {
     }
 
     private fun createChecksum(bytes: ByteArray): ByteArray {
-        val hash = crypto.hashSha256(crypto.hashSha256(bytes).get()).get()
+        val hash = crypto.hashSha256(crypto.hashSha256(bytes).getOrThrow()).getOrThrow()
 
         return hash.sliceArray(0 until 4)
     }

@@ -8,10 +8,10 @@ internal data class MatrixSync(
     val events: List<MatrixEvent>? = null,
 ) {
     companion object {
-        fun fromSyncResponse(response: MatrixSyncResponse): MatrixSync =
+        fun fromSyncResponse(node: String, response: MatrixSyncResponse): MatrixSync =
             with(response) {
-                val roomList = rooms?.let { MatrixRoom.fromSync(rooms) }
-                val eventList = rooms?.let { MatrixEvent.fromSync(rooms) }
+                val roomList = rooms?.let { MatrixRoom.fromSync(node, rooms) }
+                val eventList = rooms?.let { MatrixEvent.fromSync(node, rooms) }
 
                 return MatrixSync(nextBatch, roomList, eventList)
             }

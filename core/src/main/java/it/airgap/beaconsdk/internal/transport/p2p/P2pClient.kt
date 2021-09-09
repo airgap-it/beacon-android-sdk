@@ -2,57 +2,54 @@ package it.airgap.beaconsdk.internal.transport.p2p
 
 import it.airgap.beaconsdk.data.beacon.P2pPeer
 import it.airgap.beaconsdk.internal.BeaconConfiguration
-import it.airgap.beaconsdk.internal.crypto.Crypto
-import it.airgap.beaconsdk.internal.crypto.data.KeyPair
-import it.airgap.beaconsdk.internal.crypto.data.SessionKeyPair
+import it.airgap.beaconsdk.internal.data.HexString
 import it.airgap.beaconsdk.internal.transport.p2p.data.P2pMessage
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.MatrixClient
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.MatrixEvent
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.MatrixRoom
-import it.airgap.beaconsdk.internal.transport.p2p.utils.P2pCommunicationUtils
-import it.airgap.beaconsdk.internal.transport.p2p.utils.P2pServerUtils
+import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.api.MatrixError
+import it.airgap.beaconsdk.internal.transport.p2p.store.*
+import it.airgap.beaconsdk.internal.transport.p2p.utils.P2pCommunicator
+import it.airgap.beaconsdk.internal.transport.p2p.utils.P2pCrypto
 import it.airgap.beaconsdk.internal.utils.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.util.*
 
 internal class P2pClient(
-    private val appName: String,
-    private val appIcon: String?,
-    private val appUrl: String?,
-    private val serverUtils: P2pServerUtils,
-    private val communicationUtils: P2pCommunicationUtils,
-    private val matrixClients: List<MatrixClient>,
-    private val crypto: Crypto,
-    private val keyPair: KeyPair,
+    private val matrixClient: MatrixClient,
+    private val store: P2pStore,
+    private val crypto: P2pCrypto,
+    private val communicator: P2pCommunicator,
 ) {
-    private val subscribedFlows: MutableMap<HexString, MutableSet<String>> = mutableMapOf()
-
-    private val serverSessionKeyPair: MutableMap<HexString, SessionKeyPair> = mutableMapOf()
-    private val clientSessionKeyPair: MutableMap<HexString, SessionKeyPair> = mutableMapOf()
-
     private val matrixEvents: Flow<MatrixEvent> by lazy {
-        matrixClients
-            .map(MatrixClient::events)
-            .merge()
-            .onStart { matrixClients.filterNot { it.isLoggedIn() }.launch { it.start() } }
+        matrixClient.events
+            .filter { event -> store.state().map { it.relayServer == event.node }.getOrDefault(true) }
+            .onStart { tryLog(TAG) { matrixClient.start() } }
     }
 
     private val matrixMessageEvents: Flow<MatrixEvent.TextMessage> get() = matrixEvents.filterIsInstance()
     private val matrixInviteEvents: Flow<MatrixEvent.Invite> get() = matrixEvents.filterIsInstance()
     private val matrixJoinEvents: Flow<MatrixEvent.Join> get() = matrixEvents.filterIsInstance()
 
-    fun isSubscribed(publicKey: HexString): Boolean = subscribedFlows.containsKey(publicKey)
+    private val subscribedFlows: MutableMap<HexString, MutableSet<String>> = mutableMapOf()
 
-    fun subscribeTo(publicKey: HexString): Flow<InternalResult<P2pMessage>> {
+    private val startMutex: Mutex = Mutex()
+
+    fun isSubscribed(publicKey: ByteArray): Boolean = subscribedFlows.containsKey(publicKey)
+
+    fun subscribeTo(publicKey: ByteArray): Flow<Result<P2pMessage>> {
         val identifier = UUID.randomUUID().toString().also { subscribedFlows.addTo(publicKey, it) }
 
         return flow {
             try {
                 matrixMessageEvents
                     .filter { it.isTextMessageFrom(publicKey) }
-                    .map { decrypt(publicKey, it) }
-                    .map { P2pMessage.fromInternalResult(publicKey, it) }
+                    .onEach { store.intent(OnChannelEvent(it.sender, it.roomId)) }
+                    .map { crypto.decrypt(publicKey, it.message) }
+                    .map { P2pMessage.fromResult(publicKey, it) }
                     .collect {
                         if (subscribedFlows.containsElement(publicKey, identifier)) emit(it)
                         else cancelFlow()
@@ -63,174 +60,186 @@ internal class P2pClient(
         }
     }
 
-    fun unsubscribeFrom(publicKey: HexString) {
+    suspend fun unsubscribeFrom(publicKey: ByteArray) {
         subscribedFlows.remove(publicKey)
+        if (subscribedFlows.isEmpty()) {
+            matrixClient.stop()
+        }
     }
 
-    suspend fun sendTo(peer: P2pPeer, message: String): InternalResult<Unit> =
-        tryResult {
-            val publicKey = HexString.fromString(peer.publicKey)
-            val recipient = communicationUtils.recipientIdentifier(publicKey, peer.relayServer)
-            val encrypted = encrypt(publicKey, message).get().asHexString()
+    suspend fun sendTo(peer: P2pPeer, message: String): Result<Unit> =
+        runCatching {
+            val publicKey = peer.publicKey.asHexString().toByteArray()
+            val recipient = communicator.recipientIdentifier(publicKey, peer.relayServer).getOrThrow()
+            val encrypted = crypto.encrypt(publicKey, message).getOrThrow()
 
-            matrixClients.launch { it.sendTextMessageTo(recipient, encrypted.asString()).get() }
+            matrixClient.sendTextMessageTo(recipient.asString(), encrypted).getOrThrow()
         }
 
-    suspend fun sendPairingResponse(peer: P2pPeer): InternalResult<Unit> =
-        tryResult {
-            val publicKey = HexString.fromString(peer.publicKey)
-            val recipient = communicationUtils.recipientIdentifier(publicKey, peer.relayServer)
-            val payload = crypto.encryptMessageWithPublicKey(
-                communicationUtils.pairingPayload(
-                    peer,
-                    appName,
-                    appIcon,
-                    appUrl,
-                    keyPair.publicKey,
-                    serverUtils.getRelayServer(keyPair.publicKey)
-                ).get(),
-                publicKey.asByteArray()
-            ).get().asHexString()
-            val message = communicationUtils.channelOpeningMessage(recipient, payload.asString())
+    suspend fun sendPairingResponse(peer: P2pPeer): Result<Unit> =
+        runCatching {
+            val publicKey = peer.publicKey.asHexString().toByteArray()
+            val recipient = communicator.recipientIdentifier(publicKey, peer.relayServer).getOrThrow()
+            val relayServer = store.state().getOrThrow().relayServer
+            val payload = crypto.encryptPairingPayload(
+                publicKey,
+                communicator.pairingPayload(peer, relayServer).getOrThrow(),
+            ).getOrThrow()
+            val message = communicator.channelOpeningMessage(recipient.asString(), payload.toHexString().asString())
 
-            matrixClients.launch { it.sendTextMessageTo(recipient, message).get() }
+            matrixClient.sendTextMessageTo(recipient.asString(), message, newRoom = true).getOrThrow()
         }
 
-    private fun encrypt(publicKey: HexString, message: String): InternalResult<ByteArray> =
-        getOrCreateClientSessionKeyPair(publicKey)
-            .flatMap { crypto.encryptMessageWithSharedKey(message, it.tx) }
-
-    private fun decrypt(
-        publicKey: HexString,
-        textMessage: MatrixEvent.TextMessage,
-    ): InternalResult<String> =
-        getOrCreateServerSessionKeyPair(publicKey)
-            .flatMap {
-                if (textMessage.message.isHex()) crypto.decryptMessageWithSharedKey(HexString.fromString(
-                    textMessage.message), it.rx)
-                else crypto.decryptMessageWithSharedKey(textMessage.message, it.rx)
-            }
-            .map { it.decodeToString() }
-
-    private fun MatrixEvent.isTextMessageFrom(publicKey: HexString): Boolean =
+    private fun MatrixEvent.isTextMessageFrom(publicKey: ByteArray): Boolean =
         this is MatrixEvent.TextMessage
-                && communicationUtils.isMessageFrom(this, publicKey)
-                && crypto.validateEncryptedMessage(message)
+                && communicator.isMessageFrom(this, publicKey)
+                && communicator.isValidMessage(this)
 
-    private fun getOrCreateClientSessionKeyPair(publicKey: HexString): InternalResult<SessionKeyPair> =
-        clientSessionKeyPair.getOrCreate(publicKey) {
-            crypto.createClientSessionKeyPair(publicKey.asByteArray(), keyPair.privateKey)
-        }
-
-    private fun getOrCreateServerSessionKeyPair(publicKey: HexString): InternalResult<SessionKeyPair> =
-        serverSessionKeyPair.getOrCreate(publicKey) {
-            crypto.createServerSessionKeyPair(publicKey.asByteArray(), keyPair.privateKey)
-        }
-
-    private fun MutableMap<HexString, SessionKeyPair>.getOrCreate(
-        publicKey: HexString,
-        default: () -> InternalResult<SessionKeyPair>,
-    ): InternalResult<SessionKeyPair> =
-        if (containsKey(publicKey)) Success(getValue(publicKey))
-        else default().alsoIfSuccess { put(publicKey, it) }
-
-    private fun P2pMessage.Companion.fromInternalResult(
-        publicKey: HexString,
-        message: InternalResult<String>,
-    ): InternalResult<P2pMessage> =
-        message.map { P2pMessage(publicKey.asString(), it) }
+    private fun P2pMessage.Companion.fromResult(
+        publicKey: ByteArray,
+        message: Result<String>,
+    ): Result<P2pMessage> =
+        message.map { P2pMessage(publicKey.toHexString().asString(), it) }
 
     private suspend fun MatrixClient.start() {
-        if (isLoggedIn()) return
+        startMutex.withLock withLock@ {
+            if (isLoggedIn()) return@withLock
 
-        tryLog(TAG) {
-            val loginDigest = crypto.hash(
-                "login:${currentTimestamp() / 1000 / (5 * 60)}",
-                32
-            ).get()
+            val id = crypto.userId().getOrThrow()
+            val deviceId = crypto.deviceId().getOrThrow()
 
-            val signature = crypto.signMessageDetached(loginDigest, keyPair.privateKey)
-                .get()
-                .asHexString()
-                .asString()
+            val startRetries = store.state().getOrThrow().availableNodes
+            runCatchingFlatRepeat(startRetries) {
+                val relayServer = store.state().getOrThrow().relayServer
+                val password = crypto.password().getOrThrow()
 
-            val publicKeyHex = keyPair.publicKey
-                .asHexString()
-                .asString()
+                start(relayServer, id, password, deviceId).onFailure { this@P2pClient.resetHard() }
+            }.getOrThrow()
 
-            val id = crypto.hashKey(keyPair.publicKey)
-                .get()
-                .asHexString()
-                .asString()
-
-            val password = "ed:$signature:${publicKeyHex}"
-            val deviceId = publicKeyHex
-
-            start(id, password, deviceId)
-
-            CoroutineScope(CoroutineName("collectInviteEvents") + Dispatchers.Default).launch {
-                matrixInviteEvents.collect {
-                    joinRoomsRepeated(it.roomId)
-                }
+            CoroutineScope(CoroutineName("collectInviteEvents")).launch {
+                matrixInviteEvents
+                    .distinctUntilChangedBy { it.roomId }
+                    .collect {
+                        store.intent(OnChannelEvent(it.sender, it.roomId))
+                        tryLog(TAG) {
+                            joinRoomRepeated(it.roomId)
+                        }
+                    }
             }
         }
     }
 
-    private tailrec suspend fun MatrixClient.joinRoomsRepeated(roomId: String, retry: Int = BeaconConfiguration.P2P_MAX_JOIN_RETRIES) {
-        if (retry < 0) return
+    private suspend fun resetHard() {
+        store.intent(HardReset)
+        matrixClient.resetHard()
+    }
+
+    private tailrec suspend fun MatrixClient.joinRoomRepeated(
+        roomId: String,
+        retry: Int = BeaconConfiguration.P2P_MAX_JOIN_RETRIES,
+        carryError: Throwable? = null,
+    ) {
+        if (retry < 0) carryError?.let { throw it } ?: failWithJoiningRoomFailed(roomId)
         logDebug(TAG, "Joining room $roomId (retries remaining: $retry)")
 
-        val error = joinRoom(roomId).errorOrNull() ?: return
-        // TODO: check error type before continuing
+        val relayServer = store.state().getOrThrow().relayServer
+        val error = joinRoom(relayServer, roomId).exceptionOrNull() ?: return
+        if (error !is MatrixError.Forbidden) throw error
 
-        logDebug(TAG, "Joining room $roomId failed with error $error")
+        // Joining a room too quickly after receiving an invite event
+        // sometimes results in rejection from the server in a federated multi-node setup.
+        // Usually waiting a few milliseconds solves the issue.
 
         delay(BeaconConfiguration.P2P_JOIN_DELAY_MS)
-        return joinRoomsRepeated(roomId, retry - 1)
+        return joinRoomRepeated(roomId, retry - 1, error)
     }
 
     private suspend fun MatrixClient.sendTextMessageTo(
         recipient: String,
         message: String,
-    ): InternalResult<Unit> =
-        tryResult {
+        newRoom: Boolean = false,
+    ): Result<Unit> =
+        runCatching runCatching@ {
             start()
 
-            val room = getRelevantRoom(recipient).get()
-            room?.let { sendTextMessage(it, message).get() }
+            val roomId = (
+                if (newRoom) createRoom(recipient).getOrThrow()?.id
+                else roomId(recipient).getOrThrow()
+            ) ?: failWithRoomNotFound(recipient)
+
+            val relayServer = store.state().getOrThrow().relayServer
+
+            val error = sendTextMessage(relayServer, roomId, message).exceptionOrNull() ?: return@runCatching
+            if (error !is MatrixError.Forbidden) throw error
+
+            store.intent(OnChannelClosed(roomId))
+
+            val newRoomId = roomId(recipient).getOrThrow() ?: failWithRoomNotFound(recipient)
+            sendTextMessage(relayServer, newRoomId, message).getOrThrow()
         }
 
-    private suspend fun MatrixClient.getRelevantRoom(recipient: String): InternalResult<MatrixRoom?> {
-        start()
+    private suspend fun MatrixClient.roomId(recipient: String): Result<String?> =
+        runCatching runCatching@ {
+            start()
 
-        return joinedRooms()
-            .firstOrNull { it.members.contains(recipient) }
-            ?.let {
+            val activeChannels = store.state().getOrNull()?.activeChannels
+            activeChannels?.get(recipient)?.let {
+                return@runCatching it
+            }
+
+            val openChannel = joinedRooms().firstOrNull { it.isActive() && it.hasMember(recipient) }
+            openChannel?.let {
                 logDebug(TAG, "Channel already open, reusing ${it.id}")
-                Success(it)
-            } ?: run {
+                return@runCatching it.id
+            }
+
             logDebug(TAG, "No relevant rooms found")
-            createTrustedPrivateRoom(recipient).mapSuspend { room ->
-                room?.also { waitForMember(it, recipient) }
+            createRoom(recipient).getOrThrow()?.id
+        }
+
+    private suspend fun MatrixClient.createRoom(member: String): Result<MatrixRoom?> =
+        runCatching {
+            val relayServer = store.state().getOrThrow().relayServer
+            val room = createTrustedPrivateRoom(relayServer, member).getOrThrow()
+
+            room?.also {
+                it.waitForMember(member)
+                store.intent(OnChannelCreated(member, it.id))
             }
         }
+
+    private suspend fun MatrixRoom.isActive(recipient: String): Boolean {
+        val activeChannels = store.state().getOrNull()?.activeChannels ?: return false
+        return activeChannels[recipient] == id
     }
 
-    private suspend fun waitForMember(room: MatrixRoom, member: String) {
-        if (room.members.contains(member)) return
-        logDebug(TAG, "Waiting for $member to join room ${room.id}")
-        matrixJoinEvents.first { it.roomId == room.id && it.userId == member }
-        logDebug(TAG, "$member joined room ${room.id}")
+    private suspend fun MatrixRoom.isActive(): Boolean = !isInactive()
+    private suspend fun MatrixRoom.isInactive(): Boolean {
+        val inactiveChannels = store.state().getOrNull()?.inactiveChannels ?: return false
+        return inactiveChannels.contains(id)
     }
 
-    private fun <K, V> MutableMap<K, MutableSet<V>>.addTo(key: K, value: V) {
-        getOrPut(key) { mutableSetOf() }.add(value)
+    private suspend fun MatrixRoom.waitForMember(member: String) {
+        if (hasMember(member)) return
+        logDebug(TAG, "Waiting for $member to join room $id")
+        matrixJoinEvents.first { it.roomId == id && it.userId == member }
+        logDebug(TAG, "$member joined room $id")
     }
 
-    private fun <K, V> MutableMap<K, MutableSet<V>>.containsElement(key: K, value: V): Boolean =
-        get(key)?.contains(value) ?: false
+    private fun <V> MutableMap<HexString, V>.containsKey(key: ByteArray) = containsKey(key.toHexString())
+    private fun <V> MutableMap<HexString, V>.remove(key: ByteArray): V? = remove(key.toHexString())
+
+    private fun <V> MutableMap<HexString, MutableSet<V>>.addTo(key: ByteArray, value: V) {
+        getOrPut(key.toHexString()) { mutableSetOf() }.add(value)
+    }
+
+    private fun <V> MutableMap<HexString, MutableSet<V>>.containsElement(key: ByteArray, value: V): Boolean =
+        get(key.toHexString())?.contains(value) ?: false
 
     private fun cancelFlow(): Nothing = throw CancellationException()
+
+    private fun failWithJoiningRoomFailed(roomId: String): Nothing = failWith("Failed to join room $roomId.")
+    private fun failWithRoomNotFound(member: String): Nothing = failWith("Failed to find room for member $member.")
 
     companion object {
         const val TAG = "P2pClient"

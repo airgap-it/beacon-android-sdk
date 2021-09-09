@@ -1,17 +1,12 @@
 package it.airgap.beaconsdk.internal.utils
 
-internal inline fun <T> tryResult(block: () -> T): InternalResult<T> =
-    try {
-        Success(block())
-    } catch (e: Exception) {
-        Failure(e)
-    }
+import androidx.annotation.IntRange
 
-internal inline fun <T> flatTryResult(block: () -> InternalResult<T>): InternalResult<T> =
+internal inline fun <T> runCatchingFlat(block: () -> Result<T>): Result<T> =
     try {
         block()
     } catch (e: Exception) {
-        Failure(e)
+        Result.failure(e)
     }
 
 internal inline fun <T> tryLog(tag: String, block: () -> T): T? =
@@ -21,3 +16,21 @@ internal inline fun <T> tryLog(tag: String, block: () -> T): T? =
         logError(tag, e)
         null
     }
+
+internal inline fun <T> runCatchingRepeat(@IntRange(from = 1) times: Int, action: () -> T): Result<T> =
+    runCatchingFlatRepeat(times) { runCatching(action) }
+
+internal inline fun <T> runCatchingFlatRepeat(@IntRange(from = 1) times: Int, action: () -> Result<T>): Result<T> {
+    require(times > 0)
+
+    var result: Result<T>
+    var counter = times
+
+    do {
+        result = action()
+        if (result.isSuccess) break
+        if (result.isFailure) counter--
+    } while (counter > 0)
+
+    return result
+}

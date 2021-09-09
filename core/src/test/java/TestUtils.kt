@@ -6,9 +6,6 @@ import it.airgap.beaconsdk.data.tezos.TezosOperation
 import it.airgap.beaconsdk.internal.message.BeaconConnectionMessage
 import it.airgap.beaconsdk.internal.message.ConnectionTransportMessage
 import it.airgap.beaconsdk.internal.message.VersionedBeaconMessage
-import it.airgap.beaconsdk.internal.utils.Failure
-import it.airgap.beaconsdk.internal.utils.InternalResult
-import it.airgap.beaconsdk.internal.utils.Success
 import it.airgap.beaconsdk.internal.utils.failWith
 import it.airgap.beaconsdk.message.*
 import kotlinx.coroutines.flow.Flow
@@ -23,18 +20,20 @@ import kotlinx.serialization.json.JsonPrimitive
 
 internal fun <T> List<T>.takeHalf(): List<T> = take(size / 2)
 
-internal fun <T> MutableSharedFlow<InternalResult<T>>.tryEmitValues(values: List<T>) {
-    values.forEach { tryEmit(Success(it)) }
+internal fun <T> MutableSharedFlow<Result<T>>.tryEmitValues(values: List<T>) {
+    values.forEach { tryEmit(Result.success(it)) }
 }
 
-internal fun <T> MutableSharedFlow<InternalResult<T>>.tryEmitFailures(failures: List<Failure<T>>) {
-    failures.forEach { tryEmit(it) }
+internal fun <T> MutableSharedFlow<Result<T>>.tryEmitFailures(failures: List<Result<T>>) {
+    failures.filter { it.isFailure }.forEach { tryEmit(it) }
 }
 
 internal fun <T> Flow<T>.onNth(n: Int, action: suspend (T) -> Unit): Flow<T> {
     var counter = 0
     return onEach { if (++counter == n) action(it) }
 }
+
+internal fun List<ByteArray>.containsLike(array: ByteArray): Boolean = any { it.contentEquals(array) }
 
 internal fun JsonObject.Companion.fromValues(values: Map<String, Any?>, includeNulls: Boolean = false): JsonObject {
     val content = (if (includeNulls) values else values.filterValues { it != null })
@@ -70,11 +69,11 @@ internal fun versionedBeaconMessages(
 
 internal fun beaconConnectionMessageFlow(
     replay: Int,
-): MutableSharedFlow<InternalResult<BeaconConnectionMessage>> = MutableSharedFlow(replay)
+): MutableSharedFlow<Result<BeaconConnectionMessage>> = MutableSharedFlow(replay)
 
 internal fun connectionMessageFlow(
     replay: Int,
-): MutableSharedFlow<InternalResult<ConnectionTransportMessage>> = MutableSharedFlow(replay)
+): MutableSharedFlow<Result<ConnectionTransportMessage>> = MutableSharedFlow(replay)
 
 // -- factories --
 
@@ -287,5 +286,9 @@ internal fun permissions(
 internal fun <T> failures(
     @IntRange(from = 1) number: Int = 1,
     error: Throwable = Exception(),
-): List<Failure<T>> =
-    (0 until number).map { Failure(error) }
+): List<Result<T>> =
+    (0 until number).map { Result.failure(error) }
+
+// -- values --
+
+internal fun nodeApiUrl(node: String): String = "https://$node/_matrix/client/r0"

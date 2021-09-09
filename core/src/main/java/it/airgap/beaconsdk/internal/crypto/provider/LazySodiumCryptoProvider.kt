@@ -7,9 +7,7 @@ import com.goterl.lazysodium.interfaces.*
 import com.goterl.lazysodium.utils.Key
 import it.airgap.beaconsdk.internal.crypto.data.KeyPair
 import it.airgap.beaconsdk.internal.crypto.data.SessionKeyPair
-import it.airgap.beaconsdk.internal.utils.HexString
-
-private typealias SodiumKeyPair = com.goterl.lazysodium.utils.KeyPair
+import it.airgap.beaconsdk.internal.utils.asHexString
 
 internal class LazySodiumCryptoProvider : CryptoProvider {
     private val sodium: LazySodiumAndroid = LazySodiumAndroid(SodiumAndroid())
@@ -121,7 +119,7 @@ internal class LazySodiumCryptoProvider : CryptoProvider {
 
     override fun validateMessage(message: String): Boolean =
         try {
-            HexString.fromString(message).length() >= SecretBox.NONCEBYTES + SecretBox.MACBYTES
+            message.asHexString().length() >= SecretBox.NONCEBYTES + SecretBox.MACBYTES
         } catch (e: Exception) {
             false
         }

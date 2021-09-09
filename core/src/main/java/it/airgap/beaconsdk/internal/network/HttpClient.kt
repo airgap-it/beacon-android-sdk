@@ -1,75 +1,81 @@
 package it.airgap.beaconsdk.internal.network
 
-import it.airgap.beaconsdk.internal.network.data.HttpHeader
-import it.airgap.beaconsdk.internal.network.data.HttpParameter
-import it.airgap.beaconsdk.internal.network.provider.HttpClientProvider
-import it.airgap.beaconsdk.internal.utils.Failure
-import it.airgap.beaconsdk.internal.utils.InternalResult
-import it.airgap.beaconsdk.internal.utils.Success
+import it.airgap.beaconsdk.network.provider.HttpProvider
+import it.airgap.beaconsdk.network.data.HttpHeader
+import it.airgap.beaconsdk.network.data.HttpParameter
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.take
 import java.util.concurrent.CancellationException
 
-internal class HttpClient(private val httpClientProvider: HttpClientProvider) {
-    inline fun <reified T : Any> get(
+internal class HttpClient(private val httpProvider: HttpProvider) {
+    inline fun <reified T : Any, reified E : Throwable> get(
+        baseUrl: String,
         endpoint: String,
         headers: List<HttpHeader> = emptyList(),
         parameters: List<HttpParameter> = emptyList(),
         timeoutMillis: Long? = null,
-    ): Flow<InternalResult<T>> = resultFlowFor {
-        httpClientProvider.get(
+    ): Flow<Result<T>> = resultFlowFor {
+        httpProvider.get(
+            baseUrl,
             endpoint,
             headers,
             parameters,
             T::class,
+            E::class,
             timeoutMillis,
         )
     }
 
-    inline fun <reified T : Any, reified R : Any> post(
+    inline fun <reified T : Any, reified R : Any, reified E: Throwable> post(
+        baseUrl: String,
         endpoint: String,
         body: T? = null,
         headers: List<HttpHeader> = emptyList(),
         parameters: List<HttpParameter> = emptyList(),
         timeoutMillis: Long? = null,
-    ): Flow<InternalResult<R>> = resultFlowFor {
-        httpClientProvider.post(
+    ): Flow<Result<R>> = resultFlowFor {
+        httpProvider.post(
+            baseUrl,
             endpoint,
             headers,
             parameters,
             body,
             T::class,
             R::class,
+            E::class,
             timeoutMillis,
         )
     }
 
-    inline fun <reified T : Any, reified R : Any> put(
+    inline fun <reified T : Any, reified R : Any, reified E : Throwable> put(
+        baseUrl: String,
         endpoint: String,
         body: T? = null,
         headers: List<HttpHeader> = emptyList(),
         parameters: List<HttpParameter> = emptyList(),
         timeoutMillis: Long? = null,
-    ): Flow<InternalResult<R>> = resultFlowFor {
-        httpClientProvider.put(
+    ): Flow<Result<R>> = resultFlowFor {
+        httpProvider.put(
+            baseUrl,
             endpoint,
             headers,
             parameters,
             body,
             T::class,
             R::class,
+            E::class,
             timeoutMillis,
         )
     }
 
-    private fun <T> resultFlowFor(httpAction: suspend () -> T): Flow<InternalResult<T>> = flow {
+    private fun <T> resultFlowFor(httpAction: suspend () -> T): Flow<Result<T>> = flow {
         try {
-            emit(Success(httpAction()))
+            emit(Result.success(httpAction()))
         } catch (e: CancellationException) {
             /* no action */
         } catch (e: Exception) {
-            emit(Failure<T>(e))
+            emit(Result.failure<T>(e))
         }
     }.take(1)
 }

@@ -5,8 +5,7 @@ import it.airgap.beaconsdk.data.beacon.Peer
 import it.airgap.beaconsdk.data.beacon.Permission
 import it.airgap.beaconsdk.data.beacon.selfRemoved
 import it.airgap.beaconsdk.internal.utils.AccountUtils
-import it.airgap.beaconsdk.internal.utils.HexString
-import it.airgap.beaconsdk.internal.utils.tryResult
+import it.airgap.beaconsdk.internal.utils.asHexString
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -51,14 +50,14 @@ internal class StorageManager(
     }
 
     override suspend fun removePeers(predicate: ((Peer) -> Boolean)?) {
-        tryResult {
+        runCatching {
             val peers = storage.getPeers()
             val toRemove = predicate?.let { peers.filter(it) } ?: peers
 
             storage.removePeers(predicate)
             removePermissions { permission ->
                 toRemove.any {
-                    val senderId = accountUtils.getSenderId(HexString.fromString(it.publicKey)).get()
+                    val senderId = accountUtils.getSenderId(it.publicKey.asHexString().toByteArray()).getOrThrow()
                     senderId == permission.appMetadata.senderId
                 }
             }

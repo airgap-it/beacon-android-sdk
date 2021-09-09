@@ -2,7 +2,7 @@ package it.airgap.beaconsdk.client
 
 import it.airgap.beaconsdk.data.beacon.*
 import it.airgap.beaconsdk.exception.BeaconException
-import it.airgap.beaconsdk.internal.BeaconApp
+import it.airgap.beaconsdk.internal.BeaconSdk
 import it.airgap.beaconsdk.internal.controller.ConnectionController
 import it.airgap.beaconsdk.internal.controller.MessageController
 import it.airgap.beaconsdk.internal.crypto.Crypto
@@ -88,16 +88,18 @@ public class BeaconClient internal constructor(
      */
     public fun connect(): Flow<Result<BeaconRequest>> =
         connectionController.subscribe()
-            .map { result -> result.flatMapSuspend { messageController.onIncomingMessage(it.origin, it.content) } }
+            .map { result -> result.flatMap { messageController.onIncomingMessage(it.origin, it.content) } }
             .onEach { result -> result.getOrNull()?.let { processMessage(it) } }
-            .mapNotNull {
-                when (it) {
-                    is Success -> when (val message = it.value) {
-                        is BeaconRequest -> Result.success(message)
-                        else -> null
-                    }
-                    is Failure -> Result.failure(BeaconException.from(it.error))
-                }
+            .mapNotNull { result ->
+                result.fold(
+                    onSuccess = {
+                        when (it) {
+                            is BeaconRequest -> Result.success(it)
+                            else -> null
+                        }
+                    },
+                    onFailure = { Result.failure(BeaconException.from(it)) }
+                )
             }
 
     /**
@@ -107,7 +109,7 @@ public class BeaconClient internal constructor(
      */
     @Throws(IllegalArgumentException::class, IllegalStateException::class, BeaconException::class)
     public suspend fun respond(response: BeaconResponse) {
-        send(response, isTerminal = true).mapError { BeaconException.from(it) }.get()
+        send(response, isTerminal = true).mapException { BeaconException.from(it) }.getOrThrow()
     }
 
     /**
@@ -150,7 +152,7 @@ public class BeaconClient internal constructor(
      */
     public suspend fun removePeers(peers: List<Peer>) {
         storageManager.removePeers(peers)
-        peers.launch { disconnect(it) }
+        peers.launchForEach { disconnect(it) }
     }
 
     /**
@@ -161,7 +163,7 @@ public class BeaconClient internal constructor(
     public suspend fun removeAllPeers() {
         val peers = storageManager.getPeers()
         storageManager.removePeers()
-        peers.launch { disconnect(it) }
+        peers.launchForEach { disconnect(it) }
     }
 
     /**
@@ -259,16 +261,16 @@ public class BeaconClient internal constructor(
         storageManager.removePermissions()
     }
 
-    private suspend fun processMessage(message: BeaconMessage): InternalResult<Unit> =
+    private suspend fun processMessage(message: BeaconMessage): Result<Unit> =
         when (message) {
             is BeaconRequest -> acknowledge(message)
             is DisconnectBeaconMessage -> {
                 removePeer(message.origin.id)
-                Success()
+                Result.success()
             }
             else -> {
                 /* no action */
-                Success()
+                Result.success()
             }
         }
 
@@ -276,20 +278,20 @@ public class BeaconClient internal constructor(
         storageManager.removePeers { it.publicKey == publicKey }
     }
 
-    private suspend fun acknowledge(request: BeaconRequest): InternalResult<Unit> {
+    private suspend fun acknowledge(request: BeaconRequest): Result<Unit> {
         val acknowledgeResponse = AcknowledgeBeaconResponse.from(request, beaconId)
         return send(acknowledgeResponse, isTerminal = false)
     }
 
-    private suspend fun disconnect(peer: Peer): InternalResult<Unit> =
-        flatTryResult {
-            val message = DisconnectBeaconMessage(crypto.guid().get(), beaconId, peer.version, Origin.forPeer(peer))
+    private suspend fun disconnect(peer: Peer): Result<Unit> =
+        runCatchingFlat {
+            val message = DisconnectBeaconMessage(crypto.guid().getOrThrow(), beaconId, peer.version, Origin.forPeer(peer))
             send(message, isTerminal = true)
         }
 
-    private suspend fun send(message: BeaconMessage, isTerminal: Boolean): InternalResult<Unit> =
+    private suspend fun send(message: BeaconMessage, isTerminal: Boolean): Result<Unit> =
         messageController.onOutgoingMessage(beaconId, message, isTerminal)
-            .flatMapSuspend { connectionController.send(BeaconConnectionMessage(it)) }
+            .flatMap { connectionController.send(BeaconConnectionMessage(it)) }
 
     public companion object {}
 
@@ -319,7 +321,7 @@ public class BeaconClient internal constructor(
          * Builds a new instance of [BeaconClient].
          */
         public suspend fun build(): BeaconClient {
-            val beaconApp = BeaconApp.instance
+            val beaconApp = BeaconSdk.instance
             val storage = SharedPreferencesStorage.create(beaconApp.applicationContext)
             val secureStorage = SharedPreferencesSecureStorage.create(beaconApp.applicationContext)
 

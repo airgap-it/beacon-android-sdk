@@ -1,33 +1,32 @@
 object Version {
-    // TODO: Update to Kotlin 1.5 once KT-46477 (https://youtrack.jetbrains.com/issue/KT-46477) is fixed
-    const val kotlin = "1.4.32"
+    const val kotlin = "1.5.30"
 
-    const val kotlinSerialization = "1.2.1"
+    const val kotlinSerialization = "1.2.2"
 
-    const val androidxCore = "1.3.2"
-    const val androidxAppCompat = "1.2.0"
-    const val androidxConstraintLayout = "2.0.4"
+    const val androidxCore = "1.6.0"
+    const val androidxAppCompat = "1.3.1"
+    const val androidxConstraintLayout = "2.1.0"
 
-    const val androidxActivity = "1.2.3"
+    const val androidxActivity = "1.3.1"
     const val androidxLifecycle = "2.3.1"
 
     const val androidxSecurity = "1.0.0"
 
-    const val coroutines = "1.5.0"
+    const val coroutines = "1.5.1"
 
-    const val ktor = "1.5.4"
+    const val ktor = "1.6.2"
 
     const val lazySodium = "5.0.2"
     const val jna = "5.8.0"
 
-    const val materialComponents = "1.3.0"
+    const val materialComponents = "1.4.0"
 
     const val junit = "4.13.2"
 
-    const val androidxJunit = "1.1.2"
-    const val androidxEspresso = "3.3.0"
+    const val androidxJunit = "1.1.3"
+    const val androidxEspresso = "3.4.0"
 
-    const val mockk = "1.11.0"
+    const val mockk = "1.12.0"
 }
 
 object Dependencies {

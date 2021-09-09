@@ -4,54 +4,55 @@ import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.api.sync.MatrixSyn
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.api.sync.MatrixSyncRooms
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.api.sync.MatrixSyncStateEvent
 
-internal sealed class MatrixEvent {
+internal sealed interface MatrixEvent {
+    val node: String
 
-    data class Create(val roomId: String, val creator: String) : MatrixEvent()
+    data class Create(override val node: String, val roomId: String, val creator: String) : MatrixEvent
 
-    data class Invite(val roomId: String) : MatrixEvent()
-    data class Join(val roomId: String, val userId: String) : MatrixEvent()
+    data class Invite(override val node: String, val roomId: String, val sender: String) : MatrixEvent
+    data class Join(override val node: String, val roomId: String, val userId: String) : MatrixEvent
 
-    data class TextMessage(val roomId: String, val sender: String, val message: String) : MatrixEvent()
+    data class TextMessage(override val node: String, val roomId: String, val sender: String, val message: String) : MatrixEvent
 
     companion object {
-        fun fromSync(syncRooms: MatrixSyncRooms): List<MatrixEvent> {
+        fun fromSync(node: String, syncRooms: MatrixSyncRooms): List<MatrixEvent> {
             val joinEvents =
-                syncRooms.join?.entries?.flatMap { fromSync(it.key, it.value) } ?: emptyList()
+                syncRooms.join?.entries?.flatMap { fromSync(node, it.key, it.value) } ?: emptyList()
 
             val inviteEvents =
-                syncRooms.invite?.entries?.flatMap { fromSync(it.key, it.value) } ?: emptyList()
+                syncRooms.invite?.entries?.flatMap { fromSync(node, it.key, it.value) } ?: emptyList()
 
             val leftEvents =
-                syncRooms.leave?.entries?.flatMap { fromSync(it.key, it.value) } ?: emptyList()
+                syncRooms.leave?.entries?.flatMap { fromSync(node, it.key, it.value) } ?: emptyList()
 
             return joinEvents + inviteEvents + leftEvents
         }
 
-        fun fromSync(id: String, syncRoom: MatrixSyncRoom): List<MatrixEvent> =
+        fun fromSync(node: String, id: String, syncRoom: MatrixSyncRoom): List<MatrixEvent> =
             with(syncRoom) {
                 when (this) {
                     is MatrixSyncRoom.Joined ->
-                        fromSync(id, state?.events ?: emptyList()) + fromSync(id, timeline?.events ?: emptyList())
+                        fromSync(node, id, state?.events ?: emptyList()) + fromSync(node, id, timeline?.events ?: emptyList())
 
                     is MatrixSyncRoom.Invited ->
-                        fromSync(id, state?.events ?: emptyList())
+                        fromSync(node, id, state?.events ?: emptyList())
 
                     is MatrixSyncRoom.Left ->
-                        fromSync(id, state?.events ?: emptyList()) + fromSync(id, timeline?.events ?: emptyList())
+                        fromSync(node, id, state?.events ?: emptyList()) + fromSync(node, id, timeline?.events ?: emptyList())
                 }
             }
 
-        fun fromSync(roomId: String, syncEvents: List<MatrixSyncStateEvent<*>>): List<MatrixEvent> =
-            syncEvents.mapNotNull { fromSync(roomId, it) }
+        fun fromSync(node: String, roomId: String, syncEvents: List<MatrixSyncStateEvent<*>>): List<MatrixEvent> =
+            syncEvents.mapNotNull { fromSync(node, roomId, it) }
 
-        fun fromSync(roomId: String, syncEvent: MatrixSyncStateEvent<*>): MatrixEvent? =
+        fun fromSync(node: String, roomId: String, syncEvent: MatrixSyncStateEvent<*>): MatrixEvent? =
             with(syncEvent) {
                 return when (this) {
-                    is MatrixSyncStateEvent.Create -> content?.creator?.let { Create(roomId, it) }
+                    is MatrixSyncStateEvent.Create -> content?.creator?.let { Create(node, roomId, it) }
                     is MatrixSyncStateEvent.Member -> {
                         when (content?.membership) {
-                            MatrixSyncStateEvent.Member.Membership.Invite -> Invite(roomId)
-                            MatrixSyncStateEvent.Member.Membership.Join -> sender?.let { Join(roomId, it) }
+                            MatrixSyncStateEvent.Member.Membership.Invite -> sender?.let { Invite(node, roomId, it) }
+                            MatrixSyncStateEvent.Member.Membership.Join -> sender?.let { Join(node, roomId, it) }
                             else -> null
                         }
                     }
@@ -61,7 +62,7 @@ internal sealed class MatrixEvent {
                         val body = content.body ?: return null
 
                         when (type) {
-                            MatrixSyncStateEvent.Message.TYPE_TEXT -> TextMessage(roomId, sender, body)
+                            MatrixSyncStateEvent.Message.TYPE_TEXT -> TextMessage(node, roomId, sender, body)
                             else -> null
                         }
                     }

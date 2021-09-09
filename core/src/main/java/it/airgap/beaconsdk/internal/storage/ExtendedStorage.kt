@@ -38,5 +38,12 @@ internal interface ExtendedStorage : Storage {
     suspend fun findPermission(predicate: (Permission) -> Boolean): Permission?
     suspend fun removePermissions(predicate: ((Permission) -> Boolean)? = null)
 
+    suspend fun removeMatrixRelayServer()
+    suspend fun removeMatrixChannels()
+    suspend fun removeMatrixSyncToken()
+    suspend fun removeMatrixRooms()
+
+    suspend fun addMigrations(migrations: Set<String>)
+
     override fun extend(): ExtendedStorage = this
 }

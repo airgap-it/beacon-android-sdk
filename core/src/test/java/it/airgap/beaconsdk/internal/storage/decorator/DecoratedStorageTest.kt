@@ -3,6 +3,7 @@ package it.airgap.beaconsdk.internal.storage.decorator
 import appMetadata
 import it.airgap.beaconsdk.internal.storage.MockStorage
 import it.airgap.beaconsdk.internal.storage.Storage
+import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.MatrixRoom
 import it.airgap.beaconsdk.internal.utils.splitAt
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.drop
@@ -15,6 +16,7 @@ import p2pPeers
 import permissions
 import takeHalf
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 internal class DecoratedStorageTest {
@@ -222,7 +224,7 @@ internal class DecoratedStorageTest {
         val namesToRemove = toRemove.map { it.name }
 
         runBlocking { storage.setAppMetadata(appMetadata) }
-        runBlocking { decoratedStorage.removeAppMetadata() { namesToRemove.contains(it.name) } }
+        runBlocking { decoratedStorage.removeAppMetadata { namesToRemove.contains(it.name) } }
         val fromStorage = runBlocking { storage.getAppMetadata() }
 
         assertEquals(toKeep, fromStorage)
@@ -285,6 +287,75 @@ internal class DecoratedStorageTest {
         val fromStorage = runBlocking { storage.getPeers() }
 
         assertTrue(fromStorage.isEmpty())
+    }
+
+    @Test
+    fun `removes Matrix relay server`() {
+        runBlocking { storage.setMatrixRelayServer("relayServer") }
+        runBlocking { decoratedStorage.removeMatrixRelayServer() }
+
+        val fromStorage = runBlocking { storage.getMatrixRelayServer() }
+
+        assertNull(fromStorage)
+    }
+
+    @Test
+    fun `removes Matrix channels`() {
+        runBlocking { storage.setMatrixChannels(mapOf("sender" to "channel")) }
+        runBlocking { decoratedStorage.removeMatrixChannels() }
+
+        val fromStorage = runBlocking { storage.getMatrixChannels() }
+
+        assertEquals(emptyMap(), fromStorage)
+    }
+
+    @Test
+    fun `removes Matrix sync token`() {
+        runBlocking { storage.setMatrixSyncToken("syncToken") }
+        runBlocking { decoratedStorage.removeMatrixSyncToken() }
+
+        val fromStorage = runBlocking { storage.getMatrixSyncToken() }
+
+        assertNull(fromStorage)
+    }
+
+    @Test
+    fun `removes Matrix rooms`() {
+        runBlocking {
+            storage.setMatrixRooms(
+                listOf(MatrixRoom.Unknown("id", emptyList())),
+            )
+        }
+        runBlocking { decoratedStorage.removeMatrixRooms() }
+
+        val fromStorage = runBlocking { storage.getMatrixRooms() }
+
+        assertEquals(emptyList(), fromStorage)
+    }
+
+    @Test
+    fun `adds set of migrations if empty`() {
+        val migrations = setOf("migration")
+
+        runBlocking { storage.setMigrations(emptySet()) }
+        runBlocking { decoratedStorage.addMigrations(migrations) }
+
+        val fromStorage = runBlocking { storage.getMigrations() }
+
+        assertEquals(migrations, fromStorage)
+    }
+
+    @Test
+    fun `adds set of migrations if not empty`() {
+        val migrations = setOf("migration1", "migration2")
+        val newMigrations = setOf("newMigration1", "newMigration2")
+
+        runBlocking { storage.setMigrations(migrations) }
+        runBlocking { decoratedStorage.addMigrations(newMigrations) }
+
+        val fromStorage = runBlocking { storage.getMigrations() }
+
+        assertEquals(migrations + newMigrations, fromStorage)
     }
 
     @Test

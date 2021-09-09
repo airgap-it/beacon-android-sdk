@@ -1,5 +1,6 @@
 package it.airgap.beaconsdk.internal.transport.p2p
 
+import containsLike
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import it.airgap.beaconsdk.data.beacon.Origin
@@ -38,7 +39,7 @@ internal class P2pTransportTest {
 
         mockLog()
 
-        coEvery { p2pClient.sendPairingResponse(any()) } returns Success()
+        coEvery { p2pClient.sendPairingResponse(any()) } returns Result.success()
 
         storageManager = StorageManager(MockStorage(), MockSecureStorage(), accountUtils)
         p2pTransport = P2pTransport(storageManager, p2pClient)
@@ -52,13 +53,13 @@ internal class P2pTransportTest {
     @Test
     fun `subscribes for messages from known peers`() {
         val peers = validKnownPeers
-        val peersPublicKeys = peers.map { HexString.fromString(it.publicKey) }
+        val peersPublicKeys = peers.map { it.publicKey.asHexString().toByteArray() }
 
         val (transportMessages, transportMessageFlows) =
             messagesAndFlows(peersPublicKeys)
 
         every { p2pClient.isSubscribed(any()) } returns false
-        every { p2pClient.subscribeTo(any()) } answers { transportMessageFlows.getValue(firstArg<HexString>().asString()) }
+        every { p2pClient.subscribeTo(any()) } answers { transportMessageFlows.getValue(firstArg<ByteArray>().toHexString().asString()) }
 
         runBlocking { storageManager.setPeers(peers) }
 
@@ -71,22 +72,22 @@ internal class P2pTransportTest {
                 .take(transportMessages.size)
                 .toList()
         }
-        verify(exactly = peers.size) { p2pClient.subscribeTo(match { peersPublicKeys.contains(it) }) }
+        verify(exactly = peers.size) { p2pClient.subscribeTo(match { peersPublicKeys.containsLike(it) }) }
         assertEquals(expected.sortedBy { it.content }, messages.sortedBy { it.content })
     }
 
     @Test
     fun `unsubscribes from removed peers`() {
         val (subscribed, unsubscribed) = validKnownPeers.splitAt { it.size / 2 }
-        val subscribedPublicKeys = subscribed.map { HexString.fromString(it.publicKey) }
-        val unsubscribedPublicKeys = unsubscribed.map { HexString.fromString(it.publicKey) }
+        val subscribedPublicKeys = subscribed.map { it.publicKey.asHexString().toByteArray() }
+        val unsubscribedPublicKeys = unsubscribed.map { it.publicKey.asHexString().toByteArray() }
 
         val (transportMessages, transportMessageFlows) =
             messagesAndFlows(subscribedPublicKeys + unsubscribedPublicKeys)
 
         every { p2pClient.isSubscribed(any()) } returns false
-        every { p2pClient.subscribeTo(any()) } answers { transportMessageFlows.getValue(firstArg<HexString>().asString()) }
-        every { p2pClient.unsubscribeFrom(any()) } returns Unit
+        every { p2pClient.subscribeTo(any()) } answers { transportMessageFlows.getValue(firstArg<ByteArray>().toHexString().asString()) }
+        coEvery { p2pClient.unsubscribeFrom(any()) } returns Unit
 
         runBlocking { storageManager.setPeers(subscribed + unsubscribed) }
 
@@ -100,7 +101,7 @@ internal class P2pTransportTest {
                 .collect()
         }
 
-        verify(exactly = unsubscribed.size) { p2pClient.unsubscribeFrom(match { unsubscribedPublicKeys.contains(it) }) }
+        coVerify(exactly = unsubscribed.size) { p2pClient.unsubscribeFrom(match { unsubscribedPublicKeys.containsLike(it) }) }
     }
 
     @Test
@@ -111,7 +112,7 @@ internal class P2pTransportTest {
         val recipient = peers.shuffled().first()
         val serialized = SerializedConnectionMessage(Origin.P2P(recipient.publicKey), message)
 
-        coEvery { p2pClient.sendTo(any(), any()) } returns Success()
+        coEvery { p2pClient.sendTo(any(), any()) } returns Result.success()
 
         runBlocking { storageManager.setPeers(peers) }
         runBlocking { p2pTransport.send(serialized) }
@@ -123,13 +124,13 @@ internal class P2pTransportTest {
     @Test
     fun `subscribes for messages from new peers`() {
         val peers = validKnownPeers
-        val peersPublicKeys = peers.map { HexString.fromString(it.publicKey) }
+        val peersPublicKeys = peers.map { it.publicKey.asHexString().toByteArray() }
 
         val (transportMessages, transportMessageFlows) =
             messagesAndFlows(peersPublicKeys)
 
         every { p2pClient.isSubscribed(any()) } returns false
-        every { p2pClient.subscribeTo(any()) } answers { transportMessageFlows.getValue(firstArg<HexString>().asString()) }
+        every { p2pClient.subscribeTo(any()) } answers { transportMessageFlows.getValue(firstArg<ByteArray>().toHexString().asString()) }
 
         val expected = transportMessages.map { SerializedConnectionMessage(Origin.P2P(it.id), it.content) }
 
@@ -147,7 +148,9 @@ internal class P2pTransportTest {
 
             assertEquals(expected.sortedBy { it.content }, messages.await().sortedBy { it.content })
             verify(exactly = peers.size) {
-                p2pClient.subscribeTo(match { peersPublicKeys.contains(it) })
+                p2pClient.subscribeTo(
+                    match { peersPublicKeys.map(ByteArray::toHexString).contains(it.toHexString()) }
+                )
             }
         }
     }
@@ -155,13 +158,13 @@ internal class P2pTransportTest {
     @Test
     fun `pairs with new peers`() {
         val peers = validNewPeers
-        val peersPublicKeys = peers.map { HexString.fromString(it.publicKey) }
+        val peersPublicKeys = peers.map { it.publicKey.asHexString().toByteArray() }
 
         val (transportMessages, transportMessageFlows) =
             messagesAndFlows(peersPublicKeys)
 
         every { p2pClient.isSubscribed(any()) } returns false
-        every { p2pClient.subscribeTo(any()) } answers { transportMessageFlows.getValue(firstArg<HexString>().asString()) }
+        every { p2pClient.subscribeTo(any()) } answers { transportMessageFlows.getValue(firstArg<ByteArray>().toHexString().asString()) }
 
         runBlocking {
             val messages = async {
@@ -192,13 +195,13 @@ internal class P2pTransportTest {
     @Test
     fun `does not pair with known peers`() {
         val peers = validKnownPeers
-        val peersPublicKeys = peers.map { HexString.fromString(it.publicKey) }
+        val peersPublicKeys = peers.map { it.publicKey.asHexString().toByteArray() }
 
         val (transportMessages, transportMessageFlows) =
             messagesAndFlows(peersPublicKeys)
 
         every { p2pClient.isSubscribed(any()) } returns false
-        every { p2pClient.subscribeTo(any()) } answers { transportMessageFlows.getValue(firstArg<HexString>().asString()) }
+        every { p2pClient.subscribeTo(any()) } answers { transportMessageFlows.getValue(firstArg<ByteArray>().toHexString().asString()) }
 
         runBlocking {
             storageManager.setPeers(peers)
@@ -221,14 +224,14 @@ internal class P2pTransportTest {
     @Test
     fun `does not update new pairs if could not pair`() {
         val peers = validNewPeers
-        val peersPublicKeys = peers.map { HexString.fromString(it.publicKey) }
+        val peersPublicKeys = peers.map { it.publicKey.asHexString().toByteArray() }
 
         val (transportMessages, transportMessageFlows) =
             messagesAndFlows(peersPublicKeys)
 
         every { p2pClient.isSubscribed(any()) } returns false
-        coEvery { p2pClient.sendPairingResponse(any()) } returns Failure()
-        every { p2pClient.subscribeTo(any()) } answers { transportMessageFlows.getValue(firstArg<HexString>().asString()) }
+        coEvery { p2pClient.sendPairingResponse(any()) } returns Result.failure()
+        every { p2pClient.subscribeTo(any()) } answers { transportMessageFlows.getValue(firstArg<ByteArray>().toHexString().asString()) }
 
         runBlocking {
             val messages = async {
@@ -254,14 +257,14 @@ internal class P2pTransportTest {
     @Test
     fun `does not subscribe to already subscribed peer`() {
         val (subscribedPeers, newPeers) = validKnownPeers.splitAt { it.size / 2 }
-        val subscribedPublicKeys = subscribedPeers.map { HexString.fromString(it.publicKey) }
-        val newPublicKeys = newPeers.map { HexString.fromString(it.publicKey) }
+        val subscribedPublicKeys = subscribedPeers.map { it.publicKey.asHexString().toByteArray() }
+        val newPublicKeys = newPeers.map { it.publicKey.asHexString().toByteArray() }
 
         val (transportMessages, transportMessageFlows) =
             messagesAndFlows(newPublicKeys)
 
-        every { p2pClient.isSubscribed(any()) } answers { subscribedPublicKeys.contains(firstArg()) }
-        every { p2pClient.subscribeTo(any()) } answers { transportMessageFlows.getValue(firstArg<HexString>().asString()) }
+        every { p2pClient.isSubscribed(any()) } answers { subscribedPublicKeys.containsLike(firstArg()) }
+        every { p2pClient.subscribeTo(any()) } answers { transportMessageFlows.getValue(firstArg<ByteArray>().toHexString().asString()) }
 
         runBlocking {
             val messages = async {
@@ -284,7 +287,7 @@ internal class P2pTransportTest {
 
             fromStorage.await()
 
-            coVerify(exactly = newPeers.size) { p2pClient.subscribeTo(match { newPublicKeys.contains(it) }) }
+            coVerify(exactly = newPeers.size) { p2pClient.subscribeTo(match { newPublicKeys.containsLike(it) }) }
             verify(exactly = subscribedPeers.size + newPeers.size) { p2pClient.isSubscribed(any()) }
         }
     }
@@ -304,20 +307,20 @@ internal class P2pTransportTest {
     )
 
     private fun messagesAndFlows(
-        publicKeys: List<HexString>,
-    ): Pair<List<P2pMessage>, Map<String, MutableSharedFlow<InternalResult<P2pMessage>>>> {
-        val transportMessages = publicKeys.mapIndexed { index, hexString ->
-            P2pMessage(hexString.asString(), "content$index")
+        publicKeys: List<ByteArray>,
+    ): Pair<List<P2pMessage>, Map<String, MutableSharedFlow<Result<P2pMessage>>>> {
+        val transportMessages = publicKeys.mapIndexed { index, bytes ->
+            P2pMessage(bytes.toHexString().asString(), "content$index")
         }
 
         val transportMessageFlows = publicKeys.map {
-            it.asString() to MutableSharedFlow<InternalResult<P2pMessage>>(transportMessages.size + 1)
+            it.toHexString().asString() to MutableSharedFlow<Result<P2pMessage>>(transportMessages.size + 1)
         } .toMap()
 
         return Pair(transportMessages, transportMessageFlows)
     }
 
-    private fun Map<String, MutableSharedFlow<InternalResult<P2pMessage>>>.tryEmit(messages: List<P2pMessage>) {
-        messages.forEach { getValue(it.id).tryEmit(Success(it)) }
+    private fun Map<String, MutableSharedFlow<Result<P2pMessage>>>.tryEmit(messages: List<P2pMessage>) {
+        messages.forEach { getValue(it.id).tryEmit(Result.success(it)) }
     }
 }

@@ -12,6 +12,8 @@ internal class MatrixSyncTest {
 
     @Test
     fun `constructs from sync response`() {
+        val node = "node"
+        val sender = "sender"
         val nextBatch = "nextBatch"
 
         val syncResponse = MatrixSyncResponse(
@@ -21,8 +23,8 @@ internal class MatrixSyncTest {
                     "1" to MatrixSyncRoom.Joined(
                         MatrixSyncState(
                             listOf(
-                                Member(Member.Content(Member.Membership.Invite)),
-                                Member(Member.Content(Member.Membership.Join), sender = "sender"),
+                                Member(Member.Content(Member.Membership.Invite), sender = sender),
+                                Member(Member.Content(Member.Membership.Join), sender = sender),
                             )
                         )
                     )
@@ -30,13 +32,13 @@ internal class MatrixSyncTest {
             )
         )
 
-        val sync = MatrixSync.fromSyncResponse(syncResponse)
+        val sync = MatrixSync.fromSyncResponse(node, syncResponse)
 
         assertEquals(
             MatrixSync(
                 nextBatch,
-                listOf(MatrixRoom.Joined("1", listOf("sender"))),
-                listOf(MatrixEvent.Invite("1"), MatrixEvent.Join("1", "sender")),
+                listOf(MatrixRoom.Joined("1", listOf(sender))),
+                listOf(MatrixEvent.Invite(node, "1", sender), MatrixEvent.Join(node, "1", sender)),
             ),
             sync,
         )

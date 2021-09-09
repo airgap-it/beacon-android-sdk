@@ -1,0 +1,31 @@
+package it.airgap.beaconsdk.internal.transport.p2p.matrix.network.user
+
+import it.airgap.beaconsdk.internal.network.HttpClient
+import it.airgap.beaconsdk.internal.network.data.ApplicationJson
+import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.api.MatrixError
+import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.api.login.MatrixLoginRequest
+import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.api.login.MatrixLoginResponse
+import it.airgap.beaconsdk.internal.transport.p2p.matrix.network.MatrixService
+import kotlinx.coroutines.flow.single
+
+internal class MatrixUserService(httpClient: HttpClient) : MatrixService(httpClient) {
+
+    suspend fun login(
+        node: String,
+        user: String,
+        password: String,
+        deviceId: String,
+    ): Result<MatrixLoginResponse> =
+        withApi(node) { baseUrl ->
+            httpClient.post<MatrixLoginRequest, MatrixLoginResponse, MatrixError>(
+                baseUrl,
+                "/login",
+                body = MatrixLoginRequest.Password(
+                    MatrixLoginRequest.UserIdentifier.User(user),
+                    password,
+                    deviceId
+                ),
+                headers = listOf(ApplicationJson()),
+            ).single()
+        }
+}

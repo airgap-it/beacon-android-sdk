@@ -18,8 +18,8 @@ internal class MessageController(
 
     // -- on incoming --
 
-    suspend fun onIncomingMessage(origin: Origin, message: VersionedBeaconMessage): InternalResult<BeaconMessage> =
-        tryResult {
+    suspend fun onIncomingMessage(origin: Origin, message: VersionedBeaconMessage): Result<BeaconMessage> =
+        runCatching {
             message.toBeaconMessage(origin, storageManager).also {
                 when (it) {
                     is BeaconRequest -> onIncomingRequest(it)
@@ -47,14 +47,14 @@ internal class MessageController(
         beaconId: String,
         message: BeaconMessage,
         isTerminal: Boolean,
-    ): InternalResult<Pair<Origin, VersionedBeaconMessage>> =
-        tryResult {
+    ): Result<Pair<Origin, VersionedBeaconMessage>> =
+        runCatching {
             when (message) {
                 is BeaconResponse -> onOutgoingResponse(message, isTerminal)
                 else -> { /* no action */ }
             }
 
-            val senderId = accountUtils.getSenderId(HexString.fromString(beaconId)).get()
+            val senderId = accountUtils.getSenderId(beaconId.asHexString().toByteArray()).getOrThrow()
             Pair(message.associatedOrigin, VersionedBeaconMessage.fromBeaconMessage(senderId, message))
         }
 
@@ -68,8 +68,8 @@ internal class MessageController(
 
     private suspend fun onPermissionResponse(response: PermissionBeaconResponse, request: BeaconRequest) {
         val publicKey = response.publicKey
-        val address = protocolRegistry.get(Protocol.Type.Tezos).getAddressFromPublicKey(publicKey).get()
-        val accountIdentifier = accountUtils.getAccountIdentifier(address, response.network).get()
+        val address = protocolRegistry.get(Protocol.Type.Tezos).getAddressFromPublicKey(publicKey).getOrThrow()
+        val accountIdentifier = accountUtils.getAccountIdentifier(address, response.network).getOrThrow()
         val appMetadata = storageManager.findAppMetadata { it.senderId == request.senderId }
             ?: failWithIllegalState("Granted permissions not saved, matching appMetadata could not be found.")
 
@@ -78,7 +78,7 @@ internal class MessageController(
             address,
             response.network,
             response.scopes,
-            accountUtils.getSenderId(HexString.fromString(request.origin.id)).get(),
+            accountUtils.getSenderId(request.origin.id.asHexString().toByteArray()).getOrThrow(),
             appMetadata,
             publicKey,
             connectedAt = currentTimestamp()

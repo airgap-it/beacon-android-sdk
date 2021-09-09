@@ -3,30 +3,31 @@ package it.airgap.beaconsdk.internal.transport.p2p
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import it.airgap.beaconsdk.data.beacon.P2pPeer
-import it.airgap.beaconsdk.internal.crypto.Crypto
-import it.airgap.beaconsdk.internal.crypto.data.KeyPair
-import it.airgap.beaconsdk.internal.crypto.data.SessionKeyPair
+import it.airgap.beaconsdk.internal.BeaconConfiguration
+import it.airgap.beaconsdk.internal.transport.p2p.data.P2pIdentifier
 import it.airgap.beaconsdk.internal.transport.p2p.data.P2pMessage
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.MatrixClient
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.MatrixEvent
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.MatrixRoom
-import it.airgap.beaconsdk.internal.transport.p2p.utils.P2pCommunicationUtils
-import it.airgap.beaconsdk.internal.transport.p2p.utils.P2pServerUtils
-import it.airgap.beaconsdk.internal.utils.HexString
-import it.airgap.beaconsdk.internal.utils.Success
+import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.api.MatrixError
+import it.airgap.beaconsdk.internal.transport.p2p.store.*
+import it.airgap.beaconsdk.internal.transport.p2p.utils.P2pCommunicator
+import it.airgap.beaconsdk.internal.transport.p2p.utils.P2pCrypto
 import it.airgap.beaconsdk.internal.utils.asHexString
-import it.airgap.beaconsdk.internal.utils.encodeToHexString
-import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.async
+import it.airgap.beaconsdk.internal.utils.failure
+import it.airgap.beaconsdk.internal.utils.success
+import it.airgap.beaconsdk.internal.utils.toHexString
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.runBlocking
 import mockLog
 import onNth
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import java.io.IOException
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -34,26 +35,24 @@ import kotlin.test.assertTrue
 internal class P2pClientTest {
 
     @MockK
-    private lateinit var p2pServerUtils: P2pServerUtils
+    private lateinit var matrixClient: MatrixClient
 
     @MockK
-    private lateinit var p2pCommunicationUtils: P2pCommunicationUtils
-
-    @MockK(relaxUnitFun = true)
-    private lateinit var matrixClient1: MatrixClient
-
-    @MockK(relaxUnitFun = true)
-    private lateinit var matrixClient2: MatrixClient
+    private lateinit var p2pStore: P2pStore
 
     @MockK
-    private lateinit var crypto: Crypto
+    private lateinit var p2pCrypto: P2pCrypto
+
+    @MockK
+    private lateinit var p2pProtocol: P2pCommunicator
 
     private lateinit var p2pClient: P2pClient
 
-    private val appName = "mockApp"
-    private val appIcon = "mockAppIcon"
-    private val appUrl = "mockAppUrl"
-    private val keyPair = KeyPair(byteArrayOf(0), byteArrayOf(0))
+    private val userId: String = "userId"
+    private val password: String = "password"
+    private val deviceId: String = "deviceId"
+
+    private lateinit var testDeferred: CompletableDeferred<Unit>
 
     @Before
     fun setup() {
@@ -61,85 +60,30 @@ internal class P2pClientTest {
 
         mockLog()
 
-        coEvery { matrixClient1.isLoggedIn() } returns true
-        coEvery { matrixClient2.isLoggedIn() } returns true
+        coEvery { matrixClient.isLoggedIn() } returns true
+        coEvery { matrixClient.start(any(), any(), any(), any()) } returns Result.success()
+        coJustRun { matrixClient.resetHard(any()) }
 
-        every { crypto.hash(any<String>(), any()) } answers {
-            val arg = firstArg<String>()
-            val bytes = HexString.fromStringOrNull(arg)?.asByteArray() ?: arg.encodeToByteArray()
-            Success(bytes)
-        }
-        every {
-            crypto.hash(any<HexString>(),
-                any())
-        } answers { Success(firstArg<HexString>().asByteArray()) }
-        every { crypto.hash(any<ByteArray>(), any()) } answers { Success(firstArg()) }
+        coEvery { p2pStore.intent(any()) } returns Result.success()
 
-        every { crypto.hashKey(any<HexString>()) } answers { Success(firstArg<HexString>().asByteArray()) }
-        every { crypto.hashKey(any<ByteArray>()) } answers { Success(firstArg()) }
+        coEvery { p2pCrypto.userId() } returns Result.success(userId)
+        coEvery { p2pCrypto.password() } returns Result.success(password)
+        coEvery { p2pCrypto.deviceId() } returns Result.success(deviceId)
 
-        every { crypto.createServerSessionKeyPair(any(), any()) } answers {
-            Success(SessionKeyPair(byteArrayOf(0),
-                byteArrayOf(0)))
-        }
-        every { crypto.createClientSessionKeyPair(any(), any()) } answers {
-            Success(SessionKeyPair(byteArrayOf(0),
-                byteArrayOf(0)))
+        coEvery { p2pCrypto.encrypt(any(), any()) } answers { Result.success(secondArg()) }
+        coEvery { p2pCrypto.decrypt(any(), any()) } answers { Result.success(secondArg()) }
+
+        coEvery { p2pCrypto.encryptPairingPayload(any(), any()) } answers { Result.success(secondArg<String>().encodeToByteArray()) }
+
+        every { p2pProtocol.recipientIdentifier(any(), any()) } answers {
+            Result.success(P2pIdentifier(firstArg(), secondArg()))
         }
 
-        every {
-            crypto.signMessageDetached(any<String>(),
-                any())
-        } answers { Success(firstArg<String>().encodeToByteArray()) }
-        every {
-            crypto.signMessageDetached(any<HexString>(),
-                any())
-        } answers { Success(firstArg<HexString>().asByteArray()) }
-        every {
-            crypto.signMessageDetached(any<ByteArray>(),
-                any())
-        } answers { Success(firstArg()) }
+        coEvery { matrixClient.stop(any()) } returns Unit
 
-        every { crypto.encryptMessageWithPublicKey(any<String>(), any()) } answers {
-            Success(firstArg<String>().encodeToByteArray())
-        }
-        every { crypto.encryptMessageWithPublicKey(any<HexString>(), any()) } answers {
-            Success(firstArg<HexString>().asByteArray())
-        }
-        every { crypto.encryptMessageWithPublicKey(any<ByteArray>(), any()) } answers {
-            Success(firstArg())
-        }
+        testDeferred = CompletableDeferred()
 
-        every { crypto.encryptMessageWithSharedKey(any<String>(), any()) } answers {
-            Success(firstArg<String>().encodeToByteArray())
-        }
-        every { crypto.encryptMessageWithSharedKey(any<HexString>(), any()) } answers {
-            Success(firstArg<HexString>().asByteArray())
-        }
-        every { crypto.encryptMessageWithSharedKey(any<ByteArray>(), any()) } answers {
-            Success(firstArg())
-        }
-
-        every { crypto.decryptMessageWithSharedKey(any<String>(), any()) } answers {
-            Success(firstArg<String>().encodeToByteArray())
-        }
-        every { crypto.decryptMessageWithSharedKey(any<HexString>(), any()) } answers {
-            Success(firstArg<HexString>().asByteArray())
-        }
-        every { crypto.decryptMessageWithSharedKey(any<ByteArray>(), any()) } answers {
-            Success(firstArg())
-        }
-
-        p2pClient = P2pClient(
-            appName,
-            appIcon,
-            appUrl,
-            p2pServerUtils,
-            p2pCommunicationUtils,
-            listOf(matrixClient1, matrixClient2),
-            crypto,
-            keyPair
-        )
+        p2pClient = P2pClient(matrixClient, p2pStore, p2pCrypto, p2pProtocol)
     }
 
     @After
@@ -149,40 +93,112 @@ internal class P2pClientTest {
 
     @Test
     fun `subscribes for messages`() {
-        val publicKey = HexString.fromString("0x00")
+        val publicKey = "0x00".asHexString().toByteArray()
+        val relayServer = "relayServer"
+        val roomId = "1"
 
-        val messages1 = listOf(
-            validMatrixTextMessage("1", publicKey.asString(), "content1")
-        )
-        val messages2 = listOf(
-            validMatrixTextMessage("1", publicKey.asString(), "content2")
+        val messages = listOf(
+            validMatrixTextMessage(relayServer, roomId, publicKey.toHexString().asString(), "content1")
         )
 
-        every { p2pCommunicationUtils.isMessageFrom(any(), any()) } returns true
-        every { crypto.validateEncryptedMessage(any()) } returns true
-        every { matrixClient1.events } returns flow<MatrixEvent> {
-            messages1.forEach { emit(it) }
+        every { p2pProtocol.isMessageFrom(any(), any()) } returns true
+        every { p2pProtocol.isValidMessage(any()) } returns true
+        every { matrixClient.events } returns flow {
+            messages.forEach { emit(it) }
         }
-        every { matrixClient2.events } returns flow<MatrixEvent> {
-            messages2.forEach { emit(it) }
+
+        coEvery { p2pStore.state() } answers {
+            Result.success(
+                P2pStoreState(
+                    relayServer = relayServer,
+                    availableNodes = 1,
+                )
+            )
         }
 
         runBlocking {
-            val expected =
-                (messages1 + messages2).map { P2pMessage(publicKey.asString(), it.message) }
-            val messages = p2pClient.subscribeTo(publicKey).mapNotNull { it.getOrNull() }.toList()
+            val expected = messages.map { P2pMessage(publicKey.toHexString().asString(), it.message) }
+            val actual = p2pClient.subscribeTo(publicKey).mapNotNull { it.getOrNull() }.toList()
 
-            assertEquals(expected.sortedBy { it.content }, messages.sortedBy { it.content })
+            assertEquals(expected.sortedBy { it.content }, actual.sortedBy { it.content })
+            coVerify(exactly = 1) { p2pStore.intent(OnChannelEvent(publicKey.toHexString().asString(), roomId)) }
+        }
+    }
+
+    @Test
+    fun `starts Matrix client if not run`() {
+        val publicKey = "0x00".asHexString().toByteArray()
+        val relayServer = "relayServer"
+
+        every { p2pProtocol.isMessageFrom(any(), any()) } returns true
+        every { p2pProtocol.isValidMessage(any()) } returns true
+
+        coEvery { matrixClient.isLoggedIn() } returns false andThen true
+        coEvery { matrixClient.start(any(), any(), any(), any()) } answers {
+            testDeferred.complete(Unit)
+            Result.success()
+        }
+        every { matrixClient.events } returns flow { testDeferred.await() }
+
+        coEvery { p2pStore.state() } answers {
+            Result.success(
+                P2pStoreState(
+                    relayServer = relayServer,
+                    availableNodes = 1,
+                )
+            )
+        }
+
+        runBlocking {
+            withTimeoutOrNull(1000) { p2pClient.subscribeTo(publicKey).collect() }
+
+            coVerify(exactly = 1) { matrixClient.start(relayServer, userId, password, deviceId) }
+        }
+    }
+
+    @Test
+    fun `tries to star Matrix client and resets state on every failure`() {
+        val publicKey = "0x00".asHexString().toByteArray()
+        val relayServer = "relayServer"
+
+        every { p2pProtocol.isMessageFrom(any(), any()) } returns true
+        every { p2pProtocol.isValidMessage(any()) } returns true
+
+        coEvery { matrixClient.isLoggedIn() } returns false andThen true
+        coEvery { matrixClient.start(any(), any(), any(), any()) } answers {
+            Result.failure()
+        } andThenAnswer {
+            Result.failure()
+        } andThenAnswer {
+            testDeferred.complete(Unit)
+            Result.success()
+        }
+        every { matrixClient.events } returns flow { testDeferred.await() }
+
+        coEvery { p2pStore.state() } answers {
+            Result.success(
+                P2pStoreState(
+                    relayServer = relayServer,
+                    availableNodes = 3,
+                )
+            )
+        }
+
+        runBlocking {
+            withTimeoutOrNull(1000) { p2pClient.subscribeTo(publicKey).collect() }
+
+            coVerify(exactly = 3) { matrixClient.start(relayServer, userId, password, deviceId) }
+            coVerify(exactly = 2) { matrixClient.resetHard() }
+            coVerify(exactly = 2) { p2pStore.intent(HardReset) }
         }
     }
 
     @Test
     fun `checks if peer is already subscribed`() {
-        every { matrixClient1.events } returns flow { }
-        every { matrixClient2.events } returns flow { }
+        every { matrixClient.events } returns flow { }
 
-        val subscribed = HexString.fromString("0x00").also { p2pClient.subscribeTo(it) }
-        val unsubscribed = HexString.fromString("0x01")
+        val subscribed = "0x00".asHexString().toByteArray().also { p2pClient.subscribeTo(it) }
+        val unsubscribed = "0x01".asHexString().toByteArray()
 
         assertTrue(p2pClient.isSubscribed(subscribed),
             "Expected peer to be recognized as subscribed")
@@ -192,135 +208,232 @@ internal class P2pClientTest {
 
     @Test
     fun `ignores text messages from unsubscribed senders`() {
-        val subscribedPublicKey = HexString.fromString("0x00")
-        val unsubscribedPublicKey = HexString.fromString("0x01")
+        val subscribedPublicKey = "0x00".asHexString().toByteArray()
+        val unsubscribedPublicKey = "0x01".asHexString().toByteArray()
+
+        val relayServer = "relayServer"
 
         val subscribedMessages = listOf(
-            validMatrixTextMessage("1", subscribedPublicKey.asString(), "content1")
+            validMatrixTextMessage(relayServer, "1", subscribedPublicKey.toHexString().asString(), "content1")
         )
         val unsubscribedMessages = listOf(
-            validMatrixTextMessage("1", unsubscribedPublicKey.asString(), "content2")
+            validMatrixTextMessage(relayServer, "1", unsubscribedPublicKey.toHexString().asString(), "content2")
         )
 
         every {
-            p2pCommunicationUtils.isMessageFrom(match { subscribedMessages.contains(it) },
+            p2pProtocol.isMessageFrom(match { subscribedMessages.contains(it) },
                 any())
         } returns true
         every {
-            p2pCommunicationUtils.isMessageFrom(match { unsubscribedMessages.contains(it) },
+            p2pProtocol.isMessageFrom(match { unsubscribedMessages.contains(it) },
                 any())
         } returns false
-        every { crypto.validateEncryptedMessage(any()) } returns true
-        every { matrixClient1.events } returns flow<MatrixEvent> {
+        every { p2pProtocol.isValidMessage(any()) } returns true
+        every { matrixClient.events } returns flow {
             subscribedMessages.forEach { emit(it) }
-        }
-        every { matrixClient2.events } returns flow<MatrixEvent> {
             unsubscribedMessages.forEach { emit(it) }
         }
 
-        runBlocking {
-            val expected =
-                subscribedMessages.map { P2pMessage(subscribedPublicKey.asString(), it.message) }
-            val messages = p2pClient.subscribeTo(subscribedPublicKey)
-                .mapNotNull { it.getOrNull() }.toList()
+        coEvery { p2pStore.state() } answers {
+            Result.success(
+                P2pStoreState(
+                    relayServer = relayServer,
+                    availableNodes = 1,
+                )
+            )
+        }
 
-            assertEquals(expected.sortedBy { it.content }, messages.sortedBy { it.content })
+        runBlocking {
+            val expected = subscribedMessages.map { P2pMessage(subscribedPublicKey.toHexString().asString(), it.message) }
+            val actual = p2pClient.subscribeTo(subscribedPublicKey).mapNotNull { it.getOrNull() }.toList()
+
+            assertEquals(expected.sortedBy { it.content }, actual.sortedBy { it.content })
         }
     }
 
     @Test
     fun `ignores invalid text messages`() {
-        val publicKey = HexString.fromString("0x00")
+        val publicKey = "0x00".asHexString().toByteArray()
+        val relayServer = "relayServer"
 
         val validMessages = listOf(
-            validMatrixTextMessage("1", publicKey.asString(), "valid1")
+            validMatrixTextMessage(relayServer, "1", publicKey.toHexString().asString(), "valid1")
         )
         val invalidMessages = listOf(
-            validMatrixTextMessage("1", publicKey.asString(), "invalid2")
+            validMatrixTextMessage(relayServer, "1", publicKey.toHexString().asString(), "invalid2")
         )
 
-        every { p2pCommunicationUtils.isMessageFrom(any(), any()) } returns true
-        every { crypto.validateEncryptedMessage(match { it.startsWith("valid") }) } returns true
-        every { crypto.validateEncryptedMessage(match { it.startsWith("invalid") }) } returns false
+        every { p2pProtocol.isMessageFrom(any(), any()) } returns true
+        every { p2pProtocol.isValidMessage(match { it.message.startsWith("valid") }) } returns true
+        every { p2pProtocol.isValidMessage(match { it.message.startsWith("invalid") }) } returns false
 
-        every { matrixClient1.events } returns flow<MatrixEvent> {
+        every { matrixClient.events } returns flow {
             validMessages.forEach { emit(it) }
-        }
-        every { matrixClient2.events } returns flow<MatrixEvent> {
             invalidMessages.forEach { emit(it) }
         }
 
-        runBlocking {
-            val expected = validMessages.map { P2pMessage(publicKey.asString(), it.message) }
-            val messages = p2pClient.subscribeTo(publicKey).mapNotNull { it.getOrNull() }.toList()
+        coEvery { p2pStore.state() } answers {
+            Result.success(
+                P2pStoreState(
+                    relayServer = relayServer,
+                    availableNodes = 1,
+                )
+            )
+        }
 
-            assertEquals(expected.sortedBy { it.content }, messages.sortedBy { it.content })
+        runBlocking {
+            val expected = validMessages.map { P2pMessage(publicKey.toHexString().asString(), it.message) }
+            val actual = p2pClient.subscribeTo(publicKey).mapNotNull { it.getOrNull() }.toList()
+
+            assertEquals(expected.sortedBy { it.content }, actual.sortedBy { it.content })
         }
     }
 
     @Test
     fun `ignores events other than text messages on subscribe`() {
-        val publicKey = HexString.fromString("0x00")
+        val publicKey = "0x00".asHexString().toByteArray()
+        val relayServer = "relayServer"
 
         val textMessages1 = listOf(
-            validMatrixTextMessage("1", publicKey.asString(), "content1")
+            validMatrixTextMessage(relayServer, "1", publicKey.toHexString().asString(), "content1")
         )
         val otherMessages1 = listOf(
-            validMatrixInviteMessage("2")
+            validMatrixInviteMessage(relayServer, "2", publicKey.toHexString().asString())
         )
 
-        val testMessages2 = listOf(
-            validMatrixTextMessage("1", publicKey.asString(), "content2")
+        val textMessages2 = listOf(
+            validMatrixTextMessage(relayServer, "1", publicKey.toHexString().asString(), "content2")
         )
         val otherMessages2 = listOf(
-            validMatrixInviteMessage("2")
+            validMatrixInviteMessage(relayServer, "2", publicKey.toHexString().asString())
         )
 
-        every { p2pCommunicationUtils.isMessageFrom(any(), any()) } returns true
-        every { crypto.validateEncryptedMessage(any()) } returns true
-        every { matrixClient1.events } returns flow {
+        every { p2pProtocol.isMessageFrom(any(), any()) } returns true
+        every { p2pProtocol.isValidMessage(any()) } returns true
+        every { matrixClient.events } returns flow {
             textMessages1.forEach { emit(it) }
             otherMessages1.forEach { emit(it) }
-        }
-        every { matrixClient2.events } returns flow {
-            testMessages2.forEach { emit(it) }
+            textMessages2.forEach { emit(it) }
             otherMessages2.forEach { emit(it) }
         }
 
-        runBlocking {
-            val expected =
-                (textMessages1 + testMessages2).map { P2pMessage(publicKey.asString(), it.message) }
-            val messages = p2pClient.subscribeTo(publicKey).mapNotNull { it.getOrNull() }.toList()
+        coEvery { p2pStore.state() } answers {
+            Result.success(
+                P2pStoreState(
+                    relayServer = relayServer,
+                    availableNodes = 1,
+                )
+            )
+        }
 
-            assertEquals(expected.sortedBy { it.content }, messages.sortedBy { it.content })
+        runBlocking {
+            val expected = (textMessages1 + textMessages2).map { P2pMessage(publicKey.toHexString().asString(), it.message) }
+            val actual = p2pClient.subscribeTo(publicKey).mapNotNull { it.getOrNull() }.toList()
+
+            assertEquals(expected.sortedBy { it.content }, actual.sortedBy { it.content })
+        }
+    }
+
+    @Test
+    fun `ignores events coming from nodes other than active`() {
+        val publicKey = "0x00".asHexString().toByteArray()
+        val relayServer = "relayServer"
+        val otherRelayServer = "otherRelayServer"
+
+        val textMessages = listOf(
+            validMatrixTextMessage(relayServer, "1", publicKey.toHexString().asString(), "content1")
+        )
+        val otherTextMessages = listOf(
+            validMatrixTextMessage(otherRelayServer, "1", publicKey.toHexString().asString(), "content2")
+        )
+
+        every { p2pProtocol.isMessageFrom(any(), any()) } returns true
+        every { p2pProtocol.isValidMessage(any()) } returns true
+        every { matrixClient.events } returns flow {
+            textMessages.forEach { emit(it) }
+            otherTextMessages.forEach { emit(it) }
+        }
+
+        coEvery { p2pStore.state() } answers {
+            Result.success(
+                P2pStoreState(
+                    relayServer = relayServer,
+                    availableNodes = 1,
+                )
+            )
+        }
+
+        runBlocking {
+            val expected = textMessages.map { P2pMessage(publicKey.toHexString().asString(), it.message) }
+            val actual = p2pClient.subscribeTo(publicKey).mapNotNull { it.getOrNull() }.toList()
+
+            assertEquals(expected.sortedBy { it.content }, actual.sortedBy { it.content })
+        }
+    }
+
+    @Test
+    fun `does not ignore events coming from any nodes if there is no active`() {
+        val publicKey = "0x00".asHexString().toByteArray()
+        val relayServer = "relayServer"
+        val otherRelayServer = "otherRelayServer"
+
+        val textMessages = listOf(
+            validMatrixTextMessage(relayServer, "1", publicKey.toHexString().asString(), "content1")
+        )
+        val otherTextMessages = listOf(
+            validMatrixTextMessage(otherRelayServer, "1", publicKey.toHexString().asString(), "content2")
+        )
+
+        every { p2pProtocol.isMessageFrom(any(), any()) } returns true
+        every { p2pProtocol.isValidMessage(any()) } returns true
+        every { matrixClient.events } returns flow {
+            textMessages.forEach { emit(it) }
+            otherTextMessages.forEach { emit(it) }
+        }
+
+        coEvery { p2pStore.state() } returns Result.failure()
+
+        runBlocking {
+            val expected = (textMessages + otherTextMessages).map { P2pMessage(publicKey.toHexString().asString(), it.message) }
+            val actual = p2pClient.subscribeTo(publicKey).mapNotNull { it.getOrNull() }.toList()
+
+            assertEquals(expected.sortedBy { it.content }, actual.sortedBy { it.content })
         }
     }
 
     @Test
     fun `unsubscribes from peer`() {
-        val publicKey = HexString.fromString("0x00")
+        val publicKey = "0x00".asHexString().toByteArray()
+        val relayServer = "relayServer"
 
-        every { p2pCommunicationUtils.isMessageFrom(any(), any()) } returns true
-        every { crypto.validateEncryptedMessage(any()) } returns true
+        every { p2pProtocol.isMessageFrom(any(), any()) } returns true
+        every { p2pProtocol.isValidMessage(any()) } returns true
 
         val messages1 = listOf(
-            validMatrixTextMessage("1", publicKey.asString(), "content1"),
-            validMatrixTextMessage("1", publicKey.asString(), "content2"),
+            validMatrixTextMessage(relayServer, "1", publicKey.toHexString().asString(), "content1"),
+            validMatrixTextMessage(relayServer, "1", publicKey.toHexString().asString(), "content2"),
         )
         val messages2 = listOf(
-            validMatrixTextMessage("2", publicKey.asString(), "content1"),
-            validMatrixTextMessage("2", publicKey.asString(), "content2"),
+            validMatrixTextMessage(relayServer, "2", publicKey.toHexString().asString(), "content1"),
+            validMatrixTextMessage(relayServer, "2", publicKey.toHexString().asString(), "content2"),
         )
 
         val testDeferred = CompletableDeferred<Unit>()
 
-        every { matrixClient1.events } returns flow<MatrixEvent> {
+        every { matrixClient.events } returns flow {
             messages1.forEach { emit(it) }
-        }
-        every { matrixClient2.events } returns flow<MatrixEvent> {
             testDeferred.await()
             p2pClient.unsubscribeFrom(publicKey)
             messages2.forEach { emit(it) }
+        }
+
+        coEvery { p2pStore.state() } answers {
+            Result.success(
+                P2pStoreState(
+                    relayServer = relayServer,
+                    availableNodes = 1,
+                )
+            )
         }
 
         val actual = runBlocking {
@@ -330,7 +443,7 @@ internal class P2pClientTest {
                 .toList()
         }
 
-        val expected = messages1.map { P2pMessage(publicKey.asString(), it.message) }
+        val expected = messages1.map { P2pMessage(publicKey.toHexString().asString(), it.message) }
 
         assertFalse(p2pClient.isSubscribed(publicKey),
             "Expected peer to be recognized as unsubscribed")
@@ -338,26 +451,41 @@ internal class P2pClientTest {
     }
 
     @Test
-    fun `does not continue previous flows if resubscribed`() {
-        val publicKey = HexString.fromString("0x00")
+    fun `stops Matrix client if no active subscriptions`() {
+        val publicKey = "0x00".asHexString().toByteArray()
 
-        every { p2pCommunicationUtils.isMessageFrom(any(), any()) } returns true
-        every { crypto.validateEncryptedMessage(any()) } returns true
+        runBlocking {
+            p2pClient.subscribeTo(publicKey)
+            p2pClient.unsubscribeFrom(publicKey)
 
-        val messages1 = listOf(
-            validMatrixTextMessage("1", publicKey.asString(), "content1"),
-            validMatrixTextMessage("1", publicKey.asString(), "content2"),
-        )
-        val messages2 = listOf(
-            validMatrixTextMessage("2", publicKey.asString(), "content1"),
-            validMatrixTextMessage("2", publicKey.asString(), "content2"),
-        )
-
-        every { matrixClient1.events } returns flow<MatrixEvent> {
-            messages1.forEach { emit(it) }
+            coVerify(exactly = 1) { matrixClient.stop() }
         }
-        every { matrixClient2.events } returns flow<MatrixEvent> {
-            messages2.forEach { emit(it) }
+    }
+
+    @Test
+    fun `does not continue previous flows if resubscribed`() {
+        val publicKey = "0x00".asHexString().toByteArray()
+        val relayServer = "relayServer"
+
+        every { p2pProtocol.isMessageFrom(any(), any()) } returns true
+        every { p2pProtocol.isValidMessage(any()) } returns true
+
+        val messages = listOf(
+            validMatrixTextMessage(relayServer, "1", publicKey.toHexString().asString(), "content1"),
+            validMatrixTextMessage(relayServer, "1", publicKey.toHexString().asString(), "content2"),
+        )
+
+        every { matrixClient.events } returns flow {
+            messages.forEach { emit(it) }
+        }
+
+        coEvery { p2pStore.state() } answers {
+            Result.success(
+                P2pStoreState(
+                    relayServer = relayServer,
+                    availableNodes = 1,
+                )
+            )
         }
 
         runBlocking {
@@ -378,97 +506,301 @@ internal class P2pClientTest {
     }
 
     @Test
-    fun `sends message to specified recipient`() {
-        every { p2pServerUtils.getRelayServer(any<ByteArray>(), any()) } returns ""
-        every { p2pServerUtils.getRelayServer(any<HexString>(), any()) } returns ""
+    fun `sends message to specified recipient with cached active channel`() {
+        coEvery { matrixClient.sendTextMessage(any(), any<String>(), any()) } returns Result.success()
 
-        every {
-            p2pCommunicationUtils.recipientIdentifier(any(),
-                any())
-        } answers { firstArg<HexString>().asString() }
-
-        coEvery { matrixClient1.sendTextMessage(any<MatrixRoom>(), any()) } returns Success()
-        coEvery { matrixClient2.sendTextMessage(any<MatrixRoom>(), any()) } returns Success()
-
-        val publicKey = HexString.fromString("0x00")
-        val otherPublicKey = HexString.fromString("0x01")
-        val relayServer = "relay_server"
-        val peer =
-            P2pPeer(name = "name", publicKey = publicKey.asString(), relayServer = relayServer)
+        val publicKey = "0x00".asHexString().toByteArray()
+        val relayServer = "relayServer"
+        val identifier = P2pIdentifier(publicKey, relayServer)
+        val peer = P2pPeer(name = "name", publicKey = publicKey.toHexString().asString(), relayServer = relayServer)
         val message = "message"
+        val room = MatrixRoom.Unknown("room1", listOf(identifier.asString()))
 
-        val room1 = MatrixRoom.Joined("room1", listOf(publicKey.asString()))
-        val room2 = MatrixRoom.Joined("room2", listOf(otherPublicKey.asString()))
-
-        coEvery { matrixClient1.joinedRooms() } returns listOf(room1, room2).shuffled()
-        coEvery { matrixClient2.joinedRooms() } returns listOf(room1, room2).shuffled()
+        coEvery { p2pStore.state() } returns (
+            Result.success(
+                P2pStoreState(
+                    relayServer = relayServer,
+                    availableNodes = 1,
+                    activeChannels = mapOf(
+                        identifier.asString() to room.id,
+                    ),
+                )
+            )
+        )
 
         runBlocking { p2pClient.sendTo(peer, message) }
 
-        val expectedMessage = message.encodeToHexString().asString()
+        coVerify(exactly = 1) { matrixClient.sendTextMessage(relayServer, room.id, message) }
+    }
 
-        coVerify(exactly = 1) { matrixClient1.sendTextMessage(room1, expectedMessage) }
-        coVerify(exactly = 1) { matrixClient2.sendTextMessage(room1, expectedMessage) }
+    @Test
+    fun `sends message to specified recipient without cached active channel`() {
+        coEvery { matrixClient.sendTextMessage(any(), any<String>(), any()) } returns Result.success()
+
+        val publicKey = "0x00".asHexString().toByteArray()
+        val relayServer = "relayServer"
+        val identifier = P2pIdentifier(publicKey, relayServer)
+        val peer = P2pPeer(name = "name", publicKey = publicKey.toHexString().asString(), relayServer = relayServer)
+        val message = "message"
+        val room = MatrixRoom.Joined("room1", listOf(identifier.asString()))
+
+        coEvery { matrixClient.joinedRooms() } returns listOf(room)
+
+        coEvery { p2pStore.state() } returns (
+            Result.success(
+                P2pStoreState(
+                    relayServer = relayServer,
+                    availableNodes = 1,
+                    activeChannels = emptyMap(),
+                )
+            )
+        )
+
+        runBlocking { p2pClient.sendTo(peer, message) }
+
+        coVerify(exactly = 1) { matrixClient.sendTextMessage(relayServer, room.id, message) }
+    }
+
+    @Test
+    fun `sends message to specified recipient and retries on denied access`() {
+        coEvery { matrixClient.sendTextMessage(any(), any<String>(), any()) } answers {
+            Result.failure(MatrixError.Forbidden(""))
+        } andThenAnswer {
+            Result.success()
+        }
+
+        val publicKey = "0x00".asHexString().toByteArray()
+        val relayServer = "relayServer"
+        val identifier = P2pIdentifier(publicKey, relayServer)
+        val peer = P2pPeer(name = "name", publicKey = publicKey.toHexString().asString(), relayServer = relayServer)
+        val message = "message"
+        val invalidRoom = MatrixRoom.Joined("invalidRoom", listOf(identifier.asString()))
+        val validRoom = MatrixRoom.Joined("validRoom", listOf(identifier.asString()))
+
+        coEvery { matrixClient.joinedRooms() } returns listOf(invalidRoom, validRoom)
+
+        coEvery { p2pStore.state() } returns (
+            Result.success(
+                P2pStoreState(
+                    relayServer = relayServer,
+                    availableNodes = 1,
+                    activeChannels = mapOf(
+                        identifier.asString() to invalidRoom.id,
+                    ),
+                )
+            )
+        ) andThen (
+            Result.success(
+                P2pStoreState(
+                    relayServer = relayServer,
+                    availableNodes = 1,
+                    activeChannels = emptyMap(),
+                    inactiveChannels = setOf(invalidRoom.id),
+                )
+            )
+        )
+
+        runBlocking { p2pClient.sendTo(peer, message) }
+
+        coVerify(exactly = 1) { p2pStore.intent(OnChannelClosed(invalidRoom.id)) }
+        coVerify(exactly = 1) { matrixClient.sendTextMessage(relayServer, invalidRoom.id, message) }
+        coVerify(exactly = 1) { matrixClient.sendTextMessage(relayServer, validRoom.id, message) }
+    }
+
+    @Test
+    fun `sends message to specified recipient and fails on error other than access denied`() {
+        coEvery { matrixClient.sendTextMessage(any(), any<String>(), any()) } answers {
+            Result.failure(IOException())
+        } andThenAnswer {
+            Result.success()
+        }
+
+        val publicKey = "0x00".asHexString().toByteArray()
+        val relayServer = "relayServer"
+        val identifier = P2pIdentifier(publicKey, relayServer)
+        val peer = P2pPeer(name = "name", publicKey = publicKey.toHexString().asString(), relayServer = relayServer)
+        val message = "message"
+        val invalidRoom = MatrixRoom.Joined("invalidRoom", listOf(identifier.asString()))
+        val validRoom = MatrixRoom.Joined("validRoom", listOf(identifier.asString()))
+
+        coEvery { matrixClient.joinedRooms() } returns listOf(invalidRoom, validRoom)
+
+        coEvery { p2pStore.state() } returns (
+            Result.success(
+                P2pStoreState(
+                    relayServer = relayServer,
+                    availableNodes = 1,
+                    activeChannels = mapOf(
+                        identifier.asString() to invalidRoom.id,
+                    ),
+                )
+            )
+        )
+
+        runBlocking {
+            assertTrue(p2pClient.sendTo(peer, message).isFailure)
+
+            coVerify(exactly = 1) { matrixClient.sendTextMessage(relayServer, invalidRoom.id, message) }
+        }
     }
 
     @Test
     fun `sends pairing request to matrix clients`() {
-        every { p2pCommunicationUtils.recipientIdentifier(any(), any()) } answers {
-            "${firstArg<HexString>().asString()}:${secondArg<String>()}"
-        }
-
         val pairingPayload = "pairingPayload"
-        every {
-            p2pCommunicationUtils.pairingPayload(any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                any())
-        } returns Success(pairingPayload)
-
-        every { p2pCommunicationUtils.channelOpeningMessage(any(), any()) } answers {
+        every { p2pProtocol.pairingPayload(any(), any()) } returns Result.success(pairingPayload)
+        every { p2pProtocol.channelOpeningMessage(any(), any()) } answers {
             "@channel-open:${firstArg<String>()}:${secondArg<String>()}"
         }
 
-        coEvery { matrixClient1.joinedRooms() } returns emptyList()
-        coEvery { matrixClient2.joinedRooms() } returns emptyList()
+        coEvery { matrixClient.sendTextMessage(any(), any<String>(), any()) } returns Result.success()
+        coEvery { matrixClient.sendTextMessage(any(), any<MatrixRoom>(), any()) } returns Result.success()
 
-        coEvery { matrixClient1.sendTextMessage(any<MatrixRoom>(), any()) } returns Success()
-        coEvery { matrixClient2.sendTextMessage(any<MatrixRoom>(), any()) } returns Success()
+        val publicKey = "0x00".asHexString().toByteArray()
+        val relayServer = "relayServer"
+        val clientRelayServer = "clientRelayServer"
+        val peer = P2pPeer(name = "name", publicKey = publicKey.toHexString().asString(), relayServer = relayServer)
 
-        val publicKey = HexString.fromString("0x00")
-        val relayServer = "relay_server"
-        val clientRelayServer = "client_relay_server"
-        val peer =
-            P2pPeer(name = "name", publicKey = publicKey.asString(), relayServer = relayServer)
+        val expectedRecipient = P2pIdentifier(publicKey, relayServer)
+        val expectedPayload = pairingPayload.encodeToByteArray().toHexString().asString()
+        val expectedMessage = "@channel-open:${expectedRecipient.asString()}:$expectedPayload"
 
-        val expectedRecipient = "${publicKey.asString()}:$relayServer"
-        val expectedPayload = pairingPayload.encodeToByteArray().asHexString().asString()
-        val expectedMessage = "@channel-open:$expectedRecipient:$expectedPayload"
+        coEvery { p2pStore.state() } returns (
+            Result.success(
+                P2pStoreState(
+                    relayServer = clientRelayServer,
+                    availableNodes = 1,
+                )
+            )
+        )
 
-        val newRoom = MatrixRoom.Unknown("room1", listOf(expectedRecipient))
+        val newRoom = MatrixRoom.Unknown("room1", listOf(expectedRecipient.asString()))
 
-        coEvery { matrixClient1.createTrustedPrivateRoom(any()) } returns Success(newRoom)
-        coEvery { matrixClient2.createTrustedPrivateRoom(any()) } returns Success(newRoom)
-
-        every { p2pServerUtils.getRelayServer(any<ByteArray>(), any()) } returns clientRelayServer
-        every { p2pServerUtils.getRelayServer(any<HexString>(), any()) } returns clientRelayServer
+        coEvery { matrixClient.createTrustedPrivateRoom(any(), any()) } returns Result.success(newRoom)
 
         runBlocking { p2pClient.sendPairingResponse(peer) }
 
-        coVerify(exactly = 1) { matrixClient1.sendTextMessage(newRoom, expectedMessage) }
-        coVerify(exactly = 1) { matrixClient2.sendTextMessage(newRoom, expectedMessage) }
+        coVerify(exactly = 1) { matrixClient.sendTextMessage(clientRelayServer, newRoom.id, expectedMessage) }
+        coVerify(exactly = 1) { p2pStore.intent(OnChannelCreated(expectedRecipient.asString(), newRoom.id)) }
+    }
+
+    @Test
+    fun `joins room on invite event`() {
+        val publicKey = "0x00".asHexString().toByteArray()
+        val relayServer = "relayServer"
+        val roomId = "1"
+
+        val inviteMessages = listOf(
+            validMatrixInviteMessage(relayServer, roomId, publicKey.toHexString().asString())
+        )
+
+        coEvery { p2pStore.state() } returns Result.success(
+            P2pStoreState(
+                relayServer = relayServer,
+                availableNodes = 1,
+            )
+        )
+
+        coEvery { matrixClient.isLoggedIn() } returns false andThen true
+        every { matrixClient.events } returns flow {
+            inviteMessages.forEach { emit(it) }
+            testDeferred.await()
+        }
+        coEvery { matrixClient.joinRoom(any(), any<String>()) } answers {
+            testDeferred.complete(Unit)
+            Result.success()
+        }
+
+        runBlocking {
+            withTimeoutOrNull(10000) { p2pClient.subscribeTo(publicKey).collect() }
+
+            coVerify(exactly = inviteMessages.distinctBy { it.roomId }.size) {
+                p2pStore.intent(OnChannelEvent(publicKey.toHexString().asString(), roomId))
+            }
+            coVerify(exactly = 1) { matrixClient.joinRoom(relayServer, roomId) }
+        }
+    }
+
+    @Test
+    fun `retries to join room on invite event if denied access`() {
+        val publicKey = "0x00".asHexString().toByteArray()
+        val relayServer = "relayServer"
+        val roomId = "1"
+
+        val inviteMessages = listOf(
+            validMatrixInviteMessage(relayServer, roomId, publicKey.toHexString().asString())
+        )
+
+        coEvery { p2pStore.state() } returns Result.success(
+            P2pStoreState(
+                relayServer = relayServer,
+                availableNodes = 1,
+            )
+        )
+
+        coEvery { matrixClient.isLoggedIn() } returns false andThen true
+        every { matrixClient.events } returns flow {
+            inviteMessages.forEach { emit(it) }
+            testDeferred.await()
+            delay(BeaconConfiguration.P2P_JOIN_DELAY_MS * 2)
+        }
+        coEvery { matrixClient.joinRoom(any(), any<String>()) } answers {
+            Result.failure(MatrixError.Forbidden(""))
+        } andThenAnswer {
+            testDeferred.complete(Unit)
+            Result.success()
+        }
+
+        runBlocking {
+            withTimeoutOrNull(10000) { p2pClient.subscribeTo(publicKey).collect() }
+
+            coVerify(exactly = 2) { matrixClient.joinRoom(relayServer, roomId) }
+        }
+    }
+
+    @Test
+    fun `aborts join room on invite event if error other than denied access`() {
+        val publicKey = "0x00".asHexString().toByteArray()
+        val relayServer = "relayServer"
+        val roomId = "1"
+
+        val inviteMessages = listOf(
+            validMatrixInviteMessage(relayServer, roomId, publicKey.toHexString().asString())
+        )
+
+        coEvery { p2pStore.state() } returns Result.success(
+            P2pStoreState(
+                relayServer = relayServer,
+                availableNodes = 1,
+            )
+        )
+
+        coEvery { matrixClient.isLoggedIn() } returns false andThen true
+        every { matrixClient.events } returns flow {
+            inviteMessages.forEach { emit(it) }
+            testDeferred.await()
+            delay(BeaconConfiguration.P2P_JOIN_DELAY_MS * 2)
+        }
+        coEvery { matrixClient.joinRoom(any(), any<String>()) } answers {
+            testDeferred.complete(Unit)
+            Result.failure(IOException())
+        }
+
+        runBlocking {
+            withTimeoutOrNull(10000) { p2pClient.subscribeTo(publicKey).collect() }
+
+            coVerify(exactly = 1) { matrixClient.joinRoom(relayServer, roomId) }
+        }
     }
 
     private fun validMatrixTextMessage(
+        node: String,
         roomId: String,
         senderHash: String,
         content: String,
     ): MatrixEvent.TextMessage =
-        MatrixEvent.TextMessage(roomId, "@$senderHash", content)
+        MatrixEvent.TextMessage(node, roomId, senderHash, content)
 
-    private fun validMatrixInviteMessage(roomId: String): MatrixEvent.Invite =
-        MatrixEvent.Invite(roomId)
+    private fun validMatrixInviteMessage(node: String, roomId: String, senderHash: String): MatrixEvent.Invite =
+        MatrixEvent.Invite(node, roomId, senderHash)
 
 }

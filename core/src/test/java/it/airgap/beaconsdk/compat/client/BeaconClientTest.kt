@@ -18,8 +18,8 @@ import it.airgap.beaconsdk.internal.storage.MockSecureStorage
 import it.airgap.beaconsdk.internal.storage.MockStorage
 import it.airgap.beaconsdk.internal.storage.StorageManager
 import it.airgap.beaconsdk.internal.utils.AccountUtils
-import it.airgap.beaconsdk.internal.utils.Failure
-import it.airgap.beaconsdk.internal.utils.Success
+import it.airgap.beaconsdk.internal.utils.splitAt
+import it.airgap.beaconsdk.internal.utils.success
 import it.airgap.beaconsdk.message.AcknowledgeBeaconResponse
 import it.airgap.beaconsdk.message.BeaconMessage
 import kotlinx.coroutines.CompletableDeferred
@@ -64,15 +64,17 @@ internal class BeaconClientTest {
     fun setup() {
         MockKAnnotations.init(this)
 
+        mockkObject(BeaconCompat)
+
         coEvery { messageController.onIncomingMessage(any(), any()) } coAnswers  {
-            Success(secondArg<VersionedBeaconMessage>().toBeaconMessage(origin, storageManager))
+            Result.success(secondArg<VersionedBeaconMessage>().toBeaconMessage(origin, storageManager))
         }
 
         coEvery { messageController.onOutgoingMessage(any(), any(), any()) } coAnswers {
-            Success(Pair(secondArg<BeaconMessage>().associatedOrigin, versionedBeaconMessage(secondArg(), beaconId)))
+            Result.success(Pair(secondArg<BeaconMessage>().associatedOrigin, versionedBeaconMessage(secondArg(), beaconId)))
         }
 
-        coEvery { connectionController.send(any()) } coAnswers { Success() }
+        coEvery { connectionController.send(any()) } coAnswers { Result.success() }
 
         storageManager = StorageManager(MockStorage(), MockSecureStorage(), accountUtils)
         beaconClient = BeaconClient(appName, beaconId, connectionController, messageController, storageManager, crypto)
@@ -83,7 +85,6 @@ internal class BeaconClientTest {
     @Test
     fun `connects for messages with callback`() {
         runBlockingTest {
-
             val requests = beaconVersionedRequests().shuffled()
             val beaconMessageFlow = beaconConnectionMessageFlow(requests.size + 1)
 
@@ -119,6 +120,10 @@ internal class BeaconClientTest {
                 coVerify(exactly = expected.size) { messageController.onOutgoingMessage(beaconId, match { it is AcknowledgeBeaconResponse }, false) }
                 verify(exactly = requests.size) { callback.onNewMessage(any()) }
                 verify(exactly = 0) { callback.onError(any()) }
+                verify(exactly = 0) { callback.onCancel() }
+
+                verify(exactly = 1) { BeaconCompat.addListener(callback) }
+                assert(BeaconCompat.listeners.containsValue(callback))
 
                 confirmVerified(messageController, callback)
             }
@@ -127,7 +132,7 @@ internal class BeaconClientTest {
 
     @Test
     fun `responds to request`() {
-        coEvery { connectionController.send(any()) } returns Success()
+        coEvery { connectionController.send(any()) } returns Result.success()
 
         val origin = Origin.P2P(dAppId)
         val responses = beaconResponses(version = dAppVersion, requestOrigin = origin).shuffled()
@@ -157,6 +162,7 @@ internal class BeaconClientTest {
 
         verify(exactly = responses.size) { callback.onSuccess() }
         verify(exactly = 0) { callback.onError(any()) }
+        verify(exactly = 0) { callback.onCancel() }
 
         confirmVerified(messageController, connectionController, callback)
     }
@@ -170,7 +176,7 @@ internal class BeaconClientTest {
             val exception = Exception()
 
             every { connectionController.subscribe() } answers { beaconMessageFlow }
-            coEvery { messageController.onIncomingMessage(any(), any()) } returns Failure(exception)
+            coEvery { messageController.onIncomingMessage(any(), any()) } returns Result.failure(exception)
 
             runBlocking {
                 val errors = mutableListOf<Throwable>()
@@ -200,6 +206,7 @@ internal class BeaconClientTest {
                 coVerify(exactly = requests.size) { messageController.onIncomingMessage(any(), any()) }
                 verify(exactly = 0) { callback.onNewMessage(any()) }
                 verify(exactly = requests.size) { callback.onError(any()) }
+                verify(exactly = 0) { callback.onCancel() }
 
                 confirmVerified(messageController, callback)
             }
@@ -209,7 +216,7 @@ internal class BeaconClientTest {
     @Test
     fun `fails to respond when message sending failed`() {
         val error = IOException()
-        coEvery { connectionController.send(any()) } returns Failure(error)
+        coEvery { connectionController.send(any()) } returns Result.failure(error)
 
         val responses = beaconResponses().shuffled()
 
@@ -241,7 +248,158 @@ internal class BeaconClientTest {
 
         verify(exactly = 0) { callback.onSuccess() }
         verify(exactly = responses.size) { callback.onError(any()) }
+        verify(exactly = 0) { callback.onCancel() }
 
         confirmVerified(messageController, connectionController, callback)
+    }
+
+    @Test
+    fun `removes message callback`() {
+        runBlockingTest {
+            val requests = beaconVersionedRequests().shuffled()
+            val (requestsForAll, requestsFor2) = requests.splitAt { it.size / 2 }
+            val beaconMessageFlow = beaconConnectionMessageFlow(requests.size + 1)
+
+            every { connectionController.subscribe() } answers { beaconMessageFlow }
+
+            storageManager.addAppMetadata(listOf(AppMetadata(dAppId, "otherApp")))
+
+            runBlocking {
+                val testDeferred1 = CompletableDeferred<Unit>()
+                val testDeferred2 = CompletableDeferred<Unit>()
+
+                val messages1 = mutableListOf<BeaconMessage>()
+                val messages2 = mutableListOf<BeaconMessage>()
+                val callback1 = spyk<OnNewMessageListener>(
+                    object : OnNewMessageListener {
+                        override fun onNewMessage(message: BeaconMessage) {
+                            messages1.add(message)
+
+                            if (messages1.size == requestsForAll.size) testDeferred1.complete(Unit)
+                        }
+
+                        override fun onError(error: Throwable) {
+                            throw IllegalStateException("Expected to get a new message", error)
+                        }
+                    }
+                )
+                val callback2 = spyk<OnNewMessageListener>(
+                    object : OnNewMessageListener {
+                        override fun onNewMessage(message: BeaconMessage) {
+                            messages2.add(message)
+
+                            if (messages2.size == requests.size) testDeferred2.complete(Unit)
+                        }
+
+                        override fun onError(error: Throwable) {
+                            throw IllegalStateException("Expected to get a new message", error)
+                        }
+                    }
+                )
+
+                beaconClient.connect(callback1)
+                beaconClient.connect(callback2)
+                beaconMessageFlow.tryEmitValues(requestsForAll.map { BeaconConnectionMessage(origin, it) })
+
+                testDeferred1.await()
+
+                beaconClient.disconnect(callback1)
+                beaconMessageFlow.tryEmitValues(requestsFor2.map { BeaconConnectionMessage(origin, it) })
+
+                testDeferred2.await()
+
+                val expected1 = requestsForAll.map { it.toBeaconMessage(origin, storageManager) }
+                val expected2 = requests.map { it.toBeaconMessage(origin, storageManager) }
+
+                assertEquals(expected1.sortedBy { it.toString() }, messages1.sortedBy { it.toString() })
+                assertEquals(expected2.sortedBy { it.toString() }, messages2.sortedBy { it.toString() })
+
+                verify(exactly = requestsForAll.size) { callback1.onNewMessage(any()) }
+                verify(exactly = requests.size) { callback2.onNewMessage(any()) }
+                verify(exactly = 0) { callback1.onError(any()) }
+                verify(exactly = 0) { callback2.onError(any()) }
+                verify(exactly = 0) { callback1.onCancel() }
+                verify(exactly = 0) { callback2.onCancel() }
+
+                verify(exactly = 1) { BeaconCompat.removeListener(callback1) }
+                verify(exactly = 0) { BeaconCompat.removeListener(match { it != callback1 }) }
+                assert(!BeaconCompat.listeners.containsValue(callback1))
+                assert(BeaconCompat.listeners.containsValue(callback2))
+            }
+        }
+    }
+
+    @Test
+    fun `stops and removes all callbacks`() {
+        runBlockingTest {
+            val requests = beaconVersionedRequests().shuffled()
+            val beaconMessageFlow = beaconConnectionMessageFlow(requests.size + 1)
+
+            every { connectionController.subscribe() } answers { beaconMessageFlow }
+
+            storageManager.addAppMetadata(listOf(AppMetadata(dAppId, "otherApp")))
+
+            runBlocking {
+                val testDeferred1 = CompletableDeferred<Unit>()
+                val testDeferred2 = CompletableDeferred<Unit>()
+
+                val messages1 = mutableListOf<BeaconMessage>()
+                val messages2 = mutableListOf<BeaconMessage>()
+
+                val callback1 = spyk<OnNewMessageListener>(
+                    object : OnNewMessageListener {
+                        override fun onNewMessage(message: BeaconMessage) {
+                            messages1.add(message)
+
+                            if (messages1.size == requests.size) testDeferred1.complete(Unit)
+                        }
+
+                        override fun onError(error: Throwable) {
+                            throw IllegalStateException("Expected to get a new message", error)
+                        }
+                    }
+                )
+                val callback2 = spyk<OnNewMessageListener>(
+                    object : OnNewMessageListener {
+                        override fun onNewMessage(message: BeaconMessage) {
+                            messages2.add(message)
+
+                            if (messages2.size == requests.size) testDeferred2.complete(Unit)
+                        }
+
+                        override fun onError(error: Throwable) {
+                            throw IllegalStateException("Expected to get a new message", error)
+                        }
+                    }
+                )
+
+                beaconClient.connect(callback1)
+                beaconClient.connect(callback2)
+                beaconMessageFlow.tryEmitValues(requests.map { BeaconConnectionMessage(origin, it) })
+
+                testDeferred1.await()
+                testDeferred2.await()
+
+                beaconClient.stop()
+
+                val expected1 = requests.map { it.toBeaconMessage(origin, storageManager) }
+                val expected2 = requests.map { it.toBeaconMessage(origin, storageManager) }
+
+                assertEquals(expected1.sortedBy { it.toString() }, messages1.sortedBy { it.toString() })
+                assertEquals(expected2.sortedBy { it.toString() }, messages2.sortedBy { it.toString() })
+
+                verify(exactly = requests.size) { callback1.onNewMessage(any()) }
+                verify(exactly = requests.size) { callback2.onNewMessage(any()) }
+                verify(exactly = 0) { callback1.onError(any()) }
+                verify(exactly = 0) { callback2.onError(any()) }
+                verify(exactly = 1) { callback1.onCancel() }
+                verify(exactly = 1) { callback2.onCancel() }
+
+
+                verify(exactly = 1) { BeaconCompat.cancelScopes() }
+                assert(BeaconCompat.listeners.isEmpty())
+                assert(BeaconCompat.scopes.isEmpty())
+            }
+        }
     }
 }
