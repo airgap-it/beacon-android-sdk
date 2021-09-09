@@ -1,7 +1,7 @@
 
 import android.content.Context
 import io.mockk.*
-import it.airgap.beaconsdk.internal.BeaconApp
+import it.airgap.beaconsdk.internal.BeaconSdk
 import it.airgap.beaconsdk.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.internal.utils.currentTimestamp
 import it.airgap.beaconsdk.internal.utils.logDebug
@@ -13,10 +13,10 @@ import it.airgap.beaconsdk.internal.utils.logInfo
 internal fun mockBeaconApp(
     beaconId: String = "beaconId",
     dependencyRegistry: DependencyRegistry = mockk(relaxed = true),
-): BeaconApp =
-    mockkClass(BeaconApp::class).also {
-        mockkObject(BeaconApp)
-        every { BeaconApp.instance } returns it
+): BeaconSdk =
+    mockkClass(BeaconSdk::class).also {
+        mockkObject(BeaconSdk)
+        every { BeaconSdk.instance } returns it
 
         val contextMock = mockk<Context>(relaxed = true)
 
@@ -34,17 +34,14 @@ internal fun mockLog() {
 
     every { logInfo(any(), any()) } answers {
         println("[INFO] ${firstArg<String>()}: ${secondArg<String>()}")
-        Unit
     }
 
     every { logDebug(any(), any()) } answers {
         println("[DEBUG] ${firstArg<String>()}: ${secondArg<String>()}")
-        Unit
     }
 
     every { logError(any(), any()) } answers {
         println("[ERROR] ${firstArg<String>()}: ${secondArg<Throwable>()}")
-        Unit
     }
 }
 

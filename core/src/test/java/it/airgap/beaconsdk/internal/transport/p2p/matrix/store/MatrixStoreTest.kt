@@ -1,14 +1,15 @@
 package it.airgap.beaconsdk.internal.transport.p2p.matrix.store
 
 import io.mockk.MockKAnnotations
+import io.mockk.coVerify
 import io.mockk.impl.annotations.MockK
+import io.mockk.spyk
 import it.airgap.beaconsdk.internal.storage.MockSecureStorage
 import it.airgap.beaconsdk.internal.storage.MockStorage
 import it.airgap.beaconsdk.internal.storage.StorageManager
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.MatrixEvent
 import it.airgap.beaconsdk.internal.transport.p2p.matrix.data.MatrixRoom
 import it.airgap.beaconsdk.internal.utils.AccountUtils
-import kotlinx.coroutines.flow.onSubscription
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
@@ -28,7 +29,7 @@ internal class MatrixStoreTest {
     @Before
     fun setup() {
         MockKAnnotations.init(this)
-        storageManager = StorageManager(MockStorage(), MockSecureStorage(), accountUtils)
+        storageManager = spyk(StorageManager(MockStorage(), MockSecureStorage(), accountUtils))
         matrixStore = MatrixStore(storageManager)
     }
 
@@ -39,7 +40,7 @@ internal class MatrixStoreTest {
             val deviceId = "deviceId"
             val accessToken = "accessToken"
 
-            matrixStore.intent(Init(userId, deviceId, accessToken))
+            matrixStore.intent(Init(userId, deviceId, accessToken)).getOrThrow()
 
             assertEquals(
                 MatrixStoreState(
@@ -53,7 +54,7 @@ internal class MatrixStoreTest {
                     pollingRetries = 0,
                     rooms = emptyMap(),
                 ),
-                matrixStore.state(),
+                matrixStore.state().getOrThrow(),
             )
         }
     }
@@ -75,7 +76,7 @@ internal class MatrixStoreTest {
             val deviceId = "deviceId"
             val accessToken = "accessToken"
 
-            matrixStore.intent(Init(userId, deviceId, accessToken))
+            matrixStore.intent(Init(userId, deviceId, accessToken)).getOrThrow()
 
             assertEquals(
                 MatrixStoreState(
@@ -93,7 +94,7 @@ internal class MatrixStoreTest {
                         "3" to MatrixRoom.Left("3", listOf("member#4", "member#5")),
                     )
                 ),
-                matrixStore.state(),
+                matrixStore.state().getOrThrow(),
             )
         }
     }
@@ -109,7 +110,7 @@ internal class MatrixStoreTest {
                 MatrixRoom.Left("3", emptyList()),
             )
 
-            matrixStore.intent(OnSyncSuccess(syncToken, pollingTimeout, rooms, emptyList()))
+            matrixStore.intent(OnSyncSuccess(syncToken, pollingTimeout, rooms, emptyList())).getOrThrow()
 
             assertEquals(
                 MatrixStoreState(
@@ -123,7 +124,7 @@ internal class MatrixStoreTest {
                         "3" to MatrixRoom.Left("3", emptyList()),
                     )
                 ),
-                matrixStore.state()
+                matrixStore.state().getOrThrow()
             )
         }
     }
@@ -151,7 +152,7 @@ internal class MatrixStoreTest {
                 MatrixRoom.Joined("4", listOf("member#6")),
             )
 
-            matrixStore.intent(OnSyncSuccess(syncToken, pollingTimeout, rooms, emptyList()))
+            matrixStore.intent(OnSyncSuccess(syncToken, pollingTimeout, rooms, emptyList())).getOrThrow()
 
             assertEquals(
                 MatrixStoreState(
@@ -169,7 +170,7 @@ internal class MatrixStoreTest {
                         "4" to MatrixRoom.Joined("4", listOf("member#6")),
                     )
                 ),
-                matrixStore.state()
+                matrixStore.state().getOrThrow()
             )
         }
     }
@@ -177,22 +178,22 @@ internal class MatrixStoreTest {
     @Test
     fun `emits new events on successful sync`() {
         runBlocking {
+            val node = "node"
             val roomId = "1"
             val events = listOf(
-                MatrixEvent.TextMessage(roomId, "sender#1", "message"),
-                MatrixEvent.Join(roomId, "sender#2"),
-                MatrixEvent.Create(roomId, "sender#3"),
+                MatrixEvent.TextMessage(node, roomId, "sender#1", "message"),
+                MatrixEvent.Join(node, roomId, "sender#2"),
+                MatrixEvent.Create(node, roomId, "sender#3"),
             )
 
+            matrixStore.intent(OnSyncSuccess(
+                syncToken = null,
+                pollingTimeout = 0,
+                rooms = emptyList(),
+                events = events,
+            )).getOrThrow()
+
             val emitted = matrixStore.events
-                .onSubscription {
-                    matrixStore.intent(OnSyncSuccess(
-                        syncToken = null,
-                        pollingTimeout = 0,
-                        rooms = emptyList(),
-                        events = events,
-                    ))
-                }
                 .take(events.size)
                 .toList()
 
@@ -206,15 +207,15 @@ internal class MatrixStoreTest {
     @Test
     fun `increases polling retries counter and sets polling state on error`() {
         runBlockingTest {
-            val currentRetries = matrixStore.state().pollingRetries
-            matrixStore.intent(OnSyncError)
+            val currentRetries = matrixStore.state().getOrThrow().pollingRetries
+            matrixStore.intent(OnSyncError).getOrThrow()
 
             assertEquals(
                 MatrixStoreState(
                     isPolling = false,
                     pollingRetries = currentRetries + 1,
                 ),
-                matrixStore.state(),
+                matrixStore.state().getOrThrow(),
             )
         }
     }
@@ -222,13 +223,67 @@ internal class MatrixStoreTest {
     @Test
     fun `increases transaction counter on new txn id created`() {
         runBlockingTest {
-            val currentCounter = matrixStore.state().transactionCounter
-            matrixStore.intent(OnTxnIdCreated)
+            val currentCounter = matrixStore.state().getOrThrow().transactionCounter
+            matrixStore.intent(OnTxnIdCreated).getOrThrow()
 
             assertEquals(
                 MatrixStoreState(transactionCounter = currentCounter + 1),
-                matrixStore.state(),
+                matrixStore.state().getOrThrow(),
             )
+        }
+    }
+
+    @Test
+    fun `resets state`() {
+        runBlockingTest {
+            val userId = "userId"
+            val deviceId = "deviceId"
+            val accessToken = "accessToken"
+
+            val syncToken = "syncToken"
+            val pollingTimeout = 1000L
+            val rooms = listOf(
+                MatrixRoom.Joined("1", listOf("member#1")),
+                MatrixRoom.Invited("2", emptyList()),
+                MatrixRoom.Left("3", emptyList()),
+            )
+
+            matrixStore.intent(Init(userId, deviceId, accessToken)).getOrThrow()
+            matrixStore.intent(OnSyncSuccess(syncToken, pollingTimeout, rooms, emptyList())).getOrThrow()
+            matrixStore.intent(Reset).getOrThrow()
+
+            assertEquals(
+                MatrixStoreState(syncToken = syncToken),
+                matrixStore.state().getOrThrow()
+            )
+        }
+    }
+
+    @Test
+    fun `resets state hard`() {
+        runBlockingTest {
+            val userId = "userId"
+            val deviceId = "deviceId"
+            val accessToken = "accessToken"
+
+            val syncToken = "syncToken"
+            val pollingTimeout = 1000L
+            val rooms = listOf(
+                MatrixRoom.Joined("1", listOf("member#1")),
+                MatrixRoom.Invited("2", emptyList()),
+                MatrixRoom.Left("3", emptyList()),
+            )
+
+            matrixStore.intent(Init(userId, deviceId, accessToken)).getOrThrow()
+            matrixStore.intent(OnSyncSuccess(syncToken, pollingTimeout, rooms, emptyList())).getOrThrow()
+            matrixStore.intent(HardReset).getOrThrow()
+
+            assertEquals(
+                MatrixStoreState(syncToken = syncToken),
+                matrixStore.state().getOrThrow()
+            )
+
+            coVerify(exactly = 1) { storageManager.removeMatrixRooms() }
         }
     }
 }

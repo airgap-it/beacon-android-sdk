@@ -8,7 +8,7 @@ internal class ProtocolRegistry(private val crypto: Crypto, private val base58Ch
 
     fun get(type: Protocol.Type): Protocol = protocolMap.getOrPut(type) {
         when (type) {
-            Protocol.Type.Tezos -> TezosProtocol(crypto, base58Check)
+            Protocol.Type.Tezos -> Tezos(crypto, base58Check)
         }
     }
 }

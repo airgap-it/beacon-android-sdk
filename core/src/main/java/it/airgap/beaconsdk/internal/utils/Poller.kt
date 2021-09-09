@@ -11,11 +11,11 @@ internal class Poller {
     fun <T> poll(
         dispatcher: CoroutineDispatcher = Dispatchers.Default,
         interval: Long = 0,
-        action: suspend () -> InternalResult<T>,
-    ): Flow<InternalResult<T>> =
+        action: suspend () -> Result<T>,
+    ): Flow<Result<T>> =
         channelFlow {
             while (!isClosedForSend) {
-                val response = flatTryResult { action() }
+                val response = runCatchingFlat { action() }
                 send(response)
                 delay(interval)
             }

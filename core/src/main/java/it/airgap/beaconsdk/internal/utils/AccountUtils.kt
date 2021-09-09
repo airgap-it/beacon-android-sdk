@@ -5,7 +5,7 @@ import it.airgap.beaconsdk.internal.crypto.Crypto
 
 internal class AccountUtils(private val crypto: Crypto, private val base58Check: Base58Check) {
 
-    fun getAccountIdentifier(address: String, network: Network): InternalResult<String> {
+    fun getAccountIdentifier(address: String, network: Network): Result<String> {
         val data = with(network) {
             mutableListOf(address, identifier).apply {
                 name?.let { add("name:$it") }
@@ -18,7 +18,7 @@ internal class AccountUtils(private val crypto: Crypto, private val base58Check:
         return hash.flatMap { base58Check.encode(it) }
     }
 
-    fun getSenderId(publicKey: HexString): InternalResult<String> {
+    fun getSenderId(publicKey: ByteArray): Result<String> {
         val hash = crypto.hash(publicKey, SENDER_ID_HASH_SIZE)
         return hash.flatMap { base58Check.encode(it) }
     }

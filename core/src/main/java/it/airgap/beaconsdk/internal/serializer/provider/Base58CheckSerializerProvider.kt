@@ -11,12 +11,12 @@ internal class Base58CheckSerializerProvider(private val base58Check: Base58Chec
 
     override fun <T : Any> serialize(message: T, sourceClass: KClass<T>): String {
         val jsonEncoded = json.encodeToString(message, sourceClass)
-        return base58Check.encode(jsonEncoded.encodeToByteArray()).get()
+        return base58Check.encode(jsonEncoded.encodeToByteArray()).getOrThrow()
     }
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : Any> deserialize(message: String, targetClass: KClass<T>): T {
-        val decoded = base58Check.decode(message).get()
+        val decoded = base58Check.decode(message).getOrThrow()
         val jsonEncoded = decoded.decodeToString()
 
         return json.decodeFromString(jsonEncoded, targetClass)

@@ -30,7 +30,12 @@ internal fun <T> List<T>.tail(): List<T> {
     return takeLast(n)
 }
 
-internal suspend fun <T> List<T>.launch(block: suspend (T) -> Unit) {
+internal fun <T> List<T>.shiftedBy(offset: Int): List<T> {
+    val offset = offset % size
+    return subList(offset, size) + subList(0, offset)
+}
+
+internal suspend fun <T> List<T>.launchForEach(block: suspend (T) -> Unit) {
     coroutineScope {
         forEach {
             launch { block(it) }
@@ -38,7 +43,7 @@ internal suspend fun <T> List<T>.launch(block: suspend (T) -> Unit) {
     }
 }
 
-internal suspend fun <T, R> List<T>.async(block: suspend (T) -> R): List<R> =
+internal suspend fun <T, R> List<T>.asyncMap(block: suspend (T) -> R): List<R> =
     coroutineScope {
         map {
             async { block(it) }

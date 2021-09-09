@@ -4,7 +4,7 @@ import android.content.ContentProvider
 import android.content.ContentValues
 import android.database.Cursor
 import android.net.Uri
-import it.airgap.beaconsdk.internal.BeaconApp
+import it.airgap.beaconsdk.internal.BeaconSdk
 import it.airgap.beaconsdk.internal.utils.logInfo
 
 /**
@@ -13,7 +13,7 @@ import it.airgap.beaconsdk.internal.utils.logInfo
 public class BeaconInitProvider : ContentProvider() {
     override fun onCreate(): Boolean {
         context?.let {
-            BeaconApp.create(it)
+            BeaconSdk.create(it)
             logInfo(TAG, "BeaconApp created")
         } ?: run {
             logInfo(TAG, "BeaconApp could not be created")

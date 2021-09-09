@@ -1,4 +1,4 @@
-FROM androidsdk/android-29:latest
+FROM androidsdk/android-30:latest
 
 RUN mkdir /build
 WORKDIR /build

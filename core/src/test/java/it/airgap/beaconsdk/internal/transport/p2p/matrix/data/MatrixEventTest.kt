@@ -12,6 +12,7 @@ internal class MatrixEventTest {
 
     @Test
     fun `creates list of events from sync rooms response`() {
+        val node = "node"
         val roomId = "roomId"
         val sender = "sender"
 
@@ -20,7 +21,7 @@ internal class MatrixEventTest {
                 roomId to MatrixSyncRoom.Joined(
                     MatrixSyncState(
                         listOf(
-                            Member(Member.Content(Member.Membership.Invite)),
+                            Member(Member.Content(Member.Membership.Invite), sender = sender),
                             Member(Member.Content(Member.Membership.Join), sender = sender),
                             Member(Member.Content(Member.Membership.Ban)),
                         )
@@ -29,84 +30,87 @@ internal class MatrixEventTest {
             ),
         )
 
-        val events = MatrixEvent.fromSync(syncRooms)
+        val events = MatrixEvent.fromSync(node, syncRooms)
 
         assertEquals(
-            listOf(MatrixEvent.Invite(roomId), MatrixEvent.Join(roomId, sender)),
+            listOf(MatrixEvent.Invite(node, roomId, sender), MatrixEvent.Join(node, roomId, sender)),
             events,
         )
     }
 
     @Test
     fun `creates list of events from sync room`() {
+        val node = "node"
         val roomId = "roomId"
         val sender = "sender"
 
         val syncRoom = MatrixSyncRoom.Joined(
             MatrixSyncState(
                 listOf(
-                    Member(Member.Content(Member.Membership.Invite)),
+                    Member(Member.Content(Member.Membership.Invite), sender = sender),
                     Member(Member.Content(Member.Membership.Join), sender = sender),
                     Member(Member.Content(Member.Membership.Ban)),
                 )
             )
         )
 
-        val events = MatrixEvent.fromSync(roomId, syncRoom)
+        val events = MatrixEvent.fromSync(node, roomId, syncRoom)
 
         assertEquals(
-            listOf(MatrixEvent.Invite(roomId), MatrixEvent.Join(roomId, sender)),
+            listOf(MatrixEvent.Invite(node, roomId, sender), MatrixEvent.Join(node, roomId, sender)),
             events,
         )
     }
 
     @Test
     fun `creates list of events from list of sync events`() {
+        val node = "node"
         val roomId = "roomId"
         val sender = "sender"
 
         val syncEvents = listOf(
-            Member(Member.Content(Member.Membership.Invite)),
+            Member(Member.Content(Member.Membership.Invite), sender = sender),
             Member(Member.Content(Member.Membership.Join), sender = sender),
             Member(Member.Content(Member.Membership.Ban)),
         )
 
-        val events = MatrixEvent.fromSync(roomId, syncEvents)
+        val events = MatrixEvent.fromSync(node, roomId, syncEvents)
 
         assertEquals(
-            listOf(MatrixEvent.Invite(roomId), MatrixEvent.Join(roomId, sender)),
+            listOf(MatrixEvent.Invite(node, roomId, sender), MatrixEvent.Join(node, roomId, sender)),
             events,
         )
     }
 
     @Test
     fun `creates event from sync event`() {
+        val node = "node"
         val roomId = "roomId"
         val sender = "sender"
         val message = "message"
 
         val syncCreate = Create(Create.Content(sender), sender = sender)
-        val create = MatrixEvent.fromSync(roomId, syncCreate)
+        val create = MatrixEvent.fromSync(node, roomId, syncCreate)
 
-        assertEquals(MatrixEvent.Create(roomId, sender), create)
+        assertEquals(MatrixEvent.Create(node, roomId, sender), create)
 
-        val syncInvite = Member(Member.Content(Member.Membership.Invite))
-        val invite = MatrixEvent.fromSync(roomId, syncInvite)
+        val syncInvite = Member(Member.Content(Member.Membership.Invite), sender = sender)
+        val invite = MatrixEvent.fromSync(node, roomId, syncInvite)
 
-        assertEquals(MatrixEvent.Invite(roomId), invite)
+        assertEquals(MatrixEvent.Invite(node, roomId, sender), invite)
 
         val syncJoin = Member(Member.Content(Member.Membership.Join), sender = sender)
-        val join = MatrixEvent.fromSync(roomId, syncJoin)
+        val join = MatrixEvent.fromSync(node, roomId, syncJoin)
 
-        assertEquals(MatrixEvent.Join(roomId, sender), join)
+        assertEquals(MatrixEvent.Join(node, roomId, sender), join)
 
         val syncTextMessage = Message(Message.Content(Message.TYPE_TEXT, message), sender = sender)
-        val textMessage = MatrixEvent.fromSync(roomId, syncTextMessage)
+        val textMessage = MatrixEvent.fromSync(node, roomId, syncTextMessage)
 
-        assertEquals(MatrixEvent.TextMessage(roomId, sender, message), textMessage)
+        assertEquals(MatrixEvent.TextMessage(node, roomId, sender, message), textMessage)
 
         val syncUnknown = Member(Member.Content(Member.Membership.Ban))
-        val unknown = MatrixEvent.fromSync(roomId, syncUnknown)
+        val unknown = MatrixEvent.fromSync(node, roomId, syncUnknown)
 
         assertNull(unknown, "Expected unknown sync event to be mapped to null")
     }

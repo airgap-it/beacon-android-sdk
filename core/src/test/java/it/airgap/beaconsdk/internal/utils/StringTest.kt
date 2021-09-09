@@ -22,4 +22,22 @@ internal class StringTest {
             "12345".padStartEven('0'),
         )
     }
+
+    @Test
+    fun `capitalizes string`() {
+        assertEquals(
+            "String",
+            "string".capitalized(),
+        )
+
+        assertEquals(
+            "String",
+            "String".capitalized(),
+        )
+
+        assertEquals(
+            "STRING",
+            "sTRING".capitalized(),
+        )
+    }
 }

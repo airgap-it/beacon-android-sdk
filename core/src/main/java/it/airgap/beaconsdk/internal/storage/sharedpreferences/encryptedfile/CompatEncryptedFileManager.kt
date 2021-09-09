@@ -2,7 +2,7 @@ package it.airgap.beaconsdk.internal.storage.sharedpreferences.encryptedfile
 
 import android.content.Context
 import android.security.KeyPairGeneratorSpec
-import it.airgap.beaconsdk.internal.utils.asHexString
+import it.airgap.beaconsdk.internal.utils.toHexString
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
@@ -28,7 +28,7 @@ internal class CompatEncryptedFileManager(private val context: Context, private 
 
     override suspend fun read(fileName: String, keyAlias: String): ByteArray? {
         val fileNameHash = hashForKey(fileName)
-        val file = file(fileNameHash.asHexString().asString(), keyAlias)
+        val file = file(fileNameHash.toHexString().asString(), keyAlias)
         if (!file.exists()) return null
 
         val fsCipher = cipher(Cipher.DECRYPT_MODE, keyAlias) ?: return null
@@ -51,7 +51,7 @@ internal class CompatEncryptedFileManager(private val context: Context, private 
 
     override suspend fun write(fileName: String, keyAlias: String, data: ByteArray) {
         val fileNameHash = hashForKey(fileName)
-        val file = file(fileNameHash.asHexString().asString(), keyAlias)
+        val file = file(fileNameHash.toHexString().asString(), keyAlias)
         val fsCipher = cipher(Cipher.ENCRYPT_MODE, keyAlias) ?: return
         val fsCipherOutputStream = CipherOutputStream(file.outputStream(), fsCipher)
 

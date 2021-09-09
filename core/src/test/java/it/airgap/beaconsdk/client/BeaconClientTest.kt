@@ -21,9 +21,8 @@ import it.airgap.beaconsdk.internal.storage.MockSecureStorage
 import it.airgap.beaconsdk.internal.storage.MockStorage
 import it.airgap.beaconsdk.internal.storage.StorageManager
 import it.airgap.beaconsdk.internal.utils.AccountUtils
-import it.airgap.beaconsdk.internal.utils.Failure
-import it.airgap.beaconsdk.internal.utils.Success
 import it.airgap.beaconsdk.internal.utils.splitAt
+import it.airgap.beaconsdk.internal.utils.success
 import it.airgap.beaconsdk.message.AcknowledgeBeaconResponse
 import it.airgap.beaconsdk.message.BeaconMessage
 import it.airgap.beaconsdk.message.DisconnectBeaconMessage
@@ -71,16 +70,16 @@ internal class BeaconClientTest {
         MockKAnnotations.init(this)
 
         coEvery { messageController.onIncomingMessage(any(), any()) } coAnswers {
-            Success(secondArg<VersionedBeaconMessage>().toBeaconMessage(firstArg(), storageManager))
+            Result.success(secondArg<VersionedBeaconMessage>().toBeaconMessage(firstArg(), storageManager))
         }
 
         coEvery { messageController.onOutgoingMessage(any(), any(), any()) } coAnswers {
-            Success(Pair(secondArg<BeaconMessage>().associatedOrigin, versionedBeaconMessage(secondArg(), beaconId)))
+            Result.success(Pair(secondArg<BeaconMessage>().associatedOrigin, versionedBeaconMessage(secondArg(), beaconId)))
         }
 
-        coEvery { connectionController.send(any()) } coAnswers { Success() }
+        coEvery { connectionController.send(any()) } coAnswers { Result.success() }
 
-        every { crypto.guid() } returns Success("guid")
+        every { crypto.guid() } returns Result.success("guid")
 
         storageManager = StorageManager(MockStorage(), MockSecureStorage(), accountUtils)
         beaconClient = BeaconClient(appName, beaconId, connectionController, messageController, storageManager, crypto)
@@ -117,7 +116,7 @@ internal class BeaconClientTest {
     @Test
     fun `responds to request`() {
         runBlockingTest {
-            coEvery { connectionController.send(any()) } returns Success()
+            coEvery { connectionController.send(any()) } returns Result.success()
 
             val origin = Origin.P2P(dAppId)
             val responses = beaconResponses(version = dAppVersion, requestOrigin = origin).shuffled()
@@ -143,7 +142,7 @@ internal class BeaconClientTest {
             val exception = Exception()
 
             every { connectionController.subscribe() } answers { beaconMessageFlow }
-            coEvery { messageController.onIncomingMessage(any(), any()) } returns Failure(exception)
+            coEvery { messageController.onIncomingMessage(any(), any()) } returns Result.failure(exception)
 
             val errors =
                 beaconClient.connect()
@@ -165,7 +164,7 @@ internal class BeaconClientTest {
     fun `fails to respond when outgoing message processing failed with internal error`() {
         runBlockingTest {
             val error = IllegalStateException()
-            coEvery { messageController.onOutgoingMessage(any(), any(), any()) } returns Failure(error)
+            coEvery { messageController.onOutgoingMessage(any(), any(), any()) } returns Result.failure(error)
 
             beaconResponses().forEach {
                 val exception = assertFailsWith<BeaconException> { beaconClient.respond(it) }
@@ -179,7 +178,7 @@ internal class BeaconClientTest {
     fun `fails to respond when message sending failed`() {
         val error = IOException()
         runBlockingTest {
-            coEvery { connectionController.send(any()) } returns Failure(error)
+            coEvery { connectionController.send(any()) } returns Result.failure(error)
 
             val responses = beaconResponses().shuffled()
 
@@ -267,7 +266,7 @@ internal class BeaconClientTest {
             val (toKeep, toRemove) = p2pPeers(4).splitAt { it.size / 2 }
 
             val expectedDisconnectMessages =
-                toRemove.map { DisconnectBeaconMessage(crypto.guid().get(), beaconId, it.version, Origin.forPeer(it)) }
+                toRemove.map { DisconnectBeaconMessage(crypto.guid().getOrThrow(), beaconId, it.version, Origin.forPeer(it)) }
             val expectedConnectionMessages =
                 expectedDisconnectMessages.map { BeaconConnectionMessage(it.origin to VersionedBeaconMessage.fromBeaconMessage(beaconId, it)) }
 
@@ -306,7 +305,7 @@ internal class BeaconClientTest {
             val peers = p2pPeers(4)
 
             val expectedDisconnectMessages =
-                peers.map { DisconnectBeaconMessage(crypto.guid().get(), beaconId, it.version, Origin.forPeer(it)) }
+                peers.map { DisconnectBeaconMessage(crypto.guid().getOrThrow(), beaconId, it.version, Origin.forPeer(it)) }
             val expectedConnectionMessages =
                 expectedDisconnectMessages.map { BeaconConnectionMessage(it.origin to VersionedBeaconMessage.fromBeaconMessage(beaconId, it)) }
 

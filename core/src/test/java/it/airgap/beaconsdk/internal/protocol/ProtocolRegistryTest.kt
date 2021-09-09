@@ -52,6 +52,6 @@ internal class ProtocolRegistryTest {
     }
 
     private val typesWithClasses: List<Pair<Protocol.Type, KClass<out Protocol>>> = listOf(
-        Protocol.Type.Tezos to TezosProtocol::class,
+        Protocol.Type.Tezos to Tezos::class,
     )
 }
