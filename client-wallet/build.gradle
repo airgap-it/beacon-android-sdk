@@ -1,7 +1,6 @@
 plugins {
     id 'com.android.library'
     id 'kotlin-android'
-    id 'kotlinx-serialization'
 }
 
 android {
@@ -56,10 +55,13 @@ dependencies {
     implementation(Dependencies.androidxCore)
     implementation(Dependencies.androidxAppCompat)
 
-    // Serialization
-    implementation(Dependencies.kotlinxSerializationJson)
+    // Coroutines
+    implementation(Dependencies.kotlinxCoroutines)
+    implementation(Dependencies.kotlinxCoroutinesAndroid)
 
     // Test
+    testImplementation project(path: ':core')
+
     testImplementation(TestDependencies.kotlinTest)
     testImplementation(TestDependencies.kotlinxCoroutinesTest)
 

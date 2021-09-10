@@ -15,7 +15,7 @@ internal class DisposableTest {
 
     @Test
     fun `returns and removes its value`() {
-        val testValue = "test"
+        val testValue = "utils"
 
         var value by disposable<String>()
         value = testValue

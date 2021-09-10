@@ -35,7 +35,7 @@ public sealed class Peer {
  */
 @Serializable
 @SerialName("p2p")
-public data class P2pPeer internal constructor(
+public data class P2pPeer(
     override val id: String? = null,
     override val name: String,
     override val publicKey: String,

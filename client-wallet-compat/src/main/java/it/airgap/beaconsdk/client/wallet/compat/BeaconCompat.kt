@@ -1,4 +1,4 @@
-package it.airgap.beaconsdk.core.compat.client
+package it.airgap.beaconsdk.client.wallet.compat
 
 import kotlinx.coroutines.*
 

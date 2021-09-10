@@ -1,6 +1,6 @@
-package it.airgap.beaconsdk.core.compat.client
+package it.airgap.beaconsdk.client.wallet.compat
 
-import it.airgap.beaconsdk.core.client.BeaconClient
+import it.airgap.beaconsdk.client.wallet.BeaconWalletClient
 import it.airgap.beaconsdk.core.exception.BeaconException
 import it.airgap.beaconsdk.core.message.BeaconMessage
 import it.airgap.beaconsdk.core.message.BeaconResponse
@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.collect
  * Callback to be invoked when [build] finishes execution.
  */
 public interface BuildCallback {
-    public fun onSuccess(beaconClient: BeaconClient)
+    public fun onSuccess(beaconClient: BeaconWalletClient)
     public fun onError(error: Throwable)
     public fun onCancel() {}
 }
@@ -37,7 +37,7 @@ public interface ResponseCallback {
 /**
  * Connects with known peers and listens for incoming messages with the given [listener].
  */
-public fun BeaconClient.connect(listener: OnNewMessageListener) {
+public fun BeaconWalletClient.connect(listener: OnNewMessageListener) {
     val listenerId = BeaconCompat.addListener(listener)
     BeaconCompat.receiveScope {
         try {
@@ -58,14 +58,14 @@ public fun BeaconClient.connect(listener: OnNewMessageListener) {
 /**
  * Removes the given [listener] from the set of listeners receiving updates on incoming messages.
  */
-public fun BeaconClient.disconnect(listener: OnNewMessageListener) {
+public fun BeaconWalletClient.disconnect(listener: OnNewMessageListener) {
     BeaconCompat.removeListener(listener)
 }
 
 /**
  * Cancels all listeners and callbacks.
  */
-public fun BeaconClient.stop() {
+public fun BeaconWalletClient.stop() {
     BeaconCompat.cancelScopes()
 }
 
@@ -74,7 +74,7 @@ public fun BeaconClient.stop() {
  *
  * The method will fail if there is no pending request that matches the [response].
  */
-public fun BeaconClient.respond(response: BeaconResponse, callback: ResponseCallback) {
+public fun BeaconWalletClient.respond(response: BeaconResponse, callback: ResponseCallback) {
     BeaconCompat.sendScope {
         try {
             respond(response)
@@ -88,13 +88,13 @@ public fun BeaconClient.respond(response: BeaconResponse, callback: ResponseCall
 }
 
 /**
- * Builds a new instance of [BeaconClient] and calls the [callback] with the result.
+ * Builds a new instance of [BeaconWalletClient] and calls the [callback] with the result.
  */
-public fun BeaconClient.Builder.build(callback: BuildCallback) {
+public fun BeaconWalletClient.Builder.build(callback: BuildCallback) {
     BeaconCompat.buildScope {
         try {
-            val beaconClient = build()
-            callback.onSuccess(beaconClient)
+            val beaconWalletClient = build()
+            callback.onSuccess(beaconWalletClient)
         } catch (e: CancellationException) {
             callback.onCancel()
         } catch (e: Exception) {

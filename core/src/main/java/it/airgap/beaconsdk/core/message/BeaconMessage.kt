@@ -181,7 +181,7 @@ public data class ChainBeaconResponse(
  */
 @Serializable
 @SerialName("acknowledge")
-internal data class AcknowledgeBeaconResponse(
+public data class AcknowledgeBeaconResponse(
     override val id: String,
     val senderId: String,
     override val version: String,
@@ -209,7 +209,7 @@ internal data class AcknowledgeBeaconResponse(
  */
 @Serializable
 @SerialName("error")
-public data class ErrorBeaconResponse internal constructor(
+public data class ErrorBeaconResponse(
     override val id: String,
     val errorType: BeaconError,
     override val version: String,
@@ -239,7 +239,7 @@ public data class ErrorBeaconResponse internal constructor(
  */
 @Serializable
 @SerialName("disconnect")
-internal data class DisconnectBeaconMessage(
+public data class DisconnectBeaconMessage(
     override val id: String,
     val senderId: String,
     override val version: String,

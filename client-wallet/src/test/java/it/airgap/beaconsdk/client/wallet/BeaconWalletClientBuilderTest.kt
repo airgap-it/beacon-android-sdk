@@ -1,4 +1,4 @@
-package it.airgap.beaconsdk.core.client
+package it.airgap.beaconsdk.client.wallet
 
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
@@ -17,7 +17,7 @@ import org.junit.Test
 import java.security.KeyStore
 import kotlin.test.assertEquals
 
-internal class BeaconClientBuilderTest {
+internal class BeaconWalletClientBuilderTest {
 
     private lateinit var beaconSdk: BeaconSdk
 
@@ -39,13 +39,13 @@ internal class BeaconClientBuilderTest {
     }
 
     @Test
-    fun `builds BeaconClient with default settings`() {
+    fun `builds BeaconWalletClient with default settings`() {
         runBlocking {
-            val beaconClient = BeaconClient.Builder(appName, chains).build()
+            val beaconWalletClient = BeaconWalletClient.Builder(appName, chains).build()
             val defaultConnections = listOf(P2P(BeaconConfiguration.defaultRelayServers))
 
-            assertEquals(appName, beaconClient.name)
-            assertEquals(beaconId, beaconClient.beaconId)
+            assertEquals(appName, beaconWalletClient.name)
+            assertEquals(beaconId, beaconWalletClient.beaconId)
 
             coVerify(exactly = 1) { beaconSdk.init(appName, null, null, chains, ofType(SharedPreferencesStorage::class), ofType(SharedPreferencesSecureStorage::class)) }
             verify(exactly = 1) { dependencyRegistry.connectionController(defaultConnections) }
@@ -53,16 +53,16 @@ internal class BeaconClientBuilderTest {
     }
 
     @Test
-    fun `builds BeaconClient with custom matrix nodes`() {
+    fun `builds BeaconWalletClient with custom matrix nodes`() {
         runBlocking {
             val customConnections = listOf(P2P(listOf("node#1", "node#2")))
 
-            val beaconClient = BeaconClient.Builder(appName, chains).apply {
+            val beaconWalletClient = BeaconWalletClient.Builder(appName, chains).apply {
                 connections = customConnections
             }.build()
 
-            assertEquals(appName, beaconClient.name)
-            assertEquals(beaconId, beaconClient.beaconId)
+            assertEquals(appName, beaconWalletClient.name)
+            assertEquals(beaconId, beaconWalletClient.beaconId)
 
             coVerify(exactly = 1) { beaconSdk.init(appName, null, null, chains, ofType(SharedPreferencesStorage::class), ofType(SharedPreferencesSecureStorage::class)) }
             verify(exactly = 1) { dependencyRegistry.connectionController(customConnections) }
@@ -70,13 +70,13 @@ internal class BeaconClientBuilderTest {
     }
 
     @Test
-    fun `builds BeaconClient with default settings when used as builder function`() {
+    fun `builds BeaconWalletClient with default settings when used as builder function`() {
         runBlocking {
-            val beaconClient = BeaconClient(appName, chains)
+            val beaconWalletClient = BeaconWalletClient(appName, chains)
             val defaultConnections = listOf(P2P(BeaconConfiguration.defaultRelayServers))
 
-            assertEquals(appName, beaconClient.name)
-            assertEquals(beaconId, beaconClient.beaconId)
+            assertEquals(appName, beaconWalletClient.name)
+            assertEquals(beaconId, beaconWalletClient.beaconId)
 
             coVerify(exactly = 1) { beaconSdk.init(appName, null, null, chains, ofType(SharedPreferencesStorage::class), ofType(SharedPreferencesSecureStorage::class)) }
             verify(exactly = 1) { dependencyRegistry.connectionController(defaultConnections) }
@@ -84,14 +84,14 @@ internal class BeaconClientBuilderTest {
     }
 
     @Test
-    fun `builds BeaconClient with custom matrix nodes when used as builder function`() {
+    fun `builds BeaconWalletClient with custom matrix nodes when used as builder function`() {
         runBlocking {
             val customConnections = listOf(P2P(listOf("node#1", "node#2")))
 
-            val beaconClient = BeaconClient(appName, chains) { connections = customConnections }
+            val beaconWalletClient = BeaconWalletClient(appName, chains) { connections = customConnections }
 
-            assertEquals(appName, beaconClient.name)
-            assertEquals(beaconId, beaconClient.beaconId)
+            assertEquals(appName, beaconWalletClient.name)
+            assertEquals(beaconId, beaconWalletClient.beaconId)
 
             coVerify(exactly = 1) { beaconSdk.init(appName, null, null, chains, ofType(SharedPreferencesStorage::class), ofType(SharedPreferencesSecureStorage::class)) }
             verify(exactly = 1) { dependencyRegistry.connectionController(customConnections) }

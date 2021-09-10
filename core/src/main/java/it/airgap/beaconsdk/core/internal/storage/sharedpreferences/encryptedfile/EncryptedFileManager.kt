@@ -1,6 +1,6 @@
 package it.airgap.beaconsdk.core.internal.storage.sharedpreferences.encryptedfile
 
-internal interface EncryptedFileManager {
+public interface EncryptedFileManager {
     @Throws(Exception::class)
     suspend fun read(fileName: String, keyAlias: String): ByteArray?
 

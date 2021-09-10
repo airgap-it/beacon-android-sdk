@@ -11,7 +11,7 @@ import it.airgap.beaconsdk.core.data.beacon.Connection
 public sealed class BeaconException(message: String? = null, cause: Throwable? = null) : Exception(message, cause) {
 
     public companion object {
-        internal fun from(exception: Throwable?): BeaconException =
+        public fun from(exception: Throwable?): BeaconException =
             when {
                 exception is BeaconException -> exception
                 exception != null -> InternalException(cause = exception)

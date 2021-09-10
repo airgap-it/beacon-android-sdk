@@ -1,8 +1,8 @@
-package it.airgap.beaconsdk.core.compat.client
+package it.airgap.beaconsdk.client.wallet.compat
 
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
-import it.airgap.beaconsdk.core.client.BeaconClient
+import it.airgap.beaconsdk.client.wallet.BeaconWalletClient
 import it.airgap.beaconsdk.core.data.beacon.P2P
 import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.BeaconSdk
@@ -19,7 +19,7 @@ import org.junit.Test
 import java.security.KeyStore
 import kotlin.test.assertEquals
 
-internal class BeaconClientBuilderTest {
+internal class BeaconWalletClientBuilderTest {
 
     private lateinit var testDeferred: CompletableDeferred<Unit>
 
@@ -45,20 +45,20 @@ internal class BeaconClientBuilderTest {
     }
 
     @Test
-    fun `builds BeaconClient with default settings`() {
+    fun `builds BeaconWalletClient with default settings`() {
         val defaultConnections = listOf(P2P(BeaconConfiguration.defaultRelayServers))
 
-        var client: BeaconClient? = null
+        var client: BeaconWalletClient? = null
         val callback = spyk<BuildCallback>(object : BuildCallback {
-            override fun onSuccess(beaconClient: BeaconClient) {
-                client = beaconClient
+            override fun onSuccess(beaconWalletClient: BeaconWalletClient) {
+                client = beaconWalletClient
                 testDeferred.complete(Unit)
             }
 
             override fun onError(error: Throwable) = Unit
         })
 
-        BeaconClient.Builder(appName, chains).build(callback)
+        BeaconWalletClient.Builder(appName, chains).build(callback)
 
         runBlocking { testDeferred.await() }
 
@@ -75,20 +75,20 @@ internal class BeaconClientBuilderTest {
     }
 
     @Test
-    fun `builds BeaconClient with custom matrix nodes`() {
+    fun `builds BeaconWalletClient with custom matrix nodes`() {
         val customConnections = listOf(P2P(listOf("node#1", "node#2")))
 
-        var client: BeaconClient? = null
+        var client: BeaconWalletClient? = null
         val callback = spyk<BuildCallback>(object : BuildCallback {
-            override fun onSuccess(beaconClient: BeaconClient) {
-                client = beaconClient
+            override fun onSuccess(beaconWalletClient: BeaconWalletClient) {
+                client = beaconWalletClient
                 testDeferred.complete(Unit)
             }
 
             override fun onError(error: Throwable) = Unit
         })
 
-        BeaconClient.Builder(appName, chains).apply {
+        BeaconWalletClient.Builder(appName, chains).apply {
             connections = customConnections
         }.build(callback)
 

@@ -18,7 +18,7 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
 
-internal class MockChain : Chain<MockChainWallet, MockChainVersionedMessage> {
+public class MockChain : Chain<MockChainWallet, MockChainVersionedMessage> {
     override val wallet: MockChainWallet = MockChainWallet()
     override val messageFactory: MockChainVersionedMessage = MockChainVersionedMessage()
 
@@ -32,12 +32,12 @@ internal class MockChain : Chain<MockChainWallet, MockChainVersionedMessage> {
     }
 }
 
-internal class MockChainWallet : Chain.Wallet {
+public class MockChainWallet : Chain.Wallet {
     override fun addressFromPublicKey(publicKey: String): Result<String> =
         Result.success("@$publicKey")
 }
 
-internal class MockChainVersionedMessage : Chain.MessageFactory {
+public class MockChainVersionedMessage : Chain.MessageFactory {
     override val v1: VersionedBeaconMessage.Factory<BeaconMessage, V1BeaconMessage> =
         object : VersionedBeaconMessage.Factory<BeaconMessage, V1BeaconMessage> {
             override fun serializer(): KSerializer<V1BeaconMessage> =

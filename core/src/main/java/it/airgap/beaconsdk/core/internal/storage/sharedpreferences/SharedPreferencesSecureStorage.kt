@@ -13,7 +13,7 @@ import java.security.KeyStore
 import java.util.*
 
 // TODO: improve error handling
-internal class SharedPreferencesSecureStorage(
+public class SharedPreferencesSecureStorage(
     private val sharedPreferences: SharedPreferences,
     private val encryptedFileManager: EncryptedFileManager,
 ) : SecureStorage {

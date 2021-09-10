@@ -1,11 +1,11 @@
-package it.airgap.beaconsdk.core.compat.client
+package it.airgap.beaconsdk.client.wallet.compat
 
 import beaconConnectionMessageFlow
 import beaconResponses
 import beaconVersionedRequests
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
-import it.airgap.beaconsdk.core.client.BeaconClient
+import it.airgap.beaconsdk.client.wallet.BeaconWalletClient
 import it.airgap.beaconsdk.core.data.beacon.AppMetadata
 import it.airgap.beaconsdk.core.data.beacon.Origin
 import it.airgap.beaconsdk.core.exception.BeaconException
@@ -34,7 +34,7 @@ import versionedBeaconMessage
 import java.io.IOException
 import kotlin.test.assertEquals
 
-internal class BeaconClientTest {
+internal class BeaconWalletClientTest {
 
     @MockK
     private lateinit var connectionController: ConnectionController
@@ -49,7 +49,7 @@ internal class BeaconClientTest {
     private lateinit var crypto: Crypto
 
     private lateinit var storageManager: StorageManager
-    private lateinit var beaconClient: BeaconClient
+    private lateinit var beaconWalletClient: BeaconWalletClient
 
     private lateinit var testDeferred: CompletableDeferred<Unit>
 
@@ -80,7 +80,7 @@ internal class BeaconClientTest {
         coEvery { connectionController.send(any()) } coAnswers { Result.success() }
 
         storageManager = StorageManager(MockStorage(), MockSecureStorage(), accountUtils)
-        beaconClient = BeaconClient(appName, beaconId, connectionController, messageController, storageManager, crypto)
+        beaconWalletClient = BeaconWalletClient(appName, beaconId, connectionController, messageController, storageManager, crypto)
 
         testDeferred = CompletableDeferred()
     }
@@ -115,7 +115,7 @@ internal class BeaconClientTest {
                         }
                     }
                 )
-                beaconClient.connect(callback)
+                beaconWalletClient.connect(callback)
                 beaconMessageFlow.tryEmitValues(requests.map { BeaconConnectionMessage(origin, it) })
 
                 testDeferred.await()
@@ -161,7 +161,7 @@ internal class BeaconClientTest {
             val versioned = versionedBeaconMessage(it, beaconId)
             val expected = BeaconConnectionMessage(origin, versioned)
 
-            beaconClient.respond(it, callback)
+            beaconWalletClient.respond(it, callback)
             runBlocking { testDeferred.await() }
 
             coVerify { messageController.onOutgoingMessage(any(), it, any()) }
@@ -202,7 +202,7 @@ internal class BeaconClientTest {
                     }
                 )
 
-                beaconClient.connect(callback)
+                beaconWalletClient.connect(callback)
                 beaconMessageFlow.tryEmitValues(requests.map { BeaconConnectionMessage(origin, it) })
 
                 testDeferred.await()
@@ -245,7 +245,7 @@ internal class BeaconClientTest {
         responses.forEach {
             testDeferred = CompletableDeferred()
 
-            beaconClient.respond(it, callback)
+            beaconWalletClient.respond(it, callback)
             runBlocking { testDeferred.await() }
         }
 
@@ -305,13 +305,13 @@ internal class BeaconClientTest {
                     }
                 )
 
-                beaconClient.connect(callback1)
-                beaconClient.connect(callback2)
+                beaconWalletClient.connect(callback1)
+                beaconWalletClient.connect(callback2)
                 beaconMessageFlow.tryEmitValues(requestsForAll.map { BeaconConnectionMessage(origin, it) })
 
                 testDeferred1.await()
 
-                beaconClient.disconnect(callback1)
+                beaconWalletClient.disconnect(callback1)
                 beaconMessageFlow.tryEmitValues(requestsFor2.map { BeaconConnectionMessage(origin, it) })
 
                 testDeferred2.await()
@@ -381,14 +381,14 @@ internal class BeaconClientTest {
                     }
                 )
 
-                beaconClient.connect(callback1)
-                beaconClient.connect(callback2)
+                beaconWalletClient.connect(callback1)
+                beaconWalletClient.connect(callback2)
                 beaconMessageFlow.tryEmitValues(requests.map { BeaconConnectionMessage(origin, it) })
 
                 testDeferred1.await()
                 testDeferred2.await()
 
-                beaconClient.stop()
+                beaconWalletClient.stop()
 
                 val expected1 = requests.map { it.toBeaconMessage(origin, storageManager) }
                 val expected2 = requests.map { it.toBeaconMessage(origin, storageManager) }

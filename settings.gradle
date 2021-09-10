@@ -4,3 +4,5 @@ include ':core'
 include ':chain-tezos'
 
 include ':demo'
+include ':client-wallet'
+include ':client-wallet-compat'
