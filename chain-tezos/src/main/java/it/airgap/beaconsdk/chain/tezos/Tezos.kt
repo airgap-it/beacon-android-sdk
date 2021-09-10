@@ -1,15 +1,15 @@
 package it.airgap.beaconsdk.chain.tezos
 
 import androidx.annotation.RestrictTo
-import it.airgap.beaconsdk.chain.tezos.internal.message.VersionedTezosMessage
+import it.airgap.beaconsdk.chain.tezos.internal.message.TezosMessageFactory
 import it.airgap.beaconsdk.chain.tezos.internal.wallet.Wallet
 import it.airgap.beaconsdk.core.internal.chain.Chain
 import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 
 public class Tezos internal constructor(
     override val wallet: Wallet,
-    override val versionedMessage: VersionedTezosMessage
-) : Chain<Wallet, VersionedTezosMessage> {
+    override val messageFactory: TezosMessageFactory
+) : Chain<Wallet, TezosMessageFactory> {
 
     public class Factory internal constructor(): Chain.Factory<Tezos> {
         override val identifier: String = IDENTIFIER
@@ -18,18 +18,35 @@ public class Tezos internal constructor(
         override fun create(dependencyRegistry: DependencyRegistry): Tezos =
             with(dependencyRegistry) {
                 val wallet = Wallet(crypto, base58Check)
-                val versionedMessage = VersionedTezosMessage()
+                val versionedMessage = TezosMessageFactory()
 
                 Tezos(wallet, versionedMessage)
             }
     }
 
     internal object PrefixBytes {
-        val tz1: ByteArray = byteArrayOf(6, 161.toByte(), 159.toByte())
+        val tz1: ByteArray = listOf(6, 161, 159).map(Int::toByte).toByteArray()
+        val tz2: ByteArray = listOf(6, 161, 161).map(Int::toByte).toByteArray()
+        val tz3: ByteArray = listOf(6, 161, 164).map(Int::toByte).toByteArray()
+
+        val kt: ByteArray = byteArrayOf(2, 90, 121)
+
+        val edpk: ByteArray = listOf(13, 15, 37, 217).map(Int::toByte).toByteArray()
+        val edsk: ByteArray = listOf(43, 246, 78, 7).map(Int::toByte).toByteArray()
+        val edsig: ByteArray = listOf(9, 245, 205, 134, 18).map(Int::toByte).toByteArray()
+
     }
 
     internal object Prefix {
+        const val tz1: String = "tz1"
+        const val tz2: String = "tz2"
+        const val tz3: String = "tz3"
+
+        const val kt1: String = "kt1"
+
         const val edpk: String = "edpk"
+        const val edsk: String = "edsk"
+        const val edsig: String = "edsig"
     }
 
     public companion object {
@@ -38,5 +55,4 @@ public class Tezos internal constructor(
 }
 
 private var factory: Tezos.Factory? = null
-
 public fun tezos(): Tezos.Factory = factory ?: Tezos.Factory().also { factory = it }

@@ -84,8 +84,8 @@ public abstract class V2BeaconMessage : VersionedBeaconMessage() {
         private val chain: Chain<*, *>
             get() = chainRegistry.get(CHAIN_IDENTIFIER) ?: failWithChainNotFound(CHAIN_IDENTIFIER)
 
-        override fun from(senderId: String, content: BeaconMessage): V2BeaconMessage = chain.versionedMessage.v2.from(senderId, content)
-        override fun serializer(): KSerializer<V2BeaconMessage> = chain.versionedMessage.v2.serializer()
+        override fun from(senderId: String, content: BeaconMessage): V2BeaconMessage = chain.messageFactory.v2.from(senderId, content)
+        override fun serializer(): KSerializer<V2BeaconMessage> = chain.messageFactory.v2.serializer()
     }
 }
 

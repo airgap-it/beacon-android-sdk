@@ -20,7 +20,7 @@ import kotlinx.serialization.json.*
 
 internal class MockChain : Chain<MockChainWallet, MockChainVersionedMessage> {
     override val wallet: MockChainWallet = MockChainWallet()
-    override val versionedMessage: MockChainVersionedMessage = MockChainVersionedMessage()
+    override val messageFactory: MockChainVersionedMessage = MockChainVersionedMessage()
 
     class Factory : Chain.Factory<MockChain> {
         override val identifier: String = IDENTIFIER
@@ -37,7 +37,7 @@ internal class MockChainWallet : Chain.Wallet {
         Result.success("@$publicKey")
 }
 
-internal class MockChainVersionedMessage : Chain.VersionedMessage {
+internal class MockChainVersionedMessage : Chain.MessageFactory {
     override val v1: VersionedBeaconMessage.Factory<BeaconMessage, V1BeaconMessage> =
         object : VersionedBeaconMessage.Factory<BeaconMessage, V1BeaconMessage> {
             override fun serializer(): KSerializer<V1BeaconMessage> =

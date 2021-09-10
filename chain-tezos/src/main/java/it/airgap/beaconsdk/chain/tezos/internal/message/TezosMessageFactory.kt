@@ -8,7 +8,7 @@ import it.airgap.beaconsdk.core.internal.message.v1.V1BeaconMessage
 import it.airgap.beaconsdk.core.internal.message.v2.V2BeaconMessage
 import it.airgap.beaconsdk.core.message.BeaconMessage
 
-public class VersionedTezosMessage internal constructor() : Chain.VersionedMessage {
+public class TezosMessageFactory internal constructor() : Chain.MessageFactory {
     override val v1: VersionedBeaconMessage.Factory<BeaconMessage, V1BeaconMessage>
         get() = V1TezosMessage.Companion
 

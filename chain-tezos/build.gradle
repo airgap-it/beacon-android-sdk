@@ -59,6 +59,10 @@ dependencies {
     // Serialization
     implementation(Dependencies.kotlinxSerializationJson)
 
+    // Coroutines
+    implementation(Dependencies.kotlinxCoroutines)
+    implementation(Dependencies.kotlinxCoroutinesAndroid)
+
     // Test
     testImplementation(TestDependencies.kotlinTest)
 

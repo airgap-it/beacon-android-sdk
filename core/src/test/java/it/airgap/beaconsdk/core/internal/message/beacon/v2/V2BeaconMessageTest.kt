@@ -46,8 +46,6 @@ internal class V2BeaconMessageTest {
 
     private val mockChain: MockChain = MockChain()
 
-    private val json: Json = Json { ignoreUnknownKeys = true }
-
     @Before
     fun setup() {
         MockKAnnotations.init(this)
@@ -68,7 +66,7 @@ internal class V2BeaconMessageTest {
     @Test
     fun `is deserialized from JSON`() {
         messagesWithJsonStrings() + messagesWithJsonStrings(includeNulls = true)
-            .map { json.decodeFromString<V2BeaconMessage>(it.second) to it.first }
+            .map { Json.decodeFromString<V2BeaconMessage>(it.second) to it.first }
             .forEach {
                 assertEquals(it.second, it.first)
             }
@@ -77,8 +75,8 @@ internal class V2BeaconMessageTest {
     @Test
     fun `serializes to JSON`() {
         messagesWithJsonStrings()
-            .map { json.decodeFromString(JsonObject.serializer(), json.encodeToString(it.first)) to
-                    json.decodeFromString(JsonObject.serializer(), it.second) }
+            .map { Json.decodeFromString(JsonObject.serializer(), Json.encodeToString(it.first)) to
+                    Json.decodeFromString(JsonObject.serializer(), it.second) }
             .forEach {
                 assertEquals(it.second, it.first)
             }
@@ -184,9 +182,9 @@ internal class V2BeaconMessageTest {
                 "version": "$version",
                 "id": "$id",
                 "senderId": "$senderId",
-                "appMetadata": ${json.encodeToString(appMetadata)},
-                "network": ${json.encodeToString(network)},
-                "scopes": ${json.encodeToString(scopes)}
+                "appMetadata": ${Json.encodeToString(appMetadata)},
+                "network": ${Json.encodeToString(network)},
+                "scopes": ${Json.encodeToString(scopes)}
             }
         """.trimIndent()
 
@@ -204,8 +202,8 @@ internal class V2BeaconMessageTest {
             id,
             senderId,
             mapOf(
-                "network" to json.encodeToJsonElement(network),
-                "operationDetails" to json.encodeToJsonElement(tezosOperations),
+                "network" to Json.encodeToJsonElement(network),
+                "operationDetails" to Json.encodeToJsonElement(tezosOperations),
                 "sourceAddress" to JsonPrimitive(sourceAddress),
             ),
         ) to """
@@ -214,8 +212,8 @@ internal class V2BeaconMessageTest {
                 "version": "$version",
                 "id": "$id",
                 "senderId": "$senderId",
-                "network": ${json.encodeToString(network)},
-                "operationDetails": ${json.encodeToString(tezosOperations)},
+                "network": ${Json.encodeToString(network)},
+                "operationDetails": ${Json.encodeToString(tezosOperations)},
                 "sourceAddress": "$sourceAddress"
             }
         """.trimIndent()
@@ -234,7 +232,7 @@ internal class V2BeaconMessageTest {
             id,
             senderId,
             mapOf(
-                "signingType" to json.encodeToJsonElement(signingType),
+                "signingType" to Json.encodeToJsonElement(signingType),
                 "payload" to JsonPrimitive(payload),
                 "sourceAddress" to JsonPrimitive(sourceAddress),
             )
@@ -244,7 +242,7 @@ internal class V2BeaconMessageTest {
                 "version": "$version",
                 "id": "$id",
                 "senderId": "$senderId",
-                "signingType": ${json.encodeToString(signingType)},
+                "signingType": ${Json.encodeToString(signingType)},
                 "payload": "$payload",
                 "sourceAddress": "$sourceAddress"
             }
@@ -263,7 +261,7 @@ internal class V2BeaconMessageTest {
             id,
             senderId,
             mapOf(
-                "network" to json.encodeToJsonElement(network),
+                "network" to Json.encodeToJsonElement(network),
                 "signedTransaction" to JsonPrimitive(signedTransaction),
             )
         ) to """
@@ -272,7 +270,7 @@ internal class V2BeaconMessageTest {
                 "version": "$version",
                 "id": "$id",
                 "senderId": "$senderId",
-                "network": ${json.encodeToString(network)},
+                "network": ${Json.encodeToString(network)},
                 "signedTransaction": "$signedTransaction"
             }
         """.trimIndent()
@@ -295,9 +293,9 @@ internal class V2BeaconMessageTest {
             "id" to id,
             "senderId" to senderId,
             "publicKey" to publicKey,
-            "network" to json.encodeToJsonElement(network),
-            "scopes" to json.encodeToJsonElement(scopes),
-            "threshold" to threshold?.let { json.encodeToJsonElement(it) }
+            "network" to Json.encodeToJsonElement(network),
+            "scopes" to Json.encodeToJsonElement(scopes),
+            "threshold" to threshold?.let { Json.encodeToJsonElement(it) }
         )
 
         val json = JsonObject.fromValues(values, includeNulls).toString()
@@ -342,7 +340,7 @@ internal class V2BeaconMessageTest {
             id,
             senderId,
             mapOf(
-                "signingType" to json.encodeToJsonElement(signingType),
+                "signingType" to Json.encodeToJsonElement(signingType),
                 "signature" to JsonPrimitive(signature),
             ),
         ) to """
@@ -351,7 +349,7 @@ internal class V2BeaconMessageTest {
                 "version": "$version",
                 "id": "$id",
                 "senderId": "$senderId",
-                "signingType": ${json.encodeToString(signingType)},
+                "signingType": ${Json.encodeToString(signingType)},
                 "signature": "$signature"
             }
         """.trimIndent()
@@ -408,7 +406,7 @@ internal class V2BeaconMessageTest {
                 "version": "$version",
                 "id": "$id",
                 "senderId": "$senderId",
-                "errorType": ${json.encodeToString(errorType)}
+                "errorType": ${Json.encodeToString(errorType)}
             }
         """.trimIndent()
 
@@ -438,8 +436,8 @@ internal class V2BeaconMessageTest {
     ): Pair<MockChainVersionedMessage.V2MockBeaconMessage, ChainBeaconRequest> {
         val type = "operation_request"
         val payload = mapOf(
-            "network" to json.encodeToJsonElement(network),
-            "operationDetails" to json.encodeToJsonElement(tezosOperations),
+            "network" to Json.encodeToJsonElement(network),
+            "operationDetails" to Json.encodeToJsonElement(tezosOperations),
             "sourceAddress" to JsonPrimitive(sourceAddress),
         )
 
@@ -472,7 +470,7 @@ internal class V2BeaconMessageTest {
     ): Pair<MockChainVersionedMessage.V2MockBeaconMessage, ChainBeaconRequest> {
         val type = "sign_payload_request"
         val payload = mapOf(
-            "signingType" to json.encodeToJsonElement(signingType),
+            "signingType" to Json.encodeToJsonElement(signingType),
             "payload" to JsonPrimitive(payload),
             "sourceAddress" to JsonPrimitive(sourceAddress),
         )
@@ -505,7 +503,7 @@ internal class V2BeaconMessageTest {
     ): Pair<MockChainVersionedMessage.V2MockBeaconMessage, ChainBeaconRequest> {
         val type = "broadcast_request"
         val payload = mapOf(
-            "network" to json.encodeToJsonElement(network),
+            "network" to Json.encodeToJsonElement(network),
             "signedTransaction" to JsonPrimitive(signedTransaction),
         )
 
@@ -578,7 +576,7 @@ internal class V2BeaconMessageTest {
     ): Pair<MockChainVersionedMessage.V2MockBeaconMessage, ChainBeaconResponse> {
         val type = "sign_payload_response"
         val payload = mapOf(
-            "signingType" to json.encodeToJsonElement(signingType),
+            "signingType" to Json.encodeToJsonElement(signingType),
             "signature" to JsonPrimitive(signature),
         )
 

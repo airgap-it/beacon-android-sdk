@@ -7,15 +7,15 @@ import it.airgap.beaconsdk.core.internal.message.v1.V1BeaconMessage
 import it.airgap.beaconsdk.core.internal.message.v2.V2BeaconMessage
 import it.airgap.beaconsdk.core.message.BeaconMessage
 
-public interface Chain<W : Chain.Wallet, V : Chain.VersionedMessage> {
+public interface Chain<W : Chain.Wallet, MF : Chain.MessageFactory> {
     public val wallet: W
-    public val versionedMessage: V
+    public val messageFactory: MF
 
     public interface Wallet {
         public fun addressFromPublicKey(publicKey: String): Result<String>
     }
 
-    public interface VersionedMessage {
+    public interface MessageFactory {
         public val v1: VersionedBeaconMessage.Factory<BeaconMessage, V1BeaconMessage>
         public val v2: VersionedBeaconMessage.Factory<BeaconMessage, V2BeaconMessage>
     }
