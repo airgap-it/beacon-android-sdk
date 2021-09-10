@@ -5,24 +5,12 @@ import it.airgap.beaconsdk.core.internal.utils.success
 public abstract class VersionedMigration {
     abstract val fromVersion: String
 
-    fun migrationIdentifier(target: Target): String =
+    fun migrationIdentifier(target: Migration.Target): String =
         "from_$fromVersion@${target.identifier}"
 
-    abstract fun targets(target: Target): Boolean
+    abstract fun targets(target: Migration.Target): Boolean
 
-    abstract suspend fun perform(target: Target): Result<Unit>
+    abstract suspend fun perform(target: Migration.Target): Result<Unit>
 
     protected fun skip(): Result<Unit> = Result.success()
-
-    sealed interface Target {
-        val identifier: String
-
-        data class MatrixRelayServer(val matrixNodes: List<String>) : Target {
-            override val identifier: String = IDENTIFIER
-
-            companion object {
-                const val IDENTIFIER = "matrixRelayServer"
-            }
-        }
-    }
 }

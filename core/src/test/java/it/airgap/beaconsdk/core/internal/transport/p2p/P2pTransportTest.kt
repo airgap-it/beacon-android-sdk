@@ -25,7 +25,7 @@ import kotlin.test.assertEquals
 internal class P2pTransportTest {
 
     @MockK
-    private lateinit var p2pClient: P2pClient
+    private lateinit var p2pClient: P2pMatrixClient
 
     @MockK
     private lateinit var accountUtils: AccountUtils

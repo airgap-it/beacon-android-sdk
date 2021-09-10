@@ -46,7 +46,7 @@ internal class P2pClientTest {
     @MockK
     private lateinit var p2pProtocol: P2pCommunicator
 
-    private lateinit var p2pClient: P2pClient
+    private lateinit var p2pClient: P2pMatrixClient
 
     private val userId: String = "userId"
     private val password: String = "password"
@@ -83,7 +83,7 @@ internal class P2pClientTest {
 
         testDeferred = CompletableDeferred()
 
-        p2pClient = P2pClient(matrixClient, p2pStore, p2pCrypto, p2pProtocol)
+        p2pClient = P2pMatrixClient(matrixClient, p2pStore, p2pCrypto, p2pProtocol)
     }
 
     @After

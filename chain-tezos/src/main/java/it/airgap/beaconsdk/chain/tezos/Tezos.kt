@@ -54,5 +54,4 @@ public class Tezos internal constructor(
     }
 }
 
-private var factory: Tezos.Factory? = null
-public fun tezos(): Tezos.Factory = factory ?: Tezos.Factory().also { factory = it }
+public fun tezos(): Tezos.Factory = Tezos.Factory()

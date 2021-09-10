@@ -33,9 +33,7 @@ public class P2pTransport(
     override suspend fun sendMessage(message: ConnectionTransportMessage): Result<Unit> =
         runCatchingFlat {
             val peerPublicKey = message.origin.id
-            val peer =
-                storageManager.findInstancePeer<P2pPeer> { it.publicKey == peerPublicKey }
-                    ?: failWithUnknownPeer(peerPublicKey)
+            val peer = storageManager.findInstancePeer<P2pPeer> { it.publicKey == peerPublicKey } ?: failWithUnknownPeer(peerPublicKey)
 
             return when (message) {
                 is SerializedConnectionMessage -> sendSerializedMessage(message.content, peer)

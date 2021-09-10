@@ -55,3 +55,5 @@ public fun <K, V> MutableMap<K, V>.get(key: K, remove: Boolean = false): V? =
 
 public fun <K, V> MutableMap<K, V>.getOrPutIfNotNull(key: K, defaultValue: () -> V?): V? =
     get(key) ?: defaultValue()?.also { put(key, it) }
+
+public fun <K, V> MutableMap<K, V>.getAndDispose(key: K): V? = get(key)?.also { remove(key) }

@@ -5,6 +5,7 @@ import it.airgap.beaconsdk.core.internal.chain.Chain
 import it.airgap.beaconsdk.core.internal.crypto.Crypto
 import it.airgap.beaconsdk.core.internal.crypto.data.KeyPair
 import it.airgap.beaconsdk.core.internal.data.BeaconApplication
+import it.airgap.beaconsdk.core.internal.di.CoreDependencyRegistry
 import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.core.internal.storage.SecureStorage
 import it.airgap.beaconsdk.core.internal.storage.Storage
@@ -39,7 +40,7 @@ public class BeaconSdk(context: Context) {
     ) {
         if (isInitialized) return
 
-        _dependencyRegistry = DependencyRegistry(chainFactories, storage, secureStorage)
+        _dependencyRegistry = CoreDependencyRegistry(chainFactories, storage, secureStorage)
 
         val storageManager = dependencyRegistry.storageManager
         val crypto = dependencyRegistry.crypto

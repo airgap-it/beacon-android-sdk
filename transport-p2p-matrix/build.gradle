@@ -1,0 +1,75 @@
+plugins {
+    id 'com.android.library'
+    id 'kotlin-android'
+    id 'kotlinx-serialization'
+}
+
+android {
+    compileSdk 30
+
+    defaultConfig {
+        minSdk 21
+        targetSdk 30
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles "consumer-rules.pro"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    flavorDimensions "version"
+    productFlavors {
+        prod {
+            dimension "version"
+            buildConfigField("String", "VERSION_NAME", "\"${defaultConfig.versionName}\"")
+
+        }
+        mock {
+            dimension "version"
+            buildConfigField("String", "VERSION_NAME", "\"${defaultConfig.versionName}-mock\"")
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = '1.8'
+        freeCompilerArgs += '-Xexplicit-api=warning'
+    }
+}
+
+dependencies {
+    implementation project(path: ':core')
+
+    implementation(Dependencies.kotlinStdlib)
+
+    implementation(Dependencies.androidxCore)
+    implementation(Dependencies.androidxAppCompat)
+
+    // Serialization
+    implementation(Dependencies.kotlinxSerializationJson)
+
+    // Coroutines
+    implementation(Dependencies.kotlinxCoroutines)
+    implementation(Dependencies.kotlinxCoroutinesAndroid)
+
+    // Test
+    testImplementation(TestDependencies.kotlinTest)
+    testImplementation(TestDependencies.kotlinxCoroutinesTest)
+
+    testImplementation(TestDependencies.junit)
+    testImplementation(TestDependencies.mockk)
+
+    androidTestImplementation(TestDependencies.androidxJunit)
+    androidTestImplementation(TestDependencies.androidxEspresso)
+}
