@@ -5,7 +5,7 @@ import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.utils.delegate.disposable
 import it.airgap.beaconsdk.core.internal.utils.success
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.MatrixEvent
-import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.MatrixRoom
+import it.airgap.beaconsdk.transport.p2p.matrix.data.MatrixRoom
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.storage.*
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 
-public class MatrixStore(private val storageManager: StorageManager) : Store<MatrixStoreState, MatrixStoreAction>() {
+internal class MatrixStore(private val storageManager: StorageManager) : Store<MatrixStoreState, MatrixStoreAction>() {
     private var initialEvents: List<MatrixEvent>? by disposable()
     private val _events: MutableSharedFlow<MatrixEvent> = MutableSharedFlow(extraBufferCapacity = 64)
     val events: Flow<MatrixEvent>

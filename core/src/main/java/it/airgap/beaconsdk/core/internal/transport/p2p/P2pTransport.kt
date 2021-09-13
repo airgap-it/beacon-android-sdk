@@ -1,14 +1,15 @@
 package it.airgap.beaconsdk.core.internal.transport.p2p
 
-import it.airgap.beaconsdk.core.data.beacon.*
+import it.airgap.beaconsdk.core.data.beacon.Connection
+import it.airgap.beaconsdk.core.data.beacon.Origin
+import it.airgap.beaconsdk.core.data.beacon.P2pPeer
+import it.airgap.beaconsdk.core.data.beacon.selfPaired
 import it.airgap.beaconsdk.core.internal.message.ConnectionMessage
 import it.airgap.beaconsdk.core.internal.message.ConnectionTransportMessage
 import it.airgap.beaconsdk.core.internal.message.SerializedConnectionMessage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.transport.Transport
 import it.airgap.beaconsdk.core.internal.transport.p2p.data.P2pMessage
-import it.airgap.beaconsdk.core.internal.utils.asHexString
-import it.airgap.beaconsdk.core.internal.utils.asHexStringOrNull
 import it.airgap.beaconsdk.core.internal.utils.runCatchingFlat
 import it.airgap.beaconsdk.core.internal.utils.success
 import kotlinx.coroutines.flow.*
@@ -23,10 +24,9 @@ public class P2pTransport(
         storageManager.updatedPeers
             .filterIsInstance<P2pPeer>()
             .onEach { onUpdatedP2pPeer(it) }
-            .filterNot { it.isRemoved }
-            .mapNotNull { it.publicKey.asHexStringOrNull()?.toByteArray() }
-            .filterNot { client.isSubscribed(it) }
-            .flatMapMerge { subscribeToP2pPeer(it) }
+            .filterNot { it.isRemoved || client.isSubscribed(it) }
+            .mapNotNull { client.subscribeTo(it) }
+            .flattenMerge()
             .map { ConnectionMessage.fromResult(it) }
     }
 
@@ -48,7 +48,7 @@ public class P2pTransport(
 
     private suspend fun onUpdatedP2pPeer(peer: P2pPeer) {
         if (!peer.isPaired && !peer.isRemoved) pairP2pPeer(peer)
-        if (peer.isRemoved) unsubscribeFromP2pPeer(peer)
+        if (peer.isRemoved) client.unsubscribeFrom(peer)
     }
 
     private suspend fun pairP2pPeer(peer: P2pPeer) {
@@ -67,14 +67,6 @@ public class P2pTransport(
                 )
             )
         }
-    }
-
-    private fun subscribeToP2pPeer(publicKey: ByteArray): Flow<Result<P2pMessage>> =
-        client.subscribeTo(publicKey)
-
-    private suspend fun unsubscribeFromP2pPeer(peerInfo: Peer) {
-        val publicKey = peerInfo.publicKey.asHexString().toByteArray()
-        client.unsubscribeFrom(publicKey)
     }
 
     private fun failWithUnknownPeer(publicKey: String): Nothing =

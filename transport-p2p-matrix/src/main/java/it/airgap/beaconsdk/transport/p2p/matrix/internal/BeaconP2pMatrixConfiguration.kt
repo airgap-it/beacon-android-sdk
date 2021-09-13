@@ -1,6 +1,6 @@
-package it.airgap.beaconsdk.transport.p2p.matrix
+package it.airgap.beaconsdk.transport.p2p.matrix.internal
 
-public object BeaconP2pMatrixConfiguration {
+internal object BeaconP2pMatrixConfiguration {
     const val MATRIX_API_BASE: String = "/_matrix/client"
     const val MATRIX_API_VERSION: String = "r0"
 

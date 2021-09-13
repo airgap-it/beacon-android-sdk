@@ -8,7 +8,7 @@ import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.login.M
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.network.MatrixService
 import kotlinx.coroutines.flow.single
 
-public class MatrixUserService(httpClient: HttpClient) : MatrixService(httpClient) {
+internal class MatrixUserService(httpClient: HttpClient) : MatrixService(httpClient) {
 
     suspend fun login(
         node: String,

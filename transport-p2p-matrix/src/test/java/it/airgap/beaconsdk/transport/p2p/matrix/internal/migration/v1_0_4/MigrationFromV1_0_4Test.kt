@@ -6,7 +6,7 @@ import it.airgap.beaconsdk.core.internal.storage.MockSecureStorage
 import it.airgap.beaconsdk.core.internal.storage.MockStorage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.utils.AccountUtils
-import it.airgap.beaconsdk.transport.p2p.matrix.BeaconP2pMatrixConfiguration
+import it.airgap.beaconsdk.transport.p2p.matrix.internal.BeaconP2pMatrixConfiguration
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.migration.MatrixMigrationTarget
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.storage.*
 import kotlinx.coroutines.test.runBlockingTest
@@ -31,7 +31,7 @@ internal class MigrationFromV1_0_4Test {
         MockKAnnotations.init(this)
         mockLog()
 
-        storageManager = StorageManager(MockStorage(), MockSecureStorage(), listOf(MockP2pMatrixStoragePlugin()), accountUtils)
+        storageManager = StorageManager(MockStorage(), MockSecureStorage(), accountUtils).apply { addPlugins(MockP2pMatrixStoragePlugin()) }
         migration = MigrationFromV1_0_4(storageManager)
     }
 

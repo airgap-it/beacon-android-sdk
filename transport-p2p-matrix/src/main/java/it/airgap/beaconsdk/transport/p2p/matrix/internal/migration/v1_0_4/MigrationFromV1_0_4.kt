@@ -5,7 +5,7 @@ import it.airgap.beaconsdk.core.internal.migration.VersionedMigration
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.utils.runCatchingFlat
 import it.airgap.beaconsdk.core.internal.utils.success
-import it.airgap.beaconsdk.transport.p2p.matrix.BeaconP2pMatrixConfiguration
+import it.airgap.beaconsdk.transport.p2p.matrix.internal.BeaconP2pMatrixConfiguration
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.migration.MatrixMigrationTarget
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.storage.getMatrixRelayServer
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.storage.getMatrixRooms

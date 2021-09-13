@@ -6,10 +6,11 @@ import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.getSerializable
 import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.putSerializable
 import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.putString
-import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.MatrixRoom
-import it.airgap.beaconsdk.transport.p2p.matrix.internal.storage.P2pMatrixStoragePlugin
+import it.airgap.beaconsdk.transport.p2p.matrix.data.MatrixRoom
+import it.airgap.beaconsdk.transport.p2p.matrix.storage.P2pMatrixStoragePlugin
 
-internal class SharedPreferencesMatrixStoragePlugin(private val sharedPreferences: SharedPreferences) : P2pMatrixStoragePlugin {
+internal class SharedPreferencesMatrixStoragePlugin(private val sharedPreferences: SharedPreferences) :
+    P2pMatrixStoragePlugin {
     override suspend fun getMatrixRelayServer(): String? =
         sharedPreferences.getString(KEY_MATRIX_RELAY_SERVER, null)
 

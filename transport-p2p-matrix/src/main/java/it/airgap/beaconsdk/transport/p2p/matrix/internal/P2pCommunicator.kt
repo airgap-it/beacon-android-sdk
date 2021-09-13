@@ -13,7 +13,7 @@ import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.MatrixEvent
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
-public class P2pCommunicator(private val app: BeaconApplication, private val crypto: Crypto) {
+internal class P2pCommunicator(private val app: BeaconApplication, private val crypto: Crypto) {
     private val keyPair: KeyPair get() = app.keyPair
 
     fun recipientIdentifier(publicKey: ByteArray, relayServer: String): Result<P2pIdentifier> =

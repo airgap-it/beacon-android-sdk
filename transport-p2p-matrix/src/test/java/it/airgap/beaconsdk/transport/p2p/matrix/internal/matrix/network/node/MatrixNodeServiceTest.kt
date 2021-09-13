@@ -5,7 +5,7 @@ import io.mockk.coEvery
 import io.mockk.impl.annotations.MockK
 import it.airgap.beaconsdk.core.internal.network.HttpClient
 import it.airgap.beaconsdk.core.network.provider.HttpProvider
-import it.airgap.beaconsdk.transport.p2p.matrix.BeaconP2pMatrixConfiguration
+import it.airgap.beaconsdk.transport.p2p.matrix.internal.BeaconP2pMatrixConfiguration
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.MatrixError
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.node.MatrixVersionsResponse
 import kotlinx.coroutines.test.runBlockingTest

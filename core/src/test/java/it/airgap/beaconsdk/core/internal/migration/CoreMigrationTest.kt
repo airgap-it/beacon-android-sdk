@@ -29,7 +29,7 @@ internal class CoreMigrationTest {
         MockKAnnotations.init(this)
         mockLog()
 
-        storageManager = StorageManager(MockStorage(), MockSecureStorage(), emptyList(), accountUtils)
+        storageManager = StorageManager(MockStorage(), MockSecureStorage(), accountUtils)
     }
 
     @Test

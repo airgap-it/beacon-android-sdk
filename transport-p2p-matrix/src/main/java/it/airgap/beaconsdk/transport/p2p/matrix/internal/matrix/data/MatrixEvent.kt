@@ -4,7 +4,7 @@ import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.sync.Ma
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.sync.MatrixSyncRooms
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.sync.MatrixSyncStateEvent
 
-public sealed interface MatrixEvent {
+internal sealed interface MatrixEvent {
     val node: String
 
     data class Create(override val node: String, val roomId: String, val creator: String) : MatrixEvent

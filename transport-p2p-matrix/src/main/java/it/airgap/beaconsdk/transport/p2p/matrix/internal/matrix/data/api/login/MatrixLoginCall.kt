@@ -4,7 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-public sealed class MatrixLoginRequest(private val type: Type) {
+internal sealed class MatrixLoginRequest(private val type: Type) {
     abstract val identifier: UserIdentifier
     abstract val deviceId: String?
 
@@ -45,7 +45,7 @@ public sealed class MatrixLoginRequest(private val type: Type) {
 }
 
 @Serializable
-public data class MatrixLoginResponse(
+internal data class MatrixLoginResponse(
     @SerialName("user_id") val userId: String? = null,
     @SerialName("device_id") val deviceId: String? = null,
     @SerialName("access_token") val accessToken: String? = null,

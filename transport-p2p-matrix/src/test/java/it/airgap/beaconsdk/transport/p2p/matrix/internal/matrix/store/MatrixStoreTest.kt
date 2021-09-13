@@ -7,8 +7,8 @@ import it.airgap.beaconsdk.core.internal.storage.MockSecureStorage
 import it.airgap.beaconsdk.core.internal.storage.MockStorage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.utils.AccountUtils
+import it.airgap.beaconsdk.transport.p2p.matrix.data.MatrixRoom
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.MatrixEvent
-import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.MatrixRoom
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.storage.MockP2pMatrixStoragePlugin
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.storage.getMatrixRooms
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.storage.setMatrixRooms
@@ -33,7 +33,7 @@ internal class MatrixStoreTest {
     @Before
     fun setup() {
         MockKAnnotations.init(this)
-        storageManager = spyk(StorageManager(MockStorage(), MockSecureStorage(), listOf(MockP2pMatrixStoragePlugin()), accountUtils))
+        storageManager = spyk(StorageManager(MockStorage(), MockSecureStorage(), accountUtils).apply { addPlugins(MockP2pMatrixStoragePlugin()) })
         matrixStore = MatrixStore(storageManager)
     }
 

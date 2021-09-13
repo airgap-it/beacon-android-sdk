@@ -1,7 +1,8 @@
 package it.airgap.beaconsdk.transport.p2p.matrix.internal.storage
 
-import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.MatrixRoom
+import it.airgap.beaconsdk.transport.p2p.matrix.data.MatrixRoom
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.storage.decorator.DecoratedP2pMatrixStoragePlugin
+import it.airgap.beaconsdk.transport.p2p.matrix.storage.P2pMatrixStoragePlugin
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test

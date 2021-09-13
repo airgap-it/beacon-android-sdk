@@ -1,6 +1,7 @@
 package it.airgap.beaconsdk.transport.p2p.matrix.internal.storage
 
-import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.MatrixRoom
+import it.airgap.beaconsdk.transport.p2p.matrix.data.MatrixRoom
+import it.airgap.beaconsdk.transport.p2p.matrix.storage.P2pMatrixStoragePlugin
 
 internal class MockP2pMatrixStoragePlugin : P2pMatrixStoragePlugin {
     private var matrixRelayServer: String? = null

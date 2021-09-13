@@ -64,7 +64,7 @@ internal class P2pStoreTest {
             Result.success(P2pIdentifier(firstArg(), secondArg()))
         }
 
-        storageManager = spyk(StorageManager(MockStorage(), MockSecureStorage(), listOf(MockP2pMatrixStoragePlugin()), accountUtils))
+        storageManager = spyk(StorageManager(MockStorage(), MockSecureStorage(), accountUtils).apply { addPlugins(MockP2pMatrixStoragePlugin()) })
         p2pStore = P2pStore(app, p2pProtocol, matrixClient, matrixNodes, storageManager, migration)
     }
 

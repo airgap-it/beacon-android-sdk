@@ -41,7 +41,7 @@ internal class P2pTransportTest {
 
         coEvery { p2pClient.sendPairingResponse(any()) } returns Result.success()
 
-        storageManager = StorageManager(MockStorage(), MockSecureStorage(), emptyList(), accountUtils)
+        storageManager = StorageManager(MockStorage(), MockSecureStorage(), accountUtils)
         p2pTransport = P2pTransport(storageManager, p2pClient)
     }
 
@@ -55,11 +55,10 @@ internal class P2pTransportTest {
         val peers = validKnownPeers
         val peersPublicKeys = peers.map { it.publicKey.asHexString().toByteArray() }
 
-        val (transportMessages, transportMessageFlows) =
-            messagesAndFlows(peersPublicKeys)
+        val (transportMessages, transportMessageFlows) = messagesAndFlows(peersPublicKeys)
 
         every { p2pClient.isSubscribed(any()) } returns false
-        every { p2pClient.subscribeTo(any()) } answers { transportMessageFlows.getValue(firstArg<ByteArray>().toHexString().asString()) }
+        every { p2pClient.subscribeTo(any()) } answers { transportMessageFlows.getValue(firstArg<P2pPeer>().publicKey.asHexString().asString()) }
 
         runBlocking { storageManager.setPeers(peers) }
 
@@ -72,7 +71,7 @@ internal class P2pTransportTest {
                 .take(transportMessages.size)
                 .toList()
         }
-        verify(exactly = peers.size) { p2pClient.subscribeTo(match { peersPublicKeys.containsLike(it) }) }
+        verify(exactly = peers.size) { p2pClient.subscribeTo(match { peersPublicKeys.containsLike(it.publicKey.asHexString().toByteArray()) }) }
         assertEquals(expected.sortedBy { it.content }, messages.sortedBy { it.content })
     }
 
@@ -82,11 +81,10 @@ internal class P2pTransportTest {
         val subscribedPublicKeys = subscribed.map { it.publicKey.asHexString().toByteArray() }
         val unsubscribedPublicKeys = unsubscribed.map { it.publicKey.asHexString().toByteArray() }
 
-        val (transportMessages, transportMessageFlows) =
-            messagesAndFlows(subscribedPublicKeys + unsubscribedPublicKeys)
+        val (transportMessages, transportMessageFlows) = messagesAndFlows(subscribedPublicKeys + unsubscribedPublicKeys)
 
         every { p2pClient.isSubscribed(any()) } returns false
-        every { p2pClient.subscribeTo(any()) } answers { transportMessageFlows.getValue(firstArg<ByteArray>().toHexString().asString()) }
+        every { p2pClient.subscribeTo(any()) } answers { transportMessageFlows.getValue(firstArg<P2pPeer>().publicKey.asHexString().asString()) }
         coEvery { p2pClient.unsubscribeFrom(any()) } returns Unit
 
         runBlocking { storageManager.setPeers(subscribed + unsubscribed) }
@@ -101,7 +99,7 @@ internal class P2pTransportTest {
                 .collect()
         }
 
-        coVerify(exactly = unsubscribed.size) { p2pClient.unsubscribeFrom(match { unsubscribedPublicKeys.containsLike(it) }) }
+        coVerify(exactly = unsubscribed.size) { p2pClient.unsubscribeFrom(match { unsubscribedPublicKeys.containsLike(it.publicKey.asHexString().toByteArray()) }) }
     }
 
     @Test
@@ -126,11 +124,10 @@ internal class P2pTransportTest {
         val peers = validKnownPeers
         val peersPublicKeys = peers.map { it.publicKey.asHexString().toByteArray() }
 
-        val (transportMessages, transportMessageFlows) =
-            messagesAndFlows(peersPublicKeys)
+        val (transportMessages, transportMessageFlows) = messagesAndFlows(peersPublicKeys)
 
         every { p2pClient.isSubscribed(any()) } returns false
-        every { p2pClient.subscribeTo(any()) } answers { transportMessageFlows.getValue(firstArg<ByteArray>().toHexString().asString()) }
+        every { p2pClient.subscribeTo(any()) } answers { transportMessageFlows.getValue(firstArg<P2pPeer>().publicKey.asHexString().asString()) }
 
         val expected = transportMessages.map { SerializedConnectionMessage(Origin.P2P(it.id), it.content) }
 
@@ -149,7 +146,7 @@ internal class P2pTransportTest {
             assertEquals(expected.sortedBy { it.content }, messages.await().sortedBy { it.content })
             verify(exactly = peers.size) {
                 p2pClient.subscribeTo(
-                    match { peersPublicKeys.map(ByteArray::toHexString).contains(it.toHexString()) }
+                    match { peersPublicKeys.containsLike(it.publicKey.asHexString().toByteArray()) }
                 )
             }
         }
@@ -160,11 +157,10 @@ internal class P2pTransportTest {
         val peers = validNewPeers
         val peersPublicKeys = peers.map { it.publicKey.asHexString().toByteArray() }
 
-        val (transportMessages, transportMessageFlows) =
-            messagesAndFlows(peersPublicKeys)
+        val (transportMessages, transportMessageFlows) = messagesAndFlows(peersPublicKeys)
 
         every { p2pClient.isSubscribed(any()) } returns false
-        every { p2pClient.subscribeTo(any()) } answers { transportMessageFlows.getValue(firstArg<ByteArray>().toHexString().asString()) }
+        every { p2pClient.subscribeTo(any()) } answers { transportMessageFlows.getValue(firstArg<P2pPeer>().publicKey.asHexString().asString()) }
 
         runBlocking {
             val messages = async {
@@ -197,11 +193,10 @@ internal class P2pTransportTest {
         val peers = validKnownPeers
         val peersPublicKeys = peers.map { it.publicKey.asHexString().toByteArray() }
 
-        val (transportMessages, transportMessageFlows) =
-            messagesAndFlows(peersPublicKeys)
+        val (transportMessages, transportMessageFlows) = messagesAndFlows(peersPublicKeys)
 
         every { p2pClient.isSubscribed(any()) } returns false
-        every { p2pClient.subscribeTo(any()) } answers { transportMessageFlows.getValue(firstArg<ByteArray>().toHexString().asString()) }
+        every { p2pClient.subscribeTo(any()) } answers { transportMessageFlows.getValue(firstArg<P2pPeer>().publicKey.asHexString().asString()) }
 
         runBlocking {
             storageManager.setPeers(peers)
@@ -226,12 +221,11 @@ internal class P2pTransportTest {
         val peers = validNewPeers
         val peersPublicKeys = peers.map { it.publicKey.asHexString().toByteArray() }
 
-        val (transportMessages, transportMessageFlows) =
-            messagesAndFlows(peersPublicKeys)
+        val (transportMessages, transportMessageFlows) = messagesAndFlows(peersPublicKeys)
 
         every { p2pClient.isSubscribed(any()) } returns false
         coEvery { p2pClient.sendPairingResponse(any()) } returns Result.failure()
-        every { p2pClient.subscribeTo(any()) } answers { transportMessageFlows.getValue(firstArg<ByteArray>().toHexString().asString()) }
+        every { p2pClient.subscribeTo(any()) } answers { transportMessageFlows.getValue(firstArg<P2pPeer>().publicKey.asHexString().asString()) }
 
         runBlocking {
             val messages = async {
@@ -257,14 +251,12 @@ internal class P2pTransportTest {
     @Test
     fun `does not subscribe to already subscribed peer`() {
         val (subscribedPeers, newPeers) = validKnownPeers.splitAt { it.size / 2 }
-        val subscribedPublicKeys = subscribedPeers.map { it.publicKey.asHexString().toByteArray() }
         val newPublicKeys = newPeers.map { it.publicKey.asHexString().toByteArray() }
 
-        val (transportMessages, transportMessageFlows) =
-            messagesAndFlows(newPublicKeys)
+        val (transportMessages, transportMessageFlows) = messagesAndFlows(newPublicKeys)
 
-        every { p2pClient.isSubscribed(any()) } answers { subscribedPublicKeys.containsLike(firstArg()) }
-        every { p2pClient.subscribeTo(any()) } answers { transportMessageFlows.getValue(firstArg<ByteArray>().toHexString().asString()) }
+        every { p2pClient.isSubscribed(any()) } answers { subscribedPeers.contains(firstArg()) }
+        every { p2pClient.subscribeTo(any()) } answers { transportMessageFlows.getValue(firstArg<P2pPeer>().publicKey.asHexString().asString()) }
 
         runBlocking {
             val messages = async {
@@ -287,7 +279,7 @@ internal class P2pTransportTest {
 
             fromStorage.await()
 
-            coVerify(exactly = newPeers.size) { p2pClient.subscribeTo(match { newPublicKeys.containsLike(it) }) }
+            coVerify(exactly = newPeers.size) { p2pClient.subscribeTo(match { newPublicKeys.containsLike(it.publicKey.asHexString().toByteArray()) }) }
             verify(exactly = subscribedPeers.size + newPeers.size) { p2pClient.isSubscribed(any()) }
         }
     }

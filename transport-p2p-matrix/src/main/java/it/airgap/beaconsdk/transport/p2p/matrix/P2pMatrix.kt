@@ -6,34 +6,39 @@ import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.core.internal.transport.p2p.P2pClient
 import it.airgap.beaconsdk.core.internal.transport.p2p.data.P2pMessage
 import it.airgap.beaconsdk.core.internal.utils.*
+import it.airgap.beaconsdk.core.internal.utils.delegate.default
 import it.airgap.beaconsdk.core.network.provider.HttpProvider
+import it.airgap.beaconsdk.transport.p2p.matrix.data.MatrixRoom
+import it.airgap.beaconsdk.transport.p2p.matrix.internal.BeaconP2pMatrixConfiguration
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.P2pCommunicator
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.P2pCrypto
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.di.ExtendedDependencyRegistry
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.di.extend
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.MatrixClient
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.MatrixEvent
-import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.MatrixRoom
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.MatrixError
-import it.airgap.beaconsdk.transport.p2p.matrix.internal.storage.P2pMatrixStoragePlugin
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.storage.sharedpreferences.SharedPreferencesMatrixStoragePlugin
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.store.*
+import it.airgap.beaconsdk.transport.p2p.matrix.storage.P2pMatrixStoragePlugin
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.util.*
 
-public class P2pMatrixClient(
-    private val matrixClient: MatrixClient,
+/**
+ * Beacon P2P implementation that uses [Matrix](https://matrix.org/) network for the communication.
+ */
+public class P2pMatrix internal constructor(
+    private val matrix: MatrixClient,
     private val store: P2pStore,
     private val crypto: P2pCrypto,
     private val communicator: P2pCommunicator,
 ) : P2pClient {
     private val matrixEvents: Flow<MatrixEvent> by lazy {
-        matrixClient.events
+        matrix.events
             .filter { event -> store.state().map { it.relayServer == event.node }.getOrDefault(true) }
-            .onStart { tryLog(TAG) { matrixClient.start() } }
+            .onStart { tryLog(TAG) { matrix.start() } }
     }
 
     private val matrixMessageEvents: Flow<MatrixEvent.TextMessage> get() = matrixEvents.filterIsInstance()
@@ -44,9 +49,21 @@ public class P2pMatrixClient(
 
     private val startMutex: Mutex = Mutex()
 
-    override fun isSubscribed(publicKey: ByteArray): Boolean = subscribedFlows.containsKey(publicKey)
+    /**
+     * Checks if [peer] has been already subscribed.
+     */
+    override fun isSubscribed(peer: P2pPeer): Boolean {
+        val publicKey = peer.publicKey.asHexStringOrNull() ?: return false
 
-    override fun subscribeTo(publicKey: ByteArray): Flow<Result<P2pMessage>> {
+        return subscribedFlows.containsKey(publicKey)
+    }
+
+    /**
+     * Subscribes to a [peer] returning a [Flow] of received [P2pMessage]
+     * instances identified as sent by the subscribed peer or occurred errors represented as a [Result].
+     */
+    override fun subscribeTo(peer: P2pPeer): Flow<Result<P2pMessage>>? {
+        val publicKey = peer.publicKey.asHexStringOrNull()?.toByteArray() ?: return null
         val identifier = UUID.randomUUID().toString().also { subscribedFlows.addTo(publicKey, it) }
 
         return flow {
@@ -66,22 +83,33 @@ public class P2pMatrixClient(
         }
     }
 
-    override suspend fun unsubscribeFrom(publicKey: ByteArray) {
+    /**
+     * Removes an active subscription for the [peer].
+     */
+    override suspend fun unsubscribeFrom(peer: P2pPeer) {
+        val publicKey = peer.publicKey.asHexStringOrNull() ?: return
+
         subscribedFlows.remove(publicKey)
         if (subscribedFlows.isEmpty()) {
-            matrixClient.stop()
+            matrix.stop()
         }
     }
 
+    /**
+     * Sends a text message to the specified [peer].
+     */
     override suspend fun sendTo(peer: P2pPeer, message: String): Result<Unit> =
         runCatching {
             val publicKey = peer.publicKey.asHexString().toByteArray()
             val recipient = communicator.recipientIdentifier(publicKey, peer.relayServer).getOrThrow()
             val encrypted = crypto.encrypt(publicKey, message).getOrThrow()
 
-            matrixClient.sendTextMessageTo(recipient.asString(), encrypted).getOrThrow()
+            matrix.sendTextMessageTo(recipient.asString(), encrypted).getOrThrow()
         }
 
+    /**
+     * Sends a pairing message to the specified [peer].
+     */
     override suspend fun sendPairingResponse(peer: P2pPeer): Result<Unit> =
         runCatching {
             val publicKey = peer.publicKey.asHexString().toByteArray()
@@ -93,7 +121,7 @@ public class P2pMatrixClient(
             ).getOrThrow()
             val message = communicator.channelOpeningMessage(recipient.asString(), payload.toHexString().asString())
 
-            matrixClient.sendTextMessageTo(recipient.asString(), message, newRoom = true).getOrThrow()
+            matrix.sendTextMessageTo(recipient.asString(), message, newRoom = true).getOrThrow()
         }
 
     private fun MatrixEvent.isTextMessageFrom(publicKey: ByteArray): Boolean =
@@ -119,7 +147,7 @@ public class P2pMatrixClient(
                 val relayServer = store.state().getOrThrow().relayServer
                 val password = crypto.password().getOrThrow()
 
-                start(relayServer, id, password, deviceId).onFailure { this@P2pMatrixClient.resetHard() }
+                start(relayServer, id, password, deviceId).onFailure { this@P2pMatrix.resetHard() }
             }.getOrThrow()
 
             CoroutineScope(CoroutineName("collectInviteEvents")).launch {
@@ -137,7 +165,7 @@ public class P2pMatrixClient(
 
     private suspend fun resetHard() {
         store.intent(HardReset)
-        matrixClient.resetHard()
+        matrix.resetHard()
     }
 
     private tailrec suspend fun MatrixClient.joinRoomRepeated(
@@ -232,9 +260,6 @@ public class P2pMatrixClient(
         logDebug(TAG, "$member joined room $id")
     }
 
-    private fun <V> MutableMap<HexString, V>.containsKey(key: ByteArray) = containsKey(key.toHexString())
-    private fun <V> MutableMap<HexString, V>.remove(key: ByteArray): V? = remove(key.toHexString())
-
     private fun <V> MutableMap<HexString, MutableSet<V>>.addTo(key: ByteArray, value: V) {
         getOrPut(key.toHexString()) { mutableSetOf() }.add(value)
     }
@@ -247,35 +272,48 @@ public class P2pMatrixClient(
     private fun failWithJoiningRoomFailed(roomId: String): Nothing = failWith("Failed to join room $roomId.")
     private fun failWithRoomNotFound(member: String): Nothing = failWith("Failed to find room for member $member.")
 
+    /**
+     * Factory for [P2pMatrix].
+     *
+     * @constructor Creates a factory needed for dynamic [P2pMatrix] registration.
+     *
+     * @property [storagePlugin] An optional external implementation of [P2pMatrixStoragePlugin]. If not provided, an internal implementation will be used.
+     * @property [matrixNodes] A list of Matrix nodes used in the connection, set to [BeaconP2pMatrixConfiguration.defaultNodes] by default.
+     * One node will be selected randomly based on the local key pair and used as the primary connection node,
+     * the rest will be used as a fallback if the primary node goes down.
+     * @property [httpProvider] An optional external [HttpProvider] implementation used to make Beacon HTTP requests.
+     */
     public class Factory(
+        storagePlugin: P2pMatrixStoragePlugin? = null,
         private val matrixNodes: List<String> = BeaconP2pMatrixConfiguration.defaultNodes,
         private val httpProvider: HttpProvider? = null
-    ) : P2pClient.Factory<P2pMatrixClient> {
-        init {
-            require(matrixNodes.isNotEmpty())
-        }
-
+    ) : P2pClient.Factory<P2pMatrix> {
         private var _extendedDependencyRegistry: ExtendedDependencyRegistry? = null
         private fun extendedDependencyRegistry(dependencyRegistry: DependencyRegistry): ExtendedDependencyRegistry =
             _extendedDependencyRegistry ?: dependencyRegistry.extend().also { _extendedDependencyRegistry = it }
 
-        override fun create(dependencyRegistry: DependencyRegistry): P2pMatrixClient =
+        private var storagePlugin: P2pMatrixStoragePlugin by default(storagePlugin) { SharedPreferencesMatrixStoragePlugin.create(applicationContext) }
+
+        override fun create(dependencyRegistry: DependencyRegistry): P2pMatrix =
             with(extendedDependencyRegistry(dependencyRegistry)) {
                 with(storageManager) {
-                    if (!hasPlugin<P2pMatrixStoragePlugin>()) addPlugins(SharedPreferencesMatrixStoragePlugin.create(applicationContext))
+                    if (!hasPlugin<P2pMatrixStoragePlugin>()) addPlugins(storagePlugin.extend())
                 }
 
-                val matrixClient = matrixClient(httpProvider)
-
-                val p2pCommunicator = P2pCommunicator(app, crypto)
-                val p2pStore = P2pStore(app, p2pCommunicator, matrixClient, matrixNodes, storageManager, migration)
-                val p2pCrypto = P2pCrypto(app, crypto)
-
-                P2pMatrixClient(matrixClient, p2pStore, p2pCrypto, p2pCommunicator)
+                P2pMatrix(matrixClient(httpProvider), p2pStore(httpProvider, matrixNodes), p2pCrypto, p2pCommunicator)
             }
     }
 
-    companion object {
-        const val TAG = "P2pMatrixClient"
+    public companion object {
+        private const val TAG = "P2pMatrix"
     }
 }
+
+/**
+ * Creates a new instance of [P2pMatrix.Factory] configured with optional [storagePlugin], [matrixNodes] and [httpProvider].
+ */
+public fun p2pMatrix(
+    storagePlugin: P2pMatrixStoragePlugin? = null,
+    matrixNodes: List<String> = BeaconP2pMatrixConfiguration.defaultNodes,
+    httpProvider: HttpProvider? = null,
+): P2pMatrix.Factory = P2pMatrix.Factory(storagePlugin, matrixNodes, httpProvider)

@@ -4,4 +4,4 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-public data class MatrixEventResponse(@SerialName("event_id") val eventId: String? = null)
+internal data class MatrixEventResponse(@SerialName("event_id") val eventId: String? = null)

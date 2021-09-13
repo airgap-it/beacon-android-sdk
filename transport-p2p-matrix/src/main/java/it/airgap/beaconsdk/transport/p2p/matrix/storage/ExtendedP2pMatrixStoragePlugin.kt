@@ -1,4 +1,4 @@
-package it.airgap.beaconsdk.transport.p2p.matrix.internal.storage
+package it.airgap.beaconsdk.transport.p2p.matrix.storage
 
 public interface ExtendedP2pMatrixStoragePlugin : P2pMatrixStoragePlugin {
     public suspend fun removeMatrixRelayServer()

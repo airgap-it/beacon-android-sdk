@@ -1,6 +1,7 @@
 
 import androidx.annotation.IntRange
 import it.airgap.beaconsdk.core.data.beacon.P2pPeer
+import it.airgap.beaconsdk.core.internal.utils.toHexString
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.onEach
 
@@ -19,7 +20,7 @@ internal fun p2pPeers(
     paired: Boolean = false,
 ): List<P2pPeer> =
     (0 until number).map {
-        P2pPeer("id#$it", "name#$it", "publicKey#$it", "relayServer#$it", version, isPaired = paired)
+        P2pPeer("id#$it", "name#$it", it.toHexString().asString(), "relayServer#$it", version, isPaired = paired)
     }
 
 // -- values --

@@ -2,7 +2,9 @@ package it.airgap.beaconsdk.transport.p2p.matrix.internal.storage
 
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.utils.failWithIllegalState
-import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.MatrixRoom
+import it.airgap.beaconsdk.transport.p2p.matrix.data.MatrixRoom
+import it.airgap.beaconsdk.transport.p2p.matrix.storage.ExtendedP2pMatrixStoragePlugin
+import it.airgap.beaconsdk.transport.p2p.matrix.storage.P2pMatrixStoragePlugin
 
 internal val StorageManager.matrixPlugin: ExtendedP2pMatrixStoragePlugin
     get() = plugins.filterIsInstance<ExtendedP2pMatrixStoragePlugin>().firstOrNull()

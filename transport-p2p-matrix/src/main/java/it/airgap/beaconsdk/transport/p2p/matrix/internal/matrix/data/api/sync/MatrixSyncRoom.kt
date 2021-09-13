@@ -4,7 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-public sealed class MatrixSyncRoom {
+internal sealed class MatrixSyncRoom {
 
     @Serializable
     @SerialName("joined")
@@ -23,7 +23,7 @@ public sealed class MatrixSyncRoom {
 }
 
 @Serializable
-public data class MatrixSyncRooms(
+internal data class MatrixSyncRooms(
     val join: Map<String, MatrixSyncRoom.Joined>? = null,
     val invite: Map<String, MatrixSyncRoom.Invited>? = null,
     val leave: Map<String, MatrixSyncRoom.Left>? = null,

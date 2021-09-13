@@ -38,11 +38,10 @@ public class BeaconSdk(context: Context) {
         chainFactories: List<Chain.Factory<*>>,
         storage: Storage,
         secureStorage: SecureStorage,
-        storagePlugins: List<StoragePlugin>,
     ) {
         if (isInitialized) return
 
-        _dependencyRegistry = CoreDependencyRegistry(chainFactories, storage, secureStorage, storagePlugins)
+        _dependencyRegistry = CoreDependencyRegistry(chainFactories, storage, secureStorage)
 
         val storageManager = dependencyRegistry.storageManager
         val crypto = dependencyRegistry.crypto

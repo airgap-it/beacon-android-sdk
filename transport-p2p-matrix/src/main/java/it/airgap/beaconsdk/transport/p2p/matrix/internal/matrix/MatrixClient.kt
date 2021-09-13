@@ -1,9 +1,9 @@
 package it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix
 
 import it.airgap.beaconsdk.core.internal.utils.*
-import it.airgap.beaconsdk.transport.p2p.matrix.BeaconP2pMatrixConfiguration
+import it.airgap.beaconsdk.transport.p2p.matrix.internal.BeaconP2pMatrixConfiguration
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.MatrixEvent
-import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.MatrixRoom
+import it.airgap.beaconsdk.transport.p2p.matrix.data.MatrixRoom
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.MatrixSync
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.room.MatrixCreateRoomRequest
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.network.event.MatrixEventService
@@ -17,7 +17,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.sync.Mutex
 
-public class MatrixClient(
+internal class MatrixClient(
     private val store: MatrixStore,
     private val nodeService: MatrixNodeService,
     private val userService: MatrixUserService,

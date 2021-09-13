@@ -16,7 +16,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
 @Serializable(with = MatrixError.Serializer::class)
-public sealed class MatrixError : Exception() {
+internal sealed class MatrixError : Exception() {
     abstract val code: String
     abstract val error: String
 
