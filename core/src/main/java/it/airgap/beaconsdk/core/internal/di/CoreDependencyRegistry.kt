@@ -11,6 +11,7 @@ import it.airgap.beaconsdk.core.internal.controller.MessageController
 import it.airgap.beaconsdk.core.internal.crypto.Crypto
 import it.airgap.beaconsdk.core.internal.crypto.provider.CryptoProvider
 import it.airgap.beaconsdk.core.internal.crypto.provider.LazySodiumCryptoProvider
+import it.airgap.beaconsdk.core.internal.migration.CoreMigration
 import it.airgap.beaconsdk.core.internal.migration.Migration
 import it.airgap.beaconsdk.core.internal.network.HttpClient
 import it.airgap.beaconsdk.core.internal.network.provider.KtorHttpProvider
@@ -95,10 +96,10 @@ public class CoreDependencyRegistry(chainFactories: List<Chain.Factory<*>>, stor
         }
     }
 
-    // -- Migration --
+    // -- migration --
 
     override val migration: Migration by lazy {
-        Migration(
+        CoreMigration(
             storageManager,
             listOf(),
         )

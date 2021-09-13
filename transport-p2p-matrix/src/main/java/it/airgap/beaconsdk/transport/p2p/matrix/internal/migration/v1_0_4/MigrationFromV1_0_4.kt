@@ -6,7 +6,7 @@ import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.utils.runCatchingFlat
 import it.airgap.beaconsdk.core.internal.utils.success
 import it.airgap.beaconsdk.transport.p2p.matrix.BeaconP2pMatrixConfiguration
-import it.airgap.beaconsdk.transport.p2p.matrix.internal.migration.MatrixMigration
+import it.airgap.beaconsdk.transport.p2p.matrix.internal.migration.MatrixMigrationTarget
 
 @Suppress("ClassName")
 internal class MigrationFromV1_0_4(private val storageManager: StorageManager) : VersionedMigration() {
@@ -14,19 +14,19 @@ internal class MigrationFromV1_0_4(private val storageManager: StorageManager) :
 
     override fun targets(target: Migration.Target): Boolean =
         when (target) {
-            is MatrixMigration.Target.RelayServer -> true
+            is MatrixMigrationTarget.RelayServer -> true
             else -> false
         }
 
     override suspend fun perform(target: Migration.Target): Result<Unit> =
         with (target) {
             when (this) {
-                is MatrixMigration.Target.RelayServer -> migrateMatrixRelayServer(nodes)
+                is MatrixMigrationTarget.RelayServer -> migrateMatrixRelayServer(nodes)
                 else -> skip()
             }
         }
 
-    private suspend fun migrateMatrixRelayServer(matrixNodes: List<String>): Result<Unit> =
+    private suspend fun migrateMatrixRelayServer(nodes: List<String>): Result<Unit> =
         runCatchingFlat {
             val savedRelayServer = storageManager.getMatrixRelayServer()
             if (savedRelayServer != null) {
@@ -34,7 +34,7 @@ internal class MigrationFromV1_0_4(private val storageManager: StorageManager) :
                 return skip()
             }
 
-            if (matrixNodes != BeaconP2pMatrixConfiguration.defaultNodes) {
+            if (nodes != BeaconP2pMatrixConfiguration.defaultNodes) {
                 /* the migration can't be performed if the list of nodes differs from the default list */
                 return skip()
             }

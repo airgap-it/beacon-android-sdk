@@ -44,7 +44,7 @@ public interface DependencyRegistry {
 
     public fun httpClient(httpProvider: HttpProvider?): HttpClient
 
-    // -- Migration --
+    // -- migration --
 
     public val migration: Migration
 }

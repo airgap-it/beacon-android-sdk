@@ -7,9 +7,9 @@ import it.airgap.beaconsdk.core.internal.migration.Migration
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.transport.p2p.data.p2pIdentifierOrNull
 import it.airgap.beaconsdk.core.internal.utils.*
-import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.MatrixClient
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.P2pCommunicator
-import it.airgap.beaconsdk.transport.p2p.matrix.internal.migration.ExtendedMigration
+import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.MatrixClient
+import it.airgap.beaconsdk.transport.p2p.matrix.internal.migration.migrateMatrixRelayServer
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
@@ -19,7 +19,7 @@ public class P2pStore(
     private val matrixClient: MatrixClient,
     private val matrixNodes: List<String>,
     private val storageManager: StorageManager,
-    private val migration: ExtendedMigration,
+    private val migration: Migration,
 ) : Store<P2pStoreState, P2pStoreAction>() {
 
     private var state: P2pStoreState? = null

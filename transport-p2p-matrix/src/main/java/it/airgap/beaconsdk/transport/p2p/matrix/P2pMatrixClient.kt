@@ -10,12 +10,12 @@ import it.airgap.beaconsdk.core.network.provider.HttpProvider
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.P2pCommunicator
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.P2pCrypto
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.di.ExtendedDependencyRegistry
+import it.airgap.beaconsdk.transport.p2p.matrix.internal.di.extend
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.MatrixClient
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.MatrixEvent
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.MatrixRoom
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.MatrixError
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.store.*
-import it.airgap.beaconsdk.transport.p2p.matrix.internal.utils.extend
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
