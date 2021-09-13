@@ -3,7 +3,6 @@ package it.airgap.beaconsdk.core.internal.storage.decorator
 import appMetadata
 import it.airgap.beaconsdk.core.internal.storage.MockStorage
 import it.airgap.beaconsdk.core.internal.storage.Storage
-import it.airgap.beaconsdk.core.internal.transport.p2p.matrix.data.MatrixRoom
 import it.airgap.beaconsdk.core.internal.utils.splitAt
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.drop
@@ -16,7 +15,6 @@ import p2pPeers
 import permissions
 import takeHalf
 import kotlin.test.assertEquals
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 internal class DecoratedStorageTest {
@@ -287,50 +285,6 @@ internal class DecoratedStorageTest {
         val fromStorage = runBlocking { storage.getPeers() }
 
         assertTrue(fromStorage.isEmpty())
-    }
-
-    @Test
-    fun `removes Matrix relay server`() {
-        runBlocking { storage.setMatrixRelayServer("relayServer") }
-        runBlocking { decoratedStorage.removeMatrixRelayServer() }
-
-        val fromStorage = runBlocking { storage.getMatrixRelayServer() }
-
-        assertNull(fromStorage)
-    }
-
-    @Test
-    fun `removes Matrix channels`() {
-        runBlocking { storage.setMatrixChannels(mapOf("sender" to "channel")) }
-        runBlocking { decoratedStorage.removeMatrixChannels() }
-
-        val fromStorage = runBlocking { storage.getMatrixChannels() }
-
-        assertEquals(emptyMap(), fromStorage)
-    }
-
-    @Test
-    fun `removes Matrix sync token`() {
-        runBlocking { storage.setMatrixSyncToken("syncToken") }
-        runBlocking { decoratedStorage.removeMatrixSyncToken() }
-
-        val fromStorage = runBlocking { storage.getMatrixSyncToken() }
-
-        assertNull(fromStorage)
-    }
-
-    @Test
-    fun `removes Matrix rooms`() {
-        runBlocking {
-            storage.setMatrixRooms(
-                listOf(MatrixRoom.Unknown("id", emptyList())),
-            )
-        }
-        runBlocking { decoratedStorage.removeMatrixRooms() }
-
-        val fromStorage = runBlocking { storage.getMatrixRooms() }
-
-        assertEquals(emptyList(), fromStorage)
     }
 
     @Test

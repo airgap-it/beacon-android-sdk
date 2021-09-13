@@ -17,7 +17,7 @@ import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
-internal class MigrationTest {
+internal class CoreMigrationTest {
 
     @MockK
     private lateinit var accountUtils: AccountUtils
@@ -29,7 +29,7 @@ internal class MigrationTest {
         MockKAnnotations.init(this)
         mockLog()
 
-        storageManager = StorageManager(MockStorage(), MockSecureStorage(), accountUtils)
+        storageManager = StorageManager(MockStorage(), MockSecureStorage(), emptyList(), accountUtils)
     }
 
     @Test
@@ -38,18 +38,18 @@ internal class MigrationTest {
 
         val versionedMigration1 = object : VersionedMigration() {
             override val fromVersion: String = version
-            override fun targets(target: Target): Boolean = true
-            override suspend fun perform(target: Target): Result<Unit> = Result.success()
+            override fun targets(target: Migration.Target): Boolean = true
+            override suspend fun perform(target: Migration.Target): Result<Unit> = Result.success()
         }
 
         val versionedMigration2 = object : VersionedMigration() {
             override val fromVersion: String = version
-            override fun targets(target: Target): Boolean = true
-            override suspend fun perform(target: Target): Result<Unit> = Result.success()
+            override fun targets(target: Migration.Target): Boolean = true
+            override suspend fun perform(target: Migration.Target): Result<Unit> = Result.success()
         }
 
         assertFailsWith<IllegalStateException> {
-            Migration(storageManager, listOf(
+            CoreMigration(storageManager, listOf(
                 versionedMigration1,
                 versionedMigration2,
             ))
@@ -57,33 +57,32 @@ internal class MigrationTest {
     }
 
     @Test
-    fun `runs Matrix relay server migration`() {
-        val matrixNodes = listOf("node1", "node2")
-        val target = VersionedMigration.Target.MatrixRelayServer(matrixNodes)
+    fun `runs migration`() {
+        val target = MockTarget
 
         val versionedMigration1 = spyk(object : VersionedMigration() {
             override val fromVersion: String = "1"
-            override fun targets(target: Target): Boolean = true
-            override suspend fun perform(target: Target): Result<Unit> = Result.success()
+            override fun targets(target: Migration.Target): Boolean = true
+            override suspend fun perform(target: Migration.Target): Result<Unit> = Result.success()
         })
 
         val versionedMigration2 = spyk(object : VersionedMigration() {
             override val fromVersion: String = "2"
-            override fun targets(target: Target): Boolean =
+            override fun targets(target: Migration.Target): Boolean =
                 when (target) {
-                    is Target.MatrixRelayServer -> false
+                    is MockTarget -> false
                     else -> true
                 }
-            override suspend fun perform(target: Target): Result<Unit> = Result.success()
+            override suspend fun perform(target: Migration.Target): Result<Unit> = Result.success()
         })
 
         val versionedMigration3 = spyk(object : VersionedMigration() {
             override val fromVersion: String = "3"
-            override fun targets(target: Target): Boolean = true
-            override suspend fun perform(target: Target): Result<Unit> = Result.success()
+            override fun targets(target: Migration.Target): Boolean = true
+            override suspend fun perform(target: Migration.Target): Result<Unit> = Result.success()
         })
 
-        val migration = Migration(storageManager, listOf(
+        val migration = CoreMigration(storageManager, listOf(
             versionedMigration1,
             versionedMigration2,
             versionedMigration3,
@@ -92,7 +91,58 @@ internal class MigrationTest {
         runBlockingTest {
             storageManager.setSdkVersion("4")
 
-            migration.migrateMatrixRelayServer(matrixNodes)
+            migration.migrate(target)
+
+            val expectedInStorage = setOf(
+                versionedMigration1.migrationIdentifier(target),
+                versionedMigration3.migrationIdentifier(target),
+            )
+            val actualInStorage = storageManager.getMigrations()
+
+            coVerify(exactly = 1) { versionedMigration1.perform(target) }
+            coVerify(exactly = 0) { versionedMigration2.perform(any()) }
+            coVerify(exactly = 1) { versionedMigration3.perform(target) }
+
+            assertEquals(expectedInStorage, actualInStorage)
+        }
+    }
+
+    @Test
+    fun `runs migration on dynamically registered VersionedMigration`() {
+        val target = MockTarget
+
+        val versionedMigration1 = spyk(object : VersionedMigration() {
+            override val fromVersion: String = "1"
+            override fun targets(target: Migration.Target): Boolean = true
+            override suspend fun perform(target: Migration.Target): Result<Unit> = Result.success()
+        })
+
+        val versionedMigration2 = spyk(object : VersionedMigration() {
+            override val fromVersion: String = "2"
+            override fun targets(target: Migration.Target): Boolean =
+                when (target) {
+                    is MockTarget -> false
+                    else -> true
+                }
+            override suspend fun perform(target: Migration.Target): Result<Unit> = Result.success()
+        })
+
+        val versionedMigration3 = spyk(object : VersionedMigration() {
+            override val fromVersion: String = "3"
+            override fun targets(target: Migration.Target): Boolean = true
+            override suspend fun perform(target: Migration.Target): Result<Unit> = Result.success()
+        })
+
+        val migration = CoreMigration(storageManager, listOf(
+            versionedMigration1,
+            versionedMigration2,
+        ))
+
+        runBlockingTest {
+            storageManager.setSdkVersion("4")
+
+            migration.register(versionedMigration3)
+            migration.migrate(target)
 
             val expectedInStorage = setOf(
                 versionedMigration1.migrationIdentifier(target),
@@ -110,32 +160,31 @@ internal class MigrationTest {
 
     @Test
     fun `does not run migration if SDK version precedes migration target`() {
-        val matrixNodes = listOf("node1", "node2")
-        val target = VersionedMigration.Target.MatrixRelayServer(matrixNodes)
+        val target = MockTarget
 
         val versionedMigration1 = spyk(object : VersionedMigration() {
             override val fromVersion: String = "1"
-            override fun targets(target: Target): Boolean = true
-            override suspend fun perform(target: Target): Result<Unit> = Result.success()
+            override fun targets(target: Migration.Target): Boolean = true
+            override suspend fun perform(target: Migration.Target): Result<Unit> = Result.success()
         })
 
         val versionedMigration2 = spyk(object : VersionedMigration() {
             override val fromVersion: String = "2"
-            override fun targets(target: Target): Boolean =
+            override fun targets(target: Migration.Target): Boolean =
                 when (target) {
-                    is Target.MatrixRelayServer -> false
+                    is MockTarget -> false
                     else -> true
                 }
-            override suspend fun perform(target: Target): Result<Unit> = Result.success()
+            override suspend fun perform(target: Migration.Target): Result<Unit> = Result.success()
         })
 
         val versionedMigration3 = spyk(object : VersionedMigration() {
             override val fromVersion: String = "3"
-            override fun targets(target: Target): Boolean = true
-            override suspend fun perform(target: Target): Result<Unit> = Result.success()
+            override fun targets(target: Migration.Target): Boolean = true
+            override suspend fun perform(target: Migration.Target): Result<Unit> = Result.success()
         })
 
-        val migration = Migration(storageManager, listOf(
+        val migration = CoreMigration(storageManager, listOf(
             versionedMigration1,
             versionedMigration2,
             versionedMigration3,
@@ -144,7 +193,7 @@ internal class MigrationTest {
         runBlockingTest {
             storageManager.setSdkVersion("2")
 
-            migration.migrateMatrixRelayServer(matrixNodes)
+            migration.migrate(target)
 
             val expectedInStorage = setOf(
                 versionedMigration1.migrationIdentifier(target),
@@ -161,32 +210,31 @@ internal class MigrationTest {
 
     @Test
     fun `does not run migration if SDK version equals migration target`() {
-        val matrixNodes = listOf("node1", "node2")
-        val target = VersionedMigration.Target.MatrixRelayServer(matrixNodes)
+        val target = MockTarget
 
         val versionedMigration1 = spyk(object : VersionedMigration() {
             override val fromVersion: String = "1"
-            override fun targets(target: Target): Boolean = true
-            override suspend fun perform(target: Target): Result<Unit> = Result.success()
+            override fun targets(target: Migration.Target): Boolean = true
+            override suspend fun perform(target: Migration.Target): Result<Unit> = Result.success()
         })
 
         val versionedMigration2 = spyk(object : VersionedMigration() {
             override val fromVersion: String = "2"
-            override fun targets(target: Target): Boolean =
+            override fun targets(target: Migration.Target): Boolean =
                 when (target) {
-                    is Target.MatrixRelayServer -> false
+                    is MockTarget -> false
                     else -> true
                 }
-            override suspend fun perform(target: Target): Result<Unit> = Result.success()
+            override suspend fun perform(target: Migration.Target): Result<Unit> = Result.success()
         })
 
         val versionedMigration3 = spyk(object : VersionedMigration() {
             override val fromVersion: String = "3"
-            override fun targets(target: Target): Boolean = true
-            override suspend fun perform(target: Target): Result<Unit> = Result.success()
+            override fun targets(target: Migration.Target): Boolean = true
+            override suspend fun perform(target: Migration.Target): Result<Unit> = Result.success()
         })
 
-        val migration = Migration(storageManager, listOf(
+        val migration = CoreMigration(storageManager, listOf(
             versionedMigration1,
             versionedMigration2,
             versionedMigration3,
@@ -195,7 +243,7 @@ internal class MigrationTest {
         runBlockingTest {
             storageManager.setSdkVersion("3")
 
-            migration.migrateMatrixRelayServer(matrixNodes)
+            migration.migrate(target)
 
             val expectedInStorage = setOf(
                 versionedMigration1.migrationIdentifier(target),
@@ -212,32 +260,31 @@ internal class MigrationTest {
 
     @Test
     fun `does not run already performed migration`() {
-        val matrixNodes = listOf("node1", "node2")
-        val target = VersionedMigration.Target.MatrixRelayServer(matrixNodes)
+        val target = MockTarget
 
         val versionedMigration1 = spyk(object : VersionedMigration() {
             override val fromVersion: String = "1"
-            override fun targets(target: Target): Boolean = true
-            override suspend fun perform(target: Target): Result<Unit> = Result.success()
+            override fun targets(target: Migration.Target): Boolean = true
+            override suspend fun perform(target: Migration.Target): Result<Unit> = Result.success()
         })
 
         val versionedMigration2 = spyk(object : VersionedMigration() {
             override val fromVersion: String = "2"
-            override fun targets(target: Target): Boolean =
+            override fun targets(target: Migration.Target): Boolean =
                 when (target) {
-                    is Target.MatrixRelayServer -> false
+                    is MockTarget -> false
                     else -> true
                 }
-            override suspend fun perform(target: Target): Result<Unit> = Result.success()
+            override suspend fun perform(target: Migration.Target): Result<Unit> = Result.success()
         })
 
         val versionedMigration3 = spyk(object : VersionedMigration() {
             override val fromVersion: String = "3"
-            override fun targets(target: Target): Boolean = true
-            override suspend fun perform(target: Target): Result<Unit> = Result.success()
+            override fun targets(target: Migration.Target): Boolean = true
+            override suspend fun perform(target: Migration.Target): Result<Unit> = Result.success()
         })
 
-        val migration = Migration(storageManager, listOf(
+        val migration = CoreMigration(storageManager, listOf(
             versionedMigration1,
             versionedMigration2,
             versionedMigration3,
@@ -249,7 +296,7 @@ internal class MigrationTest {
                 setMigrations(setOf(versionedMigration1.migrationIdentifier(target)))
             }
 
-            migration.migrateMatrixRelayServer(matrixNodes)
+            migration.migrate(target)
 
             val expectedInStorage = setOf(
                 versionedMigration1.migrationIdentifier(target),
@@ -267,28 +314,27 @@ internal class MigrationTest {
 
     @Test
     fun `aborts on first migration failure`() {
-        val matrixNodes = listOf("node1", "node2")
-        val target = VersionedMigration.Target.MatrixRelayServer(matrixNodes)
+        val target = MockTarget
 
         val versionedMigration1 = spyk(object : VersionedMigration() {
             override val fromVersion: String = "1"
-            override fun targets(target: Target): Boolean = true
-            override suspend fun perform(target: Target): Result<Unit> = Result.success()
+            override fun targets(target: Migration.Target): Boolean = true
+            override suspend fun perform(target: Migration.Target): Result<Unit> = Result.success()
         })
 
         val versionedMigration2 = spyk(object : VersionedMigration() {
             override val fromVersion: String = "2"
-            override fun targets(target: Target): Boolean = true
-            override suspend fun perform(target: Target): Result<Unit> = Result.failure()
+            override fun targets(target: Migration.Target): Boolean = true
+            override suspend fun perform(target: Migration.Target): Result<Unit> = Result.failure()
         })
 
         val versionedMigration3 = spyk(object : VersionedMigration() {
             override val fromVersion: String = "3"
-            override fun targets(target: Target): Boolean = true
-            override suspend fun perform(target: Target): Result<Unit> = Result.success()
+            override fun targets(target: Migration.Target): Boolean = true
+            override suspend fun perform(target: Migration.Target): Result<Unit> = Result.success()
         })
 
-        val migration = Migration(storageManager, listOf(
+        val migration = CoreMigration(storageManager, listOf(
             versionedMigration1,
             versionedMigration2,
             versionedMigration3,
@@ -297,7 +343,7 @@ internal class MigrationTest {
         runBlockingTest {
             storageManager.setSdkVersion("4")
 
-            migration.migrateMatrixRelayServer(matrixNodes)
+            migration.migrate(target)
 
             val expectedInStorage = setOf(
                 versionedMigration1.migrationIdentifier(target),
@@ -310,5 +356,9 @@ internal class MigrationTest {
 
             assertEquals(expectedInStorage, actualInStorage)
         }
+    }
+
+    private object MockTarget : Migration.Target {
+        override val identifier: String = "mockTarget"
     }
 }

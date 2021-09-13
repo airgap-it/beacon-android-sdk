@@ -55,7 +55,7 @@ internal class V2BeaconMessageTest {
         every { dependencyRegistry.chainRegistry } returns chainRegistry
         every { chainRegistry.get("tezos") } returns mockChain
 
-        storageManager = StorageManager(MockStorage(), MockSecureStorage(), accountUtils)
+        storageManager = StorageManager(MockStorage(), MockSecureStorage(), emptyList(), accountUtils)
     }
 
     @After

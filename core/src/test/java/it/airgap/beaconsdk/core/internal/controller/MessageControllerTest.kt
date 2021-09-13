@@ -61,7 +61,7 @@ internal class MessageControllerTest {
         every { accountUtils.getAccountIdentifier(any(), any()) } answers { Result.success(firstArg()) }
         every { accountUtils.getSenderId(any()) } answers { Result.success(firstArg<ByteArray>().toHexString().asString()) }
 
-        storageManager = StorageManager(MockStorage(), MockSecureStorage(), accountUtils)
+        storageManager = StorageManager(MockStorage(), MockSecureStorage(), emptyList(), accountUtils)
         messageController = MessageController(chainRegistry, storageManager, accountUtils)
     }
 

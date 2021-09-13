@@ -25,7 +25,7 @@ import kotlin.test.assertEquals
 internal class P2pTransportTest {
 
     @MockK
-    private lateinit var p2pClient: P2pMatrixClient
+    private lateinit var p2pClient: P2pClient
 
     @MockK
     private lateinit var accountUtils: AccountUtils
@@ -41,7 +41,7 @@ internal class P2pTransportTest {
 
         coEvery { p2pClient.sendPairingResponse(any()) } returns Result.success()
 
-        storageManager = StorageManager(MockStorage(), MockSecureStorage(), accountUtils)
+        storageManager = StorageManager(MockStorage(), MockSecureStorage(), emptyList(), accountUtils)
         p2pTransport = P2pTransport(storageManager, p2pClient)
     }
 
