@@ -1,10 +1,12 @@
 package it.airgap.beaconsdkdemo
 
 import androidx.lifecycle.*
-import it.airgap.beaconsdk.core.client.BeaconClient
+import it.airgap.beaconsdk.chain.tezos.tezos
+import it.airgap.beaconsdk.client.wallet.BeaconWalletClient
+import it.airgap.beaconsdk.core.data.beacon.P2P
 import it.airgap.beaconsdk.core.data.beacon.P2pPeer
 import it.airgap.beaconsdk.core.message.*
-import it.airgap.beaconsdk.core.message.response.permission.PermissionBeaconResponse
+import it.airgap.beaconsdk.transport.p2p.matrix.p2pMatrix
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -14,11 +16,21 @@ class MainActivityViewModel : ViewModel() {
     val state: LiveData<MainActivity.State>
         get() = _state
 
-    private var beaconClient: BeaconClient? = null
+    private var beaconClient: BeaconWalletClient? = null
     private var awaitingRequest: BeaconRequest? = null
 
     fun startBeacon(): LiveData<Result<BeaconRequest>> = liveData {
-        beaconClient = BeaconClient("Beacon SDK Demo")
+        beaconClient = BeaconWalletClient(
+            "Beacon SDK Demo",
+            listOf(
+                tezos(),
+            ),
+        ) {
+            addConnections(
+                P2P(p2pMatrix()),
+            )
+        }
+
         checkForPeers()
 
         beaconClient?.connect()
@@ -32,9 +44,7 @@ class MainActivityViewModel : ViewModel() {
         viewModelScope.launch {
             val response = when (request) {
                 is PermissionBeaconRequest -> PermissionBeaconResponse.from(request, exampleTezosPublicKey)
-                is OperationBeaconRequest -> TODO()
-                is SignPayloadBeaconRequest -> TODO()
-                is BroadcastBeaconRequest -> TODO()
+                is ChainBeaconRequest -> TODO()
             }
             beaconClient?.respond(response)
             removeAwaitingRequest()

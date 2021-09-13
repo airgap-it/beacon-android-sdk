@@ -15,4 +15,4 @@ public sealed class Connection(public val type: Type) {
  * P2P Connection configuration.
  *
  */
-public data class P2P(public val client: P2pClient.Factory<*>, ) : Connection(Type.P2P)
+public data class P2P(public val client: P2pClient.Factory<*>) : Connection(Type.P2P)

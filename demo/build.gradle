@@ -49,7 +49,11 @@ android {
 
 dependencies {
     implementation fileTree(dir: "libs", include: ["*.jar"])
+
     implementation project(path: ':core')
+    implementation project(path: ':client-wallet')
+    implementation project(path: ':chain-tezos')
+    implementation project(path: ':transport-p2p-matrix')
 
     implementation(Dependencies.kotlinStdlib)
 
