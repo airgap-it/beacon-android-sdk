@@ -2,7 +2,7 @@ package it.airgap.beaconsdk.client.wallet.compat
 
 import kotlinx.coroutines.*
 
-public object BeaconCompat {
+internal object BeaconCompat {
     private val _listeners: MutableMap<Int, OnNewMessageListener> = mutableMapOf()
     val listeners: Map<Int, OnNewMessageListener> get() = _listeners
 

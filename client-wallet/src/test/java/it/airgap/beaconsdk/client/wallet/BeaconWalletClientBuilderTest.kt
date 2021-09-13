@@ -2,14 +2,15 @@ package it.airgap.beaconsdk.client.wallet
 
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
+import it.airgap.beaconsdk.core.data.beacon.Connection
 import it.airgap.beaconsdk.core.data.beacon.P2P
-import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.BeaconSdk
 import it.airgap.beaconsdk.core.internal.chain.Chain
 import it.airgap.beaconsdk.core.internal.chain.MockChain
 import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.SharedPreferencesSecureStorage
 import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.SharedPreferencesStorage
+import it.airgap.beaconsdk.core.internal.transport.p2p.P2pClient
 import kotlinx.coroutines.runBlocking
 import mockBeaconSdk
 import org.junit.Before
@@ -42,7 +43,7 @@ internal class BeaconWalletClientBuilderTest {
     fun `builds BeaconWalletClient with default settings`() {
         runBlocking {
             val beaconWalletClient = BeaconWalletClient.Builder(appName, chains).build()
-            val defaultConnections = listOf(P2P(BeaconConfiguration.defaultRelayServers))
+            val defaultConnections = emptyList<Connection>()
 
             assertEquals(appName, beaconWalletClient.name)
             assertEquals(beaconId, beaconWalletClient.beaconId)
@@ -53,12 +54,13 @@ internal class BeaconWalletClientBuilderTest {
     }
 
     @Test
-    fun `builds BeaconWalletClient with custom matrix nodes`() {
+    fun `builds BeaconWalletClient with custom connections`() {
         runBlocking {
-            val customConnections = listOf(P2P(listOf("node#1", "node#2")))
+            val mockP2pFactory = mockkClass(P2pClient.Factory::class)
+            val customConnections = listOf(P2P(mockP2pFactory))
 
             val beaconWalletClient = BeaconWalletClient.Builder(appName, chains).apply {
-                connections = customConnections
+                addConnections(*customConnections.toTypedArray())
             }.build()
 
             assertEquals(appName, beaconWalletClient.name)
@@ -73,7 +75,7 @@ internal class BeaconWalletClientBuilderTest {
     fun `builds BeaconWalletClient with default settings when used as builder function`() {
         runBlocking {
             val beaconWalletClient = BeaconWalletClient(appName, chains)
-            val defaultConnections = listOf(P2P(BeaconConfiguration.defaultRelayServers))
+            val defaultConnections = emptyList<Connection>()
 
             assertEquals(appName, beaconWalletClient.name)
             assertEquals(beaconId, beaconWalletClient.beaconId)
@@ -84,11 +86,12 @@ internal class BeaconWalletClientBuilderTest {
     }
 
     @Test
-    fun `builds BeaconWalletClient with custom matrix nodes when used as builder function`() {
+    fun `builds BeaconWalletClient with custom connections as builder function`() {
         runBlocking {
-            val customConnections = listOf(P2P(listOf("node#1", "node#2")))
+            val mockP2pFactory = mockkClass(P2pClient.Factory::class)
+            val customConnections = listOf(P2P(mockP2pFactory))
 
-            val beaconWalletClient = BeaconWalletClient(appName, chains) { connections = customConnections }
+            val beaconWalletClient = BeaconWalletClient(appName, chains) { addConnections(*customConnections.toTypedArray()) }
 
             assertEquals(appName, beaconWalletClient.name)
             assertEquals(beaconId, beaconWalletClient.beaconId)

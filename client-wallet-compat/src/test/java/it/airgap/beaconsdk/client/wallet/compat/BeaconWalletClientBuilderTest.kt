@@ -3,14 +3,15 @@ package it.airgap.beaconsdk.client.wallet.compat
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import it.airgap.beaconsdk.client.wallet.BeaconWalletClient
+import it.airgap.beaconsdk.core.data.beacon.Connection
 import it.airgap.beaconsdk.core.data.beacon.P2P
-import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.BeaconSdk
 import it.airgap.beaconsdk.core.internal.chain.Chain
 import it.airgap.beaconsdk.core.internal.chain.MockChain
 import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.SharedPreferencesSecureStorage
 import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.SharedPreferencesStorage
+import it.airgap.beaconsdk.core.internal.transport.p2p.P2pClient
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
 import mockBeaconSdk
@@ -46,7 +47,7 @@ internal class BeaconWalletClientBuilderTest {
 
     @Test
     fun `builds BeaconWalletClient with default settings`() {
-        val defaultConnections = listOf(P2P(BeaconConfiguration.defaultRelayServers))
+        val defaultConnections = emptyList<Connection>()
 
         var client: BeaconWalletClient? = null
         val callback = spyk<BuildCallback>(object : BuildCallback {
@@ -76,7 +77,8 @@ internal class BeaconWalletClientBuilderTest {
 
     @Test
     fun `builds BeaconWalletClient with custom matrix nodes`() {
-        val customConnections = listOf(P2P(listOf("node#1", "node#2")))
+        val mockP2pFactory = mockkClass(P2pClient.Factory::class)
+        val customConnections = listOf(P2P(mockP2pFactory))
 
         var client: BeaconWalletClient? = null
         val callback = spyk<BuildCallback>(object : BuildCallback {
@@ -89,7 +91,7 @@ internal class BeaconWalletClientBuilderTest {
         })
 
         BeaconWalletClient.Builder(appName, chains).apply {
-            connections = customConnections
+            addConnections(*customConnections.toTypedArray())
         }.build(callback)
 
         runBlocking { testDeferred.await() }

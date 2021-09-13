@@ -1,7 +1,11 @@
 package it.airgap.beaconsdk.client.wallet
 
+import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.client.BeaconClient
-import it.airgap.beaconsdk.core.data.beacon.*
+import it.airgap.beaconsdk.core.data.beacon.AppMetadata
+import it.airgap.beaconsdk.core.data.beacon.Connection
+import it.airgap.beaconsdk.core.data.beacon.Peer
+import it.airgap.beaconsdk.core.data.beacon.Permission
 import it.airgap.beaconsdk.core.exception.BeaconException
 import it.airgap.beaconsdk.core.internal.chain.Chain
 import it.airgap.beaconsdk.core.internal.controller.ConnectionController
@@ -10,11 +14,11 @@ import it.airgap.beaconsdk.core.internal.crypto.Crypto
 import it.airgap.beaconsdk.core.internal.storage.SecureStorage
 import it.airgap.beaconsdk.core.internal.storage.Storage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
-import it.airgap.beaconsdk.core.internal.storage.StoragePlugin
 import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.SharedPreferencesSecureStorage
 import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.SharedPreferencesStorage
 import it.airgap.beaconsdk.core.internal.utils.applicationContext
 import it.airgap.beaconsdk.core.internal.utils.beaconSdk
+import it.airgap.beaconsdk.core.internal.utils.delegate.default
 import it.airgap.beaconsdk.core.internal.utils.dependencyRegistry
 import it.airgap.beaconsdk.core.internal.utils.mapException
 import it.airgap.beaconsdk.core.message.AcknowledgeBeaconResponse
@@ -78,7 +82,7 @@ import kotlinx.coroutines.flow.Flow
  *
  * To disconnect from a peer, unregister it in the [client][BeaconWalletClient] with [removePeers].
  */
-public class BeaconWalletClient(
+public class BeaconWalletClient @RestrictTo(RestrictTo.Scope.LIBRARY) constructor(
     name: String,
     beaconId: String,
     connectionController: ConnectionController,
@@ -214,7 +218,7 @@ public class BeaconWalletClient(
     /**
      * Asynchronous builder for [BeaconWalletClient].
      *
-     * @constructor Creates a builder configured with the specified application [name] and list of [connections] with [P2P] included by default.
+     * @constructor Creates a builder configured with the specified application [name] and [chains] that will be supported by the client.
      */
     public class Builder(private val name: String, private val chains: List<Chain.Factory<*>>) {
 
@@ -231,35 +235,30 @@ public class BeaconWalletClient(
         /**
          * Connection types that will be supported by the configured client.
          */
-        public var connections: List<Connection> = listOf()
+        private var connections: MutableList<Connection> = mutableListOf()
 
         /**
-         *
+         * Registers connections that should be supported by the configured client.
          */
-        public var storage: Storage? = null
-
-        /**
-         *
-         */
-        public var secureStorage: SecureStorage? = null
-
-        private val storagePlugins: MutableList<StoragePlugin> = mutableListOf()
-
-        /**
-         *
-         */
-        public fun addStoragePlugins(vararg plugins: StoragePlugin) {
-            storagePlugins.addAll(plugins.toList())
+        public fun addConnections(vararg connections: Connection): Builder = apply {
+            this.connections.addAll(connections.toList())
         }
+
+        /**
+         * An optional external implementation of [Storage]. If not provided, an internal implementation will be used.
+         */
+        public var storage: Storage by default { SharedPreferencesStorage.create(applicationContext) }
+
+        /**
+         * An optional external implementation of [SecureStorage]. If not provided, an internal implementation will be used.
+         */
+        public var secureStorage: SecureStorage by default { SharedPreferencesSecureStorage.create(applicationContext) }
 
         /**
          * Builds a new instance of [BeaconWalletClient].
          */
         public suspend fun build(): BeaconWalletClient {
-            val storage = storage ?: SharedPreferencesStorage.create(applicationContext)
-            val secureStorage = secureStorage ?: SharedPreferencesSecureStorage.create(applicationContext)
-
-            beaconSdk.init(name, appUrl, iconUrl, chains, storage, secureStorage, storagePlugins)
+            beaconSdk.init(name, appUrl, iconUrl, chains, storage, secureStorage)
 
             with(dependencyRegistry) {
                 return BeaconWalletClient(
@@ -276,7 +275,7 @@ public class BeaconWalletClient(
 }
 
 /**
- * Creates a new instance of [BeaconWalletClient] with the specified application [name] and configured with [builderAction].
+ * Creates a new instance of [BeaconWalletClient] with the specified application [name], supporting registered [chains] and configured with [builderAction].
  *
  * @see [BeaconWalletClient.Builder]
  */
