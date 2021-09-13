@@ -29,9 +29,9 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
 @Serializable(with = V1TezosMessage.Serializer::class)
-public abstract class V1TezosMessage : V1BeaconMessage() {
+internal abstract class V1TezosMessage : V1BeaconMessage() {
 
-    public companion object : Factory<BeaconMessage, V1BeaconMessage> {
+    companion object : Factory<BeaconMessage, V1BeaconMessage> {
         override fun from(senderId: String, content: BeaconMessage): V1BeaconMessage =
             when (content) {
                 is ChainBeaconRequest -> when (val payload = content.payload) {
@@ -124,7 +124,7 @@ public abstract class V1TezosMessage : V1BeaconMessage() {
 }
 
 @Serializable
-public data class OperationV1TezosRequest(
+internal data class OperationV1TezosRequest(
     override val version: String,
     override val id: String,
     override val beaconId: String,
@@ -158,7 +158,7 @@ public data class OperationV1TezosRequest(
 }
 
 @Serializable
-public data class SignPayloadV1TezosRequest(
+internal data class SignPayloadV1TezosRequest(
     override val version: String,
     override val id: String,
     override val beaconId: String,
@@ -191,7 +191,7 @@ public data class SignPayloadV1TezosRequest(
 }
 
 @Serializable
-public data class BroadcastV1TezosRequest(
+internal data class BroadcastV1TezosRequest(
     override val version: String,
     override val id: String,
     override val beaconId: String,
@@ -223,7 +223,7 @@ public data class BroadcastV1TezosRequest(
 }
 
 @Serializable
-public data class OperationV1TezosResponse(
+internal data class OperationV1TezosResponse(
     override val version: String,
     override val id: String,
     override val beaconId: String,
@@ -247,7 +247,7 @@ public data class OperationV1TezosResponse(
 }
 
 @Serializable
-public data class SignPayloadV1TezosResponse(
+internal data class SignPayloadV1TezosResponse(
     override val version: String,
     override val id: String,
     override val beaconId: String,
@@ -274,7 +274,7 @@ public data class SignPayloadV1TezosResponse(
 }
 
 @Serializable
-public data class BroadcastV1TezosResponse(
+internal data class BroadcastV1TezosResponse(
     override val version: String,
     override val id: String,
     override val beaconId: String,

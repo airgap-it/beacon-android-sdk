@@ -1,5 +1,6 @@
 package it.airgap.beaconsdk.chain.tezos.internal.message
 
+import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.chain.tezos.internal.message.v1.V1TezosMessage
 import it.airgap.beaconsdk.chain.tezos.internal.message.v2.V2TezosMessage
 import it.airgap.beaconsdk.core.internal.chain.Chain
@@ -8,6 +9,7 @@ import it.airgap.beaconsdk.core.internal.message.v1.V1BeaconMessage
 import it.airgap.beaconsdk.core.internal.message.v2.V2BeaconMessage
 import it.airgap.beaconsdk.core.message.BeaconMessage
 
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public class TezosMessageFactory internal constructor() : Chain.MessageFactory {
     override val v1: VersionedBeaconMessage.Factory<BeaconMessage, V1BeaconMessage>
         get() = V1TezosMessage.Companion

@@ -8,7 +8,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- *
+ * Base class for requests specific to Tezos used in the Beacon communication.
  */
 @Serializable
 public sealed class TezosRequest: ChainBeaconRequest.Payload() {
@@ -38,7 +38,7 @@ public data class OperationTezosRequest internal constructor(
 /**
  * Message payload requesting the signature of the given [payload].
  *
- * Expects [SignPayloadTezosResponse] as a response.
+ * Expects [SignPayloadTezosResponse] as a response payload.
  *
  * @property [signingType] The requested type of signature. The client MUST fail if cannot provide the specified signature.
  * @property [payload] The payload to be signed.
@@ -57,7 +57,7 @@ public data class SignPayloadTezosRequest internal constructor(
 /**
  * Message payload requesting the broadcast of the given [transaction][signedTransaction].
  *
- * Expects [BroadcastTezosResponse] as a response.
+ * Expects [BroadcastTezosResponse] as a response payload.
  *
  * @property [network] The network on which the transaction should be broadcast.
  * @property [signedTransaction] The transaction to be broadcast.

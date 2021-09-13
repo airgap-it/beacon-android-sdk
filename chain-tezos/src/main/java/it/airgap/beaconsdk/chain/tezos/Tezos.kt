@@ -6,12 +6,23 @@ import it.airgap.beaconsdk.chain.tezos.internal.wallet.Wallet
 import it.airgap.beaconsdk.core.internal.chain.Chain
 import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 
+/**
+ * Tezos implementation of the [Chain] interface.
+ */
 public class Tezos internal constructor(
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
     override val wallet: Wallet,
-    override val messageFactory: TezosMessageFactory
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    override val messageFactory: TezosMessageFactory,
 ) : Chain<Wallet, TezosMessageFactory> {
 
-    public class Factory internal constructor(): Chain.Factory<Tezos> {
+    /**
+     * Factory for [Tezos].
+     *
+     * @constructor Creates a factory needed for dynamic [Tezos] chain registration.
+     */
+    public class Factory : Chain.Factory<Tezos> {
         override val identifier: String = IDENTIFIER
 
         @RestrictTo(RestrictTo.Scope.LIBRARY)
@@ -54,4 +65,7 @@ public class Tezos internal constructor(
     }
 }
 
+/**
+ * Creates a new instance of [Tezos.Factory].
+ */
 public fun tezos(): Tezos.Factory = Tezos.Factory()

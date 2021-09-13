@@ -29,7 +29,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
 @Serializable(with = V2TezosMessage.Serializer::class)
-public abstract class V2TezosMessage : V2BeaconMessage() {
+internal abstract class V2TezosMessage : V2BeaconMessage() {
 
     companion object : Factory<BeaconMessage, V2BeaconMessage> {
         override fun from(senderId: String, content: BeaconMessage): V2BeaconMessage =
@@ -126,7 +126,7 @@ public abstract class V2TezosMessage : V2BeaconMessage() {
 }
 
 @Serializable
-public data class OperationV2TezosRequest(
+internal data class OperationV2TezosRequest(
     override val version: String,
     override val id: String,
     override val senderId: String,
@@ -160,7 +160,7 @@ public data class OperationV2TezosRequest(
 }
 
 @Serializable
-public data class SignPayloadV2TezosRequest(
+internal data class SignPayloadV2TezosRequest(
     override val version: String,
     override val id: String,
     override val senderId: String,
@@ -194,7 +194,7 @@ public data class SignPayloadV2TezosRequest(
 }
 
 @Serializable
-public data class BroadcastV2TezosRequest(
+internal data class BroadcastV2TezosRequest(
     override val version: String,
     override val id: String,
     override val senderId: String,
@@ -226,7 +226,7 @@ public data class BroadcastV2TezosRequest(
 }
 
 @Serializable
-public data class OperationV2TezosResponse(
+internal data class OperationV2TezosResponse(
     override val version: String,
     override val id: String,
     override val senderId: String,
@@ -250,7 +250,7 @@ public data class OperationV2TezosResponse(
 }
 
 @Serializable
-public data class SignPayloadV2TezosResponse(
+internal data class SignPayloadV2TezosResponse(
     override val version: String,
     override val id: String,
     override val senderId: String,
@@ -278,7 +278,7 @@ public data class SignPayloadV2TezosResponse(
 }
 
 @Serializable
-public data class BroadcastV2TezosResponse(
+internal data class BroadcastV2TezosResponse(
     override val version: String,
     override val id: String,
     override val senderId: String,

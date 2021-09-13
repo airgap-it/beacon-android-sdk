@@ -6,7 +6,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- *
+ * Base class for responses specific to Tezos used in the Beacon communication.
  */
 @Serializable
 public sealed class TezosResponse: ChainBeaconResponse.Payload() {
