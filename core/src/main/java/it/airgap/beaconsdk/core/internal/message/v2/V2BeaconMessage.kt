@@ -1,5 +1,6 @@
 package it.airgap.beaconsdk.core.internal.message.v2
 
+import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.data.beacon.*
 import it.airgap.beaconsdk.core.internal.chain.Chain
 import it.airgap.beaconsdk.core.internal.message.VersionedBeaconMessage
@@ -22,12 +23,13 @@ import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 @Serializable(with = V2BeaconMessage.Serializer::class)
 public abstract class V2BeaconMessage : VersionedBeaconMessage() {
-    abstract val id: String
-    abstract val senderId: String
+    public abstract val id: String
+    public abstract val senderId: String
 
-    companion object : Factory<BeaconMessage, V2BeaconMessage> {
+    public companion object : Factory<BeaconMessage, V2BeaconMessage> {
         override fun from(senderId: String, content: BeaconMessage): V2BeaconMessage =
             with(content) {
                 when (this) {
@@ -40,11 +42,11 @@ public abstract class V2BeaconMessage : VersionedBeaconMessage() {
                 }
             }
 
-        fun compatSerializer(): KSerializer<V2BeaconMessage> = CompatFactory.serializer()
+        public fun compatSerializer(): KSerializer<V2BeaconMessage> = CompatFactory.serializer()
     }
 
-    object Serializer : KSerializer<V2BeaconMessage> {
-        object Field {
+    public object Serializer : KSerializer<V2BeaconMessage> {
+        private object Field {
             const val TYPE = "type"
         }
 

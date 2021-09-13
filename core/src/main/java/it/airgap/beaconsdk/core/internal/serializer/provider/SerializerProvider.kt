@@ -1,11 +1,13 @@
 package it.airgap.beaconsdk.core.internal.serializer.provider
 
+import androidx.annotation.RestrictTo
 import kotlin.reflect.KClass
 
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public interface SerializerProvider {
     @Throws(Exception::class)
-    fun <T : Any> serialize(message: T, sourceClass: KClass<T>): String
+    public fun <T : Any> serialize(message: T, sourceClass: KClass<T>): String
 
     @Throws(Exception::class)
-    fun <T : Any> deserialize(message: String, targetClass: KClass<T>): T
+    public fun <T : Any> deserialize(message: String, targetClass: KClass<T>): T
 }

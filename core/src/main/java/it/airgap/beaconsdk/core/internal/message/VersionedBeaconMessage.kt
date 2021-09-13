@@ -22,12 +22,12 @@ import kotlinx.serialization.json.jsonPrimitive
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 @Serializable(with = VersionedBeaconMessage.Serializer::class)
 public abstract class VersionedBeaconMessage {
-    abstract val type: String
-    abstract val version: String
+    public abstract val type: String
+    public abstract val version: String
 
-    abstract suspend fun toBeaconMessage(origin: Origin, storageManager: StorageManager): BeaconMessage
+    public abstract suspend fun toBeaconMessage(origin: Origin, storageManager: StorageManager): BeaconMessage
 
-    companion object : Factory<BeaconMessage, VersionedBeaconMessage> {
+    public companion object : Factory<BeaconMessage, VersionedBeaconMessage> {
         override fun from(senderId: String, content: BeaconMessage): VersionedBeaconMessage {
             return when (content.version.major) {
                 "1" -> V1BeaconMessage.from(senderId, content)
@@ -42,8 +42,8 @@ public abstract class VersionedBeaconMessage {
             get() = substringBefore('.')
     }
 
-    object Serializer : KSerializer<VersionedBeaconMessage> {
-        object Field {
+    public object Serializer : KSerializer<VersionedBeaconMessage> {
+        private object Field {
             const val VERSION = "version"
         }
 

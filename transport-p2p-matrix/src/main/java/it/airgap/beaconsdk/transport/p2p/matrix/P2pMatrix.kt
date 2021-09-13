@@ -3,7 +3,7 @@ package it.airgap.beaconsdk.transport.p2p.matrix
 import it.airgap.beaconsdk.core.data.beacon.P2pPeer
 import it.airgap.beaconsdk.core.internal.data.HexString
 import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
-import it.airgap.beaconsdk.core.internal.transport.p2p.P2pClient
+import it.airgap.beaconsdk.core.transport.p2p.P2pClient
 import it.airgap.beaconsdk.core.internal.transport.p2p.data.P2pMessage
 import it.airgap.beaconsdk.core.internal.utils.*
 import it.airgap.beaconsdk.core.internal.utils.delegate.default

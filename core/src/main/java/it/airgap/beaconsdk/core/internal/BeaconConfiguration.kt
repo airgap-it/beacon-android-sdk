@@ -1,28 +1,32 @@
 package it.airgap.beaconsdk.core.internal
 
+import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.BuildConfig
 
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public object BeaconConfiguration {
+
     // -- SDK --
 
-    const val STORAGE_NAME = "beaconsdk"
+    public const val STORAGE_NAME = "beaconsdk"
 
-    val sdkVersion: String
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY)
+    public val sdkVersion: String
         get() = BuildConfig.VERSION_NAME
 
-    val cryptoProvider: CryptoProvider = CryptoProvider.LazySodium
-    val serializerProvider: SerializerProvider = SerializerProvider.Base58Check
-    val httpClientProvider: HttpClientProvider = HttpClientProvider.Ktor
+    internal val cryptoProvider: CryptoProvider = CryptoProvider.LazySodium
+    internal val serializerProvider: SerializerProvider = SerializerProvider.Base58Check
+    internal val httpClientProvider: HttpClientProvider = HttpClientProvider.Ktor
 
-    enum class CryptoProvider {
+    internal enum class CryptoProvider {
         LazySodium
     }
 
-    enum class SerializerProvider {
+    internal enum class SerializerProvider {
         Base58Check
     }
 
-    enum class HttpClientProvider {
+    internal enum class HttpClientProvider {
         Ktor
     }
 }

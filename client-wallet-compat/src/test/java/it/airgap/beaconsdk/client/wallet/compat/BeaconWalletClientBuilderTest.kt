@@ -11,7 +11,7 @@ import it.airgap.beaconsdk.core.internal.chain.MockChain
 import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.SharedPreferencesSecureStorage
 import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.SharedPreferencesStorage
-import it.airgap.beaconsdk.core.internal.transport.p2p.P2pClient
+import it.airgap.beaconsdk.core.transport.p2p.P2pClient
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
 import mockBeaconSdk

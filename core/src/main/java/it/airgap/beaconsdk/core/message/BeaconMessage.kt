@@ -1,5 +1,6 @@
 package it.airgap.beaconsdk.core.message
 
+import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.data.beacon.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -13,7 +14,10 @@ import kotlinx.serialization.Serializable
 public sealed class BeaconMessage {
     public abstract val id: String
 
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY)
     public abstract val version: String
+
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY)
     public abstract val associatedOrigin: Origin
 
     public companion object {}
@@ -34,6 +38,7 @@ public sealed class BeaconRequest : BeaconMessage() {
     public abstract val appMetadata: AppMetadata?
     public abstract val origin: Origin
 
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY)
     override val associatedOrigin: Origin
         get() = origin
 
@@ -54,30 +59,43 @@ public sealed class BeaconRequest : BeaconMessage() {
  */
 @Serializable
 @SerialName("permission_request")
-public data class PermissionBeaconRequest(
+public data class PermissionBeaconRequest @RestrictTo(RestrictTo.Scope.LIBRARY) constructor(
     override val id: String,
     override val senderId: String,
     override val appMetadata: AppMetadata,
     public val network: Network,
     public val scopes: List<Permission.Scope>,
     override val origin: Origin,
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
     override val version: String,
 ) : BeaconRequest() {
     public companion object {}
 }
 
 /**
+ * Message requesting a chain specific operation provided in the [payload].
  *
+ * Expects [ChainBeaconResponse] as a response.
+ *
+ * @property [id] The value that identifiers this request.
+ * @property [senderId] The value that identifiers the sender of this request.
+ * @property [appMetadata] The metadata describing the dApp asking for the broadcast. May be `null` if the [senderId] is unknown.
+ * @property [identifier] A unique name of the chain that specifies this request.
+ * @property [payload] The content of this request.
+ * @property [origin] The origination data of this request.
  */
 @Serializable
 @SerialName("chain_request")
-public data class ChainBeaconRequest(
+public data class ChainBeaconRequest @RestrictTo(RestrictTo.Scope.LIBRARY) constructor(
     override val id: String,
     override val senderId: String,
     override val appMetadata: AppMetadata?,
     val identifier: String,
     val payload: Payload,
     override val origin: Origin,
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
     override val version: String,
 ) : BeaconRequest() {
 
@@ -95,7 +113,10 @@ public data class ChainBeaconRequest(
 @Serializable
 @SerialName("response")
 public sealed class BeaconResponse : BeaconMessage() {
-    internal abstract val requestOrigin: Origin
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY)
+    public abstract val requestOrigin: Origin
+
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY)
     override val associatedOrigin: Origin
         get() = requestOrigin
 
@@ -113,13 +134,17 @@ public sealed class BeaconResponse : BeaconMessage() {
  */
 @Serializable
 @SerialName("permission_response")
-public data class PermissionBeaconResponse(
+public data class PermissionBeaconResponse @RestrictTo(RestrictTo.Scope.LIBRARY) constructor(
     override val id: String,
     public val publicKey: String,
     public val network: Network,
     public val scopes: List<Permission.Scope>,
     public val threshold: Threshold? = null,
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
     override val version: String,
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
     override val requestOrigin: Origin,
 ) : BeaconResponse() {
 
@@ -145,15 +170,23 @@ public data class PermissionBeaconResponse(
 }
 
 /**
+ * A message responding to [ChainBeaconRequest]
  *
+ * @property [id] The value that identifies the request to which the message is responding.
+ * @property [identifier] A unique name of the chain that specifies the request.
+ * @property [payload] The content of the response.
  */
 @Serializable
 @SerialName("chain_response")
-public data class ChainBeaconResponse(
+public data class ChainBeaconResponse @RestrictTo(RestrictTo.Scope.LIBRARY) constructor(
     override val id: String,
     public val identifier: String,
     public val payload: Payload,
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
     override val version: String,
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
     override val requestOrigin: Origin,
 ) : BeaconResponse() {
 
@@ -179,6 +212,7 @@ public data class ChainBeaconResponse(
 /**
  * Message responding to every [BeaconRequest], sent to confirm receiving of the request.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 @Serializable
 @SerialName("acknowledge")
 public data class AcknowledgeBeaconResponse(
@@ -188,7 +222,7 @@ public data class AcknowledgeBeaconResponse(
     override val requestOrigin: Origin,
 ) : BeaconResponse() {
 
-    companion object {
+    public companion object {
 
         /**
          * Creates a new instance of [AcknowledgeBeaconResponse] from the [request]
@@ -196,7 +230,7 @@ public data class AcknowledgeBeaconResponse(
          *
          * The response will have an id matching the one of the [request].
          */
-        fun from(request: BeaconRequest, senderId: String): AcknowledgeBeaconResponse =
+        public fun from(request: BeaconRequest, senderId: String): AcknowledgeBeaconResponse =
             AcknowledgeBeaconResponse(request.id, senderId, request.version, request.origin)
     }
 }
@@ -209,10 +243,14 @@ public data class AcknowledgeBeaconResponse(
  */
 @Serializable
 @SerialName("error")
-public data class ErrorBeaconResponse(
+public data class ErrorBeaconResponse @RestrictTo(RestrictTo.Scope.LIBRARY) constructor(
     override val id: String,
     val errorType: BeaconError,
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
     override val version: String,
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
     override val requestOrigin: Origin,
 ) : BeaconResponse() {
 
@@ -237,6 +275,7 @@ public data class ErrorBeaconResponse(
  * @property [id] The value that identifies this message.
  * @property [senderId] The value that identifies the sender of this message.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 @Serializable
 @SerialName("disconnect")
 public data class DisconnectBeaconMessage(

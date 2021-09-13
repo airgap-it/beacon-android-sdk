@@ -1,7 +1,9 @@
 package it.airgap.beaconsdk.core.internal.migration
 
+import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.internal.utils.failWithIllegalState
 
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public abstract class Migration(migrations: List<VersionedMigration>) {
     private val _migrations: MutableList<VersionedMigration> = mutableListOf()
     protected val migrations: List<VersionedMigration> get() = _migrations

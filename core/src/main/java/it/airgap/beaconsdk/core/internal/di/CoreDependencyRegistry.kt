@@ -1,6 +1,5 @@
 package it.airgap.beaconsdk.core.internal.di
 
-import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.data.beacon.Connection
 import it.airgap.beaconsdk.core.data.beacon.P2P
 import it.airgap.beaconsdk.core.internal.BeaconConfiguration
@@ -18,8 +17,8 @@ import it.airgap.beaconsdk.core.internal.network.provider.KtorHttpProvider
 import it.airgap.beaconsdk.core.internal.serializer.Serializer
 import it.airgap.beaconsdk.core.internal.serializer.provider.Base58CheckSerializerProvider
 import it.airgap.beaconsdk.core.internal.serializer.provider.SerializerProvider
-import it.airgap.beaconsdk.core.internal.storage.SecureStorage
-import it.airgap.beaconsdk.core.internal.storage.Storage
+import it.airgap.beaconsdk.core.storage.SecureStorage
+import it.airgap.beaconsdk.core.storage.Storage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.transport.Transport
 import it.airgap.beaconsdk.core.internal.transport.p2p.P2pTransport
@@ -28,8 +27,7 @@ import it.airgap.beaconsdk.core.internal.utils.Base58Check
 import it.airgap.beaconsdk.core.internal.utils.Poller
 import it.airgap.beaconsdk.core.network.provider.HttpProvider
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
-public class CoreDependencyRegistry(chainFactories: List<Chain.Factory<*>>, storage: Storage, secureStorage: SecureStorage) : DependencyRegistry {
+internal class CoreDependencyRegistry(chainFactories: List<Chain.Factory<*>>, storage: Storage, secureStorage: SecureStorage) : DependencyRegistry {
 
     // -- storage --
     override val storageManager: StorageManager by lazy { StorageManager(storage, secureStorage, accountUtils) }

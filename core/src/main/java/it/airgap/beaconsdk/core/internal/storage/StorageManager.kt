@@ -7,6 +7,10 @@ import it.airgap.beaconsdk.core.data.beacon.Permission
 import it.airgap.beaconsdk.core.data.beacon.selfRemoved
 import it.airgap.beaconsdk.core.internal.utils.AccountUtils
 import it.airgap.beaconsdk.core.internal.utils.asHexString
+import it.airgap.beaconsdk.core.storage.ExtendedStorage
+import it.airgap.beaconsdk.core.storage.SecureStorage
+import it.airgap.beaconsdk.core.storage.Storage
+import it.airgap.beaconsdk.core.storage.StoragePlugin
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -17,13 +21,18 @@ import kotlin.reflect.KProperty1
 
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public class StorageManager(
-    public val storage: ExtendedStorage,
-    public val secureStorage: SecureStorage,
-    public val accountUtils: AccountUtils
+    @PublishedApi
+    internal val storage: ExtendedStorage,
+
+    @PublishedApi
+    internal val secureStorage: SecureStorage,
+
+    private val accountUtils: AccountUtils
 ) : ExtendedStorage by storage, SecureStorage by secureStorage {
 
     private val _plugins: MutableList<StoragePlugin> = mutableListOf()
-    public val plugins: List<StoragePlugin> get() = _plugins
+    @PublishedApi
+    internal val plugins: List<StoragePlugin> get() = _plugins
 
     public constructor(
         storage: Storage,
@@ -38,6 +47,8 @@ public class StorageManager(
     public fun addPlugins(vararg plugins: StoragePlugin) {
         addPlugins(plugins.toList())
     }
+
+    public inline fun <reified T : StoragePlugin> getPlugin(): T? = plugins.filterIsInstance<T>().firstOrNull()
 
     public inline fun <reified T : StoragePlugin> hasPlugin(): Boolean = plugins.any { it is T }
 

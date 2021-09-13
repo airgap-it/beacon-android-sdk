@@ -1,4 +1,4 @@
-package it.airgap.beaconsdk.core.internal.storage
+package it.airgap.beaconsdk.core.storage
 
 import it.airgap.beaconsdk.core.data.beacon.AppMetadata
 import it.airgap.beaconsdk.core.data.beacon.Peer

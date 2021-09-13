@@ -1,8 +1,10 @@
 package it.airgap.beaconsdk.core.internal.utils.delegate
 
+import androidx.annotation.RestrictTo
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public class Default<V : Any>(initValue: V? = null, private val defaultValue: () -> V) : ReadWriteProperty<Any?, V> {
     private var value: V? = initValue
 
@@ -13,4 +15,5 @@ public class Default<V : Any>(initValue: V? = null, private val defaultValue: ()
     }
 }
 
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public fun <V : Any> default(initValue: V? = null, defaultValue: () -> V): Default<V> = Default(initValue, defaultValue)

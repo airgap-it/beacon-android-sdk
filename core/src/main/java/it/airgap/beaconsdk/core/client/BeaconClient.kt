@@ -20,7 +20,7 @@ import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onEach
 
 /**
- *
+ * An abstract base for different client types provided in Beacon.
  */
 public abstract class BeaconClient<BM : BeaconMessage>(
     public val name: String,

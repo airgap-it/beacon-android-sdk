@@ -1,4 +1,4 @@
-package it.airgap.beaconsdk.core.internal.storage
+package it.airgap.beaconsdk.core.storage
 
 import it.airgap.beaconsdk.core.data.beacon.AppMetadata
 import it.airgap.beaconsdk.core.data.beacon.Peer
@@ -6,6 +6,7 @@ import it.airgap.beaconsdk.core.data.beacon.Permission
 import it.airgap.beaconsdk.core.internal.storage.decorator.DecoratedStorage
 
 public interface Storage {
+
     // -- Beacon --
 
     public suspend fun getPeers(): List<Peer>

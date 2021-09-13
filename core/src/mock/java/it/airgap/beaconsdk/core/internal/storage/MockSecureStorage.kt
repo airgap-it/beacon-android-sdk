@@ -1,5 +1,7 @@
 package it.airgap.beaconsdk.core.internal.storage
 
+import it.airgap.beaconsdk.core.storage.SecureStorage
+
 public class MockSecureStorage : SecureStorage {
     private var sdkSecretSeed: String? = null
 

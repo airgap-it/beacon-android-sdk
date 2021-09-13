@@ -5,7 +5,7 @@ import it.airgap.beaconsdk.core.data.beacon.Network
 import it.airgap.beaconsdk.core.internal.crypto.Crypto
 
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-public class AccountUtils(private val crypto: Crypto, private val base58Check: Base58Check) {
+public class AccountUtils internal constructor(private val crypto: Crypto, private val base58Check: Base58Check) {
 
     public fun getAccountIdentifier(address: String, network: Network): Result<String> {
         val data = with(network) {

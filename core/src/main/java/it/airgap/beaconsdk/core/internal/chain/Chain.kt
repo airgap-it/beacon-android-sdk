@@ -26,7 +26,6 @@ public interface Chain<W : Chain.Wallet, MF : Chain.MessageFactory> {
         public val v2: VersionedBeaconMessage.Factory<BeaconMessage, V2BeaconMessage>
     }
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
     public interface Factory<T: Chain<*, *>> {
         public val identifier: String
 

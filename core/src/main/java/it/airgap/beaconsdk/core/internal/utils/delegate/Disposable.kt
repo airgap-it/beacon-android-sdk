@@ -1,8 +1,10 @@
 package it.airgap.beaconsdk.core.internal.utils.delegate
 
+import androidx.annotation.RestrictTo
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public class Disposable<V: Any> : ReadWriteProperty<Any?, V?> {
     private var value: V? = null
 
@@ -14,4 +16,5 @@ public class Disposable<V: Any> : ReadWriteProperty<Any?, V?> {
     }
 }
 
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public fun <T: Any> disposable(): Disposable<T> = Disposable()

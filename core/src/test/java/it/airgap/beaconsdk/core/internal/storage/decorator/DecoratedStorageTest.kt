@@ -2,7 +2,7 @@ package it.airgap.beaconsdk.core.internal.storage.decorator
 
 import appMetadata
 import it.airgap.beaconsdk.core.internal.storage.MockStorage
-import it.airgap.beaconsdk.core.internal.storage.Storage
+import it.airgap.beaconsdk.core.storage.Storage
 import it.airgap.beaconsdk.core.internal.utils.splitAt
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.drop

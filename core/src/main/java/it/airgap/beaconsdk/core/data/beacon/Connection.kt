@@ -1,6 +1,6 @@
 package it.airgap.beaconsdk.core.data.beacon
 
-import it.airgap.beaconsdk.core.internal.transport.p2p.P2pClient
+import it.airgap.beaconsdk.core.transport.p2p.P2pClient
 
 /**
  * Connection types supported in Beacon.

@@ -10,7 +10,7 @@ import it.airgap.beaconsdk.core.internal.utils.*
 import it.airgap.beaconsdk.core.message.*
 
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-public class MessageController(
+public class MessageController internal constructor(
     private val chainRegistry: ChainRegistry,
     private val storageManager: StorageManager,
     private val accountUtils: AccountUtils,
@@ -19,7 +19,7 @@ public class MessageController(
 
     // -- on incoming --
 
-    suspend fun onIncomingMessage(origin: Origin, message: VersionedBeaconMessage): Result<BeaconMessage> =
+    public suspend fun onIncomingMessage(origin: Origin, message: VersionedBeaconMessage): Result<BeaconMessage> =
         runCatching {
             message.toBeaconMessage(origin, storageManager).also {
                 when (it) {
@@ -44,7 +44,7 @@ public class MessageController(
 
     // -- on outgoing --
 
-    suspend fun onOutgoingMessage(
+    public suspend fun onOutgoingMessage(
         beaconId: String,
         message: BeaconMessage,
         isTerminal: Boolean,

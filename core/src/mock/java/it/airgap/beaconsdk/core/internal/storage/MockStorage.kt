@@ -3,6 +3,7 @@ package it.airgap.beaconsdk.core.internal.storage
 import it.airgap.beaconsdk.core.data.beacon.AppMetadata
 import it.airgap.beaconsdk.core.data.beacon.Peer
 import it.airgap.beaconsdk.core.data.beacon.Permission
+import it.airgap.beaconsdk.core.storage.Storage
 
 public class MockStorage : Storage {
     private var p2pPeers: List<Peer> = emptyList()

@@ -1,5 +1,6 @@
 package it.airgap.beaconsdk.core.internal.transport.p2p.data
 
+import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.internal.utils.toHexString
 
 private const val PREFIX = "@"
@@ -7,6 +8,7 @@ private const val SEPARATOR = ":"
 
 private val identifierRegex: Regex = Regex("^$PREFIX(.+)$SEPARATOR(.+)$")
 
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 @JvmInline
 public value class P2pIdentifier(private val value: String) {
     init {
@@ -14,13 +16,13 @@ public value class P2pIdentifier(private val value: String) {
     }
 
     private val parts: List<String> get() = value.split(SEPARATOR, limit = 2).also { require(it.size == 2) }
-    val publicKeyHash: String get() = parts[0].removePrefix(PREFIX)
-    val relayServer: String get() = parts[1]
+    public val publicKeyHash: String get() = parts[0].removePrefix(PREFIX)
+    public val relayServer: String get() = parts[1]
 
-    fun asString(): String = value
+    public fun asString(): String = value
 
-    companion object {
-        fun isValid(value: String): Boolean = identifierRegex.matches(value)
+    public companion object {
+        public fun isValid(value: String): Boolean = identifierRegex.matches(value)
     }
 }
 

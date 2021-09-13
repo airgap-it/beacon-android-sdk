@@ -1,29 +1,36 @@
 package it.airgap.beaconsdk.core.internal.message
 
+import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.data.beacon.Origin
 
-public typealias ConnectionTransportMessage = ConnectionMessage<*>
+internal typealias ConnectionTransportMessage = ConnectionMessage<*>
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public sealed interface ConnectionMessage<T> {
-    val origin: Origin
-    val content: T
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY)
+    public val origin: Origin
 
-    companion object {}
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY)
+    public val content: T
+
+    public companion object {}
 }
 
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public data class SerializedConnectionMessage(
     override val origin: Origin,
     override val content: String,
 ) : ConnectionMessage<String> {
-    constructor(pair: Pair<Origin, String>) : this(pair.first, pair.second)
+    public constructor(pair: Pair<Origin, String>) : this(pair.first, pair.second)
 
-    companion object {}
+    public companion object {}
 }
 
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public data class BeaconConnectionMessage(
     override val origin: Origin,
     override val content: VersionedBeaconMessage,
 ) : ConnectionMessage<VersionedBeaconMessage> {
-    constructor(pair: Pair<Origin, VersionedBeaconMessage>) : this(pair.first, pair.second)
+    public constructor(pair: Pair<Origin, VersionedBeaconMessage>) : this(pair.first, pair.second)
 
-    companion object {}
+    public companion object {}
 }

@@ -1,5 +1,6 @@
 package it.airgap.beaconsdk.core.internal.controller
 
+import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.data.beacon.Connection
 import it.airgap.beaconsdk.core.exception.ConnectionException
 import it.airgap.beaconsdk.core.exception.MultipleConnectionException
@@ -13,15 +14,16 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 
-public class ConnectionController(private val transports: List<Transport>, private val serializer: Serializer) {
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+public class ConnectionController internal constructor(private val transports: List<Transport>, private val serializer: Serializer) {
 
-    fun subscribe(): Flow<Result<BeaconConnectionMessage>> =
+    public fun subscribe(): Flow<Result<BeaconConnectionMessage>> =
         transports
             .map { it.subscribe() }
             .merge()
             .map { BeaconConnectionMessage.fromResult(it)}
 
-    suspend fun send(message: BeaconConnectionMessage): Result<Unit> =
+    public suspend fun send(message: BeaconConnectionMessage): Result<Unit> =
         runCatchingFlat {
             val serializedContent = serializer.serialize(message.content).getOrThrow()
             val serializedMessage = SerializedConnectionMessage(message.origin, serializedContent)

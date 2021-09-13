@@ -1,37 +1,38 @@
 package it.airgap.beaconsdk.core.internal
 
 import android.content.Context
+import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.internal.chain.Chain
 import it.airgap.beaconsdk.core.internal.crypto.Crypto
 import it.airgap.beaconsdk.core.internal.crypto.data.KeyPair
 import it.airgap.beaconsdk.core.internal.data.BeaconApplication
 import it.airgap.beaconsdk.core.internal.di.CoreDependencyRegistry
 import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
-import it.airgap.beaconsdk.core.internal.storage.SecureStorage
-import it.airgap.beaconsdk.core.internal.storage.Storage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
-import it.airgap.beaconsdk.core.internal.storage.StoragePlugin
 import it.airgap.beaconsdk.core.internal.utils.failWithUninitialized
 import it.airgap.beaconsdk.core.internal.utils.toHexString
+import it.airgap.beaconsdk.core.storage.SecureStorage
+import it.airgap.beaconsdk.core.storage.Storage
 
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public class BeaconSdk(context: Context) {
-    var isInitialized: Boolean = false
+    public var isInitialized: Boolean = false
         private set
 
-    val applicationContext: Context = context.applicationContext
+    public val applicationContext: Context = context.applicationContext
 
     private var _dependencyRegistry: DependencyRegistry? = null
-    val dependencyRegistry: DependencyRegistry
+    public val dependencyRegistry: DependencyRegistry
         get() = _dependencyRegistry ?: failWithUninitialized(TAG)
 
     private var _app: BeaconApplication? = null
-    val app: BeaconApplication
+    public val app: BeaconApplication
         get() = _app ?: failWithUninitialized(TAG)
 
-    val beaconId: String
+    public val beaconId: String
         get() = app.keyPair.publicKey.toHexString().asString()
 
-    suspend fun init(
+    public suspend fun init(
         appName: String,
         appIcon: String?,
         appUrl: String?,

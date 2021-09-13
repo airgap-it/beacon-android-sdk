@@ -3,7 +3,7 @@ package it.airgap.beaconsdk.core.internal.migration
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.utils.logDebug
 
-public class CoreMigration(private val storageManager: StorageManager, migrations: List<VersionedMigration>) : Migration(migrations) {
+internal class CoreMigration(private val storageManager: StorageManager, migrations: List<VersionedMigration>) : Migration(migrations) {
     private var _sdkVersion: String? = null
     private suspend fun sdkVersion(): String? =
         _sdkVersion ?: storageManager.getSdkVersion()?.also { _sdkVersion = it }

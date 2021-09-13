@@ -1,7 +1,6 @@
 
 import androidx.annotation.IntRange
 import it.airgap.beaconsdk.core.data.beacon.*
-import it.airgap.beaconsdk.core.internal.message.BeaconConnectionMessage
 import it.airgap.beaconsdk.core.internal.message.ConnectionTransportMessage
 import it.airgap.beaconsdk.core.internal.message.VersionedBeaconMessage
 import it.airgap.beaconsdk.core.internal.utils.failWith
@@ -49,25 +48,7 @@ internal fun JsonObject.Companion.fromValues(values: Map<String, Any?>, includeN
     return JsonObject(content)
 }
 
-// -- converters --
-
-internal fun versionedBeaconMessage(
-    message: BeaconMessage,
-    senderId: String = "senderId",
-): VersionedBeaconMessage =
-    VersionedBeaconMessage.from(senderId, message)
-
-internal fun versionedBeaconMessages(
-    messages: List<BeaconMessage>,
-    senderId: String = "senderId",
-): List<VersionedBeaconMessage> =
-    messages.map { VersionedBeaconMessage.from(senderId, it) }
-
 // -- flows --
-
-internal fun beaconConnectionMessageFlow(
-    replay: Int,
-): MutableSharedFlow<Result<BeaconConnectionMessage>> = MutableSharedFlow(replay)
 
 internal fun connectionMessageFlow(
     replay: Int,
@@ -242,7 +223,3 @@ internal fun <T> failures(
     error: Throwable = Exception(),
 ): List<Result<T>> =
     (0 until number).map { Result.failure(error) }
-
-// -- values --
-
-internal fun nodeApiUrl(node: String): String = "https://$node/_matrix/client/r0"

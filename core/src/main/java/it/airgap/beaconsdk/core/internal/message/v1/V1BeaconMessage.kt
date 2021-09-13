@@ -1,5 +1,6 @@
 package it.airgap.beaconsdk.core.internal.message.v1
 
+import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.data.beacon.*
 import it.airgap.beaconsdk.core.internal.chain.Chain
 import it.airgap.beaconsdk.core.internal.message.VersionedBeaconMessage
@@ -18,12 +19,13 @@ import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 @Serializable(with = V1BeaconMessage.Serializer::class)
 public abstract class V1BeaconMessage : VersionedBeaconMessage() {
-    abstract val id: String
-    abstract val beaconId: String
+    public abstract val id: String
+    public abstract val beaconId: String
 
-    companion object : Factory<BeaconMessage, V1BeaconMessage> {
+    public companion object : Factory<BeaconMessage, V1BeaconMessage> {
         override fun from(senderId: String, content: BeaconMessage): V1BeaconMessage =
             with(content) {
                 when (this) {
@@ -36,11 +38,11 @@ public abstract class V1BeaconMessage : VersionedBeaconMessage() {
                 }
             }
 
-        fun compatSerializer(): KSerializer<V1BeaconMessage> = CompatFactory.serializer()
+        public fun compatSerializer(): KSerializer<V1BeaconMessage> = CompatFactory.serializer()
     }
 
-    object Serializer : KSerializer<V1BeaconMessage> {
-        object Field {
+    public object Serializer : KSerializer<V1BeaconMessage> {
+        private object Field {
             const val TYPE = "type"
         }
 
@@ -73,8 +75,8 @@ public abstract class V1BeaconMessage : VersionedBeaconMessage() {
         }
     }
 
-    object CompatFactory : Factory<BeaconMessage, V1BeaconMessage> {
-        const val CHAIN_IDENTIFIER = "tezos"
+    public object CompatFactory : Factory<BeaconMessage, V1BeaconMessage> {
+        private const val CHAIN_IDENTIFIER = "tezos"
         private val chain: Chain<*, *>
             get() = chainRegistry.get(CHAIN_IDENTIFIER) ?: failWithChainNotFound(CHAIN_IDENTIFIER)
 

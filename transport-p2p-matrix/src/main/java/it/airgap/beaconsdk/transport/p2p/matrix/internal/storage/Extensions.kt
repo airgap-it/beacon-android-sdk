@@ -7,9 +7,7 @@ import it.airgap.beaconsdk.transport.p2p.matrix.storage.ExtendedP2pMatrixStorage
 import it.airgap.beaconsdk.transport.p2p.matrix.storage.P2pMatrixStoragePlugin
 
 internal val StorageManager.matrixPlugin: ExtendedP2pMatrixStoragePlugin
-    get() = plugins.filterIsInstance<ExtendedP2pMatrixStoragePlugin>().firstOrNull()
-        ?: plugins.filterIsInstance<P2pMatrixStoragePlugin>().firstOrNull()?.extend()?.also { addPlugins(it) }
-        ?: failWithMatrixStoragePluginMissing()
+    get() = getPlugin() ?: getPlugin<P2pMatrixStoragePlugin>()?.extend()?.also { addPlugins(it) } ?: failWithMatrixStoragePluginMissing()
 
 internal suspend fun StorageManager.getMatrixRelayServer(): String? = matrixPlugin.getMatrixRelayServer()
 internal suspend fun StorageManager.setMatrixRelayServer(relayServer: String?) = matrixPlugin.setMatrixRelayServer(relayServer)

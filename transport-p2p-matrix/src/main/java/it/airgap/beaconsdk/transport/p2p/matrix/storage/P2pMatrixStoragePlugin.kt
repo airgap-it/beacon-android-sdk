@@ -1,6 +1,6 @@
 package it.airgap.beaconsdk.transport.p2p.matrix.storage
 
-import it.airgap.beaconsdk.core.internal.storage.StoragePlugin
+import it.airgap.beaconsdk.core.storage.StoragePlugin
 import it.airgap.beaconsdk.transport.p2p.matrix.data.MatrixRoom
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.storage.decorator.DecoratedP2pMatrixStoragePlugin
 

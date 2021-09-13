@@ -2,12 +2,14 @@ package it.airgap.beaconsdk.core.internal.storage.sharedpreferences
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.data.beacon.AppMetadata
 import it.airgap.beaconsdk.core.data.beacon.Peer
 import it.airgap.beaconsdk.core.data.beacon.Permission
 import it.airgap.beaconsdk.core.internal.BeaconConfiguration
-import it.airgap.beaconsdk.core.internal.storage.Storage
+import it.airgap.beaconsdk.core.storage.Storage
 
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public class SharedPreferencesStorage(private val sharedPreferences: SharedPreferences) : Storage {
     override suspend fun getPeers(): List<Peer> =
         sharedPreferences.getSerializable(KEY_PEERS, emptyList())
@@ -44,7 +46,7 @@ public class SharedPreferencesStorage(private val sharedPreferences: SharedPrefe
         sharedPreferences.putStringSet(KEY_MIGRATIONS, migrations)
     }
 
-    companion object {
+    public companion object {
         private const val KEY_PEERS = "peers"
 
         private const val KEY_APPS_METADATA = "appsMetadata"
@@ -54,7 +56,7 @@ public class SharedPreferencesStorage(private val sharedPreferences: SharedPrefe
 
         private const val KEY_MIGRATIONS = "migrations"
 
-        fun create(context: Context): SharedPreferencesStorage {
+        public fun create(context: Context): SharedPreferencesStorage {
             val sharedPreferences = context.getSharedPreferences(BeaconConfiguration.STORAGE_NAME, Context.MODE_PRIVATE)
 
             return SharedPreferencesStorage(sharedPreferences)

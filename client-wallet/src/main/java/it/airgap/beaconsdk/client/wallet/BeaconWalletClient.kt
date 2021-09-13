@@ -11,8 +11,8 @@ import it.airgap.beaconsdk.core.internal.chain.Chain
 import it.airgap.beaconsdk.core.internal.controller.ConnectionController
 import it.airgap.beaconsdk.core.internal.controller.MessageController
 import it.airgap.beaconsdk.core.internal.crypto.Crypto
-import it.airgap.beaconsdk.core.internal.storage.SecureStorage
-import it.airgap.beaconsdk.core.internal.storage.Storage
+import it.airgap.beaconsdk.core.storage.SecureStorage
+import it.airgap.beaconsdk.core.storage.Storage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.SharedPreferencesSecureStorage
 import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.SharedPreferencesStorage

@@ -1,5 +1,6 @@
 package it.airgap.beaconsdk.core.internal.utils
 
+import androidx.annotation.RestrictTo
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -7,8 +8,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.flowOn
 
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public class Poller {
-    fun <T> poll(
+    public fun <T> poll(
         dispatcher: CoroutineDispatcher = Dispatchers.Default,
         interval: Long = 0,
         action: suspend () -> Result<T>,

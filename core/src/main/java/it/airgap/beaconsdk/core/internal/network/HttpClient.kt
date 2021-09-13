@@ -1,5 +1,6 @@
 package it.airgap.beaconsdk.core.internal.network
 
+import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.network.data.HttpHeader
 import it.airgap.beaconsdk.core.network.data.HttpParameter
 import it.airgap.beaconsdk.core.network.provider.HttpProvider
@@ -8,8 +9,9 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.take
 import java.util.concurrent.CancellationException
 
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public class HttpClient(public val httpProvider: HttpProvider) {
-    inline fun <reified T : Any, reified E : Throwable> get(
+    public inline fun <reified T : Any, reified E : Throwable> get(
         baseUrl: String,
         endpoint: String,
         headers: List<HttpHeader> = emptyList(),
@@ -27,7 +29,7 @@ public class HttpClient(public val httpProvider: HttpProvider) {
         )
     }
 
-    inline fun <reified T : Any, reified R : Any, reified E: Throwable> post(
+    public inline fun <reified T : Any, reified R : Any, reified E: Throwable> post(
         baseUrl: String,
         endpoint: String,
         body: T? = null,
@@ -48,7 +50,7 @@ public class HttpClient(public val httpProvider: HttpProvider) {
         )
     }
 
-    inline fun <reified T : Any, reified R : Any, reified E : Throwable> put(
+    public inline fun <reified T : Any, reified R : Any, reified E : Throwable> put(
         baseUrl: String,
         endpoint: String,
         body: T? = null,

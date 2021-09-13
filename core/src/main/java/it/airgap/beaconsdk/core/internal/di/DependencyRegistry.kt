@@ -1,5 +1,6 @@
 package it.airgap.beaconsdk.core.internal.di
 
+import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.data.beacon.Connection
 import it.airgap.beaconsdk.core.internal.chain.ChainRegistry
 import it.airgap.beaconsdk.core.internal.controller.ConnectionController
@@ -15,6 +16,7 @@ import it.airgap.beaconsdk.core.internal.utils.Base58Check
 import it.airgap.beaconsdk.core.internal.utils.Poller
 import it.airgap.beaconsdk.core.network.provider.HttpProvider
 
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public interface DependencyRegistry {
     public val storageManager: StorageManager
 

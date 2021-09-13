@@ -3,8 +3,8 @@ package it.airgap.beaconsdk.core.internal.storage.decorator
 import it.airgap.beaconsdk.core.data.beacon.AppMetadata
 import it.airgap.beaconsdk.core.data.beacon.Peer
 import it.airgap.beaconsdk.core.data.beacon.Permission
-import it.airgap.beaconsdk.core.internal.storage.ExtendedStorage
-import it.airgap.beaconsdk.core.internal.storage.Storage
+import it.airgap.beaconsdk.core.storage.ExtendedStorage
+import it.airgap.beaconsdk.core.storage.Storage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
@@ -13,7 +13,7 @@ import kotlinx.coroutines.launch
 private typealias StorageSelectCollection<T> = suspend Storage.() -> List<T>
 private typealias StorageInsertCollection<T> = suspend Storage.(List<T>) -> Unit
 
-public class DecoratedStorage(private val storage: Storage) : ExtendedStorage, Storage by storage {
+internal class DecoratedStorage(private val storage: Storage) : ExtendedStorage, Storage by storage {
     private val _appMetadata: MutableSharedFlow<AppMetadata> by lazy { resourceFlow() }
     override val appMetadata: Flow<AppMetadata> get() = _appMetadata.onSubscription { emitAll(getAppMetadata().asFlow()) }
 

@@ -1,6 +1,10 @@
 package it.airgap.beaconsdk.core.internal.utils
 
 import android.os.Build
+import androidx.annotation.ChecksSdkIntAtLeast
+import androidx.annotation.RestrictTo
 
-internal fun sdkAtLeast(code: Int): Boolean =
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+@ChecksSdkIntAtLeast(parameter = 0)
+public fun sdkAtLeast(code: Int): Boolean =
     Build.VERSION.SDK_INT >= code
