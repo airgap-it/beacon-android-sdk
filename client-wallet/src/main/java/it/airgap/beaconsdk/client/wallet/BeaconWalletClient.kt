@@ -7,7 +7,10 @@ import it.airgap.beaconsdk.core.internal.chain.Chain
 import it.airgap.beaconsdk.core.internal.controller.ConnectionController
 import it.airgap.beaconsdk.core.internal.controller.MessageController
 import it.airgap.beaconsdk.core.internal.crypto.Crypto
+import it.airgap.beaconsdk.core.internal.storage.SecureStorage
+import it.airgap.beaconsdk.core.internal.storage.Storage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
+import it.airgap.beaconsdk.core.internal.storage.StoragePlugin
 import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.SharedPreferencesSecureStorage
 import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.SharedPreferencesStorage
 import it.airgap.beaconsdk.core.internal.utils.applicationContext
@@ -228,16 +231,35 @@ public class BeaconWalletClient(
         /**
          * Connection types that will be supported by the configured client.
          */
-        public var connections: List<Connection> = listOf(P2P())
+        public var connections: List<Connection> = listOf()
+
+        /**
+         *
+         */
+        public var storage: Storage? = null
+
+        /**
+         *
+         */
+        public var secureStorage: SecureStorage? = null
+
+        private val storagePlugins: MutableList<StoragePlugin> = mutableListOf()
+
+        /**
+         *
+         */
+        public fun addStoragePlugins(vararg plugins: StoragePlugin) {
+            storagePlugins.addAll(plugins.toList())
+        }
 
         /**
          * Builds a new instance of [BeaconWalletClient].
          */
         public suspend fun build(): BeaconWalletClient {
-            val storage = SharedPreferencesStorage.create(applicationContext)
-            val secureStorage = SharedPreferencesSecureStorage.create(applicationContext)
+            val storage = storage ?: SharedPreferencesStorage.create(applicationContext)
+            val secureStorage = secureStorage ?: SharedPreferencesSecureStorage.create(applicationContext)
 
-            beaconSdk.init(name, appUrl, iconUrl, chains, storage, secureStorage)
+            beaconSdk.init(name, appUrl, iconUrl, chains, storage, secureStorage, storagePlugins)
 
             with(dependencyRegistry) {
                 return BeaconWalletClient(

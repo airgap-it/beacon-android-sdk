@@ -6,6 +6,7 @@ import it.airgap.beaconsdk.core.internal.utils.delegate.disposable
 import it.airgap.beaconsdk.core.internal.utils.success
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.MatrixEvent
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.MatrixRoom
+import it.airgap.beaconsdk.transport.p2p.matrix.internal.storage.*
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow

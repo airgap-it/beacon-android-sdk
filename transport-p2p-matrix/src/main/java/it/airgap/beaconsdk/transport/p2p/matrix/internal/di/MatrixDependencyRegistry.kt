@@ -28,7 +28,7 @@ internal class MatrixDependencyRegistry(dependencyRegistry: DependencyRegistry) 
         )
     }
 
-    // -- Migration --
+    // -- migration --
 
     override val migration: Migration by lazy {
         dependencyRegistry.migration.apply {

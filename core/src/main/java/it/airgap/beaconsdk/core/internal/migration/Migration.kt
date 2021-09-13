@@ -3,12 +3,12 @@ package it.airgap.beaconsdk.core.internal.migration
 import it.airgap.beaconsdk.core.internal.utils.failWithIllegalState
 
 public abstract class Migration(migrations: List<VersionedMigration>) {
+    private val _migrations: MutableList<VersionedMigration> = mutableListOf()
+    protected val migrations: List<VersionedMigration> get() = _migrations
+
     init {
         register(migrations)
     }
-
-    private val _migrations: MutableList<VersionedMigration> = mutableListOf()
-    protected val migrations: List<VersionedMigration> get() = _migrations
 
     public fun register(additionalMigrations: List<VersionedMigration>) {
         _migrations.register(additionalMigrations.toList())

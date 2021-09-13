@@ -19,14 +19,29 @@ import kotlin.reflect.KProperty1
 public class StorageManager(
     public val storage: ExtendedStorage,
     public val secureStorage: SecureStorage,
+    plugins: List<StoragePlugin>,
     public val accountUtils: AccountUtils
 ) : ExtendedStorage by storage, SecureStorage by secureStorage {
+
+    private val _plugins: MutableList<StoragePlugin> = plugins.toMutableList()
+    public val plugins: List<StoragePlugin> get() = _plugins
 
     public constructor(
         storage: Storage,
         secureStorage: SecureStorage,
+        plugins: List<StoragePlugin>,
         accountUtils: AccountUtils
-    ) : this(storage.extend(), secureStorage, accountUtils)
+    ) : this(storage.extend(), secureStorage, plugins, accountUtils)
+
+    public fun addPlugins(plugins: List<StoragePlugin>) {
+        _plugins.addAll(plugins)
+    }
+
+    public fun addPlugins(vararg plugins: StoragePlugin) {
+        addPlugins(plugins.toList())
+    }
+
+    public inline fun <reified T : StoragePlugin> hasPlugin(): Boolean = plugins.any { it is T }
 
     private val removedPeers: MutableSharedFlow<Peer> by lazy { MutableSharedFlow(extraBufferCapacity = 64) }
     public val updatedPeers: Flow<Peer>

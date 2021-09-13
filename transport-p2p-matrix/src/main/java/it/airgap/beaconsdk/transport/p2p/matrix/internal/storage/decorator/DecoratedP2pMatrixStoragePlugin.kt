@@ -1,0 +1,24 @@
+package it.airgap.beaconsdk.transport.p2p.matrix.internal.storage.decorator
+
+import it.airgap.beaconsdk.transport.p2p.matrix.internal.storage.ExtendedP2pMatrixStoragePlugin
+import it.airgap.beaconsdk.transport.p2p.matrix.internal.storage.P2pMatrixStoragePlugin
+
+internal class DecoratedP2pMatrixStoragePlugin(private val plugin: P2pMatrixStoragePlugin) : ExtendedP2pMatrixStoragePlugin, P2pMatrixStoragePlugin by plugin {
+    override suspend fun removeMatrixRelayServer() {
+        setMatrixRelayServer(null)
+    }
+
+    override suspend fun removeMatrixChannels() {
+        setMatrixChannels(emptyMap())
+    }
+
+    override suspend fun removeMatrixSyncToken() {
+        setMatrixSyncToken(null)
+    }
+
+    override suspend fun removeMatrixRooms() {
+        setMatrixRooms(emptyList())
+    }
+
+    override fun extend(): ExtendedP2pMatrixStoragePlugin = this
+}

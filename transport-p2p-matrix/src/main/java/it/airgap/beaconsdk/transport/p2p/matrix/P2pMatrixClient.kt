@@ -15,6 +15,8 @@ import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.MatrixClient
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.MatrixEvent
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.MatrixRoom
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.MatrixError
+import it.airgap.beaconsdk.transport.p2p.matrix.internal.storage.P2pMatrixStoragePlugin
+import it.airgap.beaconsdk.transport.p2p.matrix.internal.storage.sharedpreferences.SharedPreferencesMatrixStoragePlugin
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.store.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -259,6 +261,10 @@ public class P2pMatrixClient(
 
         override fun create(dependencyRegistry: DependencyRegistry): P2pMatrixClient =
             with(extendedDependencyRegistry(dependencyRegistry)) {
+                with(storageManager) {
+                    if (!hasPlugin<P2pMatrixStoragePlugin>()) addPlugins(SharedPreferencesMatrixStoragePlugin.create(applicationContext))
+                }
+
                 val matrixClient = matrixClient(httpProvider)
 
                 val p2pCommunicator = P2pCommunicator(app, crypto)

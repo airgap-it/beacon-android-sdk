@@ -1,16 +1,16 @@
 package it.airgap.beaconsdk.core.internal.storage
 
-import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.data.beacon.AppMetadata
 import it.airgap.beaconsdk.core.data.beacon.Peer
 import it.airgap.beaconsdk.core.data.beacon.Permission
 import kotlinx.coroutines.flow.Flow
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
 public interface ExtendedStorage : Storage {
     public val appMetadata: Flow<AppMetadata>
     public val permissions: Flow<Permission>
     public val peers: Flow<Peer>
+
+    // -- Beacon --
 
     public suspend fun addPeers(
         peers: List<Peer>,
@@ -40,10 +40,7 @@ public interface ExtendedStorage : Storage {
     public suspend fun findPermission(predicate: (Permission) -> Boolean): Permission?
     public suspend fun removePermissions(predicate: ((Permission) -> Boolean)? = null)
 
-    public suspend fun removeMatrixRelayServer()
-    public suspend fun removeMatrixChannels()
-    public suspend fun removeMatrixSyncToken()
-    public suspend fun removeMatrixRooms()
+    // -- SDK --
 
     public suspend fun addMigrations(migrations: Set<String>)
 

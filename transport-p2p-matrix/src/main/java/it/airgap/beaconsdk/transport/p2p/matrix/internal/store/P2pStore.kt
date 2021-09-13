@@ -10,6 +10,7 @@ import it.airgap.beaconsdk.core.internal.utils.*
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.P2pCommunicator
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.MatrixClient
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.migration.migrateMatrixRelayServer
+import it.airgap.beaconsdk.transport.p2p.matrix.internal.storage.*
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 

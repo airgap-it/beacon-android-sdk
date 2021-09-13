@@ -10,6 +10,7 @@ import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.core.internal.storage.SecureStorage
 import it.airgap.beaconsdk.core.internal.storage.Storage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
+import it.airgap.beaconsdk.core.internal.storage.StoragePlugin
 import it.airgap.beaconsdk.core.internal.utils.failWithUninitialized
 import it.airgap.beaconsdk.core.internal.utils.toHexString
 
@@ -37,10 +38,11 @@ public class BeaconSdk(context: Context) {
         chainFactories: List<Chain.Factory<*>>,
         storage: Storage,
         secureStorage: SecureStorage,
+        storagePlugins: List<StoragePlugin>,
     ) {
         if (isInitialized) return
 
-        _dependencyRegistry = CoreDependencyRegistry(chainFactories, storage, secureStorage)
+        _dependencyRegistry = CoreDependencyRegistry(chainFactories, storage, secureStorage, storagePlugins)
 
         val storageManager = dependencyRegistry.storageManager
         val crypto = dependencyRegistry.crypto

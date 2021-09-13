@@ -21,6 +21,7 @@ import it.airgap.beaconsdk.core.internal.serializer.provider.SerializerProvider
 import it.airgap.beaconsdk.core.internal.storage.SecureStorage
 import it.airgap.beaconsdk.core.internal.storage.Storage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
+import it.airgap.beaconsdk.core.internal.storage.StoragePlugin
 import it.airgap.beaconsdk.core.internal.transport.Transport
 import it.airgap.beaconsdk.core.internal.transport.p2p.P2pTransport
 import it.airgap.beaconsdk.core.internal.utils.AccountUtils
@@ -29,10 +30,10 @@ import it.airgap.beaconsdk.core.internal.utils.Poller
 import it.airgap.beaconsdk.core.network.provider.HttpProvider
 
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-public class CoreDependencyRegistry(chainFactories: List<Chain.Factory<*>>, storage: Storage, secureStorage: SecureStorage) : DependencyRegistry {
+public class CoreDependencyRegistry(chainFactories: List<Chain.Factory<*>>, storage: Storage, secureStorage: SecureStorage, storagePlugins: List<StoragePlugin>) : DependencyRegistry {
 
     // -- storage --
-    override val storageManager: StorageManager by lazy { StorageManager(storage, secureStorage, accountUtils) }
+    override val storageManager: StorageManager by lazy { StorageManager(storage, secureStorage, storagePlugins, accountUtils) }
 
     // -- chain --
 
