@@ -4,15 +4,17 @@ import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.data.*
 import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
 import it.airgap.beaconsdk.core.internal.utils.chainRegistry
-import it.airgap.beaconsdk.core.internal.utils.getSerializable
-import it.airgap.beaconsdk.core.internal.utils.getString
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.element
-import kotlinx.serialization.json.*
+import kotlinx.serialization.encoding.decodeStructure
+import kotlinx.serialization.encoding.encodeStructure
+import kotlinx.serialization.json.JsonDecoder
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonEncoder
 import kotlin.reflect.jvm.internal.impl.types.ErrorType
 
 /**
@@ -126,7 +128,7 @@ public data class ChainBeaconRequest<T : ChainBeaconRequest.Payload> @RestrictTo
             public fun serializer(chainIdentifier: String? = null): KSerializer<Payload> = Serializer(chainIdentifier)
         }
 
-        internal class Serializer(private val chainIdentifier: String? = null) : KJsonSerializer<Payload>() {
+        internal class Serializer(private val chainIdentifier: String? = null) : KJsonSerializer<Payload> {
             override val descriptor: SerialDescriptor = buildClassSerialDescriptor("ChainBeaconRequestPayload")
 
             override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): Payload =
@@ -146,54 +148,43 @@ public data class ChainBeaconRequest<T : ChainBeaconRequest.Payload> @RestrictTo
 
     public companion object {}
 
-    internal object Serializer : KJsonSerializer<ChainBeaconRequest<*>>() {
-        object Field {
-            const val ID = "id"
-            const val SENDER_ID = "senderId"
-            const val APP_METADATA = "appMetadata"
-            const val IDENTIFIER = "identifier"
-            const val PAYLOAD = "payload"
-            const val ORIGIN = "origin"
-            const val VERSION = "version"
-        }
-
+    internal object Serializer : KJsonSerializer<ChainBeaconRequest<*>> {
         override val descriptor: SerialDescriptor = buildClassSerialDescriptor("ChainBeaconRequest") {
-            element<String>(Field.ID)
-            element<String>(Field.SENDER_ID)
-            element<AppMetadata>(Field.APP_METADATA)
-            element<String>(Field.IDENTIFIER)
-            element<Payload>(Field.PAYLOAD)
-            element<Origin>(Field.ORIGIN)
-            element<String>(Field.VERSION)
+            element<String>("id")
+            element<String>("senderId")
+            element<AppMetadata>("appMetadata")
+            element<String>("identifier")
+            element<Payload>("payload")
+            element<Origin>("origin")
+            element<String>("version")
         }
 
 
-        override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): ChainBeaconRequest<*> {
-            val id = jsonElement.jsonObject.getString(Field.ID)
-            val senderId = jsonElement.jsonObject.getString(Field.SENDER_ID)
-            val appMetadata = jsonElement.jsonObject.getSerializable(Field.APP_METADATA, jsonDecoder, AppMetadata.serializer())
-            val identifier = jsonElement.jsonObject.getString(Field.IDENTIFIER)
-            val payload = jsonElement.jsonObject.getSerializable(Field.PAYLOAD, jsonDecoder, Payload.serializer(identifier))
-            val origin = jsonElement.jsonObject.getSerializable(Field.ORIGIN, jsonDecoder, Origin.serializer())
-            val version = jsonElement.jsonObject.getString(Field.VERSION)
+        override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): ChainBeaconRequest<*> =
+            jsonDecoder.decodeStructure(descriptor) {
+                val id = decodeStringElement(descriptor, 0)
+                val senderId = decodeStringElement(descriptor, 1)
+                val appMetadata = decodeSerializableElement(descriptor, 2, AppMetadata.serializer())
+                val identifier = decodeStringElement(descriptor, 3)
+                val payload = decodeSerializableElement(descriptor, 4, Payload.serializer(identifier))
+                val origin = decodeSerializableElement(descriptor, 5, Origin.serializer())
+                val version = decodeStringElement(descriptor, 6)
 
-            return ChainBeaconRequest(id, senderId, appMetadata, identifier, payload, origin, version)
-        }
-
-        override fun serialize(jsonEncoder: JsonEncoder, value: ChainBeaconRequest<*>) {
-            val jsonObject = with(value) {
-                JsonObject(mapOf(
-                    Field.ID to JsonPrimitive(id),
-                    Field.SENDER_ID to JsonPrimitive(senderId),
-                    Field.APP_METADATA to (appMetadata?.let { jsonEncoder.json.encodeToJsonElement(AppMetadata.serializer(), it) } ?: JsonNull),
-                    Field.IDENTIFIER to JsonPrimitive(identifier),
-                    Field.PAYLOAD to jsonEncoder.json.encodeToJsonElement(Payload.serializer(identifier), payload),
-                    Field.VERSION to JsonPrimitive(version),
-                    Field.ORIGIN to jsonEncoder.json.encodeToJsonElement(Origin.serializer(), origin)
-                ))
+                return ChainBeaconRequest(id, senderId, appMetadata, identifier, payload, origin, version)
             }
 
-            jsonEncoder.encodeJsonElement(jsonObject)
+        override fun serialize(jsonEncoder: JsonEncoder, value: ChainBeaconRequest<*>) {
+            jsonEncoder.encodeStructure(descriptor) {
+                with(value) {
+                    encodeStringElement(descriptor, 0, id)
+                    encodeStringElement(descriptor, 1, senderId)
+                    appMetadata?.let { encodeSerializableElement(descriptor, 2, AppMetadata.serializer(), appMetadata) }
+                    encodeStringElement(descriptor, 3, identifier)
+                    encodeSerializableElement(descriptor, 4, Payload.serializer(identifier), payload)
+                    encodeSerializableElement(descriptor, 5, Origin.serializer(), origin)
+                    encodeStringElement(descriptor, 6, version)
+                }
+            }
         }
     }
 }
@@ -295,7 +286,7 @@ public data class ChainBeaconResponse<T : ChainBeaconResponse.Payload> @Restrict
             public fun serializer(chainIdentifier: String? = null): KSerializer<Payload> = Serializer(chainIdentifier)
         }
 
-        internal class Serializer(private val chainIdentifier: String? = null) : KJsonSerializer<Payload>() {
+        internal class Serializer(private val chainIdentifier: String? = null) : KJsonSerializer<Payload> {
             override val descriptor: SerialDescriptor = buildClassSerialDescriptor("ChainBeaconResponsePayload")
 
             override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): Payload =
@@ -328,45 +319,36 @@ public data class ChainBeaconResponse<T : ChainBeaconResponse.Payload> @Restrict
             ChainBeaconResponse(request.id, request.identifier, payload, request.version, request.origin)
     }
 
-    internal object Serializer : KJsonSerializer<ChainBeaconResponse<*>>() {
-        object Field {
-            const val ID = "id"
-            const val IDENTIFIER = "identifier"
-            const val PAYLOAD = "payload"
-            const val VERSION = "version"
-            const val REQUEST_ORIGIN = "requestOrigin"
-        }
-
+    internal object Serializer : KJsonSerializer<ChainBeaconResponse<*>> {
         override val descriptor: SerialDescriptor = buildClassSerialDescriptor("ChainBeaconResponse") {
-            element<String>(Field.ID)
-            element<String>(Field.IDENTIFIER)
-            element<Payload>(Field.PAYLOAD)
-            element<String>(Field.VERSION)
-            element<Origin>(Field.REQUEST_ORIGIN)
+            element<String>("id")
+            element<String>("identifier")
+            element<Payload>("payload")
+            element<String>("version")
+            element<Origin>("requestOrigin")
         }
 
-        override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): ChainBeaconResponse<*> {
-            val id = jsonElement.jsonObject.getString(Field.ID)
-            val identifier = jsonElement.jsonObject.getString(Field.IDENTIFIER)
-            val payload = jsonElement.jsonObject.getSerializable(Field.PAYLOAD, jsonDecoder, Payload.serializer(identifier))
-            val version = jsonElement.jsonObject.getString(Field.VERSION)
-            val requestOrigin = jsonElement.jsonObject.getSerializable(Field.REQUEST_ORIGIN, jsonDecoder, Origin.serializer())
+        override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): ChainBeaconResponse<*> =
+            jsonDecoder.decodeStructure(descriptor) {
+                val id = decodeStringElement(descriptor, 0)
+                val identifier = decodeStringElement(descriptor, 1)
+                val payload = decodeSerializableElement(descriptor, 2, Payload.serializer(identifier))
+                val version = decodeStringElement(descriptor, 3)
+                val requestOrigin = decodeSerializableElement(descriptor, 4, Origin.serializer())
 
-            return ChainBeaconResponse(id, identifier, payload, version, requestOrigin)
-        }
-
-        override fun serialize(jsonEncoder: JsonEncoder, value: ChainBeaconResponse<*>) {
-            val jsonObject = with(value) {
-                JsonObject(mapOf(
-                    Field.ID to JsonPrimitive(id),
-                    Field.IDENTIFIER to JsonPrimitive(identifier),
-                    Field.PAYLOAD to jsonEncoder.json.encodeToJsonElement(Payload.serializer(identifier), payload),
-                    Field.VERSION to JsonPrimitive(version),
-                    Field.REQUEST_ORIGIN to jsonEncoder.json.encodeToJsonElement(Origin.serializer(), requestOrigin)
-                ))
+                return ChainBeaconResponse(id, identifier, payload, version, requestOrigin)
             }
 
-            jsonEncoder.encodeJsonElement(jsonObject)
+        override fun serialize(jsonEncoder: JsonEncoder, value: ChainBeaconResponse<*>) {
+            jsonEncoder.encodeStructure(descriptor) {
+                with(value) {
+                    encodeStringElement(descriptor, 0, id)
+                    encodeStringElement(descriptor, 1, identifier)
+                    encodeSerializableElement(descriptor, 2, Payload.serializer(identifier), payload)
+                    encodeStringElement(descriptor, 3, version)
+                    encodeSerializableElement(descriptor, 4, Origin.serializer(), requestOrigin)
+                }
+            }
         }
     }
 }
@@ -430,46 +412,36 @@ public data class ErrorBeaconResponse @RestrictTo(RestrictTo.Scope.LIBRARY) cons
             ErrorBeaconResponse(request.id, request.identifier, errorType, request.version, request.origin)
     }
 
-    internal object Serializer : KJsonSerializer<ErrorBeaconResponse>() {
-        object Field {
-            const val ID = "id"
-            const val IDENTIFIER = "identifier"
-            const val ERROR_TYPE = "errorType"
-            const val VERSION = "version"
-            const val REQUEST_ORIGIN = "requestOrigin"
-        }
-
+    internal object Serializer : KJsonSerializer<ErrorBeaconResponse> {
         override val descriptor: SerialDescriptor = buildClassSerialDescriptor("ErrorBeaconResponse") {
-            element<String>(Field.ID)
-            element<String>(Field.IDENTIFIER)
-            element<ErrorType>(Field.ERROR_TYPE)
-            element<String>(Field.VERSION)
-            element<Origin>(Field.REQUEST_ORIGIN)
+            element<String>("id")
+            element<String>("identifier")
+            element<ErrorType>("errorType")
+            element<String>("version")
+            element<Origin>("requestOrigin")
         }
 
+        override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): ErrorBeaconResponse =
+            jsonDecoder.decodeStructure(descriptor) {
+                val id = decodeStringElement(descriptor, 0)
+                val identifier = decodeStringElement(descriptor, 1)
+                val errorType = decodeSerializableElement(descriptor, 2, BeaconError.serializer(identifier))
+                val version = decodeStringElement(descriptor, 3)
+                val requestOrigin = decodeSerializableElement(descriptor, 4, Origin.serializer())
 
-        override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): ErrorBeaconResponse {
-            val id = jsonElement.jsonObject.getString(Field.ID)
-            val identifier = jsonElement.jsonObject.getString(Field.IDENTIFIER)
-            val errorType = jsonElement.jsonObject.getSerializable(Field.ERROR_TYPE, jsonDecoder, BeaconError.serializer(identifier))
-            val version = jsonElement.jsonObject.getString(Field.VERSION)
-            val requestOrigin = jsonElement.jsonObject.getSerializable(Field.REQUEST_ORIGIN, jsonDecoder, Origin.serializer())
-
-            return ErrorBeaconResponse(id, identifier, errorType, version, requestOrigin)
-        }
-
-        override fun serialize(jsonEncoder: JsonEncoder, value: ErrorBeaconResponse) {
-            val jsonObject = with(value) {
-                JsonObject(mapOf(
-                    Field.ID to JsonPrimitive(id),
-                    Field.IDENTIFIER to JsonPrimitive(identifier),
-                    Field.ERROR_TYPE to jsonEncoder.json.encodeToJsonElement(BeaconError.serializer(identifier), errorType),
-                    Field.VERSION to JsonPrimitive(version),
-                    Field.REQUEST_ORIGIN to jsonEncoder.json.encodeToJsonElement(Origin.serializer(), requestOrigin)
-                ))
+                return ErrorBeaconResponse(id, identifier, errorType, version, requestOrigin)
             }
 
-            jsonEncoder.encodeJsonElement(jsonObject)
+        override fun serialize(jsonEncoder: JsonEncoder, value: ErrorBeaconResponse) {
+            jsonEncoder.encodeStructure(descriptor) {
+                with(value) {
+                    encodeStringElement(descriptor, 0, id)
+                    encodeStringElement(descriptor, 1, identifier)
+                    encodeSerializableElement(descriptor, 2, BeaconError.serializer(identifier), errorType)
+                    encodeStringElement(descriptor, 3, version)
+                    encodeSerializableElement(descriptor, 4, Origin.serializer(), requestOrigin)
+                }
+            }
         }
 
     }

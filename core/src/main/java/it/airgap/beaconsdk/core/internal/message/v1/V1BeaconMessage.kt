@@ -13,6 +13,8 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.element
+import kotlinx.serialization.encoding.decodeStructure
+import kotlinx.serialization.encoding.encodeStructure
 import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonEncoder
@@ -40,7 +42,7 @@ public abstract class V1BeaconMessage : VersionedBeaconMessage() {
         public fun compatSerializer(): KSerializer<V1BeaconMessage> = CompatFactory.serializer()
     }
 
-    internal object Serializer : KJsonSerializer<V1BeaconMessage>() {
+    internal object Serializer : KJsonSerializer<V1BeaconMessage> {
         private object Field {
             const val TYPE = "type"
         }
@@ -123,7 +125,7 @@ public data class PermissionV1BeaconResponse(
     }
 }
 
-@Serializable
+@Serializable(with = ErrorV1BeaconResponse.Serializer::class)
 public data class ErrorV1BeaconResponse(
     override val version: String,
     override val id: String,
@@ -138,6 +140,40 @@ public data class ErrorV1BeaconResponse(
 
     public companion object {
         public const val TYPE: String = "error"
+    }
+
+    internal class Serializer : KJsonSerializer<ErrorV1BeaconResponse> {
+        override val descriptor: SerialDescriptor = buildClassSerialDescriptor("ErrorV1BeaconResponse") {
+            element<String>("type")
+            element<String>("version")
+            element<String>("id")
+            element<String>("beaconId")
+            element<BeaconError>("errorType")
+        }
+
+        override fun deserialize(
+            jsonDecoder: JsonDecoder,
+            jsonElement: JsonElement,
+        ): ErrorV1BeaconResponse = jsonDecoder.decodeStructure(descriptor) {
+            val version = decodeStringElement(descriptor, 1)
+            val id = decodeStringElement(descriptor, 2)
+            val beaconId = decodeStringElement(descriptor, 3)
+            val errorType = decodeSerializableElement(descriptor, 4, BeaconError.serializer(CompatFactory.chain.identifier))
+
+            return ErrorV1BeaconResponse(version, id, beaconId, errorType)
+        }
+
+        override fun serialize(jsonEncoder: JsonEncoder, value: ErrorV1BeaconResponse) {
+            jsonEncoder.encodeStructure(descriptor) {
+                with(value) {
+                    encodeStringElement(descriptor, 0, type)
+                    encodeStringElement(descriptor, 1, version)
+                    encodeStringElement(descriptor, 2, id)
+                    encodeStringElement(descriptor, 3, beaconId)
+                    encodeSerializableElement(descriptor, 4, BeaconError.serializer(CompatFactory.chain.identifier), errorType)
+                }
+            }
+        }
     }
 }
 

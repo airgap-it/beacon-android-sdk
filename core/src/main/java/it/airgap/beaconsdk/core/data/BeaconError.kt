@@ -58,7 +58,7 @@ public abstract class BeaconError {
         public fun serializer(chainIdentifier: String? = null): KSerializer<BeaconError> = Serializer(chainIdentifier)
     }
 
-    internal class Serializer(private val chainIdentifier: String? = null) : KJsonSerializer<BeaconError>() {
+    internal class Serializer(private val chainIdentifier: String? = null) : KJsonSerializer<BeaconError> {
         override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("BeaconError", PrimitiveKind.STRING)
 
         override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): BeaconError {

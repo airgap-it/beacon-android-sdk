@@ -12,11 +12,12 @@ import it.airgap.beaconsdk.core.internal.utils.getString
 import it.airgap.beaconsdk.core.message.*
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Required
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.element
+import kotlinx.serialization.encoding.decodeStructure
+import kotlinx.serialization.encoding.encodeStructure
 import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonEncoder
@@ -44,7 +45,7 @@ public abstract class V2BeaconMessage : VersionedBeaconMessage() {
         public fun compatSerializer(): KSerializer<V2BeaconMessage> = CompatFactory.serializer()
     }
 
-    internal object Serializer : KJsonSerializer<V2BeaconMessage>() {
+    internal object Serializer : KJsonSerializer<V2BeaconMessage> {
         private object Field {
             const val TYPE = "type"
         }
@@ -89,7 +90,6 @@ public abstract class V2BeaconMessage : VersionedBeaconMessage() {
 }
 
 @Serializable
-@SerialName("permission_request")
 public data class PermissionV2BeaconRequest(
     override val version: String,
     override val id: String,
@@ -110,7 +110,6 @@ public data class PermissionV2BeaconRequest(
 }
 
 @Serializable
-@SerialName("permission_response")
 public data class PermissionV2BeaconResponse(
     override val version: String,
     override val id: String,
@@ -132,7 +131,6 @@ public data class PermissionV2BeaconResponse(
 }
 
 @Serializable
-@SerialName("acknowledge")
 public data class AcknowledgeV2BeaconResponse(
     override val version: String,
     override val id: String,
@@ -149,8 +147,7 @@ public data class AcknowledgeV2BeaconResponse(
     }
 }
 
-@Serializable
-@SerialName("error")
+@Serializable(with = ErrorV2BeaconResponse.Serializer::class)
 public data class ErrorV2BeaconResponse(
     override val version: String,
     override val id: String,
@@ -166,10 +163,43 @@ public data class ErrorV2BeaconResponse(
     public companion object {
         public const val TYPE: String = "error"
     }
+
+    internal class Serializer : KJsonSerializer<ErrorV2BeaconResponse> {
+        override val descriptor: SerialDescriptor = buildClassSerialDescriptor("ErrorV2BeaconResponse") {
+            element<String>("type")
+            element<String>("version")
+            element<String>("id")
+            element<String>("senderId")
+            element<BeaconError>("errorType")
+        }
+
+        override fun deserialize(
+            jsonDecoder: JsonDecoder,
+            jsonElement: JsonElement,
+        ): ErrorV2BeaconResponse = jsonDecoder.decodeStructure(descriptor) {
+            val version = decodeStringElement(descriptor, 1)
+            val id = decodeStringElement(descriptor, 2)
+            val senderId = decodeStringElement(descriptor, 3)
+            val errorType = decodeSerializableElement(descriptor, 4, BeaconError.serializer(CompatFactory.chain.identifier))
+
+            return ErrorV2BeaconResponse(version, id, senderId, errorType)
+        }
+
+        override fun serialize(jsonEncoder: JsonEncoder, value: ErrorV2BeaconResponse) {
+            jsonEncoder.encodeStructure(descriptor) {
+                with(value) {
+                    encodeStringElement(descriptor, 0, type)
+                    encodeStringElement(descriptor, 1, version)
+                    encodeStringElement(descriptor, 2, id)
+                    encodeStringElement(descriptor, 3, senderId)
+                    encodeSerializableElement(descriptor, 4, BeaconError.serializer(CompatFactory.chain.identifier), errorType)
+                }
+            }
+        }
+    }
 }
 
 @Serializable
-@SerialName("disconnect")
 public data class DisconnectV2BeaconMessage(
     override val version: String,
     override val id: String,

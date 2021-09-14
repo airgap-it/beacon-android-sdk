@@ -21,9 +21,6 @@ public fun Map<String, JsonElement>.toJsonObject(): JsonObject = JsonObject(this
 public fun JsonObject.getString(key: String): String =
     get(key)?.jsonPrimitive?.content ?: failWithMissingField(key)
 
-public fun JsonObject.getInt(key: String): Int =
-    get(key)?.jsonPrimitive?.content?.toInt() ?: failWithMissingField(key)
-
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public fun <T> JsonObject.getSerializable(key: String, jsonDecoder: JsonDecoder, deserializer: KSerializer<T>): T =
     get(key)?.let { jsonDecoder.json.decodeFromJsonElement(deserializer, it) } ?: failWithMissingField(key)

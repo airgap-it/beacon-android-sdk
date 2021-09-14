@@ -58,7 +58,7 @@ public sealed class TezosOperation {
         Delegation,
     }
 
-    internal object Serializer : KJsonSerializer<TezosOperation>() {
+    internal object Serializer : KJsonSerializer<TezosOperation> {
         object Field {
             const val KIND = "kind"
         }

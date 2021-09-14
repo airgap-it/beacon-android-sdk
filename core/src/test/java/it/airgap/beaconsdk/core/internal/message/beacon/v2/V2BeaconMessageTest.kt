@@ -423,7 +423,7 @@ internal class V2BeaconMessageTest {
         sourceAddress: String = "sourceAddress",
         appMetadata: AppMetadata? = null,
         origin: Origin = Origin.P2P(senderId),
-    ): Pair<MockChainVersionedMessage.V2MockBeaconMessage, ChainBeaconRequest> {
+    ): Pair<MockChainVersionedMessage.V2MockBeaconMessage, ChainBeaconRequest<*>> {
         val type = "operation_request"
         val payload = mapOf(
             "network" to Json.encodeToJsonElement(network),
@@ -457,7 +457,7 @@ internal class V2BeaconMessageTest {
         sourceAddress: String = "sourceAddress",
         appMetadata: AppMetadata? = null,
         origin: Origin = Origin.P2P(senderId),
-    ): Pair<MockChainVersionedMessage.V2MockBeaconMessage, ChainBeaconRequest> {
+    ): Pair<MockChainVersionedMessage.V2MockBeaconMessage, ChainBeaconRequest<*>> {
         val type = "sign_payload_request"
         val payload = mapOf(
             "signingType" to Json.encodeToJsonElement(signingType),
@@ -490,7 +490,7 @@ internal class V2BeaconMessageTest {
         signedTransaction: String = "signedTransaction",
         appMetadata: AppMetadata? = null,
         origin: Origin = Origin.P2P(senderId),
-    ): Pair<MockChainVersionedMessage.V2MockBeaconMessage, ChainBeaconRequest> {
+    ): Pair<MockChainVersionedMessage.V2MockBeaconMessage, ChainBeaconRequest<*>> {
         val type = "broadcast_request"
         val payload = mapOf(
             "network" to Json.encodeToJsonElement(network),
@@ -535,7 +535,7 @@ internal class V2BeaconMessageTest {
         senderId: String = "senderId",
         transactionHash: String = "transactionHash",
         origin: Origin = Origin.P2P(senderId),
-    ): Pair<MockChainVersionedMessage.V2MockBeaconMessage, ChainBeaconResponse> {
+    ): Pair<MockChainVersionedMessage.V2MockBeaconMessage, ChainBeaconResponse<*>> {
         val type = "operation_response"
         val payload = mapOf(
             "transactionHash" to JsonPrimitive(transactionHash),
@@ -563,7 +563,7 @@ internal class V2BeaconMessageTest {
         signingType: SigningType = SigningType.Raw,
         signature: String = "signature",
         origin: Origin = Origin.P2P(senderId),
-    ): Pair<MockChainVersionedMessage.V2MockBeaconMessage, ChainBeaconResponse> {
+    ): Pair<MockChainVersionedMessage.V2MockBeaconMessage, ChainBeaconResponse<*>> {
         val type = "sign_payload_response"
         val payload = mapOf(
             "signingType" to Json.encodeToJsonElement(signingType),
@@ -591,7 +591,7 @@ internal class V2BeaconMessageTest {
         senderId: String = "senderId",
         transactionHash: String = "transactionHash",
         origin: Origin = Origin.P2P(senderId),
-    ): Pair<MockChainVersionedMessage.V2MockBeaconMessage, ChainBeaconResponse> {
+    ): Pair<MockChainVersionedMessage.V2MockBeaconMessage, ChainBeaconResponse<*>> {
         val type = "broadcast_response"
         val payload = mapOf(
             "transactionHash" to JsonPrimitive(transactionHash),

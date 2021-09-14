@@ -14,7 +14,7 @@ import kotlin.reflect.KClass
 import kotlin.reflect.full.createType
 
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-public abstract class KJsonSerializer<T> : KSerializer<T> {
+public interface KJsonSerializer<T> : KSerializer<T> {
     override fun deserialize(decoder: Decoder): T {
         val jsonDecoder = decoder as? JsonDecoder ?: failWithExpectedJsonDecoder(decoder::class)
         val jsonElement = jsonDecoder.decodeJsonElement()

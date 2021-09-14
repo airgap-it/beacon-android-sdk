@@ -41,7 +41,7 @@ public abstract class VersionedBeaconMessage {
             get() = substringBefore('.')
     }
 
-    internal object Serializer : KJsonSerializer<VersionedBeaconMessage>() {
+    internal object Serializer : KJsonSerializer<VersionedBeaconMessage> {
         private object Field {
             const val VERSION = "version"
         }

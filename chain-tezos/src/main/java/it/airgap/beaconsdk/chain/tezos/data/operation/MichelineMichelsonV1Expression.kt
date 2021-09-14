@@ -3,11 +3,15 @@ package it.airgap.beaconsdk.chain.tezos.data.operation
 import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
 import it.airgap.beaconsdk.core.internal.utils.failWithMissingField
 import it.airgap.beaconsdk.core.internal.utils.failWithUnexpectedJsonType
-import it.airgap.beaconsdk.core.internal.utils.getInt
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.element
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.encoding.decodeStructure
+import kotlinx.serialization.encoding.encodeStructure
 import kotlinx.serialization.json.*
 
 /**
@@ -21,7 +25,7 @@ public sealed class MichelineMichelsonV1Expression {
 
     public companion object {}
 
-    public object Serializer : KJsonSerializer<MichelineMichelsonV1Expression>() {
+    public object Serializer : KJsonSerializer<MichelineMichelsonV1Expression> {
         override val descriptor: SerialDescriptor = buildClassSerialDescriptor("MichelineMichelsonV1Expression")
 
         override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): MichelineMichelsonV1Expression {
@@ -60,7 +64,7 @@ public sealed class MichelineMichelsonV1Expression {
 public data class MichelinePrimitiveInt(public val int: Int) : MichelineMichelsonV1Expression() {
     public companion object {}
 
-    internal object Serializer : KJsonSerializer<MichelinePrimitiveInt>() {
+    internal object Serializer : KSerializer<MichelinePrimitiveInt> {
         object Field {
             const val INT = "int"
         }
@@ -69,17 +73,19 @@ public data class MichelinePrimitiveInt(public val int: Int) : MichelineMichelso
             element<String>(Field.INT)
         }
 
-        override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): MichelinePrimitiveInt {
-            val primitive = jsonElement.jsonObject.getInt(Field.INT)
+        override fun deserialize(decoder: Decoder): MichelinePrimitiveInt =
+            decoder.decodeStructure(descriptor) {
+                val primitive = decodeStringElement(descriptor, 0).toInt()
 
-            return MichelinePrimitiveInt(primitive)
-        }
+                return MichelinePrimitiveInt(primitive)
+            }
 
-        override fun serialize(jsonEncoder: JsonEncoder, value: MichelinePrimitiveInt) {
-            val jsonObject = JsonObject(
-                mapOf(Field.INT to JsonPrimitive(value.int.toString()))
-            )
-            jsonEncoder.encodeJsonElement(jsonObject)
+        override fun serialize(encoder: Encoder, value: MichelinePrimitiveInt) {
+            encoder.encodeStructure(descriptor) {
+                with(value) {
+                    encodeStringElement(descriptor, 0, int.toString())
+                }
+            }
         }
     }
 }
@@ -119,7 +125,7 @@ public data class MichelinePrimitiveApplication(
 public data class MichelineNode(public val expressions: List<MichelineMichelsonV1Expression>) : MichelineMichelsonV1Expression() {
     public companion object {}
 
-    internal object Serializer : KJsonSerializer<MichelineNode>() {
+    internal object Serializer : KJsonSerializer<MichelineNode> {
         object Field {
             const val EXPRESSIONS = "expressions"
         }

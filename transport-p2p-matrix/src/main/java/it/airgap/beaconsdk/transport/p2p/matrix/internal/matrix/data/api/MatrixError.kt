@@ -1,16 +1,15 @@
 package it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api
 
 import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
-import it.airgap.beaconsdk.core.internal.utils.getString
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.element
+import kotlinx.serialization.encoding.decodeStructure
 import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonEncoder
-import kotlinx.serialization.json.jsonObject
 
 @Serializable(with = MatrixError.Serializer::class)
 internal sealed class MatrixError : Exception() {
@@ -29,7 +28,7 @@ internal sealed class MatrixError : Exception() {
     @Serializable
     data class Other(@SerialName(Serializer.Field.ERRCODE) override val code: String, override val error: String) : MatrixError()
 
-    object Serializer : KJsonSerializer<MatrixError>() {
+    object Serializer : KJsonSerializer<MatrixError> {
         object Field {
             const val ERRCODE = "errcode"
         }
@@ -39,7 +38,7 @@ internal sealed class MatrixError : Exception() {
         }
 
         override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): MatrixError {
-            val errcode = jsonElement.jsonObject.getString(Field.ERRCODE)
+            val errcode = jsonDecoder.decodeStructure(descriptor) { decodeStringElement(descriptor, 0) }
 
             return when (errcode) {
                 Forbidden.CODE -> jsonDecoder.json.decodeFromJsonElement(Forbidden.serializer(), jsonElement)

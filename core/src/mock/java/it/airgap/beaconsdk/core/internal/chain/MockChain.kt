@@ -55,7 +55,7 @@ public class MockChainVersionedMessage : Chain.Serializer {
     override val v1: VersionedBeaconMessage.Factory<BeaconMessage, V1BeaconMessage> =
         object : VersionedBeaconMessage.Factory<BeaconMessage, V1BeaconMessage> {
             override fun serializer(): KSerializer<V1BeaconMessage> =
-                object : KJsonSerializer<V1BeaconMessage>() {
+                object : KJsonSerializer<V1BeaconMessage> {
                     private val fieldType: String = "type"
                     private val fieldVersion: String = "version"
                     private val fieldId: String = "id"
@@ -116,7 +116,7 @@ public class MockChainVersionedMessage : Chain.Serializer {
     override val v2: VersionedBeaconMessage.Factory<BeaconMessage, V2BeaconMessage> =
         object : VersionedBeaconMessage.Factory<BeaconMessage, V2BeaconMessage> {
             override fun serializer(): KSerializer<V2BeaconMessage> =
-                object : KJsonSerializer<V2BeaconMessage>() {
+                object : KJsonSerializer<V2BeaconMessage> {
                     private val fieldType: String = "type"
                     private val fieldVersion: String = "version"
                     private val fieldId: String = "id"

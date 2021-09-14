@@ -86,7 +86,7 @@ public sealed class TezosError : BeaconError() {
 
     public companion object {}
     
-    internal object Serializer : KJsonSerializer<TezosError>() {
+    internal object Serializer : KJsonSerializer<TezosError> {
         override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("TezosError", PrimitiveKind.STRING)
 
         override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): TezosError {

@@ -248,7 +248,7 @@ internal class V1TezosMessageTest {
         sourceAddress: String = "sourceAddress",
         appMetadata: AppMetadata? = null,
         origin: Origin = Origin.P2P(beaconId),
-    ): Pair<OperationV1TezosRequest, ChainBeaconRequest> =
+    ): Pair<OperationV1TezosRequest, ChainBeaconRequest<*>> =
         OperationV1TezosRequest(version, id, beaconId, network, tezosOperations, sourceAddress) to
                 ChainBeaconRequest(id, beaconId, appMetadata, Tezos.IDENTIFIER, OperationTezosRequest(network, tezosOperations, sourceAddress), origin, version)
 
@@ -260,7 +260,7 @@ internal class V1TezosMessageTest {
         sourceAddress: String = "sourceAddress",
         appMetadata: AppMetadata? = null,
         origin: Origin = Origin.P2P(beaconId),
-    ): Pair<SignPayloadV1TezosRequest, ChainBeaconRequest> =
+    ): Pair<SignPayloadV1TezosRequest, ChainBeaconRequest<*>> =
         SignPayloadV1TezosRequest(version, id, beaconId, payload, sourceAddress) to
                 ChainBeaconRequest(id, beaconId, appMetadata, Tezos.IDENTIFIER, SignPayloadTezosRequest(
                     SigningType.Raw, payload, sourceAddress), origin, version)
@@ -273,7 +273,7 @@ internal class V1TezosMessageTest {
         signedTransaction: String = "signedTransaction",
         appMetadata: AppMetadata? = null,
         origin: Origin = Origin.P2P(beaconId),
-    ): Pair<BroadcastV1TezosRequest, ChainBeaconRequest> =
+    ): Pair<BroadcastV1TezosRequest, ChainBeaconRequest<*>> =
         BroadcastV1TezosRequest(version, id, beaconId, network, signedTransaction) to
                 ChainBeaconRequest(id, beaconId, appMetadata, Tezos.IDENTIFIER, BroadcastTezosRequest(network, signedTransaction), origin, version)
 
@@ -285,7 +285,7 @@ internal class V1TezosMessageTest {
         beaconId: String = "beaconId",
         transactionHash: String = "transactionHash",
         origin: Origin = Origin.P2P(beaconId),
-    ): Pair<OperationV1TezosResponse, ChainBeaconResponse> =
+    ): Pair<OperationV1TezosResponse, ChainBeaconResponse<*>> =
         OperationV1TezosResponse(version, id, beaconId, transactionHash) to
                 ChainBeaconResponse(id, Tezos.IDENTIFIER, OperationTezosResponse(transactionHash), version, origin)
 
@@ -295,7 +295,7 @@ internal class V1TezosMessageTest {
         beaconId: String = "beaconId",
         signature: String = "signature",
         origin: Origin = Origin.P2P(beaconId),
-    ): Pair<SignPayloadV1TezosResponse, ChainBeaconResponse> =
+    ): Pair<SignPayloadV1TezosResponse, ChainBeaconResponse<*>> =
         SignPayloadV1TezosResponse(version, id, beaconId, signature) to
                 ChainBeaconResponse(id, Tezos.IDENTIFIER, SignPayloadTezosResponse(SigningType.Raw, signature), version, origin)
 
@@ -305,6 +305,6 @@ internal class V1TezosMessageTest {
         beaconId: String = "beaconId",
         transactionHash: String = "transactionHash",
         origin: Origin = Origin.P2P(beaconId),
-    ): Pair<BroadcastV1TezosResponse, ChainBeaconResponse> =
+    ): Pair<BroadcastV1TezosResponse, ChainBeaconResponse<*>> =
         BroadcastV1TezosResponse(version, id, beaconId, transactionHash) to ChainBeaconResponse(id, Tezos.IDENTIFIER, BroadcastTezosResponse(transactionHash), version, origin)
 }

@@ -1,16 +1,15 @@
 package it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.sync
 
 import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
-import it.airgap.beaconsdk.core.internal.utils.getString
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.element
+import kotlinx.serialization.encoding.decodeStructure
 import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonEncoder
-import kotlinx.serialization.json.jsonObject
 
 @Serializable(with = MatrixSyncStateEvent.Serializer::class)
 internal sealed class MatrixSyncStateEvent<Content> {
@@ -96,17 +95,13 @@ internal sealed class MatrixSyncStateEvent<Content> {
         const val TYPE_MESSAGE = "m.room.message"
     }
 
-    object Serializer : KJsonSerializer<MatrixSyncStateEvent<*>>() {
-        object Field {
-            const val TYPE = "type"
-        }
-
+    object Serializer : KJsonSerializer<MatrixSyncStateEvent<*>> {
         override val descriptor: SerialDescriptor = buildClassSerialDescriptor("MatrixStateEvent") {
-            element<String>(Field.TYPE)
+            element<String>("type")
         }
 
         override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): MatrixSyncStateEvent<*> {
-            val type = jsonElement.jsonObject.getString(Field.TYPE)
+            val type = jsonDecoder.decodeStructure(descriptor) { decodeStringElement(descriptor, 0) }
 
             return when (type) {
                 TYPE_CREATE -> jsonDecoder.json.decodeFromJsonElement(Create.serializer(), jsonElement)
