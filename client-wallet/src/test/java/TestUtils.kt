@@ -48,7 +48,7 @@ internal fun chainBeaconRequest(
     payload: ChainBeaconRequest.Payload = object : ChainBeaconRequest.Payload() {},
     origin: Origin = Origin.P2P(senderId),
     version: String = "version"
-): ChainBeaconRequest = ChainBeaconRequest(id, senderId, appMetadata, identifier, payload, origin, version)
+): ChainBeaconRequest<*> = ChainBeaconRequest(id, senderId, appMetadata, identifier, payload, origin, version)
 
 internal fun permissionBeaconResponse(
     id: String = "id",
@@ -67,7 +67,7 @@ internal fun chainBeaconResponse(
     payload: ChainBeaconResponse.Payload = object : ChainBeaconResponse.Payload() {},
     version: String = "version",
     requestOrigin: Origin = Origin.P2P("senderId"),
-): ChainBeaconResponse = ChainBeaconResponse(id, identifier, payload, version, requestOrigin)
+): ChainBeaconResponse<*> = ChainBeaconResponse(id, identifier, payload, version, requestOrigin)
 
 internal fun acknowledgeBeaconResponse(
     id: String = "id",
