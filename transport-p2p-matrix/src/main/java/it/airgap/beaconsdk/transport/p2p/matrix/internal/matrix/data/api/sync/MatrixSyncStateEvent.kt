@@ -1,18 +1,16 @@
 package it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.sync
 
-import it.airgap.beaconsdk.core.internal.utils.failWithExpectedJsonDecoder
-import kotlinx.serialization.KSerializer
+import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
+import it.airgap.beaconsdk.core.internal.utils.getString
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.descriptors.element
 import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 
 @Serializable(with = MatrixSyncStateEvent.Serializer::class)
 internal sealed class MatrixSyncStateEvent<Content> {
@@ -98,15 +96,17 @@ internal sealed class MatrixSyncStateEvent<Content> {
         const val TYPE_MESSAGE = "m.room.message"
     }
 
-    object Serializer : KSerializer<MatrixSyncStateEvent<*>> {
-        override val descriptor: SerialDescriptor =
-            PrimitiveSerialDescriptor("MatrixStateEvent", PrimitiveKind.STRING)
+    object Serializer : KJsonSerializer<MatrixSyncStateEvent<*>>() {
+        object Field {
+            const val TYPE = "type"
+        }
 
-        override fun deserialize(decoder: Decoder): MatrixSyncStateEvent<*> {
-            val jsonDecoder = decoder as? JsonDecoder ?: failWithExpectedJsonDecoder(decoder::class)
-            val jsonElement = jsonDecoder.decodeJsonElement()
+        override val descriptor: SerialDescriptor = buildClassSerialDescriptor("MatrixStateEvent") {
+            element<String>(Field.TYPE)
+        }
 
-            val type = jsonElement.jsonObject["type"]?.jsonPrimitive?.content
+        override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): MatrixSyncStateEvent<*> {
+            val type = jsonElement.jsonObject.getString(Field.TYPE)
 
             return when (type) {
                 TYPE_CREATE -> jsonDecoder.json.decodeFromJsonElement(Create.serializer(), jsonElement)
@@ -116,12 +116,12 @@ internal sealed class MatrixSyncStateEvent<Content> {
             }
         }
 
-        override fun serialize(encoder: Encoder, value: MatrixSyncStateEvent<*>) {
+        override fun serialize(jsonEncoder: JsonEncoder, value: MatrixSyncStateEvent<*>) {
             when (value) {
-                is Create -> encoder.encodeSerializableValue(Create.serializer(), value)
-                is Member -> encoder.encodeSerializableValue(Member.serializer(), value)
-                is Message -> encoder.encodeSerializableValue(Message.serializer(), value)
-                is Unknown -> encoder.encodeSerializableValue(Unknown.serializer(), value)
+                is Create -> jsonEncoder.encodeSerializableValue(Create.serializer(), value)
+                is Member -> jsonEncoder.encodeSerializableValue(Member.serializer(), value)
+                is Message -> jsonEncoder.encodeSerializableValue(Message.serializer(), value)
+                is Unknown -> jsonEncoder.encodeSerializableValue(Unknown.serializer(), value)
             }
         }
     }

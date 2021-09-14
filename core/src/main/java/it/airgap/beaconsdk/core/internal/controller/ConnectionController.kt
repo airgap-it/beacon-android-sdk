@@ -1,7 +1,7 @@
 package it.airgap.beaconsdk.core.internal.controller
 
 import androidx.annotation.RestrictTo
-import it.airgap.beaconsdk.core.data.beacon.Connection
+import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.exception.ConnectionException
 import it.airgap.beaconsdk.core.exception.MultipleConnectionException
 import it.airgap.beaconsdk.core.internal.message.BeaconConnectionMessage

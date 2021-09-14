@@ -1,19 +1,16 @@
 package it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api
 
-import it.airgap.beaconsdk.core.internal.utils.failWithExpectedJsonDecoder
-import it.airgap.beaconsdk.core.internal.utils.failWithMissingField
-import kotlinx.serialization.KSerializer
+import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
+import it.airgap.beaconsdk.core.internal.utils.getString
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.builtins.serializer
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.descriptors.element
 import kotlinx.serialization.json.JsonDecoder
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 
 @Serializable(with = MatrixError.Serializer::class)
 internal sealed class MatrixError : Exception() {
@@ -32,20 +29,17 @@ internal sealed class MatrixError : Exception() {
     @Serializable
     data class Other(@SerialName(Serializer.Field.ERRCODE) override val code: String, override val error: String) : MatrixError()
 
-    object Serializer : KSerializer<MatrixError> {
+    object Serializer : KJsonSerializer<MatrixError>() {
         object Field {
             const val ERRCODE = "errcode"
         }
 
-        override val descriptor: SerialDescriptor =
-            PrimitiveSerialDescriptor("MatrixError", PrimitiveKind.STRING)
+        override val descriptor: SerialDescriptor = buildClassSerialDescriptor("MatrixError") {
+            element<String>(Field.ERRCODE)
+        }
 
-        override fun deserialize(decoder: Decoder): MatrixError {
-            val jsonDecoder = decoder as? JsonDecoder ?: failWithExpectedJsonDecoder(decoder::class)
-            val jsonElement = jsonDecoder.decodeJsonElement()
-
-            val errcodeSerialized = jsonElement.jsonObject[Field.ERRCODE]?.jsonPrimitive ?: failWithMissingField(Field.ERRCODE)
-            val errcode = jsonDecoder.json.decodeFromJsonElement(String.serializer(), errcodeSerialized)
+        override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): MatrixError {
+            val errcode = jsonElement.jsonObject.getString(Field.ERRCODE)
 
             return when (errcode) {
                 Forbidden.CODE -> jsonDecoder.json.decodeFromJsonElement(Forbidden.serializer(), jsonElement)
@@ -53,10 +47,10 @@ internal sealed class MatrixError : Exception() {
             }
         }
 
-        override fun serialize(encoder: Encoder, value: MatrixError) {
+        override fun serialize(jsonEncoder: JsonEncoder, value: MatrixError) {
             when (value) {
-                is Forbidden -> encoder.encodeSerializableValue(Forbidden.serializer(), value)
-                is Other -> encoder.encodeSerializableValue(Other.serializer(), value)
+                is Forbidden -> jsonEncoder.encodeSerializableValue(Forbidden.serializer(), value)
+                is Other -> jsonEncoder.encodeSerializableValue(Other.serializer(), value)
             }
         }
     }

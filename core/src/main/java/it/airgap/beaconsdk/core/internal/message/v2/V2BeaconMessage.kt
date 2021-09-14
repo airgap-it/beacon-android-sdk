@@ -1,27 +1,26 @@
 package it.airgap.beaconsdk.core.internal.message.v2
 
 import androidx.annotation.RestrictTo
-import it.airgap.beaconsdk.core.data.beacon.*
+import it.airgap.beaconsdk.core.data.*
 import it.airgap.beaconsdk.core.internal.chain.Chain
 import it.airgap.beaconsdk.core.internal.message.VersionedBeaconMessage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
+import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
 import it.airgap.beaconsdk.core.internal.utils.chainRegistry
 import it.airgap.beaconsdk.core.internal.utils.failWithChainNotFound
-import it.airgap.beaconsdk.core.internal.utils.failWithExpectedJsonDecoder
-import it.airgap.beaconsdk.core.internal.utils.failWithMissingField
+import it.airgap.beaconsdk.core.internal.utils.getString
 import it.airgap.beaconsdk.core.message.*
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Required
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.descriptors.element
 import kotlinx.serialization.json.JsonDecoder
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 @Serializable(with = V2BeaconMessage.Serializer::class)
@@ -45,19 +44,17 @@ public abstract class V2BeaconMessage : VersionedBeaconMessage() {
         public fun compatSerializer(): KSerializer<V2BeaconMessage> = CompatFactory.serializer()
     }
 
-    public object Serializer : KSerializer<V2BeaconMessage> {
+    internal object Serializer : KJsonSerializer<V2BeaconMessage>() {
         private object Field {
             const val TYPE = "type"
         }
 
-        override val descriptor: SerialDescriptor =
-            PrimitiveSerialDescriptor("V1BeaconMessage", PrimitiveKind.STRING)
+        override val descriptor: SerialDescriptor = buildClassSerialDescriptor("V2BeaconMessage") {
+            element<String>(Field.TYPE)
+        }
 
-        override fun deserialize(decoder: Decoder): V2BeaconMessage {
-            val jsonDecoder = decoder as? JsonDecoder ?: failWithExpectedJsonDecoder(decoder::class)
-            val jsonElement = jsonDecoder.decodeJsonElement()
-
-            val type = jsonElement.jsonObject[Field.TYPE]?.jsonPrimitive?.content ?: failWithMissingField(Field.TYPE)
+        override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): V2BeaconMessage {
+            val type = jsonElement.jsonObject.getString(Field.TYPE)
 
             return when (type) {
                 PermissionV2BeaconRequest.TYPE -> jsonDecoder.json.decodeFromJsonElement(PermissionV2BeaconRequest.serializer(), jsonElement)
@@ -69,25 +66,25 @@ public abstract class V2BeaconMessage : VersionedBeaconMessage() {
             }
         }
 
-        override fun serialize(encoder: Encoder, value: V2BeaconMessage) {
+        override fun serialize(jsonEncoder: JsonEncoder, value: V2BeaconMessage) {
             when (value) {
-                is PermissionV2BeaconRequest -> encoder.encodeSerializableValue(PermissionV2BeaconRequest.serializer(), value)
-                is PermissionV2BeaconResponse -> encoder.encodeSerializableValue(PermissionV2BeaconResponse.serializer(), value)
-                is AcknowledgeV2BeaconResponse -> encoder.encodeSerializableValue(AcknowledgeV2BeaconResponse.serializer(), value)
-                is ErrorV2BeaconResponse -> encoder.encodeSerializableValue(ErrorV2BeaconResponse.serializer(), value)
-                is DisconnectV2BeaconMessage -> encoder.encodeSerializableValue(DisconnectV2BeaconMessage.serializer(), value)
-                else -> encoder.encodeSerializableValue(compatSerializer(), value)
+                is PermissionV2BeaconRequest -> jsonEncoder.encodeSerializableValue(PermissionV2BeaconRequest.serializer(), value)
+                is PermissionV2BeaconResponse -> jsonEncoder.encodeSerializableValue(PermissionV2BeaconResponse.serializer(), value)
+                is AcknowledgeV2BeaconResponse -> jsonEncoder.encodeSerializableValue(AcknowledgeV2BeaconResponse.serializer(), value)
+                is ErrorV2BeaconResponse -> jsonEncoder.encodeSerializableValue(ErrorV2BeaconResponse.serializer(), value)
+                is DisconnectV2BeaconMessage -> jsonEncoder.encodeSerializableValue(DisconnectV2BeaconMessage.serializer(), value)
+                else -> jsonEncoder.encodeSerializableValue(compatSerializer(), value)
             }
         }
     }
 
-    object CompatFactory : Factory<BeaconMessage, V2BeaconMessage> {
-        const val CHAIN_IDENTIFIER = "tezos"
-        private val chain: Chain<*, *>
+    internal object CompatFactory : Factory<BeaconMessage, V2BeaconMessage> {
+        private const val CHAIN_IDENTIFIER = "tezos"
+        val chain: Chain<*, *>
             get() = chainRegistry.get(CHAIN_IDENTIFIER) ?: failWithChainNotFound(CHAIN_IDENTIFIER)
 
-        override fun from(senderId: String, content: BeaconMessage): V2BeaconMessage = chain.messageFactory.v2.from(senderId, content)
-        override fun serializer(): KSerializer<V2BeaconMessage> = chain.messageFactory.v2.serializer()
+        override fun from(senderId: String, content: BeaconMessage): V2BeaconMessage = chain.serializer.v2.from(senderId, content)
+        override fun serializer(): KSerializer<V2BeaconMessage> = chain.serializer.v2.serializer()
     }
 }
 
@@ -105,7 +102,7 @@ public data class PermissionV2BeaconRequest(
     override val type: String = TYPE
 
     override suspend fun toBeaconMessage(origin: Origin, storageManager: StorageManager): BeaconMessage =
-        PermissionBeaconRequest(id, senderId, appMetadata.toAppMetadata(), network, scopes, origin, version)
+        PermissionBeaconRequest(id, senderId, appMetadata.toAppMetadata(), CompatFactory.chain.identifier, network, scopes, origin, version)
 
     public companion object {
         public const val TYPE: String = "permission_request"
@@ -127,7 +124,7 @@ public data class PermissionV2BeaconResponse(
     override val type: String = TYPE
 
     override suspend fun toBeaconMessage(origin: Origin, storageManager: StorageManager): BeaconMessage =
-        PermissionBeaconResponse(id, publicKey, network, scopes, threshold, version, origin)
+        PermissionBeaconResponse(id, publicKey, CompatFactory.chain.identifier, network, scopes, threshold, version, origin)
 
     public companion object {
         public const val TYPE: String = "permission_response"
@@ -164,7 +161,7 @@ public data class ErrorV2BeaconResponse(
     override val type: String = TYPE
 
     override suspend fun toBeaconMessage(origin: Origin, storageManager: StorageManager): BeaconMessage =
-        ErrorBeaconResponse(id, errorType, version, origin)
+        ErrorBeaconResponse(id, CompatFactory.chain.identifier, errorType, version, origin)
 
     public companion object {
         public const val TYPE: String = "error"

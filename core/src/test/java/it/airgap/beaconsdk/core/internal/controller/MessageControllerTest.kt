@@ -7,8 +7,8 @@ import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.unmockkAll
-import it.airgap.beaconsdk.core.data.beacon.Origin
-import it.airgap.beaconsdk.core.data.beacon.Permission
+import it.airgap.beaconsdk.core.data.Origin
+import it.airgap.beaconsdk.core.data.Permission
 import it.airgap.beaconsdk.core.internal.chain.ChainRegistry
 import it.airgap.beaconsdk.core.internal.chain.MockChain
 import it.airgap.beaconsdk.core.internal.message.VersionedBeaconMessage

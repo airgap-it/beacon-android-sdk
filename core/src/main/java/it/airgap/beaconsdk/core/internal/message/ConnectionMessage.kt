@@ -1,9 +1,10 @@
 package it.airgap.beaconsdk.core.internal.message
 
 import androidx.annotation.RestrictTo
-import it.airgap.beaconsdk.core.data.beacon.Origin
+import it.airgap.beaconsdk.core.data.Origin
 
 internal typealias ConnectionTransportMessage = ConnectionMessage<*>
+
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public sealed interface ConnectionMessage<T> {
     @get:RestrictTo(RestrictTo.Scope.LIBRARY)

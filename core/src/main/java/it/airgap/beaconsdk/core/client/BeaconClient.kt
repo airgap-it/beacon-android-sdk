@@ -1,7 +1,7 @@
 package it.airgap.beaconsdk.core.client
 
-import it.airgap.beaconsdk.core.data.beacon.Origin
-import it.airgap.beaconsdk.core.data.beacon.Peer
+import it.airgap.beaconsdk.core.data.Origin
+import it.airgap.beaconsdk.core.data.Peer
 import it.airgap.beaconsdk.core.exception.BeaconException
 import it.airgap.beaconsdk.core.internal.controller.ConnectionController
 import it.airgap.beaconsdk.core.internal.controller.MessageController

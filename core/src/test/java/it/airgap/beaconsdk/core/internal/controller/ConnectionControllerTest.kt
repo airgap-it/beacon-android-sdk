@@ -7,8 +7,8 @@ import connectionMessageFlow
 import failures
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
-import it.airgap.beaconsdk.core.data.beacon.Connection
-import it.airgap.beaconsdk.core.data.beacon.Origin
+import it.airgap.beaconsdk.core.data.Connection
+import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.internal.message.BeaconConnectionMessage
 import it.airgap.beaconsdk.core.internal.message.ConnectionTransportMessage
 import it.airgap.beaconsdk.core.internal.message.SerializedConnectionMessage

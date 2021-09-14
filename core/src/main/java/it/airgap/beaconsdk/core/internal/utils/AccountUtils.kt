@@ -1,7 +1,7 @@
 package it.airgap.beaconsdk.core.internal.utils
 
 import androidx.annotation.RestrictTo
-import it.airgap.beaconsdk.core.data.beacon.Network
+import it.airgap.beaconsdk.core.data.Network
 import it.airgap.beaconsdk.core.internal.crypto.Crypto
 
 @RestrictTo(RestrictTo.Scope.LIBRARY)

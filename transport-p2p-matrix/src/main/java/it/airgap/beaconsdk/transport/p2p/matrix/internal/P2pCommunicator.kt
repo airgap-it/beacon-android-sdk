@@ -1,7 +1,7 @@
 package it.airgap.beaconsdk.transport.p2p.matrix.internal
 
-import it.airgap.beaconsdk.core.data.beacon.P2pPeer
-import it.airgap.beaconsdk.core.data.beacon.Peer
+import it.airgap.beaconsdk.core.data.P2pPeer
+import it.airgap.beaconsdk.core.data.Peer
 import it.airgap.beaconsdk.core.internal.crypto.Crypto
 import it.airgap.beaconsdk.core.internal.crypto.data.KeyPair
 import it.airgap.beaconsdk.core.internal.data.BeaconApplication

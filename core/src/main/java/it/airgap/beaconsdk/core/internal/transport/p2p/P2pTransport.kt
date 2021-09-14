@@ -1,9 +1,9 @@
 package it.airgap.beaconsdk.core.internal.transport.p2p
 
-import it.airgap.beaconsdk.core.data.beacon.Connection
-import it.airgap.beaconsdk.core.data.beacon.Origin
-import it.airgap.beaconsdk.core.data.beacon.P2pPeer
-import it.airgap.beaconsdk.core.data.beacon.selfPaired
+import it.airgap.beaconsdk.core.data.Connection
+import it.airgap.beaconsdk.core.data.Origin
+import it.airgap.beaconsdk.core.data.P2pPeer
+import it.airgap.beaconsdk.core.data.selfPaired
 import it.airgap.beaconsdk.core.internal.message.ConnectionMessage
 import it.airgap.beaconsdk.core.internal.message.ConnectionTransportMessage
 import it.airgap.beaconsdk.core.internal.message.SerializedConnectionMessage

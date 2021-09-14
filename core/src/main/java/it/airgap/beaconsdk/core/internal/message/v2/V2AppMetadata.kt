@@ -1,7 +1,7 @@
 package it.airgap.beaconsdk.core.internal.message.v2
 
 import androidx.annotation.RestrictTo
-import it.airgap.beaconsdk.core.data.beacon.AppMetadata
+import it.airgap.beaconsdk.core.data.AppMetadata
 import kotlinx.serialization.Serializable
 
 @RestrictTo(RestrictTo.Scope.LIBRARY)

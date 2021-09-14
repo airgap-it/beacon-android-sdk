@@ -4,7 +4,7 @@ import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.unmockkAll
-import it.airgap.beaconsdk.core.data.beacon.P2pPeer
+import it.airgap.beaconsdk.core.data.P2pPeer
 import it.airgap.beaconsdk.core.internal.crypto.Crypto
 import it.airgap.beaconsdk.core.internal.crypto.data.KeyPair
 import it.airgap.beaconsdk.core.internal.data.BeaconApplication

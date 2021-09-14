@@ -1,6 +1,6 @@
 package it.airgap.beaconsdk.core.exception
 
-import it.airgap.beaconsdk.core.data.beacon.Connection
+import it.airgap.beaconsdk.core.data.Connection
 
 /**
  * Base for exceptions recognized in the Beacon SDK.

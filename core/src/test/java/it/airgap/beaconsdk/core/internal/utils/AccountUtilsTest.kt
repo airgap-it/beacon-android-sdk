@@ -3,7 +3,8 @@ package it.airgap.beaconsdk.core.internal.utils
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
-import it.airgap.beaconsdk.core.data.beacon.Network
+import it.airgap.beaconsdk.core.data.MockNetwork
+import it.airgap.beaconsdk.core.data.Network
 import it.airgap.beaconsdk.core.internal.crypto.Crypto
 import org.junit.Before
 import org.junit.Test
@@ -47,17 +48,9 @@ internal class AccountUtilsTest {
 
     private fun expectedIdentifiers(address: String = "address"): List<Pair<Pair<String, Network>, String>> =
         listOf(
-            Pair(address, Network.Mainnet()) to "$address-mainnet",
-            Pair(address, Network.Mainnet(name = "name")) to "$address-mainnet-name:name",
-            Pair(address, Network.Mainnet(rpcUrl = "rpcUrl")) to "$address-mainnet-rpc:rpcUrl",
-            Pair(address, Network.Mainnet(name = "name", rpcUrl = "rpcUrl")) to "$address-mainnet-name:name-rpc:rpcUrl",
-            Pair(address, Network.Carthagenet()) to "$address-carthagenet",
-            Pair(address, Network.Carthagenet(name = "name")) to "$address-carthagenet-name:name",
-            Pair(address, Network.Carthagenet(rpcUrl = "rpcUrl")) to "$address-carthagenet-rpc:rpcUrl",
-            Pair(address, Network.Carthagenet(name = "name", rpcUrl = "rpcUrl")) to "$address-carthagenet-name:name-rpc:rpcUrl",
-            Pair(address, Network.Custom()) to "$address-custom",
-            Pair(address, Network.Custom(name = "name")) to "$address-custom-name:name",
-            Pair(address, Network.Custom(rpcUrl = "rpcUrl")) to "$address-custom-rpc:rpcUrl",
-            Pair(address, Network.Custom(name = "name", rpcUrl = "rpcUrl")) to "$address-custom-name:name-rpc:rpcUrl",
+            Pair(address, MockNetwork()) to "$address-mock",
+            Pair(address, MockNetwork(name = "name")) to "$address-mock-name:name",
+            Pair(address, MockNetwork(rpcUrl = "rpcUrl")) to "$address-mock-rpc:rpcUrl",
+            Pair(address, MockNetwork(name = "name", rpcUrl = "rpcUrl")) to "$address-mock-name:name-rpc:rpcUrl",
         )
 }

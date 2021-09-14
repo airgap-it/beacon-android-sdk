@@ -3,8 +3,8 @@ package it.airgap.beaconsdk.client.wallet.compat
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import it.airgap.beaconsdk.client.wallet.BeaconWalletClient
-import it.airgap.beaconsdk.core.data.beacon.Connection
-import it.airgap.beaconsdk.core.data.beacon.P2P
+import it.airgap.beaconsdk.core.data.Connection
+import it.airgap.beaconsdk.core.data.P2P
 import it.airgap.beaconsdk.core.internal.BeaconSdk
 import it.airgap.beaconsdk.core.internal.chain.Chain
 import it.airgap.beaconsdk.core.internal.chain.MockChain

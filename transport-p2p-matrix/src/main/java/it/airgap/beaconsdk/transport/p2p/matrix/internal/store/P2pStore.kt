@@ -1,6 +1,6 @@
 package it.airgap.beaconsdk.transport.p2p.matrix.internal.store
 
-import it.airgap.beaconsdk.core.data.beacon.P2pPeer
+import it.airgap.beaconsdk.core.data.P2pPeer
 import it.airgap.beaconsdk.core.internal.base.Store
 import it.airgap.beaconsdk.core.internal.data.BeaconApplication
 import it.airgap.beaconsdk.core.internal.migration.Migration

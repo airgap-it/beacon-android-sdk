@@ -1,7 +1,7 @@
 package it.airgap.beaconsdk.core.internal.transport
 
 import androidx.annotation.RestrictTo
-import it.airgap.beaconsdk.core.data.beacon.Connection
+import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.internal.message.ConnectionTransportMessage
 import it.airgap.beaconsdk.core.internal.utils.logDebug
 import kotlinx.coroutines.flow.Flow

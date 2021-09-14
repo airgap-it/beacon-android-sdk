@@ -1,5 +1,6 @@
 
-import it.airgap.beaconsdk.core.data.beacon.*
+import it.airgap.beaconsdk.core.data.*
+import it.airgap.beaconsdk.core.internal.chain.MockChain
 import it.airgap.beaconsdk.core.internal.message.BeaconConnectionMessage
 import it.airgap.beaconsdk.core.internal.message.VersionedBeaconMessage
 import it.airgap.beaconsdk.core.message.*
@@ -31,11 +32,12 @@ internal fun permissionBeaconRequest(
     id: String = "id",
     senderId: String = "senderId",
     appMetadata: AppMetadata = AppMetadata(senderId, "mockApp"),
-    network: Network = Network.Custom(),
+    identifier: String = MockChain.IDENTIFIER,
+    network: Network = MockNetwork(),
     scopes: List<Permission.Scope> = emptyList(),
     origin: Origin = Origin.P2P(senderId),
     version: String = "version",
-): PermissionBeaconRequest = PermissionBeaconRequest(id, senderId, appMetadata, network, scopes, origin, version)
+): PermissionBeaconRequest = PermissionBeaconRequest(id, senderId, appMetadata, identifier, network, scopes, origin, version)
 
 internal fun chainBeaconRequest(
     id: String = "id",
@@ -50,12 +52,13 @@ internal fun chainBeaconRequest(
 internal fun permissionBeaconResponse(
     id: String = "id",
     publicKey: String = "publicKey",
-    network: Network = Network.Custom(),
+    identifier: String = MockChain.IDENTIFIER,
+    network: Network = MockNetwork(),
     scopes: List<Permission.Scope> = emptyList(),
     threshold: Threshold? = null,
     version: String = "version",
     requestOrigin: Origin = Origin.P2P("senderId"),
-): PermissionBeaconResponse = PermissionBeaconResponse(id, publicKey, network, scopes, threshold, version, requestOrigin)
+): PermissionBeaconResponse = PermissionBeaconResponse(id, publicKey, identifier, network, scopes, threshold, version, requestOrigin)
 
 internal fun chainBeaconResponse(
     id: String = "id",
@@ -75,28 +78,23 @@ internal fun acknowledgeBeaconResponse(
 
 internal fun errorBeaconResponse(
     id: String = "id",
+    identifier: String = MockChain.IDENTIFIER,
     errorType: BeaconError = BeaconError.Unknown,
     version: String = "version",
     requestOrigin: Origin = Origin.P2P("senderId"),
-): ErrorBeaconResponse = ErrorBeaconResponse(id, errorType, version, requestOrigin)
+): ErrorBeaconResponse = ErrorBeaconResponse(id, identifier, errorType, version, requestOrigin)
 
 internal fun errorBeaconResponses(
     id: String = "id",
     version: String = "version",
+    identifier: String = MockChain.IDENTIFIER,
     requestOrigin: Origin = Origin.P2P("senderId")
 ): List<ErrorBeaconResponse> =
     listOf(
-        errorBeaconResponse(id, BeaconError.BroadcastError, version = version, requestOrigin = requestOrigin),
-        errorBeaconResponse(id, BeaconError.NetworkNotSupported, version = version, requestOrigin = requestOrigin),
-        errorBeaconResponse(id, BeaconError.NoAddressError, version = version, requestOrigin = requestOrigin),
-        errorBeaconResponse(id, BeaconError.NoPrivateKeyFound, version = version, requestOrigin = requestOrigin),
-        errorBeaconResponse(id, BeaconError.NotGranted, version = version, requestOrigin = requestOrigin),
-        errorBeaconResponse(id, BeaconError.ParametersInvalid, version = version, requestOrigin = requestOrigin),
-        errorBeaconResponse(id, BeaconError.TooManyOperations, version = version, requestOrigin = requestOrigin),
-        errorBeaconResponse(id, BeaconError.TransactionInvalid, version = version, requestOrigin = requestOrigin),
-        errorBeaconResponse(id, BeaconError.SignatureTypeNotSupported, version = version, requestOrigin = requestOrigin),
-        errorBeaconResponse(id, BeaconError.Aborted, version = version, requestOrigin = requestOrigin),
-        errorBeaconResponse(id, BeaconError.Unknown, version = version, requestOrigin = requestOrigin),
+        errorBeaconResponse(id, identifier, BeaconError.NetworkNotSupported, version = version, requestOrigin = requestOrigin),
+        errorBeaconResponse(id, identifier, BeaconError.NoAddressError, version = version, requestOrigin = requestOrigin),
+        errorBeaconResponse(id, identifier, BeaconError.Aborted, version = version, requestOrigin = requestOrigin),
+        errorBeaconResponse(id, identifier, BeaconError.Unknown, version = version, requestOrigin = requestOrigin),
     )
 
 internal fun beaconResponses(version: String = "version", requestOrigin: Origin = Origin.P2P("senderId")): List<BeaconResponse> =

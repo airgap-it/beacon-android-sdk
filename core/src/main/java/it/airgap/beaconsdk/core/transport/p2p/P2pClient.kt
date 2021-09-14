@@ -1,6 +1,6 @@
 package it.airgap.beaconsdk.core.transport.p2p
 
-import it.airgap.beaconsdk.core.data.beacon.P2pPeer
+import it.airgap.beaconsdk.core.data.P2pPeer
 import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.core.internal.transport.p2p.data.P2pMessage
 import kotlinx.coroutines.flow.Flow

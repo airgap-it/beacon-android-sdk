@@ -1,8 +1,8 @@
 package it.airgap.beaconsdk.chain.tezos
 
 import androidx.annotation.RestrictTo
-import it.airgap.beaconsdk.chain.tezos.internal.message.TezosMessageFactory
-import it.airgap.beaconsdk.chain.tezos.internal.wallet.Wallet
+import it.airgap.beaconsdk.chain.tezos.internal.TezosSerializer
+import it.airgap.beaconsdk.chain.tezos.internal.TezosWallet
 import it.airgap.beaconsdk.core.internal.chain.Chain
 import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 
@@ -11,16 +11,19 @@ import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
  */
 public class Tezos internal constructor(
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    override val wallet: Wallet,
+    override val wallet: TezosWallet,
 
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    override val messageFactory: TezosMessageFactory,
-) : Chain<Wallet, TezosMessageFactory> {
+    override val serializer: TezosSerializer,
+) : Chain<TezosWallet, TezosSerializer> {
 
-    /**
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY)
+    override val identifier: String = IDENTIFIER
+
+        /**
      * Factory for [Tezos].
      *
-     * @constructor Creates a factory needed for dynamic [Tezos] chain registration.
+     * @constructor Creates a factory required for dynamic [Tezos] chain registration.
      */
     public class Factory : Chain.Factory<Tezos> {
         override val identifier: String = IDENTIFIER
@@ -28,10 +31,10 @@ public class Tezos internal constructor(
         @RestrictTo(RestrictTo.Scope.LIBRARY)
         override fun create(dependencyRegistry: DependencyRegistry): Tezos =
             with(dependencyRegistry) {
-                val wallet = Wallet(crypto, base58Check)
-                val versionedMessage = TezosMessageFactory()
+                val wallet = TezosWallet(crypto, base58Check)
+                val serializer = TezosSerializer()
 
-                Tezos(wallet, versionedMessage)
+                Tezos(wallet, serializer)
             }
     }
 

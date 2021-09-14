@@ -1,8 +1,8 @@
 package it.airgap.beaconsdk.chain.tezos.message
 
-import it.airgap.beaconsdk.core.data.beacon.Network
-import it.airgap.beaconsdk.core.data.beacon.SigningType
-import it.airgap.beaconsdk.core.data.tezos.TezosOperation
+import it.airgap.beaconsdk.chain.tezos.data.operation.TezosOperation
+import it.airgap.beaconsdk.core.data.Network
+import it.airgap.beaconsdk.core.data.SigningType
 import it.airgap.beaconsdk.core.message.ChainBeaconRequest
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

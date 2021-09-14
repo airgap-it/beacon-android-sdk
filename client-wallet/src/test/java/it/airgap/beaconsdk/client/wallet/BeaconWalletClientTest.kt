@@ -7,10 +7,10 @@ import beaconVersionedRequests
 import disconnectBeaconMessage
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
-import it.airgap.beaconsdk.core.data.beacon.AppMetadata
-import it.airgap.beaconsdk.core.data.beacon.Origin
-import it.airgap.beaconsdk.core.data.beacon.P2pPeer
-import it.airgap.beaconsdk.core.data.beacon.Permission
+import it.airgap.beaconsdk.core.data.AppMetadata
+import it.airgap.beaconsdk.core.data.Origin
+import it.airgap.beaconsdk.core.data.P2pPeer
+import it.airgap.beaconsdk.core.data.Permission
 import it.airgap.beaconsdk.core.exception.BeaconException
 import it.airgap.beaconsdk.core.internal.controller.ConnectionController
 import it.airgap.beaconsdk.core.internal.controller.MessageController

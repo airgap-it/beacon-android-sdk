@@ -1,6 +1,6 @@
 
 import androidx.annotation.IntRange
-import it.airgap.beaconsdk.core.data.beacon.P2pPeer
+import it.airgap.beaconsdk.core.data.P2pPeer
 import it.airgap.beaconsdk.core.internal.utils.toHexString
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.onEach

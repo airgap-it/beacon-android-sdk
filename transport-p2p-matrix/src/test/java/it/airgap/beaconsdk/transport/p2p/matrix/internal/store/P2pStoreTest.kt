@@ -2,7 +2,7 @@ package it.airgap.beaconsdk.transport.p2p.matrix.internal.store
 
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
-import it.airgap.beaconsdk.core.data.beacon.P2pPeer
+import it.airgap.beaconsdk.core.data.P2pPeer
 import it.airgap.beaconsdk.core.internal.crypto.data.KeyPair
 import it.airgap.beaconsdk.core.internal.data.BeaconApplication
 import it.airgap.beaconsdk.core.internal.migration.Migration

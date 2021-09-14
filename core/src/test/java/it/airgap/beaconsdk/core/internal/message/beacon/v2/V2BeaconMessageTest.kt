@@ -5,9 +5,7 @@ import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.unmockkAll
-import it.airgap.beaconsdk.core.data.beacon.*
-import it.airgap.beaconsdk.core.data.tezos.TezosEndorsementOperation
-import it.airgap.beaconsdk.core.data.tezos.TezosOperation
+import it.airgap.beaconsdk.core.data.*
 import it.airgap.beaconsdk.core.internal.chain.ChainRegistry
 import it.airgap.beaconsdk.core.internal.chain.MockChain
 import it.airgap.beaconsdk.core.internal.chain.MockChainVersionedMessage
@@ -121,7 +119,6 @@ internal class V2BeaconMessageTest {
             createPermissionRequestJsonPair(),
             createPermissionRequestJsonPair(scopes = listOf(Permission.Scope.Sign)),
             createOperationRequestJsonPair(),
-            createOperationRequestJsonPair(tezosOperations = listOf(TezosEndorsementOperation("level"))),
             createSignPayloadRequestJsonPair(),
             createBroadcastRequestJsonPair(),
 
@@ -147,13 +144,6 @@ internal class V2BeaconMessageTest {
         listOf(
             createPermissionRequestPair(version = version, senderId = senderId, origin = origin),
             createOperationRequestPair(version = version, senderId = senderId, appMetadata = appMetadata, origin = origin),
-            createOperationRequestPair(
-                version = version,
-                senderId = senderId,
-                tezosOperations = listOf(TezosEndorsementOperation("level")),
-                appMetadata = appMetadata,
-                origin = origin,
-            ),
             createSignPayloadRequestPair(version = version, senderId = senderId, appMetadata = appMetadata, origin = origin),
             createBroadcastRequestPair(version = version, senderId = senderId, appMetadata = appMetadata, origin = origin),
 
@@ -173,7 +163,7 @@ internal class V2BeaconMessageTest {
         id: String = "id",
         senderId: String = "senderId",
         appMetadata: V2AppMetadata = V2AppMetadata("senderId", "v2App"),
-        network: Network = Network.Custom(),
+        network: Network = MockNetwork(),
         scopes: List<Permission.Scope> = emptyList()
     ): Pair<PermissionV2BeaconRequest, String> =
         PermissionV2BeaconRequest(version, id, senderId, appMetadata, network, scopes) to """
@@ -192,8 +182,8 @@ internal class V2BeaconMessageTest {
         version: String = "2",
         id: String = "id",
         senderId: String = "senderId",
-        network: Network = Network.Custom(),
-        tezosOperations: List<TezosOperation> = emptyList(),
+        network: Network = MockNetwork(),
+        tezosOperations: List<Map<String, String>> = emptyList(),
         sourceAddress: String = "sourceAddress"
     ): Pair<MockChainVersionedMessage.V2MockBeaconMessage, String> =
         MockChainVersionedMessage.V2MockBeaconMessage.request(
@@ -252,7 +242,7 @@ internal class V2BeaconMessageTest {
         version: String = "2",
         id: String = "id",
         senderId: String = "senderId",
-        network: Network = Network.Custom(),
+        network: Network = MockNetwork(),
         signedTransaction: String = "signedTransaction"
     ): Pair<MockChainVersionedMessage.V2MockBeaconMessage, String> =
         MockChainVersionedMessage.V2MockBeaconMessage.request(
@@ -282,7 +272,7 @@ internal class V2BeaconMessageTest {
         id: String = "id",
         senderId: String = "senderId",
         publicKey: String = "publicKey",
-        network: Network = Network.Custom(),
+        network: Network = MockNetwork(),
         scopes: List<Permission.Scope> = emptyList(),
         threshold: Threshold? = null,
         includeNulls: Boolean = false,
@@ -417,19 +407,19 @@ internal class V2BeaconMessageTest {
         id: String = "id",
         senderId: String = "senderId",
         appMetadata: V2AppMetadata = V2AppMetadata("senderId", "v2App"),
-        network: Network = Network.Custom(),
+        network: Network = MockNetwork(),
         scopes: List<Permission.Scope> = emptyList(),
         origin: Origin = Origin.P2P(senderId),
     ): Pair<PermissionV2BeaconRequest, PermissionBeaconRequest> =
         PermissionV2BeaconRequest(version, id, senderId, appMetadata, network, scopes) to
-                PermissionBeaconRequest(id, senderId, appMetadata.toAppMetadata(), network, scopes, origin, version)
+                PermissionBeaconRequest(id, senderId, appMetadata.toAppMetadata(), MockChain.IDENTIFIER, network, scopes, origin, version)
 
     private fun createOperationRequestPair(
         version: String = "2",
         id: String = "id",
         senderId: String = "senderId",
-        network: Network = Network.Custom(),
-        tezosOperations: List<TezosOperation> = emptyList(),
+        network: Network = MockNetwork(),
+        tezosOperations: List<Map<String, String>> = emptyList(),
         sourceAddress: String = "sourceAddress",
         appMetadata: AppMetadata? = null,
         origin: Origin = Origin.P2P(senderId),
@@ -496,7 +486,7 @@ internal class V2BeaconMessageTest {
         version: String = "2",
         id: String = "id",
         senderId: String = "senderId",
-        network: Network = Network.Custom(),
+        network: Network = MockNetwork(),
         signedTransaction: String = "signedTransaction",
         appMetadata: AppMetadata? = null,
         origin: Origin = Origin.P2P(senderId),
@@ -531,13 +521,13 @@ internal class V2BeaconMessageTest {
         id: String = "id",
         senderId: String = "senderId",
         publicKey: String = "publicKey",
-        network: Network = Network.Custom(),
+        network: Network = MockNetwork(),
         scopes: List<Permission.Scope> = emptyList(),
         threshold: Threshold? = null,
         origin: Origin = Origin.P2P(senderId),
     ): Pair<PermissionV2BeaconResponse, PermissionBeaconResponse> =
         PermissionV2BeaconResponse(version, id, senderId, publicKey, network, scopes, threshold) to
-                PermissionBeaconResponse(id, publicKey, network, scopes, threshold, version, origin)
+                PermissionBeaconResponse(id, publicKey, MockChain.IDENTIFIER, network, scopes, threshold, version, origin)
 
     private fun createOperationResponsePair(
         version: String = "2",
@@ -629,7 +619,7 @@ internal class V2BeaconMessageTest {
         errorType: BeaconError = BeaconError.Unknown,
         origin: Origin = Origin.P2P(senderId),
     ): Pair<ErrorV2BeaconResponse, ErrorBeaconResponse> =
-        ErrorV2BeaconResponse(version, id, senderId, errorType) to ErrorBeaconResponse(id, errorType, version, origin)
+        ErrorV2BeaconResponse(version, id, senderId, errorType) to ErrorBeaconResponse(id, MockChain.IDENTIFIER, errorType, version, origin)
 
     // -- other to BeaconMessage --
 

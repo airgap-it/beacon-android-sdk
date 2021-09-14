@@ -1,6 +1,8 @@
 package it.airgap.beaconsdk.core.internal.chain
 
-import it.airgap.beaconsdk.core.data.beacon.Origin
+import androidx.annotation.RestrictTo
+import it.airgap.beaconsdk.core.data.BeaconError
+import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.core.internal.message.VersionedBeaconMessage
 import it.airgap.beaconsdk.core.internal.message.v1.V1BeaconMessage
@@ -11,37 +13,49 @@ import it.airgap.beaconsdk.core.message.BeaconMessage
 import it.airgap.beaconsdk.core.message.ChainBeaconRequest
 import it.airgap.beaconsdk.core.message.ChainBeaconResponse
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.descriptors.element
 import kotlinx.serialization.json.*
 
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public class MockChain : Chain<MockChainWallet, MockChainVersionedMessage> {
+    override val identifier: String = IDENTIFIER
     override val wallet: MockChainWallet = MockChainWallet()
-    override val messageFactory: MockChainVersionedMessage = MockChainVersionedMessage()
+    override val serializer: MockChainVersionedMessage = MockChainVersionedMessage()
 
-    class Factory : Chain.Factory<MockChain> {
+    public class Factory : Chain.Factory<MockChain> {
         override val identifier: String = IDENTIFIER
         override fun create(dependencyRegistry: DependencyRegistry): MockChain = MockChain()
     }
 
-    companion object {
-        const val IDENTIFIER = "mockChain"
+    public companion object {
+        public const val IDENTIFIER = "mockChain"
     }
 }
 
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public class MockChainWallet : Chain.Wallet {
     override fun addressFromPublicKey(publicKey: String): Result<String> =
         Result.success("@$publicKey")
 }
 
-public class MockChainVersionedMessage : Chain.MessageFactory {
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+public class MockChainVersionedMessage : Chain.Serializer {
+    override val requestPayload: KSerializer<ChainBeaconRequest.Payload>
+        get() = PolymorphicSerializer(RequestPayload.serializer())
+
+    override val responsePayload: KSerializer<ChainBeaconResponse.Payload>
+        get() = PolymorphicSerializer(ResponsePayload.serializer())
+
+    override val error: KSerializer<BeaconError>
+        get() = PolymorphicSerializer(Error.serializer())
+
     override val v1: VersionedBeaconMessage.Factory<BeaconMessage, V1BeaconMessage> =
         object : VersionedBeaconMessage.Factory<BeaconMessage, V1BeaconMessage> {
             override fun serializer(): KSerializer<V1BeaconMessage> =
-                object : KSerializer<V1BeaconMessage> {
+                object : KJsonSerializer<V1BeaconMessage>() {
                     private val fieldType: String = "type"
                     private val fieldVersion: String = "version"
                     private val fieldId: String = "id"
@@ -49,24 +63,25 @@ public class MockChainVersionedMessage : Chain.MessageFactory {
 
                     private val knownFields: Set<String> = setOf(fieldType, fieldVersion, fieldId, fieldBeaconId)
 
-                    override val descriptor: SerialDescriptor =
-                        PrimitiveSerialDescriptor("MockChainV1BeaconMessage", PrimitiveKind.STRING)
+                    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("MockChainV1BeaconMessage") {
+                        element<String>(fieldType)
+                        element<String>(fieldVersion)
+                        element<String>(fieldId)
+                        element<String>(fieldBeaconId)
+                    }
 
-                    override fun deserialize(decoder: Decoder): V1BeaconMessage {
-                        val jsonDecoder = decoder as? JsonDecoder ?: failWithExpectedJsonDecoder(decoder::class)
-                        val jsonElement = jsonDecoder.decodeJsonElement()
-
-                        val type = jsonElement.jsonObject[fieldType]?.jsonPrimitive?.content ?: failWithMissingField(fieldType)
-                        val version = jsonElement.jsonObject[fieldVersion]?.jsonPrimitive?.content ?: failWithMissingField(fieldVersion)
-                        val id = jsonElement.jsonObject[fieldId]?.jsonPrimitive?.content ?: failWithMissingField(fieldId)
-                        val beaconId = jsonElement.jsonObject[fieldBeaconId]?.jsonPrimitive?.content ?: failWithMissingField(fieldBeaconId)
+                    override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): V1BeaconMessage {
+                        val type = jsonElement.jsonObject.getString(fieldType)
+                        val version = jsonElement.jsonObject.getString(fieldVersion)
+                        val id = jsonElement.jsonObject.getString(fieldId)
+                        val beaconId = jsonElement.jsonObject.getString(fieldBeaconId)
                         val rest = jsonElement.jsonObject.filterKeys { !knownFields.contains(it) }
                         val mockType = MockMessageType.from(type) ?: failWithIllegalArgument()
 
                         return V1MockBeaconMessage(type, version, id, beaconId, rest, mockType)
                     }
 
-                    override fun serialize(encoder: Encoder, value: V1BeaconMessage) {
+                    override fun serialize(jsonEncoder: JsonEncoder, value: V1BeaconMessage) {
                         val fields = mapOf<String, JsonElement>(
                             fieldType to JsonPrimitive(value.type),
                             fieldVersion to JsonPrimitive(value.version),
@@ -79,7 +94,7 @@ public class MockChainVersionedMessage : Chain.MessageFactory {
                             else -> failWithIllegalArgument()
                         }
 
-                        encoder.encodeSerializableValue(JsonObject.serializer(), (fields + rest).toJsonObject())
+                        jsonEncoder.encodeSerializableValue(JsonObject.serializer(), (fields + rest).toJsonObject())
                     }
                 }
 
@@ -101,7 +116,7 @@ public class MockChainVersionedMessage : Chain.MessageFactory {
     override val v2: VersionedBeaconMessage.Factory<BeaconMessage, V2BeaconMessage> =
         object : VersionedBeaconMessage.Factory<BeaconMessage, V2BeaconMessage> {
             override fun serializer(): KSerializer<V2BeaconMessage> =
-                object : KSerializer<V2BeaconMessage> {
+                object : KJsonSerializer<V2BeaconMessage>() {
                     private val fieldType: String = "type"
                     private val fieldVersion: String = "version"
                     private val fieldId: String = "id"
@@ -109,24 +124,25 @@ public class MockChainVersionedMessage : Chain.MessageFactory {
 
                     private val knownFields: Set<String> = setOf(fieldType, fieldVersion, fieldId, fieldSenderId)
 
-                    override val descriptor: SerialDescriptor =
-                        PrimitiveSerialDescriptor("MockChainV2BeaconMessage", PrimitiveKind.STRING)
+                    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("MockChainV2BeaconMessage") {
+                        element<String>(fieldType)
+                        element<String>(fieldVersion)
+                        element<String>(fieldId)
+                        element<String>(fieldSenderId)
+                    }
 
-                    override fun deserialize(decoder: Decoder): V2BeaconMessage {
-                        val jsonDecoder = decoder as? JsonDecoder ?: failWithExpectedJsonDecoder(decoder::class)
-                        val jsonElement = jsonDecoder.decodeJsonElement()
-
-                        val type = jsonElement.jsonObject[fieldType]?.jsonPrimitive?.content ?: failWithMissingField(fieldType)
-                        val version = jsonElement.jsonObject[fieldVersion]?.jsonPrimitive?.content ?: failWithMissingField(fieldVersion)
-                        val id = jsonElement.jsonObject[fieldId]?.jsonPrimitive?.content ?: failWithMissingField(fieldId)
-                        val senderId = jsonElement.jsonObject[fieldSenderId]?.jsonPrimitive?.content ?: failWithMissingField(fieldSenderId)
+                    override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): V2BeaconMessage {
+                        val type = jsonElement.jsonObject.getString(fieldType)
+                        val version = jsonElement.jsonObject.getString(fieldVersion)
+                        val id = jsonElement.jsonObject.getString(fieldId)
+                        val senderId = jsonElement.jsonObject.getString(fieldSenderId)
                         val rest = jsonElement.jsonObject.filterKeys { !knownFields.contains(it) }
                         val mockType = MockMessageType.from(type) ?: failWithIllegalArgument()
 
                         return V2MockBeaconMessage(type, version, id, senderId, rest, mockType)
                     }
 
-                    override fun serialize(encoder: Encoder, value: V2BeaconMessage) {
+                    override fun serialize(jsonEncoder: JsonEncoder, value: V2BeaconMessage) {
                         val fields = mapOf<String, JsonElement>(
                             fieldType to JsonPrimitive(value.type),
                             fieldVersion to JsonPrimitive(value.version),
@@ -139,7 +155,7 @@ public class MockChainVersionedMessage : Chain.MessageFactory {
                             else -> failWithIllegalArgument()
                         }
 
-                        encoder.encodeSerializableValue(JsonObject.serializer(), (fields + rest).toJsonObject())
+                        jsonEncoder.encodeSerializableValue(JsonObject.serializer(), (fields + rest).toJsonObject())
                     }
                 }
 
@@ -158,7 +174,7 @@ public class MockChainVersionedMessage : Chain.MessageFactory {
 
         }
 
-    enum class MockMessageType(val value: String) {
+    internal enum class MockMessageType(val value: String) {
         Request("request"),
         Response("response");
 
@@ -167,7 +183,7 @@ public class MockChainVersionedMessage : Chain.MessageFactory {
         }
     }
 
-    data class V1MockBeaconMessage(
+    internal data class V1MockBeaconMessage(
         override val type: String,
         override val version: String,
         override val id: String,
@@ -202,7 +218,7 @@ public class MockChainVersionedMessage : Chain.MessageFactory {
         }
     }
 
-    data class V2MockBeaconMessage(
+    internal data class V2MockBeaconMessage(
         override val type: String,
         override val version: String,
         override val id: String,
@@ -237,6 +253,12 @@ public class MockChainVersionedMessage : Chain.MessageFactory {
         }
     }
 
-    data class RequestPayload(val type: String, val content: Map<String, JsonElement> = emptyMap()) : ChainBeaconRequest.Payload()
-    data class ResponsePayload(val type: String, val content: Map<String, JsonElement> = emptyMap()) : ChainBeaconResponse.Payload()
+    @Serializable
+    internal data class RequestPayload(val type: String, val content: Map<String, JsonElement> = emptyMap()) : ChainBeaconRequest.Payload()
+
+    @Serializable
+    internal data class ResponsePayload(val type: String, val content: Map<String, JsonElement> = emptyMap()) : ChainBeaconResponse.Payload()
+
+    @Serializable
+    internal sealed class Error : BeaconError()
 }

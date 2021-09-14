@@ -6,8 +6,8 @@ import beaconVersionedRequests
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import it.airgap.beaconsdk.client.wallet.BeaconWalletClient
-import it.airgap.beaconsdk.core.data.beacon.AppMetadata
-import it.airgap.beaconsdk.core.data.beacon.Origin
+import it.airgap.beaconsdk.core.data.AppMetadata
+import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.exception.BeaconException
 import it.airgap.beaconsdk.core.internal.controller.ConnectionController
 import it.airgap.beaconsdk.core.internal.controller.MessageController

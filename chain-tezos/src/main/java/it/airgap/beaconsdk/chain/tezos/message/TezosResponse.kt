@@ -1,6 +1,6 @@
 package it.airgap.beaconsdk.chain.tezos.message
 
-import it.airgap.beaconsdk.core.data.beacon.SigningType
+import it.airgap.beaconsdk.core.data.SigningType
 import it.airgap.beaconsdk.core.message.ChainBeaconResponse
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

@@ -1,8 +1,8 @@
 package it.airgap.beaconsdk.core.internal.storage.decorator
 
-import it.airgap.beaconsdk.core.data.beacon.AppMetadata
-import it.airgap.beaconsdk.core.data.beacon.Peer
-import it.airgap.beaconsdk.core.data.beacon.Permission
+import it.airgap.beaconsdk.core.data.AppMetadata
+import it.airgap.beaconsdk.core.data.Peer
+import it.airgap.beaconsdk.core.data.Permission
 import it.airgap.beaconsdk.core.storage.ExtendedStorage
 import it.airgap.beaconsdk.core.storage.Storage
 import kotlinx.coroutines.CoroutineScope

@@ -1,7 +1,7 @@
 package it.airgap.beaconsdk.core.internal.di
 
 import androidx.annotation.RestrictTo
-import it.airgap.beaconsdk.core.data.beacon.Connection
+import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.internal.chain.ChainRegistry
 import it.airgap.beaconsdk.core.internal.controller.ConnectionController
 import it.airgap.beaconsdk.core.internal.controller.MessageController

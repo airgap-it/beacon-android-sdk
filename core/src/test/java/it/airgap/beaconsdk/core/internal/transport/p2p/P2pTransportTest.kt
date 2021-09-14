@@ -3,8 +3,8 @@ package it.airgap.beaconsdk.core.internal.transport.p2p
 import containsLike
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
-import it.airgap.beaconsdk.core.data.beacon.Origin
-import it.airgap.beaconsdk.core.data.beacon.P2pPeer
+import it.airgap.beaconsdk.core.data.Origin
+import it.airgap.beaconsdk.core.data.P2pPeer
 import it.airgap.beaconsdk.core.internal.message.SerializedConnectionMessage
 import it.airgap.beaconsdk.core.internal.storage.MockSecureStorage
 import it.airgap.beaconsdk.core.internal.storage.MockStorage

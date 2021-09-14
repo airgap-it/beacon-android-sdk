@@ -1,23 +1,22 @@
 package it.airgap.beaconsdk.core.internal.message
 
 import androidx.annotation.RestrictTo
-import it.airgap.beaconsdk.core.data.beacon.Origin
+import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.internal.message.v1.V1BeaconMessage
 import it.airgap.beaconsdk.core.internal.message.v2.V2BeaconMessage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
-import it.airgap.beaconsdk.core.internal.utils.failWithExpectedJsonDecoder
-import it.airgap.beaconsdk.core.internal.utils.failWithMissingField
+import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
+import it.airgap.beaconsdk.core.internal.utils.getString
 import it.airgap.beaconsdk.core.message.BeaconMessage
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.descriptors.element
 import kotlinx.serialization.json.JsonDecoder
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 @Serializable(with = VersionedBeaconMessage.Serializer::class)
@@ -42,19 +41,17 @@ public abstract class VersionedBeaconMessage {
             get() = substringBefore('.')
     }
 
-    public object Serializer : KSerializer<VersionedBeaconMessage> {
+    internal object Serializer : KJsonSerializer<VersionedBeaconMessage>() {
         private object Field {
             const val VERSION = "version"
         }
 
-        override val descriptor: SerialDescriptor =
-            PrimitiveSerialDescriptor("VersionedBeaconMessage", PrimitiveKind.STRING)
+        override val descriptor: SerialDescriptor = buildClassSerialDescriptor("VersionedBeaconMessage") {
+            element<String>(Field.VERSION)
+        }
 
-        override fun deserialize(decoder: Decoder): VersionedBeaconMessage {
-            val jsonDecoder = decoder as? JsonDecoder ?: failWithExpectedJsonDecoder(decoder::class)
-            val jsonElement = jsonDecoder.decodeJsonElement()
-
-            val version = jsonElement.jsonObject[Field.VERSION]?.jsonPrimitive?.content ?: failWithMissingField(Field.VERSION)
+        override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): VersionedBeaconMessage {
+            val version = jsonElement.jsonObject.getString(Field.VERSION)
 
             return when (version.major) {
                 "1" -> jsonDecoder.json.decodeFromJsonElement(V1BeaconMessage.serializer(), jsonElement)
@@ -65,10 +62,10 @@ public abstract class VersionedBeaconMessage {
             }
         }
 
-        override fun serialize(encoder: Encoder, value: VersionedBeaconMessage) {
+        override fun serialize(jsonEncoder: JsonEncoder, value: VersionedBeaconMessage) {
             when (value) {
-                is V1BeaconMessage -> encoder.encodeSerializableValue(V1BeaconMessage.serializer(), value)
-                is V2BeaconMessage -> encoder.encodeSerializableValue(V2BeaconMessage.serializer(), value)
+                is V1BeaconMessage -> jsonEncoder.encodeSerializableValue(V1BeaconMessage.serializer(), value)
+                is V2BeaconMessage -> jsonEncoder.encodeSerializableValue(V2BeaconMessage.serializer(), value)
             }
         }
     }

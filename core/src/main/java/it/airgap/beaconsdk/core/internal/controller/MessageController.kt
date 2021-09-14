@@ -1,8 +1,8 @@
 package it.airgap.beaconsdk.core.internal.controller
 
 import androidx.annotation.RestrictTo
-import it.airgap.beaconsdk.core.data.beacon.Origin
-import it.airgap.beaconsdk.core.data.beacon.Permission
+import it.airgap.beaconsdk.core.data.Origin
+import it.airgap.beaconsdk.core.data.Permission
 import it.airgap.beaconsdk.core.internal.chain.ChainRegistry
 import it.airgap.beaconsdk.core.internal.message.VersionedBeaconMessage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager

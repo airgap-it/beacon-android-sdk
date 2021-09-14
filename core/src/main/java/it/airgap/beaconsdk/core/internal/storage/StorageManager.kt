@@ -1,10 +1,10 @@
 package it.airgap.beaconsdk.core.internal.storage
 
 import androidx.annotation.RestrictTo
-import it.airgap.beaconsdk.core.data.beacon.AppMetadata
-import it.airgap.beaconsdk.core.data.beacon.Peer
-import it.airgap.beaconsdk.core.data.beacon.Permission
-import it.airgap.beaconsdk.core.data.beacon.selfRemoved
+import it.airgap.beaconsdk.core.data.AppMetadata
+import it.airgap.beaconsdk.core.data.Peer
+import it.airgap.beaconsdk.core.data.Permission
+import it.airgap.beaconsdk.core.data.selfRemoved
 import it.airgap.beaconsdk.core.internal.utils.AccountUtils
 import it.airgap.beaconsdk.core.internal.utils.asHexString
 import it.airgap.beaconsdk.core.storage.ExtendedStorage

@@ -3,8 +3,8 @@ package it.airgap.beaconsdkdemo
 import androidx.lifecycle.*
 import it.airgap.beaconsdk.chain.tezos.tezos
 import it.airgap.beaconsdk.client.wallet.BeaconWalletClient
-import it.airgap.beaconsdk.core.data.beacon.P2P
-import it.airgap.beaconsdk.core.data.beacon.P2pPeer
+import it.airgap.beaconsdk.core.data.P2P
+import it.airgap.beaconsdk.core.data.P2pPeer
 import it.airgap.beaconsdk.core.message.*
 import it.airgap.beaconsdk.transport.p2p.matrix.p2pMatrix
 import kotlinx.coroutines.flow.collect

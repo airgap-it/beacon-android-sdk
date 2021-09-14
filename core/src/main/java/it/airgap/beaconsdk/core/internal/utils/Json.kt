@@ -2,12 +2,8 @@ package it.airgap.beaconsdk.core.internal.utils
 
 import androidx.annotation.RestrictTo
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.serializer
+import kotlinx.serialization.json.*
 import kotlin.reflect.KClass
-import kotlin.reflect.full.createType
 
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public fun <T : Any> Json.encodeToString(value: T, sourceClass: KClass<T>): String =
@@ -21,7 +17,13 @@ public fun <T : Any> Json.decodeFromString(string: String, targetClass: KClass<T
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public fun Map<String, JsonElement>.toJsonObject(): JsonObject = JsonObject(this)
 
-private fun serializerFor(target: KClass<out Any>): KSerializer<Any?> {
-    val type = target.createType()
-    return serializer(type)
-}
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+public fun JsonObject.getString(key: String): String =
+    get(key)?.jsonPrimitive?.content ?: failWithMissingField(key)
+
+public fun JsonObject.getInt(key: String): Int =
+    get(key)?.jsonPrimitive?.content?.toInt() ?: failWithMissingField(key)
+
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+public fun <T> JsonObject.getSerializable(key: String, jsonDecoder: JsonDecoder, deserializer: KSerializer<T>): T =
+    get(key)?.let { jsonDecoder.json.decodeFromJsonElement(deserializer, it) } ?: failWithMissingField(key)

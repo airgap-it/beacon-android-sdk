@@ -1,13 +1,13 @@
 package it.airgap.beaconsdk.transport.p2p.matrix
 
-import it.airgap.beaconsdk.core.data.beacon.P2pPeer
+import it.airgap.beaconsdk.core.data.P2pPeer
 import it.airgap.beaconsdk.core.internal.data.HexString
 import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
-import it.airgap.beaconsdk.core.transport.p2p.P2pClient
 import it.airgap.beaconsdk.core.internal.transport.p2p.data.P2pMessage
 import it.airgap.beaconsdk.core.internal.utils.*
 import it.airgap.beaconsdk.core.internal.utils.delegate.default
 import it.airgap.beaconsdk.core.network.provider.HttpProvider
+import it.airgap.beaconsdk.core.transport.p2p.P2pClient
 import it.airgap.beaconsdk.transport.p2p.matrix.data.MatrixRoom
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.BeaconP2pMatrixConfiguration
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.P2pCommunicator
@@ -275,7 +275,7 @@ public class P2pMatrix internal constructor(
     /**
      * Factory for [P2pMatrix].
      *
-     * @constructor Creates a factory needed for dynamic [P2pMatrix] registration.
+     * @constructor Creates a factory required for dynamic [P2pMatrix] registration.
      *
      * @property [storagePlugin] An optional external implementation of [P2pMatrixStoragePlugin]. If not provided, an internal implementation will be used.
      * @property [matrixNodes] A list of Matrix nodes used in the connection, set to [BeaconP2pMatrixConfiguration.defaultNodes] by default.
