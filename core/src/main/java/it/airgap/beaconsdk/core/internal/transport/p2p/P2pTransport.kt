@@ -13,8 +13,10 @@ import it.airgap.beaconsdk.core.internal.transport.p2p.data.P2pMessage
 import it.airgap.beaconsdk.core.internal.utils.runCatchingFlat
 import it.airgap.beaconsdk.core.internal.utils.success
 import it.airgap.beaconsdk.core.transport.p2p.P2pClient
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 
+@OptIn(FlowPreview::class)
 internal class P2pTransport(
     private val storageManager: StorageManager,
     private val client: P2pClient,

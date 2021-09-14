@@ -104,12 +104,12 @@ public data class PermissionBeaconRequest @RestrictTo(RestrictTo.Scope.LIBRARY) 
  */
 @Serializable(with = ChainBeaconRequest.Serializer::class)
 @SerialName("chain_request")
-public data class ChainBeaconRequest @RestrictTo(RestrictTo.Scope.LIBRARY) constructor(
+public data class ChainBeaconRequest<T : ChainBeaconRequest.Payload> @RestrictTo(RestrictTo.Scope.LIBRARY) constructor(
     override val id: String,
     override val senderId: String,
     override val appMetadata: AppMetadata?,
     override val identifier: String,
-    val payload: Payload,
+    val payload: T,
     override val origin: Origin,
 
     @RestrictTo(RestrictTo.Scope.LIBRARY)
@@ -146,7 +146,7 @@ public data class ChainBeaconRequest @RestrictTo(RestrictTo.Scope.LIBRARY) const
 
     public companion object {}
 
-    internal object Serializer : KJsonSerializer<ChainBeaconRequest>() {
+    internal object Serializer : KJsonSerializer<ChainBeaconRequest<*>>() {
         object Field {
             const val ID = "id"
             const val SENDER_ID = "senderId"
@@ -168,7 +168,7 @@ public data class ChainBeaconRequest @RestrictTo(RestrictTo.Scope.LIBRARY) const
         }
 
 
-        override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): ChainBeaconRequest {
+        override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): ChainBeaconRequest<*> {
             val id = jsonElement.jsonObject.getString(Field.ID)
             val senderId = jsonElement.jsonObject.getString(Field.SENDER_ID)
             val appMetadata = jsonElement.jsonObject.getSerializable(Field.APP_METADATA, jsonDecoder, AppMetadata.serializer())
@@ -180,7 +180,7 @@ public data class ChainBeaconRequest @RestrictTo(RestrictTo.Scope.LIBRARY) const
             return ChainBeaconRequest(id, senderId, appMetadata, identifier, payload, origin, version)
         }
 
-        override fun serialize(jsonEncoder: JsonEncoder, value: ChainBeaconRequest) {
+        override fun serialize(jsonEncoder: JsonEncoder, value: ChainBeaconRequest<*>) {
             val jsonObject = with(value) {
                 JsonObject(mapOf(
                     Field.ID to JsonPrimitive(id),
@@ -273,10 +273,10 @@ public data class PermissionBeaconResponse @RestrictTo(RestrictTo.Scope.LIBRARY)
  */
 @Serializable
 @SerialName("chain_response")
-public data class ChainBeaconResponse @RestrictTo(RestrictTo.Scope.LIBRARY) constructor(
+public data class ChainBeaconResponse<T : ChainBeaconResponse.Payload> @RestrictTo(RestrictTo.Scope.LIBRARY) constructor(
     override val id: String,
     public val identifier: String,
-    public val payload: Payload,
+    public val payload: T,
 
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     override val version: String,
@@ -321,14 +321,14 @@ public data class ChainBeaconResponse @RestrictTo(RestrictTo.Scope.LIBRARY) cons
          *
          * The response will have an id matching the one of the [request].
          */
-        public fun from(
-            request: ChainBeaconRequest,
-            payload: Payload,
-        ): ChainBeaconResponse =
+        public fun <T : Payload> from(
+            request: ChainBeaconRequest<*>,
+            payload: T,
+        ): ChainBeaconResponse<T> =
             ChainBeaconResponse(request.id, request.identifier, payload, request.version, request.origin)
     }
 
-    internal object Serializer : KJsonSerializer<ChainBeaconResponse>() {
+    internal object Serializer : KJsonSerializer<ChainBeaconResponse<*>>() {
         object Field {
             const val ID = "id"
             const val IDENTIFIER = "identifier"
@@ -345,7 +345,7 @@ public data class ChainBeaconResponse @RestrictTo(RestrictTo.Scope.LIBRARY) cons
             element<Origin>(Field.REQUEST_ORIGIN)
         }
 
-        override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): ChainBeaconResponse {
+        override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): ChainBeaconResponse<*> {
             val id = jsonElement.jsonObject.getString(Field.ID)
             val identifier = jsonElement.jsonObject.getString(Field.IDENTIFIER)
             val payload = jsonElement.jsonObject.getSerializable(Field.PAYLOAD, jsonDecoder, Payload.serializer(identifier))
@@ -355,7 +355,7 @@ public data class ChainBeaconResponse @RestrictTo(RestrictTo.Scope.LIBRARY) cons
             return ChainBeaconResponse(id, identifier, payload, version, requestOrigin)
         }
 
-        override fun serialize(jsonEncoder: JsonEncoder, value: ChainBeaconResponse) {
+        override fun serialize(jsonEncoder: JsonEncoder, value: ChainBeaconResponse<*>) {
             val jsonObject = with(value) {
                 JsonObject(mapOf(
                     Field.ID to JsonPrimitive(id),

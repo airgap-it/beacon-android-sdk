@@ -100,11 +100,11 @@ public class MockChainVersionedMessage : Chain.Serializer {
 
             override fun from(senderId: String, content: BeaconMessage): V1BeaconMessage =
                 when (content) {
-                    is ChainBeaconRequest -> when (val payload = content.payload) {
+                    is ChainBeaconRequest<*> -> when (val payload = content.payload) {
                         is RequestPayload -> V1MockBeaconMessage(payload.type, content.version, content.id, content.senderId, payload.content, MockMessageType.Request)
                         else -> V1MockBeaconMessage(MockMessageType.Request.value, content.version, content.id, content.senderId, emptyMap(), MockMessageType.Request)
                     }
-                    is ChainBeaconResponse -> when (val payload = content.payload) {
+                    is ChainBeaconResponse<*> -> when (val payload = content.payload) {
                         is ResponsePayload -> V1MockBeaconMessage(payload.type, content.version, content.id, senderId, payload.content, MockMessageType.Response)
                         else -> V1MockBeaconMessage(MockMessageType.Response.value, content.version, content.id, senderId, emptyMap(), MockMessageType.Response)
                     }
@@ -161,11 +161,11 @@ public class MockChainVersionedMessage : Chain.Serializer {
 
             override fun from(senderId: String, content: BeaconMessage): V2BeaconMessage =
                 when (content) {
-                    is ChainBeaconRequest -> when (val payload = content.payload) {
+                    is ChainBeaconRequest<*> -> when (val payload = content.payload) {
                         is RequestPayload -> V2MockBeaconMessage(payload.type, content.version, content.id, content.senderId, payload.content, MockMessageType.Request)
                         else -> V2MockBeaconMessage(MockMessageType.Request.value, content.version, content.id, content.senderId, emptyMap(), MockMessageType.Request)
                     }
-                    is ChainBeaconResponse -> when (val payload = content.payload) {
+                    is ChainBeaconResponse<*> -> when (val payload = content.payload) {
                         is ResponsePayload -> V2MockBeaconMessage(payload.type, content.version, content.id, senderId, payload.content, MockMessageType.Response)
                         else -> V2MockBeaconMessage(MockMessageType.Response.value, content.version, content.id, senderId, emptyMap(), MockMessageType.Response)
                     }

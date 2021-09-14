@@ -23,7 +23,7 @@ internal sealed class V2TezosMessage : V2BeaconMessage() {
     companion object : Factory<BeaconMessage, V2BeaconMessage> {
         override fun from(senderId: String, content: BeaconMessage): V2TezosMessage =
             when (content) {
-                is ChainBeaconRequest -> when (val payload = content.payload) {
+                is ChainBeaconRequest<*> -> when (val payload = content.payload) {
                     is OperationTezosRequest -> OperationV2TezosRequest(
                         content.version,
                         content.id,
@@ -49,7 +49,7 @@ internal sealed class V2TezosMessage : V2BeaconMessage() {
                     )
                     else -> failWithUnknownPayload(payload)
                 }
-                is ChainBeaconResponse -> when (val payload = content.payload) {
+                is ChainBeaconResponse<*> -> when (val payload = content.payload) {
                     is OperationTezosResponse -> OperationV2TezosResponse(
                         content.version,
                         content.id,

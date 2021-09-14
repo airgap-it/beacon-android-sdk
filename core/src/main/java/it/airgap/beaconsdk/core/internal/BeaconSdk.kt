@@ -70,15 +70,15 @@ public class BeaconSdk(context: Context) {
         return crypto.getKeyPairFromSeed(seed).getOrThrow()
     }
 
-    companion object {
-        const val TAG = "BeaconSdk"
+    public companion object {
+        internal const val TAG = "BeaconSdk"
 
         @Suppress("ObjectPropertyName")
         private var _instance: BeaconSdk? = null
-        val instance: BeaconSdk
+        public val instance: BeaconSdk
             get() = _instance ?: failWithUninitialized(TAG)
 
-        fun create(context: Context) {
+        internal fun create(context: Context) {
             _instance = BeaconSdk(context)
         }
     }

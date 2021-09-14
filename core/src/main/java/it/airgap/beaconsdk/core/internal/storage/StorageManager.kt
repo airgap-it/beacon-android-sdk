@@ -13,12 +13,14 @@ import it.airgap.beaconsdk.core.storage.Storage
 import it.airgap.beaconsdk.core.storage.StoragePlugin
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
 import kotlin.reflect.KProperty1
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public class StorageManager(
     @PublishedApi

@@ -10,10 +10,12 @@ import it.airgap.beaconsdk.core.internal.message.SerializedConnectionMessage
 import it.airgap.beaconsdk.core.internal.serializer.Serializer
 import it.airgap.beaconsdk.core.internal.transport.Transport
 import it.airgap.beaconsdk.core.internal.utils.*
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public class ConnectionController internal constructor(private val transports: List<Transport>, private val serializer: Serializer) {
 

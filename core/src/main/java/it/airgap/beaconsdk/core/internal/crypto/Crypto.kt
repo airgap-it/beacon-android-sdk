@@ -179,7 +179,7 @@ public class Crypto(private val cryptoProvider: CryptoProvider) {
     ): Result<ByteArray> =
         runCatching { cryptoProvider.decryptMessageWithSharedKey(message, sharedKey) }
 
-    companion object {
+    public companion object {
         private const val SEED_BYTES = 16
     }
 }

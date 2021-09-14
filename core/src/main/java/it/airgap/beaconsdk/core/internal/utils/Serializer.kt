@@ -46,6 +46,7 @@ public class PolymorphicSerializer<P : Any, S : P>(private val subclass: KClass<
 public inline fun <P : Any, reified S : P> PolymorphicSerializer(subclassSerializer: KSerializer<S>): PolymorphicSerializer<P, S> =
     PolymorphicSerializer(S::class, subclassSerializer)
 
+@Suppress("UNCHECKED_CAST")
 internal fun <T : Any> serializerFor(target: KClass<out T>): KSerializer<T> {
     val type = target.createType()
     return serializer(type) as KSerializer<T>

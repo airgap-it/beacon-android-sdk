@@ -8,7 +8,7 @@ public object BeaconConfiguration {
 
     // -- SDK --
 
-    public const val STORAGE_NAME = "beaconsdk"
+    public const val STORAGE_NAME: String = "beaconsdk"
 
     @get:RestrictTo(RestrictTo.Scope.LIBRARY)
     public val sdkVersion: String

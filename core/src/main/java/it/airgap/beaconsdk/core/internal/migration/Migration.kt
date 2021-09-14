@@ -41,7 +41,7 @@ public abstract class Migration(migrations: List<VersionedMigration>) {
         sortBy { it.fromVersion }
     }
 
-    interface Target {
-        val identifier: String
+    public interface Target {
+        public val identifier: String
     }
 }
