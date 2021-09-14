@@ -18,7 +18,7 @@ To add `Beacon Android SDK` into your project:
   ```groovy
   allprojects {
     repositories {
-      ...
+      // ...
       maven { url 'https://jitpack.io' }
     }
   }
@@ -26,9 +26,17 @@ To add `Beacon Android SDK` into your project:
 
   2. Add the dependency:
   ```groovy
-  def beaconVersion = "1.0.0"
+  def beaconVersion = "3.0.0-beta01"
 
-  implementation "com.github.airgap-it:beacon-android-sdk:$beaconVersion"
+  implementation "com.github.airgap-it:beacon-android-sdk:core:$beaconVersion" // core, **required**
+
+  implementation "com.github.airgap-it:beacon-android-sdk:client-wallet:$beaconVersion" // client-wallet, optional
+  implementation "com.github.airgap-it:beacon-android-sdk:client-wallet-compat:$beaconVersion" // client-wallet-compat, optional
+  implementation "com.github.airgap-it:beacon-android-sdk:chain-tezos:$beaconVersion" // chain-tezos, optional
+  implementation "com.github.airgap-it:beacon-android-sdk:transport-p2p-matrix:$beaconVersion" // chain-tezos, optional
+  
+  ---
+  implementation "com.github.airgap-it:beacon-android-sdk:$beaconVersion" // alternatively, all modules
   ```
 
 <!-- TODO: ## Documentation -->
@@ -37,8 +45,12 @@ To add `Beacon Android SDK` into your project:
 
 The project consists of the following modules:
 
-- `core` - the main library module (Kotlin)
-- `demo` - an example application (Kotlin & Java)
+- `core` - common and base code for other modules
+- `client-wallet` - the wallet implementation of Beacon
+- `client-wallet-compat` - a supplementary interface for `client-wallet` for use without [Coroutines](https://kotlinlang.org/docs/coroutines-overview.html)
+- `chain-tezos` - a set of messages, utility functions and other components specific for Tezos
+- `transport-p2p-matrix` - Beacon P2P implementation which uses [Matrix](https://matrix.org/) network for the communication
+- `demo` - an example application
 
 ## Examples
 
@@ -46,19 +58,24 @@ The snippets below show how to quickly setup listening for incoming Beacon messa
 
 For more examples or examples of how to use the SDK without coroutines or in Java, please see our `demo` app (WIP).
 
-### Create a Beacon client and listen for incoming messages
+### Create a Beacon wallet client and listen for incoming requests
 
 ```kotlin
-import it.airgap.beaconsdk.core.client.BeaconClient
+import it.airgap.beaconsdk.chain.tezos.tezos
+import it.airgap.beaconsdk.client.wallet.BeaconWalletClient
+import it.airgap.beaconsdk.core.data.P2P
+import it.airgap.beaconsdk.transport.p2p.matrix.p2pMatrix
 
 class MainActivity : AppCompatActivity() {
-  lateinit var client: BeaconClient
+  lateinit var client: BeaconWalletClient
 
   // ...
 
   suspend fun listenForBeaconMessages() {
-    // create a Beacon client
-    client = BeaconClient("My App")
+    // create a wallet Beacon client that can listen for Tezos messages via Matrix network 
+    client = BeaconWalletClient("My App", listOf(tezos())) { 
+        addConnections(P2P(p2pMatrix()))
+    }
 
     myCoroutineScope.launch {
       // subscribe to a message Flow
@@ -66,6 +83,99 @@ class MainActivity : AppCompatActivity() {
     }
   }
 }
+```
+
+## Migration
+
+See the below guides to learn how to migrate your existing code to new `Beacon Android SDK` versions.
+
+### From <v3.0.0
+
+As of `v3.0.0`, not only has `Beacon Android SDK` been further split into new modules, it has also become more generic in terms of supported blockchains and transports.
+This means that in some parts the values that had been previously set by default now must be provided manually or that different structures have changed their location or definition.
+To make sure your existing Beacon integration will be set up the same way as it used to be before `v3.0.0` do the following:
+
+1. Remove the old dependency and add `core`, `client-wallet`, `chain-tezos` and `transport-p2p-matrix` modules.
+
+```groovy
+def beaconVersion = "3.0.0"
+
+/* <v3.0.0: implementation "com.github.airgap-it:beacon-android-sdk:$beaconVersion" */
+
+implementation "com.github.airgap-it:beacon-android-sdk:core:$beaconVersion"
+
+implementation "com.github.airgap-it:beacon-android-sdk:client-wallet:$beaconVersion"
+implementation "com.github.airgap-it:beacon-android-sdk:chain-tezos:$beaconVersion"
+implementation "com.github.airgap-it:beacon-android-sdk:transport-p2p-matrix:$beaconVersion"
+```
+
+2. Replace the old `BeaconClient` with the new `BeaconWalletClient` (`client-wallet`) and configure it with `Tezos` chain (`chain-tezos`) and `P2pMatrix` transport (`transport-p2p-matrix`).
+```kotlin
+import it.airgap.beaconsdk.chain.tezos.tezos
+import it.airgap.beaconsdk.client.wallet.BeaconWalletClient
+import it.airgap.beaconsdk.core.data.P2P
+import it.airgap.beaconsdk.transport.p2p.matrix.p2pMatrix
+
+/* <v3.0.0: val client = BeaconClient("MyApp") */
+val client = BeaconWalletClient("MyApp", listOf(tezos())) { 
+    addConnections(P2P(p2pMatrix())) 
+}
+```
+
+3. Adjust the message handling code.
+```kotlin
+/* <v3.0.0:
+ * when (beaconRequest) {
+ *    is PermissionBeaconRequest -> { ... }
+ *    is OperationBeaconRequest -> { ... }
+ *    is SignPayloadBeaconRequest -> { ... }
+ *    is BroadcastBeaconRequest -> { ... } 
+ * }
+ */
+
+import it.airgap.beaconsdk.chain.tezos.extensions.asTezosRequest
+import it.airgap.beaconsdk.chain.tezos.message.BroadcastTezosRequest
+import it.airgap.beaconsdk.chain.tezos.message.OperationTezosRequest
+import it.airgap.beaconsdk.chain.tezos.message.SignPayloadTezosRequest
+
+when (beaconRequest) {
+    is PermissionBeaconRequest -> { /* ... */ }
+    is ChainBeaconRequest<*> -> when (val payload = beaconRequest.asTezosRequest().payload) {
+        is OperationTezosRequest -> { /* ... */ }
+        is SignPayloadTezosRequest -> { /* ... */ }
+        is BroadcastTezosRequest -> { /* ... */ }
+    }
+}
+```
+
+```kotlin
+/* <v3.0.0:
+ * val response = OperationBeaconResponse.from(
+ *    operationRequest, //: OperationBeaconRequest 
+ *    transactionHash,
+ * ) 
+ */
+import it.airgap.beaconsdk.chain.tezos.message.OperationTezosResponse
+        
+val response = ChainBeaconResponse.from(
+    chainBeaconRequest, //: ChainBeaconRequest<OperationTezosRequest> 
+    OperationTezosResponse(transactionHash),
+)
+```
+```kotlin
+/* <v3.0.0:
+ * val errorResponse = ErrorBeaconResponse.from(
+ *    broadcastRequest, //: OperationBeaconRequest 
+ *    BeaconError.BroadcastError,
+ * ) 
+ */
+
+import it.airgap.beaconsdk.chain.tezos.data.TezosError
+
+val errorResponse = ErrorBeaconResponse.from(
+    chainBeaconRequest, //: ChainBeaconRequest<BroadcastTezosRequest> 
+    TezosError.BroadcastError,
+)
 ```
 
 ## Development

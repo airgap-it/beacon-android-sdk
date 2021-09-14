@@ -1,8 +1,14 @@
 package it.airgap.beaconsdkdemo
 
 import androidx.lifecycle.*
+import it.airgap.beaconsdk.chain.tezos.data.TezosError
+import it.airgap.beaconsdk.chain.tezos.extensions.asTezosRequest
+import it.airgap.beaconsdk.chain.tezos.message.BroadcastTezosRequest
+import it.airgap.beaconsdk.chain.tezos.message.OperationTezosRequest
+import it.airgap.beaconsdk.chain.tezos.message.SignPayloadTezosRequest
 import it.airgap.beaconsdk.chain.tezos.tezos
 import it.airgap.beaconsdk.client.wallet.BeaconWalletClient
+import it.airgap.beaconsdk.core.data.BeaconError
 import it.airgap.beaconsdk.core.data.P2P
 import it.airgap.beaconsdk.core.data.P2pPeer
 import it.airgap.beaconsdk.core.message.*
@@ -44,7 +50,11 @@ class MainActivityViewModel : ViewModel() {
         viewModelScope.launch {
             val response = when (request) {
                 is PermissionBeaconRequest -> PermissionBeaconResponse.from(request, exampleTezosPublicKey)
-                is ChainBeaconRequest -> TODO()
+                is ChainBeaconRequest<*> -> when (request.asTezosRequest().payload) {
+                    is OperationTezosRequest -> ErrorBeaconResponse.from(request, BeaconError.Aborted)
+                    is SignPayloadTezosRequest -> ErrorBeaconResponse.from(request, TezosError.SignatureTypeNotSupported)
+                    is BroadcastTezosRequest -> ErrorBeaconResponse.from(request, TezosError.BroadcastError)
+                }
             }
             beaconClient?.respond(response)
             removeAwaitingRequest()
