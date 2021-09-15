@@ -2,6 +2,7 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlinx-serialization'
 apply plugin: 'org.jetbrains.dokka'
+apply plugin: 'maven-publish'
 
 android {
     compileSdkVersion 30
@@ -46,6 +47,20 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    afterEvaluate {
+        publishing {
+            publications {
+                release(MavenPublication) {
+                    from components.prodRelease
+
+                    groupId = 'it.airgap.beaconsdk'
+                    artifactId = 'core'
+                    version = "2.0.0"
+                }
+            }
+        }
     }
 }
 
