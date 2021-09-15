@@ -82,7 +82,7 @@ import kotlinx.coroutines.flow.Flow
  *
  * To disconnect from a peer, unregister it in the [client][BeaconWalletClient] with [removePeers].
  */
-public class BeaconWalletClient @RestrictTo(RestrictTo.Scope.LIBRARY) constructor(
+public class BeaconWalletClient @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) constructor(
     name: String,
     beaconId: String,
     connectionController: ConnectionController,

@@ -6,7 +6,7 @@ import it.airgap.beaconsdk.core.internal.chain.Chain
 import it.airgap.beaconsdk.core.internal.crypto.Crypto
 import it.airgap.beaconsdk.core.internal.utils.*
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class TezosWallet internal constructor(private val crypto: Crypto, private val base58Check: Base58Check) : Chain.Wallet {
     override fun addressFromPublicKey(publicKey: String): Result<String> =
         runCatchingFlat {

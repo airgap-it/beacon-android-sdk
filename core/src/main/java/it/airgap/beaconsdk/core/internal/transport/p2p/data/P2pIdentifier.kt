@@ -8,7 +8,7 @@ private const val SEPARATOR = ":"
 
 private val identifierRegex: Regex = Regex("^$PREFIX(.+)$SEPARATOR(.+)$")
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @JvmInline
 public value class P2pIdentifier(private val value: String) {
     init {

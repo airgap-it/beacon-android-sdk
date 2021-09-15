@@ -9,7 +9,7 @@ import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.utils.*
 import it.airgap.beaconsdk.core.message.*
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class MessageController internal constructor(
     private val chainRegistry: ChainRegistry,
     private val storageManager: StorageManager,

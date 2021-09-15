@@ -9,7 +9,7 @@ import it.airgap.beaconsdk.core.internal.data.HexString
 import it.airgap.beaconsdk.core.internal.utils.runCatchingFlat
 import it.airgap.beaconsdk.core.internal.utils.toHexString
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class Crypto(private val cryptoProvider: CryptoProvider) {
     public fun hashKey(key: HexString): Result<ByteArray> = hashKey(key.toByteArray())
     public fun hashKey(key: ByteArray): Result<ByteArray> = hash(key, key.size)

@@ -4,7 +4,7 @@ import androidx.annotation.RestrictTo
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class Disposable<V: Any> : ReadWriteProperty<Any?, V?> {
     private var value: V? = null
 
@@ -16,5 +16,5 @@ public class Disposable<V: Any> : ReadWriteProperty<Any?, V?> {
     }
 }
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun <T: Any> disposable(): Disposable<T> = Disposable()

@@ -4,7 +4,7 @@ import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.data.Network
 import it.airgap.beaconsdk.core.internal.crypto.Crypto
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class AccountUtils internal constructor(private val crypto: Crypto, private val base58Check: Base58Check) {
 
     public fun getAccountIdentifier(address: String, network: Network): Result<String> {

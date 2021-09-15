@@ -4,7 +4,7 @@ import androidx.annotation.RestrictTo
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public abstract class Store<S, A> {
     protected val stateMutex: Mutex = Mutex()
 

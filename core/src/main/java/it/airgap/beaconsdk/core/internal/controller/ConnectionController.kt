@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 
 @OptIn(ExperimentalCoroutinesApi::class)
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class ConnectionController internal constructor(private val transports: List<Transport>, private val serializer: Serializer) {
 
     public fun subscribe(): Flow<Result<BeaconConnectionMessage>> =

@@ -16,7 +16,7 @@ import it.airgap.beaconsdk.core.internal.utils.Base58Check
 import it.airgap.beaconsdk.core.internal.utils.Poller
 import it.airgap.beaconsdk.core.network.provider.HttpProvider
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface DependencyRegistry {
     public val storageManager: StorageManager
 

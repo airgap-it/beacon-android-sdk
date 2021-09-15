@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.take
 import java.util.concurrent.CancellationException
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class HttpClient(public val httpProvider: HttpProvider) {
     public inline fun <reified T : Any, reified E : Throwable> get(
         baseUrl: String,

@@ -3,7 +3,7 @@ package it.airgap.beaconsdk.core.internal.serializer
 import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.internal.serializer.provider.SerializerProvider
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class Serializer(public val serializerProvider: SerializerProvider) {
     public inline fun <reified T : Any> serialize(message: T): Result<String> =
         runCatching { serializerProvider.serialize(message, T::class) }

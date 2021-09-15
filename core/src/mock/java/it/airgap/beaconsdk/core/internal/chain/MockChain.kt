@@ -19,7 +19,7 @@ import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.element
 import kotlinx.serialization.json.*
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class MockChain : Chain<MockChainWallet, MockChainVersionedMessage> {
     override val identifier: String = IDENTIFIER
     override val wallet: MockChainWallet = MockChainWallet()
@@ -35,13 +35,13 @@ public class MockChain : Chain<MockChainWallet, MockChainVersionedMessage> {
     }
 }
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class MockChainWallet : Chain.Wallet {
     override fun addressFromPublicKey(publicKey: String): Result<String> =
         Result.success("@$publicKey")
 }
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class MockChainVersionedMessage : Chain.Serializer {
     override val requestPayload: KSerializer<ChainBeaconRequest.Payload>
         get() = PolymorphicSerializer(RequestPayload.serializer())

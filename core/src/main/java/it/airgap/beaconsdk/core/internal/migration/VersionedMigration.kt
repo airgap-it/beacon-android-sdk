@@ -3,7 +3,7 @@ package it.airgap.beaconsdk.core.internal.migration
 import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.internal.utils.success
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public abstract class VersionedMigration {
     public abstract val fromVersion: String
 

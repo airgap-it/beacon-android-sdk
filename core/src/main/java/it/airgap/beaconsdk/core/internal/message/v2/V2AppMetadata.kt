@@ -4,7 +4,7 @@ import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.data.AppMetadata
 import kotlinx.serialization.Serializable
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Serializable
 public data class V2AppMetadata(
     val senderId: String,

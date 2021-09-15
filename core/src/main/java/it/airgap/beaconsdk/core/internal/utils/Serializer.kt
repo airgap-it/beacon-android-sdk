@@ -13,7 +13,7 @@ import kotlinx.serialization.serializer
 import kotlin.reflect.KClass
 import kotlin.reflect.full.createType
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface KJsonSerializer<T> : KSerializer<T> {
     override fun deserialize(decoder: Decoder): T {
         val jsonDecoder = decoder as? JsonDecoder ?: failWithExpectedJsonDecoder(decoder::class)
@@ -33,16 +33,17 @@ public interface KJsonSerializer<T> : KSerializer<T> {
     public abstract fun serialize(jsonEncoder: JsonEncoder, value: T)
 }
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
-public class PolymorphicSerializer<P : Any, S : P>(private val subclass: KClass<S>, private val subclassSerializer: KSerializer<S>): KSerializer<P> {
+@Suppress("UNCHECKED_CAST")
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public class PolymorphicSerializer<T : Any, S : T>(private val subclass: KClass<S>, private val subclassSerializer: KSerializer<S>): KSerializer<T> {
     override val descriptor: SerialDescriptor get() = subclassSerializer.descriptor
-    override fun deserialize(decoder: Decoder): P = subclassSerializer.deserialize(decoder)
-    override fun serialize(encoder: Encoder, value: P) {
+    override fun deserialize(decoder: Decoder): T = subclassSerializer.deserialize(decoder)
+    override fun serialize(encoder: Encoder, value: T) {
         if (value.instanceOf(subclass)) encoder.encodeSerializableValue(subclassSerializer, value as S)
     }
 }
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public inline fun <P : Any, reified S : P> PolymorphicSerializer(subclassSerializer: KSerializer<S>): PolymorphicSerializer<P, S> =
     PolymorphicSerializer(S::class, subclassSerializer)
 

@@ -5,18 +5,18 @@ import it.airgap.beaconsdk.core.data.Origin
 
 internal typealias ConnectionTransportMessage = ConnectionMessage<*>
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public sealed interface ConnectionMessage<T> {
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY)
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public val origin: Origin
 
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY)
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public val content: T
 
     public companion object {}
 }
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public data class SerializedConnectionMessage(
     override val origin: Origin,
     override val content: String,
@@ -26,7 +26,7 @@ public data class SerializedConnectionMessage(
     public companion object {}
 }
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public data class BeaconConnectionMessage(
     override val origin: Origin,
     override val content: VersionedBeaconMessage,

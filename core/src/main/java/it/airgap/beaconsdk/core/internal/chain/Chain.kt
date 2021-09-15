@@ -11,23 +11,23 @@ import it.airgap.beaconsdk.core.message.ChainBeaconRequest
 import it.airgap.beaconsdk.core.message.ChainBeaconResponse
 import kotlinx.serialization.KSerializer
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface Chain<W : Chain.Wallet, S : Chain.Serializer> {
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY)
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public val identifier: String
 
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY)
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public val wallet: W
 
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY)
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public val serializer: S
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public interface Wallet {
         public fun addressFromPublicKey(publicKey: String): Result<String>
     }
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public interface Serializer {
 
         // -- BeaconMessage --
@@ -48,7 +48,7 @@ public interface Chain<W : Chain.Wallet, S : Chain.Serializer> {
     public interface Factory<T: Chain<*, *>> {
         public val identifier: String
 
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public fun create(dependencyRegistry: DependencyRegistry): T
     }
 }

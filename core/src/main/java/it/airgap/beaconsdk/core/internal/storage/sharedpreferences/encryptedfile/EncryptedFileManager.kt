@@ -2,7 +2,7 @@ package it.airgap.beaconsdk.core.internal.storage.sharedpreferences.encryptedfil
 
 import androidx.annotation.RestrictTo
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface EncryptedFileManager {
     @Throws(Exception::class)
     public suspend fun read(fileName: String, keyAlias: String): ByteArray?

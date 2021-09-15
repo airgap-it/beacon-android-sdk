@@ -9,7 +9,7 @@ import it.airgap.beaconsdk.core.data.Permission
 import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.storage.Storage
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class SharedPreferencesStorage(private val sharedPreferences: SharedPreferences) : Storage {
     override suspend fun getPeers(): List<Peer> =
         sharedPreferences.getSerializable(KEY_PEERS, emptyList())

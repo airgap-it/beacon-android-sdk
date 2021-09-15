@@ -3,14 +3,14 @@ package it.airgap.beaconsdk.core.internal
 import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.BuildConfig
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public object BeaconConfiguration {
 
     // -- SDK --
 
     public const val STORAGE_NAME: String = "beaconsdk"
 
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY)
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public val sdkVersion: String
         get() = BuildConfig.VERSION_NAME
 

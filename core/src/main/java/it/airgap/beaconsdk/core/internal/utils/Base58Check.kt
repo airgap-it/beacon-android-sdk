@@ -4,7 +4,7 @@ import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.internal.crypto.Crypto
 import java.math.BigInteger
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class Base58Check internal constructor(private val crypto: Crypto) {
     private val bs58Regex = Regex("^[${ALPHABET}]+$")
 

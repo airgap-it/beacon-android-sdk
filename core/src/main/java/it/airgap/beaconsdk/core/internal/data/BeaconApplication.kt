@@ -3,7 +3,7 @@ package it.airgap.beaconsdk.core.internal.data
 import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.internal.crypto.data.KeyPair
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public data class BeaconApplication(
     val keyPair: KeyPair,
     val name: String,

@@ -7,7 +7,7 @@ import it.airgap.beaconsdk.core.internal.utils.logDebug
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.onStart
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public abstract class Transport {
     public abstract val type: Connection.Type
 

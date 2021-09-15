@@ -10,11 +10,14 @@ import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
  * Tezos implementation of the [Chain] interface.
  */
 public class Tezos internal constructor(
-    @RestrictTo(RestrictTo.Scope.LIBRARY) override val wallet: TezosWallet,
-    @RestrictTo(RestrictTo.Scope.LIBRARY) override val serializer: TezosSerializer,
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    override val wallet: TezosWallet,
+
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    override val serializer: TezosSerializer,
 ) : Chain<TezosWallet, TezosSerializer> {
 
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY)
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override val identifier: String = IDENTIFIER
 
     /**
@@ -25,7 +28,7 @@ public class Tezos internal constructor(
     public class Factory : Chain.Factory<Tezos> {
         override val identifier: String = IDENTIFIER
 
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         override fun create(dependencyRegistry: DependencyRegistry): Tezos =
             with(dependencyRegistry) {
                 val wallet = TezosWallet(crypto, base58Check)

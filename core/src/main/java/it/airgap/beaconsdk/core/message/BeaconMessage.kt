@@ -26,10 +26,10 @@ import kotlin.reflect.jvm.internal.impl.types.ErrorType
 public sealed class BeaconMessage {
     public abstract val id: String
 
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY)
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public abstract val version: String
 
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY)
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public abstract val associatedOrigin: Origin
 
     public companion object {}
@@ -51,7 +51,7 @@ public sealed class BeaconRequest : BeaconMessage() {
     public abstract val identifier: String
     public abstract val origin: Origin
 
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY)
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override val associatedOrigin: Origin
         get() = origin
 
@@ -73,7 +73,7 @@ public sealed class BeaconRequest : BeaconMessage() {
  */
 @Serializable
 @SerialName("permission_request")
-public data class PermissionBeaconRequest @RestrictTo(RestrictTo.Scope.LIBRARY) constructor(
+public data class PermissionBeaconRequest @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) constructor(
     override val id: String,
     override val senderId: String,
     override val appMetadata: AppMetadata,
@@ -82,7 +82,7 @@ public data class PermissionBeaconRequest @RestrictTo(RestrictTo.Scope.LIBRARY) 
     public val scopes: List<Permission.Scope>,
     override val origin: Origin,
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override val version: String,
 ) : BeaconRequest() {
 
@@ -106,7 +106,7 @@ public data class PermissionBeaconRequest @RestrictTo(RestrictTo.Scope.LIBRARY) 
  */
 @Serializable(with = ChainBeaconRequest.Serializer::class)
 @SerialName("chain_request")
-public data class ChainBeaconRequest<T : ChainBeaconRequest.Payload> @RestrictTo(RestrictTo.Scope.LIBRARY) constructor(
+public data class ChainBeaconRequest<T : ChainBeaconRequest.Payload> @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) constructor(
     override val id: String,
     override val senderId: String,
     override val appMetadata: AppMetadata?,
@@ -114,7 +114,7 @@ public data class ChainBeaconRequest<T : ChainBeaconRequest.Payload> @RestrictTo
     val payload: T,
     override val origin: Origin,
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override val version: String,
 ) : BeaconRequest() {
 
@@ -197,10 +197,10 @@ public data class ChainBeaconRequest<T : ChainBeaconRequest.Payload> @RestrictTo
 @Serializable
 @SerialName("response")
 public sealed class BeaconResponse : BeaconMessage() {
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY)
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public abstract val requestOrigin: Origin
 
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY)
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override val associatedOrigin: Origin
         get() = requestOrigin
 
@@ -219,7 +219,7 @@ public sealed class BeaconResponse : BeaconMessage() {
  */
 @Serializable
 @SerialName("permission_response")
-public data class PermissionBeaconResponse @RestrictTo(RestrictTo.Scope.LIBRARY) constructor(
+public data class PermissionBeaconResponse @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) constructor(
     override val id: String,
     public val publicKey: String,
     public val identifier: String,
@@ -227,10 +227,10 @@ public data class PermissionBeaconResponse @RestrictTo(RestrictTo.Scope.LIBRARY)
     public val scopes: List<Permission.Scope>,
     public val threshold: Threshold? = null,
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override val version: String,
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override val requestOrigin: Origin,
 ) : BeaconResponse() {
 
@@ -264,15 +264,15 @@ public data class PermissionBeaconResponse @RestrictTo(RestrictTo.Scope.LIBRARY)
  */
 @Serializable
 @SerialName("chain_response")
-public data class ChainBeaconResponse<T : ChainBeaconResponse.Payload> @RestrictTo(RestrictTo.Scope.LIBRARY) constructor(
+public data class ChainBeaconResponse<T : ChainBeaconResponse.Payload> @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) constructor(
     override val id: String,
     public val identifier: String,
     public val payload: T,
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override val version: String,
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override val requestOrigin: Origin,
 ) : BeaconResponse() {
 
@@ -356,7 +356,7 @@ public data class ChainBeaconResponse<T : ChainBeaconResponse.Payload> @Restrict
 /**
  * Message responding to every [BeaconRequest], sent to confirm receiving of the request.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Serializable
 @SerialName("acknowledge")
 public data class AcknowledgeBeaconResponse(
@@ -388,15 +388,15 @@ public data class AcknowledgeBeaconResponse(
  */
 @Serializable(with = ErrorBeaconResponse.Serializer::class)
 @SerialName("error")
-public data class ErrorBeaconResponse @RestrictTo(RestrictTo.Scope.LIBRARY) constructor(
+public data class ErrorBeaconResponse @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) constructor(
     override val id: String,
     public val identifier: String,
     public val errorType: BeaconError,
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override val version: String,
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override val requestOrigin: Origin,
 ) : BeaconResponse() {
 
@@ -455,7 +455,7 @@ public data class ErrorBeaconResponse @RestrictTo(RestrictTo.Scope.LIBRARY) cons
  * @property [id] The value that identifies this message.
  * @property [senderId] The value that identifies the sender of this message.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Serializable
 @SerialName("disconnect")
 public data class DisconnectBeaconMessage(

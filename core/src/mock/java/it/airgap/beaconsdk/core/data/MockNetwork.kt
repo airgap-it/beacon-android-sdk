@@ -3,7 +3,7 @@ package it.airgap.beaconsdk.core.data
 import androidx.annotation.RestrictTo
 import kotlinx.serialization.Serializable
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Serializable
 public data class MockNetwork(
     override val name: String? = null,
@@ -12,6 +12,6 @@ public data class MockNetwork(
     override val identifier: String = IDENTIFIER
 
     public companion object {
-        public const val IDENTIFIER = "mock"
+        public const val IDENTIFIER: String = "mock"
     }
 }

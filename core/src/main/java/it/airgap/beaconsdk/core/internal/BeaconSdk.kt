@@ -14,7 +14,7 @@ import it.airgap.beaconsdk.core.internal.utils.toHexString
 import it.airgap.beaconsdk.core.storage.SecureStorage
 import it.airgap.beaconsdk.core.storage.Storage
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class BeaconSdk(context: Context) {
     public var isInitialized: Boolean = false
         private set

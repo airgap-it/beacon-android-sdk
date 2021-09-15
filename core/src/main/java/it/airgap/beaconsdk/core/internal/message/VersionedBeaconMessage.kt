@@ -18,7 +18,7 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.jsonObject
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Serializable(with = VersionedBeaconMessage.Serializer::class)
 public abstract class VersionedBeaconMessage {
     public abstract val type: String

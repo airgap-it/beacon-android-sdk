@@ -17,7 +17,7 @@ import it.airgap.beaconsdk.core.message.ChainBeaconRequest
 import it.airgap.beaconsdk.core.message.ChainBeaconResponse
 import kotlinx.serialization.KSerializer
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class TezosSerializer internal constructor() : Chain.Serializer {
 
     // -- BeaconMessage --

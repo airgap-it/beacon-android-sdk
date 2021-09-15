@@ -21,7 +21,7 @@ import kotlinx.coroutines.launch
 import kotlin.reflect.KProperty1
 
 @OptIn(ExperimentalCoroutinesApi::class)
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class StorageManager(
     @PublishedApi
     internal val storage: ExtendedStorage,

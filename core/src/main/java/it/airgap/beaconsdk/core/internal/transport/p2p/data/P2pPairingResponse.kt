@@ -3,7 +3,7 @@ package it.airgap.beaconsdk.core.internal.transport.p2p.data
 import androidx.annotation.RestrictTo
 import kotlinx.serialization.Serializable
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Serializable
 public data class P2pPairingResponse(
     val id: String,

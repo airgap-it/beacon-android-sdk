@@ -13,7 +13,7 @@ import it.airgap.beaconsdk.core.storage.SecureStorage
 import java.security.KeyStore
 import java.util.*
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class SharedPreferencesSecureStorage(
     private val sharedPreferences: SharedPreferences,
     private val encryptedFileManager: EncryptedFileManager,

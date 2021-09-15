@@ -3,7 +3,7 @@ package it.airgap.beaconsdk.core.internal.utils
 import androidx.annotation.IntRange
 import androidx.annotation.RestrictTo
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public inline fun <T> runCatchingFlat(block: () -> Result<T>): Result<T> =
     try {
         block()
@@ -11,7 +11,7 @@ public inline fun <T> runCatchingFlat(block: () -> Result<T>): Result<T> =
         Result.failure(e)
     }
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public inline fun <T> tryLog(tag: String, block: () -> T): T? =
     try {
         block()
@@ -20,11 +20,11 @@ public inline fun <T> tryLog(tag: String, block: () -> T): T? =
         null
     }
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public inline fun <T> runCatchingRepeat(@IntRange(from = 1) times: Int, action: () -> T): Result<T> =
     runCatchingFlatRepeat(times) { runCatching(action) }
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public inline fun <T> runCatchingFlatRepeat(@IntRange(from = 1) times: Int, action: () -> Result<T>): Result<T> {
     require(times > 0)
 
