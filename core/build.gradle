@@ -3,6 +3,7 @@ plugins {
     id 'kotlin-android'
     id 'kotlinx-serialization'
     id 'org.jetbrains.dokka'
+    id 'maven-publish'
 }
 
 android {
@@ -48,6 +49,20 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    afterEvaluate {
+        publishing {
+            publications {
+                release(MavenPublication) {
+                    from components.prodRelease
+
+                    groupId = 'it.airgap.beaconsdk'
+                    artifactId = 'core'
+                    version = Android.versionName
+                }
+            }
+        }
     }
 }
 
