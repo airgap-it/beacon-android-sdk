@@ -1,17 +1,21 @@
 
 import android.content.Context
 import io.mockk.*
-import it.airgap.beaconsdk.internal.BeaconSdk
-import it.airgap.beaconsdk.internal.di.DependencyRegistry
-import it.airgap.beaconsdk.internal.utils.currentTimestamp
-import it.airgap.beaconsdk.internal.utils.logDebug
-import it.airgap.beaconsdk.internal.utils.logError
-import it.airgap.beaconsdk.internal.utils.logInfo
+import it.airgap.beaconsdk.core.internal.BeaconSdk
+import it.airgap.beaconsdk.core.internal.blockchain.BlockchainRegistry
+import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchain
+import it.airgap.beaconsdk.core.internal.data.BeaconApplication
+import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
+import it.airgap.beaconsdk.core.internal.utils.currentTimestamp
+import it.airgap.beaconsdk.core.internal.utils.logDebug
+import it.airgap.beaconsdk.core.internal.utils.logError
+import it.airgap.beaconsdk.core.internal.utils.logInfo
 
 // -- class --
 
-internal fun mockBeaconApp(
+internal fun mockBeaconSdk(
     beaconId: String = "beaconId",
+    app: BeaconApplication = mockkClass(BeaconApplication::class),
     dependencyRegistry: DependencyRegistry = mockk(relaxed = true),
 ): BeaconSdk =
     mockkClass(BeaconSdk::class).also {
@@ -20,17 +24,28 @@ internal fun mockBeaconApp(
 
         val contextMock = mockk<Context>(relaxed = true)
 
-        coEvery { it.init(any(), any(), any(), any(), any()) } returns Unit
+        coEvery { it.init(any(), any(), any(), any(), any(), any()) } returns Unit
 
         every { it.applicationContext } returns contextMock
+        every { it.app } returns app
         every { it.beaconId } returns beaconId
         every { it.dependencyRegistry } returns dependencyRegistry
     }
 
 // -- static --
 
+internal fun mockBlockchainRegistry(): BlockchainRegistry =
+    mockkClass(BlockchainRegistry::class).also {
+        val dependencyRegistry = mockkClass(DependencyRegistry::class)
+
+        every { it.get(any()) } returns MockBlockchain()
+        every { dependencyRegistry.blockchainRegistry } returns it
+
+        mockBeaconSdk(dependencyRegistry = dependencyRegistry)
+    }
+
 internal fun mockLog() {
-    mockkStatic("it.airgap.beaconsdk.internal.utils.LogKt")
+    mockkStatic("it.airgap.beaconsdk.core.internal.utils.LogKt")
 
     every { logInfo(any(), any()) } answers {
         println("[INFO] ${firstArg<String>()}: ${secondArg<String>()}")
@@ -46,6 +61,6 @@ internal fun mockLog() {
 }
 
 internal fun mockTime(currentTimeMillis: Long = 1) {
-    mockkStatic("it.airgap.beaconsdk.internal.utils.TimeKt")
+    mockkStatic("it.airgap.beaconsdk.core.internal.utils.TimeKt")
     every { currentTimestamp() } returns currentTimeMillis
 }

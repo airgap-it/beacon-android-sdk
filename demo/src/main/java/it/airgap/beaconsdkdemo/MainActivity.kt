@@ -5,11 +5,14 @@ import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.textfield.TextInputLayout
-import it.airgap.beaconsdk.message.BeaconRequest
+import it.airgap.beaconsdk.core.message.BeaconRequest
+import it.airgap.beaconsdkdemo.utils.toJson
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
+@OptIn(ExperimentalSerializationApi::class)
 class MainActivity : AppCompatActivity() {
 
     private val viewModel by viewModels<MainActivityViewModel>()
@@ -55,13 +58,14 @@ class MainActivity : AppCompatActivity() {
 
 
     private fun onBeaconRequest(beaconRequest: BeaconRequest) {
-        messageTextView.text = json.encodeToString(beaconRequest)
+        messageTextView.text = json.encodeToString(beaconRequest.toJson(json))
     }
 
     private fun onError(exception: Throwable) {
+        exception.printStackTrace()
         Toast.makeText(
             this,
-            "Error: ${exception.message ?: "unknown"}",
+            "MockError: ${exception.message ?: "unknown"}",
             Toast.LENGTH_SHORT
         ).show()
     }
