@@ -44,12 +44,12 @@ android {
 
     kotlinOptions {
         jvmTarget = "1.8"
+        freeCompilerArgs += '-Xopt-in=kotlin.RequiresOptIn'
     }
 }
 
 dependencies {
     implementation fileTree(dir: "libs", include: ["*.jar"])
-    implementation project(path: ':core')
 
     implementation(Dependencies.kotlinStdlib)
 
@@ -57,6 +57,23 @@ dependencies {
 
     implementation(Dependencies.androidxAppCompat)
     implementation(Dependencies.androidxConstraintLayout)
+
+    // Beacon
+
+    // // Local
+    implementation project(path: ':core')
+    implementation project(path: ':client-wallet')
+    implementation project(path: ':blockchain-tezos')
+    implementation project(path: ':transport-p2p-matrix')
+
+    // // Published
+//    def beaconVersion = Android.versionName
+//
+//    implementation "com.github.airgap-it.beacon-android-sdk:core:$beaconVersion"
+//
+//    implementation "com.github.airgap-it.beacon-android-sdk:client-wallet:$beaconVersion"
+//    implementation "com.github.airgap-it.beacon-android-sdk:blockchain-tezos:$beaconVersion"
+//    implementation "com.github.airgap-it.beacon-android-sdk:transport-p2p-matrix:$beaconVersion"
 
     // Activity
     implementation(Dependencies.androidxActivity)

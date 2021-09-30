@@ -19,6 +19,10 @@ build:
     - docker build -t $GOOGLE_TAG .
     - docker run --name $BUILD_CONTAINER $GOOGLE_TAG echo "container ran"
     - docker cp $BUILD_CONTAINER:/build/android-core-release-unsigned.aar beaconsdk-core-release-unsigned-$CI_PIPELINE_ID.aar
+    - docker cp $BUILD_CONTAINER:/build/android-client-wallet-release-unsigned.aar beaconsdk-client-wallet-release-unsigned-$CI_PIPELINE_ID.aar
+    - docker cp $BUILD_CONTAINER:/build/android-client-wallet-compat-release-unsigned.aar beaconsdk-client-wallet-compat-release-unsigned-$CI_PIPELINE_ID.aar
+    - docker cp $BUILD_CONTAINER:/build/android-blockchain-tezos-release-unsigned.aar beaconsdk-blockchain-tezos-release-unsigned-$CI_PIPELINE_ID.aar
+    - docker cp $BUILD_CONTAINER:/build/android-transport-p2p-matrix-release-unsigned.aar beaconsdk-transport-p2p-matrix-release-unsigned-$CI_PIPELINE_ID.aar
   after_script:
     - docker rm -f $BUILD_CONTAINER || true
   tags:
@@ -26,6 +30,10 @@ build:
   artifacts:
     paths:
       - beaconsdk-core-release-unsigned-$CI_PIPELINE_ID.aar
+      - beaconsdk-client-wallet-release-unsigned-$CI_PIPELINE_ID.aar
+      - beaconsdk-client-wallet-compat-release-unsigned-$CI_PIPELINE_ID.aar
+      - beaconsdk-blockchain-tezos-release-unsigned-$CI_PIPELINE_ID.aar
+      - beaconsdk-transport-p2p-matrix-release-unsigned-$CI_PIPELINE_ID.aar
 
 unit:
   allow_failure: true

@@ -1,3 +1,12 @@
+object Android {
+    const val compileSdk = 30
+    const val minSdk = 21
+    const val targetSdk = 30
+
+    const val versionCode = 8
+    const val versionName = "3.0.0-beta01"
+}
+
 object Version {
     const val kotlin = "1.5.30"
 

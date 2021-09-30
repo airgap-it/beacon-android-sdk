@@ -9,7 +9,7 @@
 
     <application>
         <provider
-            android:name="it.airgap.beaconsdk.provider.BeaconInitProvider"
+            android:name="it.airgap.beaconsdk.core.provider.BeaconInitProvider"
             android:authorities="${applicationId}.beaconinitprovider"
             android:exported="false" />
     </application>

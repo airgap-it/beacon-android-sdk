@@ -1,0 +1,86 @@
+plugins {
+    id 'com.android.library'
+    id 'kotlin-android'
+    id 'maven-publish'
+}
+
+android {
+    compileSdk Android.compileSdk
+
+    defaultConfig {
+        minSdk Android.minSdk
+        targetSdk Android.targetSdk
+        versionCode Android.versionCode
+        versionName Android.versionName
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles "consumer-rules.pro"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    flavorDimensions "version"
+    productFlavors {
+        prod {
+            dimension "version"
+            buildConfigField("String", "VERSION_NAME", "\"${defaultConfig.versionName}\"")
+
+        }
+        mock {
+            dimension "version"
+            buildConfigField("String", "VERSION_NAME", "\"${defaultConfig.versionName}-mock\"")
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = '1.8'
+        freeCompilerArgs += '-Xexplicit-api=warning'
+    }
+
+    afterEvaluate {
+        publishing {
+            publications {
+                release(MavenPublication) {
+                    from components.prodRelease
+
+                    groupId = 'it.airgap.beaconsdk'
+                    artifactId = 'client-wallet'
+                    version = Android.versionName
+                }
+            }
+        }
+    }
+}
+
+dependencies {
+    implementation project(path: ':core')
+
+    implementation(Dependencies.kotlinStdlib)
+
+    implementation(Dependencies.androidxCore)
+    implementation(Dependencies.androidxAppCompat)
+
+    // Coroutines
+    implementation(Dependencies.kotlinxCoroutines)
+    implementation(Dependencies.kotlinxCoroutinesAndroid)
+
+    // Test
+    testImplementation(TestDependencies.kotlinTest)
+    testImplementation(TestDependencies.kotlinxCoroutinesTest)
+
+    testImplementation(TestDependencies.junit)
+    testImplementation(TestDependencies.mockk)
+
+    androidTestImplementation(TestDependencies.androidxJunit)
+    androidTestImplementation(TestDependencies.androidxEspresso)
+}
