@@ -92,7 +92,9 @@ dependencies {
     implementation(Dependencies.ktorLoggingJvm)
 
     // Lazy Sodium
-    implementation(Dependencies.lazySodium)
+    implementation(Dependencies.lazySodium) {
+        exclude group: 'net.java.dev.jna'
+    }
 
     // Test
     testImplementation(TestDependencies.kotlinTest)
