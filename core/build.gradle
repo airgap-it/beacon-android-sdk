@@ -66,6 +66,12 @@ android {
     }
 }
 
+configurations {
+    implementation {
+        exclude group: 'net.java.dev.jna'
+    }
+}
+
 dependencies {
     implementation(Dependencies.kotlinStdlib)
 
@@ -92,9 +98,7 @@ dependencies {
     implementation(Dependencies.ktorLoggingJvm)
 
     // Lazy Sodium
-    implementation(Dependencies.lazySodium) {
-        exclude group: 'net.java.dev.jna'
-    }
+    implementation(Dependencies.lazySodium)
 
     // Test
     testImplementation(TestDependencies.kotlinTest)
