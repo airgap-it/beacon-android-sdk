@@ -1,18 +1,19 @@
-apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
-apply plugin: 'kotlinx-serialization'
-apply plugin: 'org.jetbrains.dokka'
-apply plugin: 'maven-publish'
+plugins {
+    id 'com.android.library'
+    id 'kotlin-android'
+    id 'kotlinx-serialization'
+    id 'org.jetbrains.dokka'
+    id 'maven-publish'
+}
 
 android {
-    compileSdkVersion 30
-    buildToolsVersion "30.0.3"
+    compileSdk Android.compileSdk
 
     defaultConfig {
-        minSdkVersion 21
-        targetSdkVersion 30
-        versionCode 7
-        versionName "2.0.0"
+        minSdk Android.minSdk
+        targetSdk Android.targetSdk
+        versionCode Android.versionCode
+        versionName Android.versionName
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -42,6 +43,7 @@ android {
     kotlinOptions {
         jvmTarget = '1.8'
         freeCompilerArgs += '-Xexplicit-api=warning'
+        freeCompilerArgs += '-Xopt-in=kotlin.RequiresOptIn'
     }
 
     compileOptions {
@@ -57,7 +59,7 @@ android {
 
                     groupId = 'it.airgap.beaconsdk'
                     artifactId = 'core'
-                    version = "2.0.0"
+                    version = Android.versionName
                 }
             }
         }
@@ -65,7 +67,6 @@ android {
 }
 
 dependencies {
-    implementation fileTree(dir: "libs", include: ["*.jar"])
     implementation(Dependencies.kotlinStdlib)
 
     implementation(Dependencies.androidxCore)
