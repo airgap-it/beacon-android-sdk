@@ -92,7 +92,7 @@ See the below guides to learn how to migrate your existing code to new `Beacon A
 ### From <v3.0.0
 
 As of `v3.0.0`, not only has `Beacon Android SDK` been further split into new modules, it has also become more generic in terms of supported blockchains and transports.
-This means that in some parts the values that had been previously set by default now must be provided manually or that different structures have changed their location or definition.
+This means that in some parts the values that had been previously set by default now must be configured manually or that various structures have changed their location or definition.
 To make sure your existing Beacon integration will be set up the same way as it used to be before `v3.0.0` do the following:
 
 1. Remove the old dependency and add `core`, `client-wallet`, `blockchain-tezos` and `transport-p2p-matrix` modules.
