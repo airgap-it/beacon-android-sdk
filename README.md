@@ -26,18 +26,35 @@ To add `Beacon Android SDK` into your project:
 
   2. Add the dependency:
   ```groovy
-  def beaconVersion = "3.0.0-beta01"
+  def beaconVersion = "3.0.0"
 
-  implementation "com.github.airgap-it.beacon-android-sdk:core:$beaconVersion" // core, **required**
+  implementation "com.github.airgap-it.beacon-android-sdk:core:$beaconVersion" // core, **required** 
 
-  implementation "com.github.airgap-it.beacon-android-sdk:client-wallet:$beaconVersion" // client-wallet, optional
-  implementation "com.github.airgap-it.beacon-android-sdk:client-wallet-compat:$beaconVersion" // client-wallet-compat, optional
-  implementation "com.github.airgap-it.beacon-android-sdk:blockchain-tezos:$beaconVersion" // blockchain-tezos, optional
-  implementation "com.github.airgap-it.beacon-android-sdk:transport-p2p-matrix:$beaconVersion" // blockchain-tezos, optional
+  implementation "com.github.airgap-it.beacon-android-sdk:client-wallet:$beaconVersion" // client-wallet, optional 
+  implementation "com.github.airgap-it.beacon-android-sdk:client-wallet-compat:$beaconVersion" // client-wallet-compat, optional 
+  implementation "com.github.airgap-it.beacon-android-sdk:blockchain-tezos:$beaconVersion" // blockchain-tezos, optional 
+  implementation "com.github.airgap-it.beacon-android-sdk:transport-p2p-matrix:$beaconVersion" // blockchain-tezos, optional 
   
   ---
-  implementation "com.github.airgap-it:beacon-android-sdk:$beaconVersion" // alternatively, all modules
+  implementation "com.github.airgap-it:beacon-android-sdk:$beaconVersion" // alternatively, all modules 
   ```
+
+### Troubleshooting
+
+See the list of known issues and how to fix them if you run into problems after adding the dependencies.
+
+- `Native library (com/sun/jna/xxxxx/libjnidispatch.so) not found in resource path`
+
+    Add the `"net.java.dev.jna:jna:x.y.z@aar"` dependency **and exclude the `net.java.dev.jna` group from the Beacon dependencies**.
+    ```groovy
+    def withoutJna = { exclude group: 'net.java.dev.jna' }
+    
+    implementation "com.github.airgap-it.beacon-android-sdk:core:$beaconVersion", withoutJna
+    implementation "com.github.airgap-it.beacon-android-sdk:client-wallet:$beaconVersion", withoutJna 
+    // ...
+
+    implementation "net.java.dev.jna:jna:5.9.0@aar"
+    ```
 
 <!-- TODO: ## Documentation -->
 
@@ -92,7 +109,7 @@ See the below guides to learn how to migrate your existing code to new `Beacon A
 ### From <v3.0.0
 
 As of `v3.0.0`, not only has `Beacon Android SDK` been further split into new modules, it has also become more generic in terms of supported blockchains and transports.
-This means that in some parts the values that had been previously set by default now must be provided manually or that different structures have changed their location or definition.
+This means that in some parts the values that had been previously set by default now must be configured manually or that various structures have changed their location or definition.
 To make sure your existing Beacon integration will be set up the same way as it used to be before `v3.0.0` do the following:
 
 1. Remove the old dependency and add `core`, `client-wallet`, `blockchain-tezos` and `transport-p2p-matrix` modules.

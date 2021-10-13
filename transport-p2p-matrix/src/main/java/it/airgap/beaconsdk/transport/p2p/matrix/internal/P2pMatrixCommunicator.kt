@@ -10,9 +10,11 @@ import it.airgap.beaconsdk.core.internal.transport.p2p.data.P2pPairingResponse
 import it.airgap.beaconsdk.core.internal.utils.failWithIllegalArgument
 import it.airgap.beaconsdk.core.internal.utils.toHexString
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.MatrixEvent
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
+@OptIn(ExperimentalSerializationApi::class)
 internal class P2pMatrixCommunicator(private val app: BeaconApplication, private val crypto: Crypto) {
     private val keyPair: KeyPair get() = app.keyPair
 
