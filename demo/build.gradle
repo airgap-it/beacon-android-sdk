@@ -68,12 +68,15 @@ dependencies {
 
     // // Published
 //    def beaconVersion = Android.versionName
+//    def withoutJna = { exclude group: 'net.java.dev.jna' }
 //
-//    implementation "com.github.airgap-it.beacon-android-sdk:core:$beaconVersion"
+//    implementation "com.github.airgap-it.beacon-android-sdk:core:$beaconVersion", withoutJna
 //
-//    implementation "com.github.airgap-it.beacon-android-sdk:client-wallet:$beaconVersion"
-//    implementation "com.github.airgap-it.beacon-android-sdk:blockchain-tezos:$beaconVersion"
-//    implementation "com.github.airgap-it.beacon-android-sdk:transport-p2p-matrix:$beaconVersion"
+//    implementation "com.github.airgap-it.beacon-android-sdk:client-wallet:$beaconVersion", withoutJna
+//    implementation "com.github.airgap-it.beacon-android-sdk:blockchain-tezos:$beaconVersion", withoutJna
+//    implementation "com.github.airgap-it.beacon-android-sdk:transport-p2p-matrix:$beaconVersion", withoutJna
+//
+//    implementation(Dependencies.jna)
 
     // Activity
     implementation(Dependencies.androidxActivity)

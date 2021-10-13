@@ -8,7 +8,7 @@ import it.airgap.beaconsdk.core.internal.utils.failWithIllegalState
 public abstract class Compat<T : VersionedCompat> {
     private val allVersioned: MutableList<T> = mutableListOf()
     public val versioned: T
-        get() = allVersioned.lastOrNull { it.withVersion > BeaconConfiguration.sdkVersion }
+        get() = allVersioned.lastOrNull { it.withVersion < BeaconConfiguration.sdkVersion }
             ?: allVersioned.last()
 
     public fun register(additionalVersioned: List<T>) {

@@ -1,5 +1,6 @@
 package it.airgap.beaconsdk.blockchain.tezos.data.operation
 
+import it.airgap.beaconsdk.core.internal.data.HexString
 import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
 import it.airgap.beaconsdk.core.internal.utils.failWithMissingField
 import it.airgap.beaconsdk.core.internal.utils.failWithUnexpectedJsonType
@@ -61,32 +62,18 @@ public sealed class MichelineMichelsonV1Expression {
     }
 }
 
-@Serializable(with = MichelinePrimitiveInt.Serializer::class)
-public data class MichelinePrimitiveInt(public val int: Int) : MichelineMichelsonV1Expression() {
+@Serializable
+public data class MichelinePrimitiveInt(public val int: String) : MichelineMichelsonV1Expression() {
+    public constructor(int: Byte) : this(int.toString())
+    public constructor(int: Short) : this(int.toString())
+    public constructor(int: Int) : this(int.toString())
+    public constructor(int: Long) : this(int.toString())
+
     public companion object {}
 
-    internal object Serializer : KSerializer<MichelinePrimitiveInt> {
+    internal object Serializer {
         object Field {
             const val INT = "int"
-        }
-
-        override val descriptor: SerialDescriptor = buildClassSerialDescriptor("MichelinePrimitiveInt") {
-            element<String>(Field.INT)
-        }
-
-        override fun deserialize(decoder: Decoder): MichelinePrimitiveInt =
-            decoder.decodeStructure(descriptor) {
-                val primitive = decodeStringElement(descriptor, 0).toInt()
-
-                return MichelinePrimitiveInt(primitive)
-            }
-
-        override fun serialize(encoder: Encoder, value: MichelinePrimitiveInt) {
-            encoder.encodeStructure(descriptor) {
-                with(value) {
-                    encodeStringElement(descriptor, 0, int.toString())
-                }
-            }
         }
     }
 }
@@ -106,9 +93,28 @@ public data class MichelinePrimitiveString(public val string: String) : Michelin
 public data class MichelinePrimitiveBytes(public val bytes: String) : MichelineMichelsonV1Expression() {
     public companion object {}
 
-    internal object Serializer {
+    internal object Serializer : KSerializer<MichelinePrimitiveBytes> {
         object Field {
             const val BYTES = "bytes"
+        }
+
+        override val descriptor: SerialDescriptor = buildClassSerialDescriptor("MichelinePrimitiveBytes") {
+            element<String>(Field.BYTES)
+        }
+
+        override fun deserialize(decoder: Decoder): MichelinePrimitiveBytes =
+            decoder.decodeStructure(descriptor) {
+                val primitive = decodeStringElement(descriptor, 0)
+
+                return MichelinePrimitiveBytes(primitive)
+            }
+
+        override fun serialize(encoder: Encoder, value: MichelinePrimitiveBytes) {
+            encoder.encodeStructure(descriptor) {
+                with(value) {
+                    encodeStringElement(descriptor, 0, HexString(bytes).asString(withPrefix = true))
+                }
+            }
         }
     }
 }
