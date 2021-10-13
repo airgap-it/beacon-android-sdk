@@ -1,9 +1,9 @@
 package it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix
 
 import it.airgap.beaconsdk.core.internal.utils.*
+import it.airgap.beaconsdk.transport.p2p.matrix.data.MatrixRoom
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.BeaconP2pMatrixConfiguration
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.MatrixEvent
-import it.airgap.beaconsdk.transport.p2p.matrix.data.MatrixRoom
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.MatrixSync
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.room.MatrixCreateRoomRequest
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.network.event.MatrixEventService
@@ -167,7 +167,7 @@ internal class MatrixClient(
                 .onSuccess { onSyncSuccess(it) }
                 .onFailure { onSyncError(scope, it) }
 
-            syncMutex.unlock()
+            if (syncMutex.isLocked) syncMutex.unlock()
         }
     }
 
