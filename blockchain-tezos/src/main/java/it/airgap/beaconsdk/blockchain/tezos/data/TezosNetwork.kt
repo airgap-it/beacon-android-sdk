@@ -112,6 +112,21 @@ public sealed class TezosNetwork : Network() {
     }
 
     @Serializable
+    @SerialName(Idiazabal.TYPE)
+    public data class Idiazabal(
+        override val name: String? = null,
+        override val rpcUrl: String? = null,
+    ) : TezosNetwork() {
+        @Transient
+        override val type: String = TYPE
+
+        public companion object {
+            internal const val TYPE = "idiazabalnet"
+        }
+    }
+
+
+    @Serializable
     @SerialName(Custom.TYPE)
     public data class Custom(
         override val name: String? = null,
