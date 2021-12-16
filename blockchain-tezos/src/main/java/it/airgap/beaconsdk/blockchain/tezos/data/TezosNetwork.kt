@@ -8,9 +8,19 @@ import kotlinx.serialization.Transient
 
 /**
  * Type of Tezos networks supported in Beacon.
+ *
+ * @property [type] A unique value that identifies the network.
  */
 @Serializable
 public sealed class TezosNetwork : Network() {
+    public abstract val type: String
+
+    override val identifier: String
+        get() = mutableListOf(type).apply {
+            name?.let { add("name:$it") }
+            rpcUrl?.let { add("rpc:$it") }
+        }.joinToString("-")
+
     @Transient
     override val blockchainIdentifier: String = Tezos.IDENTIFIER
 
@@ -58,6 +68,7 @@ public sealed class TezosNetwork : Network() {
         }
     }
 
+    @Deprecated("'Florencenet' is no longer a maintained Tezos test network and will be removed from Beacon in future versions.")
     @Serializable
     @SerialName(Florencenet.TYPE)
     public data class Florencenet(
@@ -89,8 +100,8 @@ public sealed class TezosNetwork : Network() {
     @Serializable
     @SerialName(Hangzhounet.TYPE)
     public data class Hangzhounet(
-        override val name: String?,
-        override val rpcUrl: String?,
+        override val name: String? = null,
+        override val rpcUrl: String? = null,
     ) : TezosNetwork() {
         @Transient
         override val type: String = TYPE
