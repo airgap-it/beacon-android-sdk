@@ -19,7 +19,7 @@ public class Tezos internal constructor(
     override val identifier: String = IDENTIFIER
 
     /**
-     * Creator for [Tezos].
+     * Factory for [Tezos].
      *
      * @constructor Creates a factory required for dynamic [Tezos] blockchain registration.
      */
