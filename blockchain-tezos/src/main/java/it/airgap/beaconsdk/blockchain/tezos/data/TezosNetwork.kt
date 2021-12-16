@@ -9,10 +9,16 @@ import kotlinx.serialization.Transient
 /**
  * Type of Tezos networks supported in Beacon.
  *
+ * @property [blockchainIdentifier] A unique name of the blockchain which the network applies to.
  * @property [type] A unique value that identifies the network.
+ * @property [name] An optional name of the network.
+ * @property [rpcUrl] An optional URL for the network RPC interface.
  */
 @Serializable
 public sealed class TezosNetwork : Network() {
+    @Transient
+    override val blockchainIdentifier: String = Tezos.IDENTIFIER
+
     public abstract val type: String
 
     override val identifier: String
@@ -20,9 +26,6 @@ public sealed class TezosNetwork : Network() {
             name?.let { add("name:$it") }
             rpcUrl?.let { add("rpc:$it") }
         }.joinToString("-")
-
-    @Transient
-    override val blockchainIdentifier: String = Tezos.IDENTIFIER
 
     @Serializable
     @SerialName(Mainnet.TYPE)
