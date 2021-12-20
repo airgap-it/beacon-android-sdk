@@ -35,7 +35,7 @@ internal class PermissionTest {
         mockBeaconSdk(dependencyRegistry = dependencyRegistry)
 
         every { dependencyRegistry.blockchainRegistry } returns blockchainRegistry
-        every { blockchainRegistry.get(any()) } returns mockBlockchain
+        every { blockchainRegistry.getOrNull(any()) } returns mockBlockchain
     }
 
     @Test

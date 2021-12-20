@@ -71,7 +71,7 @@ public abstract class BeaconError {
                 NoAddressError.IDENTIFIER -> NoAddressError
                 Aborted.IDENTIFIER -> Aborted
                 Unknown.IDENTIFIER -> Unknown
-                else -> blockchainIdentifier?.let { blockchainRegistry.get(it)?.serializer?.error?.deserialize(jsonDecoder) } ?: failWithUnknownValue(value)
+                else -> blockchainIdentifier?.let { blockchainRegistry.getOrNull(it)?.serializer?.data?.error?.deserialize(jsonDecoder) } ?: failWithUnknownValue(value)
             }
         }
 
@@ -81,7 +81,7 @@ public abstract class BeaconError {
                 NoAddressError -> jsonEncoder.encodeString(NoAddressError.IDENTIFIER)
                 Aborted -> jsonEncoder.encodeString(Aborted.IDENTIFIER)
                 Unknown -> jsonEncoder.encodeString(Unknown.IDENTIFIER)
-                else -> blockchainIdentifier?.let { blockchainRegistry.get(it)?.serializer?.error?.serialize(jsonEncoder, value) } ?: failWithUnknownValue(value)
+                else -> blockchainIdentifier?.let { blockchainRegistry.getOrNull(it)?.serializer?.data?.error?.serialize(jsonEncoder, value) } ?: failWithUnknownValue(value)
             }
         }
 

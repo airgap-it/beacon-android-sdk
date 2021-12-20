@@ -5,7 +5,10 @@ import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.internal.blockchain.BlockchainRegistry
 import it.airgap.beaconsdk.core.internal.message.VersionedBeaconMessage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
-import it.airgap.beaconsdk.core.internal.utils.*
+import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
+import it.airgap.beaconsdk.core.internal.utils.asHexString
+import it.airgap.beaconsdk.core.internal.utils.failWithIllegalArgument
+import it.airgap.beaconsdk.core.internal.utils.get
 import it.airgap.beaconsdk.core.message.*
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -69,8 +72,8 @@ public class MessageController internal constructor(
     private suspend fun onPermissionResponse(response: PermissionBeaconResponse, request: BeaconRequest) {
         if (request !is PermissionBeaconRequest) /* unknown state, no action */ return
 
-        val blockchain = blockchainRegistry.get(response.blockchainIdentifier) ?: failWithBlockchainNotFound(response.blockchainIdentifier)
-        val permission = blockchain.creator.extractPermission(request, response).getOrThrow()
+        val blockchain = blockchainRegistry.get(response.blockchainIdentifier)
+        val permission = blockchain.creator.data.extractPermission(request, response).getOrThrow()
 
         storageManager.addPermissions(listOf(permission))
     }

@@ -4,7 +4,6 @@ import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.internal.compat.CoreCompat
 import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
 import it.airgap.beaconsdk.core.internal.utils.blockchainRegistry
-import it.airgap.beaconsdk.core.internal.utils.failWithBlockchainNotFound
 import it.airgap.beaconsdk.core.internal.utils.getStringOrNull
 import it.airgap.beaconsdk.core.message.PermissionBeaconResponse
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -56,15 +55,15 @@ public abstract class Permission {
         override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): Permission {
             val blockchainIdentifier = jsonElement.jsonObject.getStringOrNull(descriptor.getElementName(0))
             val blockchain = blockchainIdentifier?.let {
-                blockchainRegistry.get(blockchainIdentifier) ?: failWithBlockchainNotFound(blockchainIdentifier)
+                blockchainRegistry.get(blockchainIdentifier)
             } ?: CoreCompat.versioned.blockchain
 
-            return jsonDecoder.json.decodeFromJsonElement(blockchain.serializer.permission, jsonElement)
+            return jsonDecoder.json.decodeFromJsonElement(blockchain.serializer.data.permission, jsonElement)
         }
 
         override fun serialize(jsonEncoder: JsonEncoder, value: Permission) {
-            val blockchain = blockchainRegistry.get(value.blockchainIdentifier) ?: failWithBlockchainNotFound(value.blockchainIdentifier)
-            jsonEncoder.encodeSerializableValue(blockchain.serializer.permission, value)
+            val blockchain = blockchainRegistry.get(value.blockchainIdentifier)
+            jsonEncoder.encodeSerializableValue(blockchain.serializer.data.permission, value)
         }
     }
 

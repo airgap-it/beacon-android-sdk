@@ -110,7 +110,7 @@ internal fun errorBeaconResponse(
     errorType: BeaconError = BeaconError.Unknown,
     version: String = "version",
     requestOrigin: Origin = Origin.P2P("senderId"),
-): ErrorBeaconResponse = ErrorBeaconResponse(id, version, requestOrigin, identifier, errorType)
+): ErrorBeaconResponse = ErrorBeaconResponse(id, version, requestOrigin, errorType, identifier)
 
 internal fun disconnectBeaconMessage(
     id: String = "id",

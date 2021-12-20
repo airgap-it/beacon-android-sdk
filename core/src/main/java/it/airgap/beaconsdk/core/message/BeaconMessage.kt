@@ -147,8 +147,8 @@ public data class ErrorBeaconResponse @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP
     override val id: String,
     override val version: String,
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) override val requestOrigin: Origin,
-    public val blockchainIdentifier: String,
     public val errorType: BeaconError,
+    public val blockchainIdentifier: String? = null,
 ) : BeaconResponse() {
 
     public companion object {
@@ -160,7 +160,7 @@ public data class ErrorBeaconResponse @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP
          * The response will have an id and blockchain identifier matching the ones of the [request].
          */
         public fun from(request: BeaconRequest, errorType: BeaconError): ErrorBeaconResponse =
-            ErrorBeaconResponse(request.id, request.version, request.origin, request.blockchainIdentifier, errorType)
+            ErrorBeaconResponse(request.id, request.version, request.origin, errorType, request.blockchainIdentifier)
     }
 }
 

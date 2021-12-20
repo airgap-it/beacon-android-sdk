@@ -1,4 +1,4 @@
-package it.airgap.blockchain.substrate.internal
+package it.airgap.blockchain.substrate.internal.wallet
 
 import it.airgap.beaconsdk.core.blockchain.Blockchain
 

@@ -3,9 +3,11 @@ package it.airgap.blockchain.substrate
 import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.blockchain.Blockchain
 import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
-import it.airgap.blockchain.substrate.internal.SubstrateCreator
-import it.airgap.blockchain.substrate.internal.SubstrateSerializer
-import it.airgap.blockchain.substrate.internal.SubstrateWallet
+import it.airgap.blockchain.substrate.internal.creator.SubstrateCreator
+import it.airgap.blockchain.substrate.internal.di.ExtendedDependencyRegistry
+import it.airgap.blockchain.substrate.internal.di.extend
+import it.airgap.blockchain.substrate.internal.serializer.SubstrateSerializer
+import it.airgap.blockchain.substrate.internal.wallet.SubstrateWallet
 
 /**
  * Substrate implementation of the [Blockchain] interface.
@@ -26,14 +28,14 @@ public class Substrate(
     public class Factory : Blockchain.Factory<Substrate> {
         override val identifier: String = IDENTIFIER
 
+        private var _extendedDependencyRegistry: ExtendedDependencyRegistry? = null
+        private fun extendedDependencyRegistry(dependencyRegistry: DependencyRegistry): ExtendedDependencyRegistry =
+            _extendedDependencyRegistry ?: dependencyRegistry.extend().also { _extendedDependencyRegistry = it }
+
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         override fun create(dependencyRegistry: DependencyRegistry): Substrate =
-            with(dependencyRegistry) {
-                val wallet = SubstrateWallet()
-                val creator = SubstrateCreator()
-                val serializer = SubstrateSerializer()
-
-                Substrate(wallet, creator, serializer)
+            with(extendedDependencyRegistry(dependencyRegistry)) {
+                Substrate(substrateWallet, substrateCreator, substrateSerializer)
             }
 
     }

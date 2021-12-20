@@ -1,35 +1,28 @@
-package it.airgap.beaconsdk.blockchain.tezos.internal
+package it.airgap.beaconsdk.blockchain.tezos.internal.creator
 
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
-import it.airgap.beaconsdk.blockchain.tezos.internal.message.v1.V1TezosMessage
-import it.airgap.beaconsdk.blockchain.tezos.internal.message.v2.V2TezosMessage
 import it.airgap.beaconsdk.blockchain.tezos.internal.utils.failWithUnknownMessage
+import it.airgap.beaconsdk.blockchain.tezos.internal.wallet.TezosWallet
 import it.airgap.beaconsdk.blockchain.tezos.message.request.PermissionTezosRequest
 import it.airgap.beaconsdk.blockchain.tezos.message.response.PermissionTezosResponse
 import it.airgap.beaconsdk.core.data.Permission
-import it.airgap.beaconsdk.core.blockchain.Blockchain
-import it.airgap.beaconsdk.core.internal.message.v1.V1BeaconMessage
-import it.airgap.beaconsdk.core.internal.message.v2.V2BeaconMessage
+import it.airgap.beaconsdk.core.internal.blockchain.creator.DataBlockchainCreator
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
 import it.airgap.beaconsdk.core.internal.utils.asHexString
 import it.airgap.beaconsdk.core.internal.utils.currentTimestamp
 import it.airgap.beaconsdk.core.internal.utils.failWithIllegalState
-import it.airgap.beaconsdk.core.message.BeaconMessage
 import it.airgap.beaconsdk.core.message.PermissionBeaconRequest
 import it.airgap.beaconsdk.core.message.PermissionBeaconResponse
 
-internal class TezosCreator(
+internal class DataTezosCreator(
     private val wallet: TezosWallet,
     private val storageManager: StorageManager,
     private val identifierCreator: IdentifierCreator,
-) : Blockchain.Creator {
-
-    // -- data --
-
+) : DataBlockchainCreator {
     override suspend fun extractPermission(
         request: PermissionBeaconRequest,
-        response: PermissionBeaconResponse
+        response: PermissionBeaconResponse,
     ): Result<Permission> =
         runCatching {
             if (request !is PermissionTezosRequest) failWithUnknownMessage(request)
@@ -51,11 +44,6 @@ internal class TezosCreator(
                 response.threshold,
             )
         }
-
-    // -- VersionedBeaconMessage --
-
-    override fun v1From(senderId: String, content: BeaconMessage): Result<V1BeaconMessage> = runCatching { V1TezosMessage.from(senderId, content) }
-    override fun v2From(senderId: String, content: BeaconMessage): Result<V2BeaconMessage> = runCatching { V2TezosMessage.from(senderId, content) }
 
     private fun failWithAppMetadataNotFound(): Nothing = failWithIllegalState("Permission could not be extracted, matching appMetadata not found.")
 }

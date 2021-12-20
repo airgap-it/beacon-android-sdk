@@ -54,7 +54,7 @@ internal class V1BeaconMessageTest {
         mockBeaconSdk(dependencyRegistry = dependencyRegistry)
 
         every { dependencyRegistry.blockchainRegistry } returns blockchainRegistry
-        every { blockchainRegistry.get(any()) } returns mockBlockchain
+        every { blockchainRegistry.getOrNull(any()) } returns mockBlockchain
 
         storageManager = StorageManager(MockStorage(), MockSecureStorage(), identifierCreator)
     }
@@ -588,7 +588,7 @@ internal class V1BeaconMessageTest {
         errorType: BeaconError = BeaconError.Unknown,
         origin: Origin = Origin.P2P(beaconId),
     ): Pair<ErrorV1BeaconResponse, ErrorBeaconResponse> =
-        ErrorV1BeaconResponse(version, id, beaconId, errorType) to ErrorBeaconResponse(id, version, origin, MockBlockchain.IDENTIFIER, errorType)
+        ErrorV1BeaconResponse(version, id, beaconId, errorType) to ErrorBeaconResponse(id, version, origin, errorType, MockBlockchain.IDENTIFIER)
 
     // -- other to BeaconMessage --
 

@@ -4,6 +4,8 @@ import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
+import it.airgap.beaconsdk.blockchain.tezos.internal.creator.TezosCreator
+import it.airgap.beaconsdk.blockchain.tezos.internal.wallet.TezosWallet
 import it.airgap.beaconsdk.blockchain.tezos.mockTime
 import it.airgap.beaconsdk.core.data.AppMetadata
 import it.airgap.beaconsdk.core.internal.storage.MockSecureStorage

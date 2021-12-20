@@ -30,20 +30,21 @@ import kotlinx.serialization.json.jsonObject
 @Serializable(with = V2BeaconMessage.Serializer::class)
 public abstract class V2BeaconMessage : VersionedBeaconMessage() {
     public abstract val id: String
+    public abstract val type: String
     public abstract val senderId: String
 
     public companion object {
-        public fun from(senderId: String, content: BeaconMessage): V2BeaconMessage =
-            with(content) {
+        public fun from(senderId: String, message: BeaconMessage): V2BeaconMessage =
+            with(message) {
                 when (this) {
                     is AcknowledgeBeaconResponse -> AcknowledgeV2BeaconResponse(version, id, senderId)
                     is ErrorBeaconResponse -> ErrorV2BeaconResponse(version, id, senderId, errorType)
                     is DisconnectBeaconMessage -> DisconnectV2BeaconMessage(version, id, senderId)
-                    else -> CoreCompat.versioned.blockchain.creator.v2From(senderId, content).getOrThrow()
+                    else -> CoreCompat.versioned.blockchain.creator.v2.from(senderId, message).getOrThrow()
                 }
             }
 
-        public fun compatSerializer(): KSerializer<V2BeaconMessage> = CoreCompat.versioned.blockchain.serializer.v2
+        public fun compatSerializer(): KSerializer<V2BeaconMessage> = CoreCompat.versioned.blockchain.serializer.v2.message
     }
 
     @OptIn(ExperimentalSerializationApi::class)
@@ -104,7 +105,7 @@ public data class ErrorV2BeaconResponse(
     override val type: String = TYPE
 
     override suspend fun toBeaconMessage(origin: Origin, storageManager: StorageManager): BeaconMessage =
-        ErrorBeaconResponse(id, version, origin, CoreCompat.versioned.blockchain.identifier, errorType)
+        ErrorBeaconResponse(id, version, origin, errorType, CoreCompat.versioned.blockchain.identifier)
 
     public companion object {
         public const val TYPE: String = "error"

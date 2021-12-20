@@ -1,4 +1,4 @@
-package it.airgap.beaconsdk.blockchain.tezos.internal
+package it.airgap.beaconsdk.blockchain.tezos.internal.wallet
 
 import it.airgap.beaconsdk.blockchain.tezos.Tezos
 import it.airgap.beaconsdk.core.blockchain.Blockchain

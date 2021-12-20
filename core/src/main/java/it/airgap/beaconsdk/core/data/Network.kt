@@ -2,7 +2,6 @@ package it.airgap.beaconsdk.core.data
 
 import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
 import it.airgap.beaconsdk.core.internal.utils.blockchainRegistry
-import it.airgap.beaconsdk.core.internal.utils.failWithBlockchainNotFound
 import it.airgap.beaconsdk.core.internal.utils.getString
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
@@ -41,14 +40,14 @@ public abstract class Network {
 
         override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): Network {
             val blockchainIdentifier = jsonElement.jsonObject.getString(descriptor.getElementName(0))
-            val blockchain = blockchainRegistry.get(blockchainIdentifier) ?: failWithBlockchainNotFound(blockchainIdentifier)
+            val blockchain = blockchainRegistry.get(blockchainIdentifier)
 
-            return jsonDecoder.json.decodeFromJsonElement(blockchain.serializer.network, jsonElement)
+            return jsonDecoder.json.decodeFromJsonElement(blockchain.serializer.data.network, jsonElement)
         }
 
         override fun serialize(jsonEncoder: JsonEncoder, value: Network) {
-            val blockchain = blockchainRegistry.get(value.blockchainIdentifier) ?: failWithBlockchainNotFound(value.blockchainIdentifier)
-            jsonEncoder.encodeSerializableValue(blockchain.serializer.network, value)
+            val blockchain = blockchainRegistry.get(value.blockchainIdentifier)
+            jsonEncoder.encodeSerializableValue(blockchain.serializer.data.network, value)
         }
     }
 }

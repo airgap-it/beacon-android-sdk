@@ -56,7 +56,7 @@ internal class MessageControllerTest {
         mockBlockchainRegistry()
         mockTime(currentTimeMillis)
 
-        every { blockchainRegistry.get(any()) } returns blockchain
+        every { blockchainRegistry.getOrNull(any()) } returns blockchain
 
         every { identifierCreator.accountIdentifier(any(), any()) } answers { Result.success(firstArg()) }
         every { identifierCreator.senderIdentifier(any()) } answers { Result.success(firstArg<ByteArray>().toHexString().asString()) }
