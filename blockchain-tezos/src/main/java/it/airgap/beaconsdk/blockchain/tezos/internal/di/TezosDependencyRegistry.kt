@@ -4,16 +4,17 @@ import it.airgap.beaconsdk.blockchain.tezos.internal.creator.*
 import it.airgap.beaconsdk.blockchain.tezos.internal.serializer.*
 import it.airgap.beaconsdk.blockchain.tezos.internal.wallet.TezosWallet
 import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
+import it.airgap.beaconsdk.core.internal.utils.delegate.lazyWeak
 
 internal class TezosDependencyRegistry(dependencyRegistry: DependencyRegistry) : ExtendedDependencyRegistry, DependencyRegistry by dependencyRegistry {
 
     // -- wallet --
 
-    override val tezosWallet: TezosWallet by lazy { TezosWallet(crypto, base58Check) }
+    override val tezosWallet: TezosWallet by lazyWeak { TezosWallet(crypto, base58Check) }
 
     // -- creator --
 
-    override val tezosCreator: TezosCreator by lazy {
+    override val tezosCreator: TezosCreator by lazyWeak {
         TezosCreator(
             DataTezosCreator(tezosWallet, storageManager, identifierCreator),
             V1BeaconMessageTezosCreator(),
@@ -24,7 +25,7 @@ internal class TezosDependencyRegistry(dependencyRegistry: DependencyRegistry) :
 
     // -- serializer --
 
-    override val tezosSerializer: TezosSerializer by lazy {
+    override val tezosSerializer: TezosSerializer by lazyWeak {
         TezosSerializer(
             DataTezosSerializer(),
             V1BeaconMessageTezosSerializer(),

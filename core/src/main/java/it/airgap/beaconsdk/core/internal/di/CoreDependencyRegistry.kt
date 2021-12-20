@@ -23,6 +23,7 @@ import it.airgap.beaconsdk.core.internal.transport.p2p.P2pTransport
 import it.airgap.beaconsdk.core.internal.utils.Base58Check
 import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
 import it.airgap.beaconsdk.core.internal.utils.Poller
+import it.airgap.beaconsdk.core.internal.utils.delegate.lazyWeak
 import it.airgap.beaconsdk.core.network.provider.HttpProvider
 import it.airgap.beaconsdk.core.storage.SecureStorage
 import it.airgap.beaconsdk.core.storage.Storage
@@ -31,11 +32,11 @@ internal class CoreDependencyRegistry(blockchainFactories: List<Blockchain.Facto
 
     // -- storage --
 
-    override val storageManager: StorageManager by lazy { StorageManager(storage, secureStorage, identifierCreator) }
+    override val storageManager: StorageManager by lazyWeak { StorageManager(storage, secureStorage, identifierCreator) }
 
     // -- blockchain --
 
-    override val blockchainRegistry: BlockchainRegistry by lazy {
+    override val blockchainRegistry: BlockchainRegistry by lazyWeak {
         val blockchainFactories = blockchainFactories
             .map { it.identifier to { it.create(this) } }
             .toMap()
@@ -45,7 +46,7 @@ internal class CoreDependencyRegistry(blockchainFactories: List<Blockchain.Facto
 
     // -- controller --
 
-    override val messageController: MessageController by lazy { MessageController(blockchainRegistry, storageManager, identifierCreator) }
+    override val messageController: MessageController by lazyWeak { MessageController(blockchainRegistry, storageManager, identifierCreator) }
 
     override fun connectionController(connections: List<Connection>): ConnectionController {
             val transports = connections.map { transport(it) }
@@ -62,19 +63,19 @@ internal class CoreDependencyRegistry(blockchainFactories: List<Blockchain.Facto
 
     // -- utils --
 
-    override val crypto: Crypto by lazy { Crypto(cryptoProvider) }
-    override val serializer: Serializer by lazy { Serializer(serializerProvider) }
+    override val crypto: Crypto by lazyWeak { Crypto(cryptoProvider) }
+    override val serializer: Serializer by lazyWeak { Serializer(serializerProvider) }
 
-    override val identifierCreator: IdentifierCreator by lazy { IdentifierCreator(crypto, base58Check) }
-    override val base58Check: Base58Check by lazy { Base58Check(crypto) }
-    override val poller: Poller by lazy { Poller() }
+    override val identifierCreator: IdentifierCreator by lazyWeak { IdentifierCreator(crypto, base58Check) }
+    override val base58Check: Base58Check by lazyWeak { Base58Check(crypto) }
+    override val poller: Poller by lazyWeak { Poller() }
 
-    private val cryptoProvider: CryptoProvider by lazy {
+    private val cryptoProvider: CryptoProvider by lazyWeak {
         when (BeaconConfiguration.cryptoProvider) {
             BeaconConfiguration.CryptoProvider.LazySodium -> LazySodiumCryptoProvider()
         }
     }
-    private val serializerProvider: SerializerProvider by lazy {
+    private val serializerProvider: SerializerProvider by lazyWeak {
         when (BeaconConfiguration.serializerProvider) {
             BeaconConfiguration.SerializerProvider.Base58Check -> Base58CheckSerializerProvider(base58Check)
         }
@@ -89,7 +90,7 @@ internal class CoreDependencyRegistry(blockchainFactories: List<Blockchain.Facto
         return httpClients.getOrPut(httpProvider.hashCode()) { HttpClient(this.httpProvider) }
     }
 
-    private val httpProvider: HttpProvider by lazy {
+    private val httpProvider: HttpProvider by lazyWeak {
         when (BeaconConfiguration.httpClientProvider) {
             BeaconConfiguration.HttpClientProvider.Ktor -> KtorHttpProvider()
         }
@@ -97,7 +98,7 @@ internal class CoreDependencyRegistry(blockchainFactories: List<Blockchain.Facto
 
     // -- migration --
 
-    override val migration: Migration by lazy {
+    override val migration: Migration by lazyWeak {
         CoreMigration(
             storageManager,
             listOf(),
