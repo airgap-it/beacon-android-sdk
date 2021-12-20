@@ -66,7 +66,7 @@ internal class CoreDependencyRegistry(blockchainFactories: List<Blockchain.Facto
     override val crypto: Crypto by lazyWeak { Crypto(cryptoProvider) }
     override val serializer: Serializer by lazyWeak { Serializer(serializerProvider) }
 
-    override val identifierCreator: IdentifierCreator by lazyWeak { IdentifierCreator(crypto, base58Check) }
+    override val identifierCreator: IdentifierCreator by lazyWeak { IdentifierCreator(crypto, base58Check, blockchainRegistry) }
     override val base58Check: Base58Check by lazyWeak { Base58Check(crypto) }
     override val poller: Poller by lazyWeak { Poller() }
 

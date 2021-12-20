@@ -85,7 +85,7 @@ public class StorageManager(
             storage.removePeers(predicate)
             removePermissions { permission ->
                 toRemove.any {
-                    val senderId = identifierCreator.senderIdentifier(it.publicKey.asHexString().toByteArray()).getOrThrow()
+                    val senderId = identifierCreator.senderId(it.publicKey.asHexString().toByteArray()).getOrThrow()
                     senderId == permission.appMetadata.senderId
                 }
             }

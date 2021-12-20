@@ -29,13 +29,13 @@ internal class DataTezosCreator(
             if (response !is PermissionTezosResponse) failWithUnknownMessage(response)
 
             val address = wallet.addressFromPublicKey(response.publicKey).getOrThrow()
-            val accountIdentifier = identifierCreator.accountIdentifier(address, response.network).getOrThrow()
+            val accountId = identifierCreator.accountId(address, response.network).getOrThrow()
             val appMetadata = storageManager.findAppMetadata { it.senderId == request.senderId } ?: failWithAppMetadataNotFound()
 
             TezosPermission(
-                accountIdentifier,
+                accountId,
                 address,
-                identifierCreator.senderIdentifier(request.origin.id.asHexString().toByteArray()).getOrThrow(),
+                identifierCreator.senderId(request.origin.id.asHexString().toByteArray()).getOrThrow(),
                 appMetadata,
                 response.publicKey,
                 connectedAt = currentTimestamp(),

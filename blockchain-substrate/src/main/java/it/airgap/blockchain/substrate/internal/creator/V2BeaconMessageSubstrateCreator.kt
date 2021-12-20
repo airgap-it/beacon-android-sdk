@@ -5,7 +5,7 @@ import it.airgap.beaconsdk.core.internal.message.v2.V2BeaconMessage
 import it.airgap.beaconsdk.core.message.BeaconMessage
 
 internal class V2BeaconMessageSubstrateCreator : V2BeaconMessageBlockchainCreator {
-    override fun from(senderId: String, content: BeaconMessage): Result<V2BeaconMessage> {
+    override fun from(senderId: String, message: BeaconMessage): Result<V2BeaconMessage> {
         TODO("Not yet implemented")
     }
 }

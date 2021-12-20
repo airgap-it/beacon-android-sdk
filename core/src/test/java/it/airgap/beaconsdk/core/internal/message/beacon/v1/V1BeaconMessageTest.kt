@@ -8,7 +8,7 @@ import io.mockk.unmockkAll
 import it.airgap.beaconsdk.core.data.*
 import it.airgap.beaconsdk.core.internal.blockchain.BlockchainRegistry
 import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchain
-import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchainSerializer
+import it.airgap.beaconsdk.core.internal.blockchain.message.*
 import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.core.internal.message.v1.DisconnectV1BeaconMessage
 import it.airgap.beaconsdk.core.internal.message.v1.ErrorV1BeaconResponse
@@ -54,6 +54,8 @@ internal class V1BeaconMessageTest {
         mockBeaconSdk(dependencyRegistry = dependencyRegistry)
 
         every { dependencyRegistry.blockchainRegistry } returns blockchainRegistry
+
+        every { blockchainRegistry.get(any()) } returns mockBlockchain
         every { blockchainRegistry.getOrNull(any()) } returns mockBlockchain
 
         storageManager = StorageManager(MockStorage(), MockSecureStorage(), identifierCreator)
@@ -108,7 +110,7 @@ internal class V1BeaconMessageTest {
 
         runBlocking {
             versionedWithBeacon(beaconId = senderId, appMetadata = matchingAppMetadata, origin = origin)
-                .map { it.first.toBeaconMessage(origin, storageManager) to it.second }
+                .map { it.first.toBeaconMessage(origin, storageManager, identifierCreator) to it.second }
                 .forEach {
                     assertEquals(it.second, it.first)
                 }
@@ -166,8 +168,8 @@ internal class V1BeaconMessageTest {
         appMetadata: V1AppMetadata = V1AppMetadata("beaconId", "v1App"),
         network: Network = MockNetwork(),
         scopes: List<String> = emptyList()
-    ): Pair<MockBlockchainSerializer.V1MockPermissionBeaconRequest, String> =
-        MockBlockchainSerializer.V1MockPermissionBeaconRequest(
+    ): Pair<V1MockPermissionBeaconRequest, String> =
+        V1MockPermissionBeaconRequest(
             "permission_request",
             version,
             id,
@@ -196,8 +198,8 @@ internal class V1BeaconMessageTest {
         network: Network = MockNetwork(),
         tezosOperations: List<Map<String, String>> = emptyList(),
         sourceAddress: String = "sourceAddress"
-    ): Pair<MockBlockchainSerializer.V1MockBlockchainBeaconMessage, String> =
-        MockBlockchainSerializer.V1MockBlockchainBeaconMessage.request(
+    ): Pair<V1MockBlockchainBeaconMessage, String> =
+        V1MockBlockchainBeaconMessage.request(
             "operation_request",
             version,
             id,
@@ -225,8 +227,8 @@ internal class V1BeaconMessageTest {
         beaconId: String = "beaconId",
         payload: String = "payload",
         sourceAddress: String = "sourceAddress",
-    ): Pair<MockBlockchainSerializer.V1MockBlockchainBeaconMessage, String> =
-        MockBlockchainSerializer.V1MockBlockchainBeaconMessage.request(
+    ): Pair<V1MockBlockchainBeaconMessage, String> =
+        V1MockBlockchainBeaconMessage.request(
             "sign_payload_request",
             version,
             id,
@@ -252,8 +254,8 @@ internal class V1BeaconMessageTest {
         beaconId: String = "beaconId",
         network: Network = MockNetwork(),
         signedTransaction: String = "signedTransaction"
-    ): Pair<MockBlockchainSerializer.V1MockBlockchainBeaconMessage, String> =
-        MockBlockchainSerializer.V1MockBlockchainBeaconMessage.request(
+    ): Pair<V1MockBlockchainBeaconMessage, String> =
+        V1MockBlockchainBeaconMessage.request(
             "broadcast_request",
             version,
             id,
@@ -279,17 +281,17 @@ internal class V1BeaconMessageTest {
         version: String = "1",
         id: String = "id",
         beaconId: String = "beaconId",
-        publicKey: String = "publicKey",
+        accountId: String = "accoutId",
         network: Network = MockNetwork(),
         scopes: List<String> = emptyList(),
         threshold: Threshold? = null,
-    ): Pair<MockBlockchainSerializer.V1MockPermissionBeaconResponse, String> {
+    ): Pair<V1MockPermissionBeaconResponse, String> {
         val values = mapOf(
             "type" to "permission_response",
             "version" to version,
             "id" to id,
             "beaconId" to beaconId,
-            "publicKey" to publicKey,
+            "accountId" to accountId,
             "network" to Json.encodeToJsonElement(network),
             "scopes" to Json.encodeToJsonElement(scopes),
             "threshold" to threshold?.let { Json.encodeToJsonElement(it) }
@@ -297,12 +299,12 @@ internal class V1BeaconMessageTest {
 
         val json = JsonObject.fromValues(values, includeNulls = true).toString()
 
-        return MockBlockchainSerializer.V1MockPermissionBeaconResponse(
+        return V1MockPermissionBeaconResponse(
             "permission_response",
             version,
             id,
             beaconId,
-            publicKey,
+            accountId,
             threshold,
             mapOf(
                 "network" to Json.encodeToJsonElement(network),
@@ -316,8 +318,8 @@ internal class V1BeaconMessageTest {
         id: String = "id",
         beaconId: String = "beaconId",
         transactionHash: String = "transactionHash"
-    ): Pair<MockBlockchainSerializer.V1MockBlockchainBeaconMessage, String> =
-        MockBlockchainSerializer.V1MockBlockchainBeaconMessage.response(
+    ): Pair<V1MockBlockchainBeaconMessage, String> =
+        V1MockBlockchainBeaconMessage.response(
             "operation_response",
             version,
             id,
@@ -340,8 +342,8 @@ internal class V1BeaconMessageTest {
         id: String = "id",
         beaconId: String = "beaconId",
         signature: String = "signature",
-    ): Pair<MockBlockchainSerializer.V1MockBlockchainBeaconMessage, String> =
-        MockBlockchainSerializer.V1MockBlockchainBeaconMessage.response(
+    ): Pair<V1MockBlockchainBeaconMessage, String> =
+        V1MockBlockchainBeaconMessage.response(
             "sign_payload_response",
             version,
             id,
@@ -364,8 +366,8 @@ internal class V1BeaconMessageTest {
         id: String = "id",
         beaconId: String = "beaconId",
         transactionHash: String = "transactionHash"
-    ): Pair<MockBlockchainSerializer.V1MockBlockchainBeaconMessage, String> =
-        MockBlockchainSerializer.V1MockBlockchainBeaconMessage.response(
+    ): Pair<V1MockBlockchainBeaconMessage, String> =
+        V1MockBlockchainBeaconMessage.response(
             "broadcast_response",
             version,
             id,
@@ -425,7 +427,7 @@ internal class V1BeaconMessageTest {
         network: Network = MockNetwork(),
         scopes: List<String> = emptyList(),
         origin: Origin = Origin.P2P(beaconId),
-    ): Pair<MockBlockchainSerializer.V1MockPermissionBeaconRequest, PermissionBeaconRequest> {
+    ): Pair<V1MockPermissionBeaconRequest, PermissionBeaconRequest> {
         val type = "permission_request"
         val rest = mapOf(
             "network" to Json.encodeToJsonElement(network),
@@ -433,8 +435,8 @@ internal class V1BeaconMessageTest {
         )
 
         return (
-            MockBlockchainSerializer.V1MockPermissionBeaconRequest(type, version, id, beaconId, appMetadata, rest)
-                to MockBlockchainSerializer.PermissionMockRequest(type, id, version, MockBlockchain.IDENTIFIER, beaconId, origin, appMetadata.toAppMetadata(), rest)
+            V1MockPermissionBeaconRequest(type, version, id, beaconId, appMetadata, rest)
+                to PermissionMockRequest(type, id, version, MockBlockchain.IDENTIFIER, beaconId, origin, appMetadata.toAppMetadata(), rest)
         )
     }
 
@@ -447,7 +449,8 @@ internal class V1BeaconMessageTest {
         sourceAddress: String = "sourceAddress",
         appMetadata: AppMetadata? = null,
         origin: Origin = Origin.P2P(beaconId),
-    ): Pair<MockBlockchainSerializer.V1MockBlockchainBeaconMessage, BlockchainBeaconRequest> {
+        accountId: String? = null,
+    ): Pair<V1MockBlockchainBeaconMessage, BlockchainBeaconRequest> {
         val type = "operation_request"
         val rest = mapOf(
             "network" to Json.encodeToJsonElement(network),
@@ -456,8 +459,8 @@ internal class V1BeaconMessageTest {
         )
 
         return (
-            MockBlockchainSerializer.V1MockBlockchainBeaconMessage.request(type, version, id, beaconId, rest)
-                to MockBlockchainSerializer.BlockchainMockRequest(type, id, version, MockBlockchain.IDENTIFIER, beaconId, appMetadata, origin, rest)
+            V1MockBlockchainBeaconMessage.request(type, version, id, beaconId, rest)
+                to BlockchainMockRequest(type, id, version, MockBlockchain.IDENTIFIER, beaconId, appMetadata, origin, accountId, rest)
         )
     }
 
@@ -469,7 +472,8 @@ internal class V1BeaconMessageTest {
         sourceAddress: String = "sourceAddress",
         appMetadata: AppMetadata? = null,
         origin: Origin = Origin.P2P(beaconId),
-    ): Pair<MockBlockchainSerializer.V1MockBlockchainBeaconMessage, BlockchainBeaconRequest> {
+        accountId: String? = null,
+    ): Pair<V1MockBlockchainBeaconMessage, BlockchainBeaconRequest> {
         val type = "sign_payload_request"
         val rest = mapOf(
             "payload" to JsonPrimitive(payload),
@@ -477,8 +481,8 @@ internal class V1BeaconMessageTest {
         )
 
         return (
-            MockBlockchainSerializer.V1MockBlockchainBeaconMessage.request(type, version, id, beaconId, rest)
-                to MockBlockchainSerializer.BlockchainMockRequest(type, id, version, MockBlockchain.IDENTIFIER, beaconId, appMetadata, origin, rest)
+            V1MockBlockchainBeaconMessage.request(type, version, id, beaconId, rest)
+                to BlockchainMockRequest(type, id, version, MockBlockchain.IDENTIFIER, beaconId, appMetadata, origin, accountId, rest)
         )
     }
 
@@ -490,7 +494,8 @@ internal class V1BeaconMessageTest {
         signedTransaction: String = "signedTransaction",
         appMetadata: AppMetadata? = null,
         origin: Origin = Origin.P2P(beaconId),
-    ): Pair<MockBlockchainSerializer.V1MockBlockchainBeaconMessage, BlockchainBeaconRequest> {
+        accountId: String? = null,
+    ): Pair<V1MockBlockchainBeaconMessage, BlockchainBeaconRequest> {
         val type = "broadcast_request"
         val rest = mapOf(
             "network" to Json.encodeToJsonElement(network),
@@ -498,8 +503,8 @@ internal class V1BeaconMessageTest {
         )
 
         return (
-            MockBlockchainSerializer.V1MockBlockchainBeaconMessage.request(type, version, id, beaconId, rest)
-                to MockBlockchainSerializer.BlockchainMockRequest(type, id, version, MockBlockchain.IDENTIFIER, beaconId, appMetadata, origin, rest)
+            V1MockBlockchainBeaconMessage.request(type, version, id, beaconId, rest)
+                to BlockchainMockRequest(type, id, version, MockBlockchain.IDENTIFIER, beaconId, appMetadata, origin, accountId, rest)
         )
     }
 
@@ -514,7 +519,7 @@ internal class V1BeaconMessageTest {
         scopes: List<String> = emptyList(),
         threshold: Threshold? = null,
         origin: Origin = Origin.P2P(beaconId),
-    ): Pair<MockBlockchainSerializer.V1MockPermissionBeaconResponse, PermissionBeaconResponse> {
+    ): Pair<V1MockPermissionBeaconResponse, PermissionBeaconResponse> {
         val type = "permission_response"
         val rest = mapOf(
             "network" to Json.encodeToJsonElement(network),
@@ -522,8 +527,8 @@ internal class V1BeaconMessageTest {
         )
 
         return (
-            MockBlockchainSerializer.V1MockPermissionBeaconResponse(type, version, id, beaconId, publicKey, threshold, rest)
-                to MockBlockchainSerializer.PermissionMockResponse(type, id, version, origin, MockBlockchain.IDENTIFIER, publicKey, threshold, rest)
+            V1MockPermissionBeaconResponse(type, version, id, beaconId, publicKey, threshold, rest)
+                to PermissionMockResponse(type, id, version, origin, MockBlockchain.IDENTIFIER, publicKey, threshold, rest)
         )
     }
 
@@ -533,15 +538,15 @@ internal class V1BeaconMessageTest {
         beaconId: String = "beaconId",
         transactionHash: String = "transactionHash",
         origin: Origin = Origin.P2P(beaconId),
-    ): Pair<MockBlockchainSerializer.V1MockBlockchainBeaconMessage, BlockchainBeaconResponse> {
+    ): Pair<V1MockBlockchainBeaconMessage, BlockchainBeaconResponse> {
         val type = "operation_response"
         val rest = mapOf(
             "transactionHash" to JsonPrimitive(transactionHash),
         )
 
         return (
-            MockBlockchainSerializer.V1MockBlockchainBeaconMessage.response(type, version, id, beaconId, rest)
-                to MockBlockchainSerializer.BlockchainMockResponse(type, id, version, origin, MockBlockchain.IDENTIFIER, rest)
+            V1MockBlockchainBeaconMessage.response(type, version, id, beaconId, rest)
+                to BlockchainMockResponse(type, id, version, origin, MockBlockchain.IDENTIFIER, rest)
         )
     }
 
@@ -551,15 +556,15 @@ internal class V1BeaconMessageTest {
         beaconId: String = "beaconId",
         signature: String = "signature",
         origin: Origin = Origin.P2P(beaconId),
-    ): Pair<MockBlockchainSerializer.V1MockBlockchainBeaconMessage, BlockchainBeaconResponse> {
+    ): Pair<V1MockBlockchainBeaconMessage, BlockchainBeaconResponse> {
         val type = "sign_payload_response"
         val rest = mapOf(
             "signature" to JsonPrimitive(signature),
         )
 
         return (
-            MockBlockchainSerializer.V1MockBlockchainBeaconMessage.response(type, version, id, beaconId, rest,)
-                to MockBlockchainSerializer.BlockchainMockResponse(type, id, version, origin, MockBlockchain.IDENTIFIER, rest)
+            V1MockBlockchainBeaconMessage.response(type, version, id, beaconId, rest,)
+                to BlockchainMockResponse(type, id, version, origin, MockBlockchain.IDENTIFIER, rest)
         )
     }
 
@@ -569,15 +574,15 @@ internal class V1BeaconMessageTest {
         beaconId: String = "beaconId",
         transactionHash: String = "transactionHash",
         origin: Origin = Origin.P2P(beaconId),
-    ): Pair<MockBlockchainSerializer.V1MockBlockchainBeaconMessage, BlockchainBeaconResponse> {
+    ): Pair<V1MockBlockchainBeaconMessage, BlockchainBeaconResponse> {
         val type = "broadcast_response"
         val rest = mapOf(
             "transactionHash" to JsonPrimitive(transactionHash),
         )
 
         return (
-            MockBlockchainSerializer.V1MockBlockchainBeaconMessage.response(type, version, id, beaconId, rest)
-                to MockBlockchainSerializer.BlockchainMockResponse(type, id, version, origin, MockBlockchain.IDENTIFIER, rest)
+            V1MockBlockchainBeaconMessage.response(type, version, id, beaconId, rest)
+                to BlockchainMockResponse(type, id, version, origin, MockBlockchain.IDENTIFIER, rest)
         )
     }
 

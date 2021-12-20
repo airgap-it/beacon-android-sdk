@@ -20,22 +20,18 @@ import kotlinx.serialization.json.jsonObject
  * Base class for granted permission data.
  *
  * @property [blockchainIdentifier] The unique name of the blockchain on which the permission is valid.
- * @property [accountIdentifier] The value that identifies the account which granted the permissions.
- * @property [address] The address of the account derived from its public key.
+ * @property [accountId] The value that identifies the account which granted the permissions.
  * @property [senderId] The value that identifies the sender to whom the permissions were granted.
  * @property [appMetadata] The metadata describing the dApp to which the permissions were granted.
- * @property [publicKey] The public key of the account.
  * @property [connectedAt] The timestamp at which the permissions were granted.
  * @property [threshold] An optional threshold configuration.
  */
 @Serializable(with = Permission.Serializer::class)
 public abstract class Permission {
     public abstract val blockchainIdentifier: String
-    public abstract val accountIdentifier: String
-    public abstract val address: String
+    public abstract val accountId: String
     public abstract val senderId: String
     public abstract val appMetadata: AppMetadata
-    public abstract val publicKey: String
     public abstract val connectedAt: Long
     public abstract val threshold: Threshold?
 
@@ -43,13 +39,6 @@ public abstract class Permission {
     internal object Serializer : KJsonSerializer<Permission> {
         override val descriptor: SerialDescriptor = buildClassSerialDescriptor("Permission") {
             element<String>("blockchainIdentifier")
-            element<String>("accountIdentifier")
-            element<String>("address")
-            element<String>("senderId")
-            element<AppMetadata>("appMetadata")
-            element<String>("publicKey")
-            element<Long>("connectedAt")
-            element<Threshold?>("threshold", isOptional = true)
         }
 
         override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): Permission {

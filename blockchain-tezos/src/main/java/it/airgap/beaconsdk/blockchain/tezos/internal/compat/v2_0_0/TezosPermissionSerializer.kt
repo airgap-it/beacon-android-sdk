@@ -72,7 +72,7 @@ internal object TezosPermissionSerializer : KSerializer<TezosPermission> {
         encoder.encodeStructure(descriptor) {
             with(value) {
                 encodeStringElement(descriptor, 0, value.blockchainIdentifier)
-                encodeStringElement(descriptor, 1, value.accountIdentifier)
+                encodeStringElement(descriptor, 1, value.accountId)
                 encodeStringElement(descriptor, 2, value.address)
                 encodeStringElement(descriptor, 3, value.senderId)
                 encodeSerializableElement(descriptor, 4, AppMetadata.serializer(), value.appMetadata)

@@ -63,8 +63,11 @@ public abstract class PermissionBeaconRequest : BeaconRequest() {
  * Base for class for blockchain specific messages.
  *
  * Expects [BlockchainBeaconResponse] as a response.
+ *
+ * @property [accountId] The account identifier of the account that is requested to handle this request.
  */
 public abstract class BlockchainBeaconRequest : BeaconRequest() {
+    public abstract val accountId: String?
 
     public companion object {}
 }
@@ -89,13 +92,13 @@ public sealed class BeaconResponse : BeaconMessage() {
  * Message responding to [PermissionBeaconRequest].
  *
  * @property [id] The value that identifies the request to which the message is responding.
- * @property [publicKey] The public key of the account that is granting the permissions.
+ * @property [accountId] The account identifier of the account that is granting the permissions.
  * @property [blockchainIdentifier] The unique name of the blockchain that specifies the request.
  * @property [threshold] An optional threshold configuration.
  */
 public abstract class PermissionBeaconResponse : BeaconResponse() {
     public abstract val blockchainIdentifier: String
-    public abstract val publicKey: String
+    public abstract val accountId: String
     public abstract val threshold: Threshold?
 
     public companion object {}

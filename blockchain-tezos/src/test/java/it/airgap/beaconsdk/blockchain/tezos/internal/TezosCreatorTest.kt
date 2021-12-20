@@ -46,8 +46,8 @@ internal class TezosCreatorTest {
 
         every { wallet.addressFromPublicKey(any()) } answers { Result.success("@${firstArg<String>()}") }
 
-        every { identifierCreator.accountIdentifier(any(), any()) } answers { Result.success(firstArg()) }
-        every { identifierCreator.senderIdentifier(any()) } answers { Result.success(firstArg<ByteArray>().toHexString().asString()) }
+        every { identifierCreator.accountId(any(), any()) } answers { Result.success(firstArg()) }
+        every { identifierCreator.senderId(any()) } answers { Result.success(firstArg<ByteArray>().toHexString().asString()) }
 
         storageManager = StorageManager(MockStorage(), MockSecureStorage(), identifierCreator)
         creator = TezosCreator(wallet, storageManager, identifierCreator)

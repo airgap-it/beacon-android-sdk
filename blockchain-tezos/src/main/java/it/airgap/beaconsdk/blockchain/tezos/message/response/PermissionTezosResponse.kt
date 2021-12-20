@@ -6,6 +6,8 @@ import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
 import it.airgap.beaconsdk.blockchain.tezos.message.request.PermissionTezosRequest
 import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.data.Threshold
+import it.airgap.beaconsdk.core.exception.BeaconException
+import it.airgap.beaconsdk.core.internal.utils.dependencyRegistry
 import it.airgap.beaconsdk.core.message.PermissionBeaconResponse
 
 /**
@@ -15,6 +17,7 @@ import it.airgap.beaconsdk.core.message.PermissionBeaconResponse
  * @property [version] The message version.
  * @property [requestOrigin] The origination data of the request.
  * @property [blockchainIdentifier] The unique name of the blockchain that specifies the request.
+ * @property [accountId] The account identifier of the account that is granting the permissions.
  * @property [publicKey] The public key of the account that is granting the permissions.
  * @property [network] The network to which the permissions apply.
  * @property [scopes] The list of granted permissions.
@@ -25,7 +28,8 @@ public data class PermissionTezosResponse internal constructor(
     override val version: String,
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) override val requestOrigin: Origin,
     override val blockchainIdentifier: String,
-    override val publicKey: String,
+    override val accountId: String,
+    val publicKey: String,
     public val network: TezosNetwork,
     public val scopes: List<TezosPermission.Scope>,
     override val threshold: Threshold? = null,
@@ -41,6 +45,7 @@ public data class PermissionTezosResponse internal constructor(
          * If no custom [network] and [scopes] are provided, the values will be also taken from the [request].
          * By default [threshold] is set to `null`.
          */
+        @Throws(BeaconException::class)
         public fun from(
             request: PermissionTezosRequest,
             publicKey: String,
@@ -48,6 +53,16 @@ public data class PermissionTezosResponse internal constructor(
             scopes: List<TezosPermission.Scope> = request.scopes,
             threshold: Threshold? = null,
         ): PermissionTezosResponse =
-            PermissionTezosResponse(request.id, request.version, request.origin, request.blockchainIdentifier, publicKey, network, scopes, threshold)
+            PermissionTezosResponse(
+                request.id,
+                request.version,
+                request.origin,
+                request.blockchainIdentifier,
+                dependencyRegistry.identifierCreator.accountId(request.blockchainIdentifier, publicKey, network).getOrThrow(),
+                publicKey,
+                network,
+                scopes,
+                threshold
+            )
     }
 }

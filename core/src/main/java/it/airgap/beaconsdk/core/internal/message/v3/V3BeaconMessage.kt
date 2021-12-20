@@ -3,16 +3,16 @@ package it.airgap.beaconsdk.core.internal.message.v3
 import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.data.BeaconError
 import it.airgap.beaconsdk.core.data.Origin
-import it.airgap.beaconsdk.core.internal.compat.CoreCompat
+import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.core.internal.message.VersionedBeaconMessage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
+import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
 import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
 import it.airgap.beaconsdk.core.internal.utils.blockchainRegistry
 import it.airgap.beaconsdk.core.message.*
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.element
@@ -34,7 +34,8 @@ public data class V3BeaconMessage(
     override suspend fun toBeaconMessage(
         origin: Origin,
         storageManager: StorageManager,
-    ): BeaconMessage = message.toBeaconMessage(id, version, senderId, origin, storageManager)
+        identifierCreator: IdentifierCreator,
+    ): BeaconMessage = message.toBeaconMessage(id, version, senderId, origin, storageManager, identifierCreator)
 
     @Serializable
     public sealed class Content {
@@ -44,6 +45,7 @@ public data class V3BeaconMessage(
             senderId: String,
             origin: Origin,
             storageManager: StorageManager,
+            identifierCreator: IdentifierCreator,
         ): BeaconMessage
     }
 
@@ -78,7 +80,8 @@ public data class PermissionV3BeaconRequestContent(
         senderId: String,
         origin: Origin,
         storageManager: StorageManager,
-    ): BeaconMessage = chainData.toBeaconMessage(id, version, senderId, origin, storageManager)
+        identifierCreator: IdentifierCreator,
+    ): BeaconMessage = chainData.toBeaconMessage(id, version, senderId, origin, storageManager, identifierCreator)
 
     @Serializable
     public abstract class ChainData {
@@ -88,6 +91,7 @@ public data class PermissionV3BeaconRequestContent(
             senderId: String,
             origin: Origin,
             storageManager: StorageManager,
+            identifierCreator: IdentifierCreator,
         ): BeaconMessage
 
         public companion object {
@@ -132,6 +136,7 @@ public data class PermissionV3BeaconRequestContent(
 @SerialName(BlockchainV3BeaconRequestContent.TYPE)
 public data class BlockchainV3BeaconRequestContent(
     public val blockchainIdentifier: String,
+    public val accountId: String,
     public val chainData: ChainData,
 ) : V3BeaconMessage.Content() {
 
@@ -141,7 +146,8 @@ public data class BlockchainV3BeaconRequestContent(
         senderId: String,
         origin: Origin,
         storageManager: StorageManager,
-    ): BeaconMessage = chainData.toBeaconMessage(id, version, senderId, origin, storageManager)
+        identifierCreator: IdentifierCreator,
+    ): BeaconMessage = chainData.toBeaconMessage(id, version, senderId, origin, accountId, storageManager, identifierCreator)
 
     @Serializable
     public abstract class ChainData {
@@ -150,7 +156,9 @@ public data class BlockchainV3BeaconRequestContent(
             version: String,
             senderId: String,
             origin: Origin,
+            accountId: String,
             storageManager: StorageManager,
+            identifierCreator: IdentifierCreator,
         ): BeaconMessage
 
         public companion object {
@@ -169,22 +177,25 @@ public data class BlockchainV3BeaconRequestContent(
     internal object Serializer : KJsonSerializer<BlockchainV3BeaconRequestContent> {
         override val descriptor: SerialDescriptor = buildClassSerialDescriptor("BlockchainV3BeaconRequestContent") {
             element<String>("blockchainIdentifier")
+            element<String>("accountId")
             element<ChainData>("chainData")
         }
 
         override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): BlockchainV3BeaconRequestContent =
             jsonDecoder.decodeStructure(descriptor) {
                 val blockchainIdentifier = decodeStringElement(descriptor, 0)
-                val chainData = decodeSerializableElement(descriptor, 1, ChainData.serializer(blockchainIdentifier))
+                val accountId = decodeStringElement(descriptor, 1)
+                val chainData = decodeSerializableElement(descriptor, 2, ChainData.serializer(blockchainIdentifier))
 
-                BlockchainV3BeaconRequestContent(blockchainIdentifier, chainData)
+                BlockchainV3BeaconRequestContent(blockchainIdentifier, accountId, chainData)
             }
 
         override fun serialize(jsonEncoder: JsonEncoder, value: BlockchainV3BeaconRequestContent) =
             jsonEncoder.encodeStructure(descriptor) {
                 with(value) {
                     encodeStringElement(descriptor, 0, blockchainIdentifier)
-                    encodeSerializableElement(descriptor, 1, ChainData.serializer(blockchainIdentifier), chainData)
+                    encodeStringElement(descriptor, 1, accountId)
+                    encodeSerializableElement(descriptor, 2, ChainData.serializer(blockchainIdentifier), chainData)
                 }
             }
     }
@@ -205,7 +216,8 @@ public data class PermissionV3BeaconResponseContent(
         senderId: String,
         origin: Origin,
         storageManager: StorageManager,
-    ): BeaconMessage = chainData.toBeaconMessage(id, version, senderId, origin, storageManager)
+        identifierCreator: IdentifierCreator,
+    ): BeaconMessage = chainData.toBeaconMessage(id, version, senderId, origin, accountId, storageManager, identifierCreator)
 
     @Serializable
     public abstract class ChainData {
@@ -214,7 +226,9 @@ public data class PermissionV3BeaconResponseContent(
             version: String,
             senderId: String,
             origin: Origin,
+            accountId: String,
             storageManager: StorageManager,
+            identifierCreator: IdentifierCreator,
         ): BeaconMessage
 
         public companion object {
@@ -262,7 +276,6 @@ public data class PermissionV3BeaconResponseContent(
 @SerialName(BlockchainV3BeaconResponseContent.TYPE)
 public data class BlockchainV3BeaconResponseContent(
     public val blockchainIdentifier: String,
-    public val accountId: String,
     public val chainData: ChainData,
 ) : V3BeaconMessage.Content() {
 
@@ -272,7 +285,8 @@ public data class BlockchainV3BeaconResponseContent(
         senderId: String,
         origin: Origin,
         storageManager: StorageManager,
-    ): BeaconMessage = chainData.toBeaconMessage(id, version, senderId, origin, storageManager)
+        identifierCreator: IdentifierCreator,
+    ): BeaconMessage = chainData.toBeaconMessage(id, version, senderId, origin, storageManager, identifierCreator)
 
     @Serializable
     public abstract class ChainData {
@@ -282,6 +296,7 @@ public data class BlockchainV3BeaconResponseContent(
             senderId: String,
             origin: Origin,
             storageManager: StorageManager,
+            identifierCreator: IdentifierCreator,
         ): BeaconMessage
 
         public companion object {
@@ -300,25 +315,22 @@ public data class BlockchainV3BeaconResponseContent(
     internal object Serializer : KJsonSerializer<BlockchainV3BeaconResponseContent> {
         override val descriptor: SerialDescriptor = buildClassSerialDescriptor("BlockchainV3BeaconResponseContent") {
             element<String>("blockchainIdentifier")
-            element<String>("accountId")
             element<ChainData>("chainData")
         }
 
         override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): BlockchainV3BeaconResponseContent =
             jsonDecoder.decodeStructure(descriptor) {
                 val blockchainIdentifier = decodeStringElement(descriptor, 0)
-                val accountId = decodeStringElement(descriptor, 1)
-                val chainData = decodeSerializableElement(descriptor, 2, ChainData.serializer(blockchainIdentifier))
+                val chainData = decodeSerializableElement(descriptor, 1, ChainData.serializer(blockchainIdentifier))
 
-                BlockchainV3BeaconResponseContent(blockchainIdentifier, accountId, chainData)
+                BlockchainV3BeaconResponseContent(blockchainIdentifier, chainData)
             }
 
         override fun serialize(jsonEncoder: JsonEncoder, value: BlockchainV3BeaconResponseContent) =
             jsonEncoder.encodeStructure(descriptor) {
                 with(value) {
                     encodeStringElement(descriptor, 0, blockchainIdentifier)
-                    encodeStringElement(descriptor, 1, accountId)
-                    encodeSerializableElement(descriptor, 2, ChainData.serializer(blockchainIdentifier), chainData)
+                    encodeSerializableElement(descriptor, 1, ChainData.serializer(blockchainIdentifier), chainData)
                 }
             }
     }
@@ -336,6 +348,7 @@ public object AcknowledgeV3BeaconResponseContent : V3BeaconMessage.Content() {
         senderId: String,
         origin: Origin,
         storageManager: StorageManager,
+        identifierCreator: IdentifierCreator,
     ): BeaconMessage = AcknowledgeBeaconResponse(id, version, origin, senderId)
 }
 
@@ -353,6 +366,7 @@ public data class ErrorV3BeaconResponseContent(
         senderId: String,
         origin: Origin,
         storageManager: StorageManager,
+        identifierCreator: IdentifierCreator,
     ): BeaconMessage = ErrorBeaconResponse(id, version, origin, errorType, blockchainIdentifier)
 
     public companion object {
@@ -398,5 +412,6 @@ public object DisconnectV3BeaconMessageContent : V3BeaconMessage.Content() {
         senderId: String,
         origin: Origin,
         storageManager: StorageManager,
+        identifierCreator: IdentifierCreator,
     ): BeaconMessage = DisconnectBeaconMessage(id, senderId, version, origin)
 }

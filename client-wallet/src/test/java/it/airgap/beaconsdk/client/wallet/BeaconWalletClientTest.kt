@@ -435,7 +435,7 @@ internal class BeaconWalletClientTest {
             storageManager.setPermissions(storagePermissions)
 
             val toFind = storagePermissions.random()
-            val fromClient = beaconWalletClient.getPermissionsFor(toFind.accountIdentifier)
+            val fromClient = beaconWalletClient.getPermissionsFor(toFind.accountId)
 
             assertEquals(toFind, fromClient)
         }
@@ -448,7 +448,7 @@ internal class BeaconWalletClientTest {
             val (toKeep, toRemove) = permissions(4).splitAt { it.size / 2 }
             storageManager.setPermissions(toKeep + toRemove)
 
-            val (toRemoveVararg, toRemoveList) = toRemove.map(Permission::accountIdentifier)
+            val (toRemoveVararg, toRemoveList) = toRemove.map(Permission::accountId)
                 .splitAt { it.size / 2 }
             with(beaconWalletClient) {
                 removePermissionsFor(*toRemoveVararg.toTypedArray())

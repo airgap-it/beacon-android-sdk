@@ -6,5 +6,5 @@ import it.airgap.beaconsdk.core.message.BeaconMessage
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface V2BeaconMessageBlockchainCreator {
-    public fun from(senderId: String, content: BeaconMessage): Result<V2BeaconMessage>
+    public fun from(senderId: String, message: BeaconMessage): Result<V2BeaconMessage>
 }

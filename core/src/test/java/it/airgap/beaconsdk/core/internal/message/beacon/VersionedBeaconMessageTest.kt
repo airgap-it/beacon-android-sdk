@@ -5,6 +5,7 @@ import io.mockk.unmockkAll
 import it.airgap.beaconsdk.core.internal.message.VersionedBeaconMessage
 import it.airgap.beaconsdk.core.internal.message.v1.V1BeaconMessage
 import it.airgap.beaconsdk.core.internal.message.v2.V2BeaconMessage
+import it.airgap.beaconsdk.core.internal.message.v3.V3BeaconMessage
 import it.airgap.beaconsdk.core.internal.utils.failWith
 import it.airgap.beaconsdk.core.message.AcknowledgeBeaconResponse
 import it.airgap.beaconsdk.core.message.BeaconMessage
@@ -102,14 +103,19 @@ internal class VersionedBeaconMessageTest {
             "2.0" to V2BeaconMessage::class,
             "2.0.0" to V2BeaconMessage::class,
             "2.abc" to V2BeaconMessage::class,
-            "3" to V2BeaconMessage::class,
+            "3" to V3BeaconMessage::class,
+            "3.0" to V3BeaconMessage::class,
+            "3.0.0" to V3BeaconMessage::class,
+            "3.abc" to V3BeaconMessage::class,
+            "4" to V3BeaconMessage::class,
         )
 
     private fun createJson(version: String, beaconMessage: BeaconMessage): String =
         when (version.major) {
             "1" -> Json.encodeToString(beaconMessage.versioned<V1BeaconMessage>(version))
             "2" -> Json.encodeToString(beaconMessage.versioned<V2BeaconMessage>(version))
-            else -> Json.encodeToString(beaconMessage.versioned<V2BeaconMessage>(version))
+            "3" -> Json.encodeToString(beaconMessage.versioned<V3BeaconMessage>(version))
+            else -> Json.encodeToString(beaconMessage.versioned<V3BeaconMessage>(version))
         }
 
     private fun createVersionedJsonPair(version: String, beaconMessage: BeaconMessage): Pair<VersionedBeaconMessage, String> =
@@ -128,8 +134,15 @@ internal class VersionedBeaconMessageTest {
                 Pair(versioned, json)
             }
 
+            "3" -> {
+                val versioned = beaconMessage.versioned<V3BeaconMessage>(version)
+                val json = Json.encodeToString(versioned)
+
+                Pair(versioned, json)
+            }
+
             else -> {
-                val versioned = beaconMessage.versioned<V2BeaconMessage>(version)
+                val versioned = beaconMessage.versioned<V3BeaconMessage>(version)
                 val json = Json.encodeToString(versioned)
 
                 Pair(versioned, json)
@@ -140,6 +153,7 @@ internal class VersionedBeaconMessageTest {
         when (T::class) {
             V1BeaconMessage::class -> V1BeaconMessage.from("senderId", this) as T
             V2BeaconMessage::class -> V2BeaconMessage.from( "senderId", this) as T
+            V3BeaconMessage::class -> V3BeaconMessage.from( "senderId", this) as T
             else -> failWith("Unknown class")
         }
 

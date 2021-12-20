@@ -6,5 +6,5 @@ import it.airgap.beaconsdk.core.internal.message.v1.V1BeaconMessage
 import it.airgap.beaconsdk.core.message.BeaconMessage
 
 internal class V1BeaconMessageTezosCreator : V1BeaconMessageBlockchainCreator {
-    override fun from(senderId: String, content: BeaconMessage): Result<V1BeaconMessage> = runCatching { V1TezosMessage.from(senderId, content) }
+    override fun from(senderId: String, message: BeaconMessage): Result<V1BeaconMessage> = runCatching { V1TezosMessage.from(senderId, message) }
 }

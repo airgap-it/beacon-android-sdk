@@ -6,6 +6,7 @@ import it.airgap.beaconsdk.core.internal.message.v1.V1BeaconMessage
 import it.airgap.beaconsdk.core.internal.message.v2.V2BeaconMessage
 import it.airgap.beaconsdk.core.internal.message.v3.V3BeaconMessage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
+import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
 import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
 import it.airgap.beaconsdk.core.internal.utils.getString
 import it.airgap.beaconsdk.core.message.BeaconMessage
@@ -24,7 +25,11 @@ import kotlinx.serialization.json.jsonObject
 public abstract class VersionedBeaconMessage {
     public abstract val version: String
 
-    public abstract suspend fun toBeaconMessage(origin: Origin, storageManager: StorageManager): BeaconMessage
+    public abstract suspend fun toBeaconMessage(
+        origin: Origin,
+        storageManager: StorageManager,
+        identifierCreator: IdentifierCreator,
+    ): BeaconMessage
 
     public companion object {
         public fun from(senderId: String, message: BeaconMessage): VersionedBeaconMessage {

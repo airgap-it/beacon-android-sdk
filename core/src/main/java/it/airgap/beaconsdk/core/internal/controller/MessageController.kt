@@ -23,7 +23,7 @@ public class MessageController internal constructor(
 
     public suspend fun onIncomingMessage(origin: Origin, message: VersionedBeaconMessage): Result<BeaconMessage> =
         runCatching {
-            message.toBeaconMessage(origin, storageManager).also {
+            message.toBeaconMessage(origin, storageManager, identifierCreator).also {
                 when (it) {
                     is BeaconRequest -> onIncomingRequest(it)
                     else -> { /* no action */ }
@@ -57,7 +57,7 @@ public class MessageController internal constructor(
                 else -> { /* no action */ }
             }
 
-            val senderId = identifierCreator.senderIdentifier(beaconId.asHexString().toByteArray()).getOrThrow()
+            val senderId = identifierCreator.senderId(beaconId.asHexString().toByteArray()).getOrThrow()
             Pair(message.associatedOrigin, VersionedBeaconMessage.from(senderId, message))
         }
 

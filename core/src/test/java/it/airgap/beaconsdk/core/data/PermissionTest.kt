@@ -6,7 +6,6 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import it.airgap.beaconsdk.core.internal.blockchain.BlockchainRegistry
 import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchain
-import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchainSerializer
 import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -26,7 +25,7 @@ internal class PermissionTest {
     @MockK
     private lateinit var blockchainRegistry: BlockchainRegistry
 
-    private val mockBlockchain: MockBlockchain = MockBlockchain()
+    private lateinit var mockBlockchain: MockBlockchain
 
     @Before
     fun setup() {
@@ -34,7 +33,11 @@ internal class PermissionTest {
 
         mockBeaconSdk(dependencyRegistry = dependencyRegistry)
 
+        mockBlockchain = MockBlockchain()
+
         every { dependencyRegistry.blockchainRegistry } returns blockchainRegistry
+
+        every { blockchainRegistry.get(any()) } returns mockBlockchain
         every { blockchainRegistry.getOrNull(any()) } returns mockBlockchain
     }
 
@@ -64,35 +67,29 @@ internal class PermissionTest {
 
     private fun expectedWithJson(
         blockchainIdentifier: String = MockBlockchain.IDENTIFIER,
-        accountIdentifier: String = "accountIdentifier",
-        address: String = "address",
+        accountId: String = "accountId",
         senderId: String = "senderId",
         appMetadata: AppMetadata = AppMetadata(senderId, "name"),
-        publicKey: String = "publicKey",
         connectedAt: Long = 0,
         threshold: Threshold? = null,
         includeNulls: Boolean = false,
     ): Pair<Permission, String> {
         val values = mapOf(
-            "address" to address,
             "threshold" to threshold?.let { Json.encodeToJsonElement(it) },
             "blockchainIdentifier" to blockchainIdentifier,
-            "accountIdentifier" to accountIdentifier,
+            "accountId" to accountId,
             "senderId" to senderId,
             "appMetadata" to Json.encodeToJsonElement(appMetadata),
-            "publicKey" to publicKey,
             "connectedAt" to connectedAt,
         )
 
         val json = JsonObject.fromValues(values, includeNulls).toString()
 
-        return MockBlockchainSerializer.MockPermission(
+        return MockPermission(
             blockchainIdentifier,
-            accountIdentifier,
-            address,
+            accountId,
             senderId,
             appMetadata,
-            publicKey,
             connectedAt,
             threshold,
         ) to json

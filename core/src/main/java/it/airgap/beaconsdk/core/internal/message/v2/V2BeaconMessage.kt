@@ -4,8 +4,10 @@ import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.data.BeaconError
 import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.internal.compat.CoreCompat
+import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.core.internal.message.VersionedBeaconMessage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
+import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
 import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
 import it.airgap.beaconsdk.core.internal.utils.getString
 import it.airgap.beaconsdk.core.message.AcknowledgeBeaconResponse
@@ -85,7 +87,7 @@ public data class AcknowledgeV2BeaconResponse(
     @Required
     override val type: String = TYPE
 
-    override suspend fun toBeaconMessage(origin: Origin, storageManager: StorageManager): BeaconMessage =
+    override suspend fun toBeaconMessage(origin: Origin, storageManager: StorageManager, identifierCreator: IdentifierCreator): BeaconMessage =
         AcknowledgeBeaconResponse(id, version, origin, senderId)
 
     public companion object {
@@ -104,7 +106,7 @@ public data class ErrorV2BeaconResponse(
     @Required
     override val type: String = TYPE
 
-    override suspend fun toBeaconMessage(origin: Origin, storageManager: StorageManager): BeaconMessage =
+    override suspend fun toBeaconMessage(origin: Origin, storageManager: StorageManager, identifierCreator: IdentifierCreator): BeaconMessage =
         ErrorBeaconResponse(id, version, origin, errorType, CoreCompat.versioned.blockchain.identifier)
 
     public companion object {
@@ -156,7 +158,7 @@ public data class DisconnectV2BeaconMessage(
     @Required
     override val type: String = TYPE
 
-    override suspend fun toBeaconMessage(origin: Origin, storageManager: StorageManager): BeaconMessage =
+    override suspend fun toBeaconMessage(origin: Origin, storageManager: StorageManager, identifierCreator: IdentifierCreator): BeaconMessage =
         DisconnectBeaconMessage(id, senderId, version, origin)
 
     public companion object {

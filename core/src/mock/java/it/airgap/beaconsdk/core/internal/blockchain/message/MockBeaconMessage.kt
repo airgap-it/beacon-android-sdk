@@ -1,0 +1,196 @@
+package it.airgap.beaconsdk.core.internal.blockchain.message
+
+import androidx.annotation.RestrictTo
+import it.airgap.beaconsdk.core.data.AppMetadata
+import it.airgap.beaconsdk.core.data.BeaconError
+import it.airgap.beaconsdk.core.data.Origin
+import it.airgap.beaconsdk.core.data.Threshold
+import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchain
+import it.airgap.beaconsdk.core.internal.message.v1.V1AppMetadata
+import it.airgap.beaconsdk.core.internal.message.v1.V1BeaconMessage
+import it.airgap.beaconsdk.core.internal.message.v2.V2AppMetadata
+import it.airgap.beaconsdk.core.internal.message.v2.V2BeaconMessage
+import it.airgap.beaconsdk.core.internal.message.v3.*
+import it.airgap.beaconsdk.core.internal.message.v3.V3AppMetadata
+import it.airgap.beaconsdk.core.message.BlockchainBeaconRequest
+import it.airgap.beaconsdk.core.message.BlockchainBeaconResponse
+import it.airgap.beaconsdk.core.message.PermissionBeaconRequest
+import it.airgap.beaconsdk.core.message.PermissionBeaconResponse
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
+
+internal enum class MockBeaconMessageType(val value: String) {
+    Request("request"),
+    Response("response");
+
+    companion object {
+        fun from(string: String): MockBeaconMessageType? = values().firstOrNull { string.contains(it.value) }
+    }
+}
+
+@Serializable
+public data class PermissionMockRequest(
+    val type: String,
+    override val id: String,
+    override val version: String,
+    override val blockchainIdentifier: String,
+    override val senderId: String,
+    override val origin: Origin,
+    override val appMetadata: AppMetadata,
+    val rest: Map<String, JsonElement> = emptyMap(),
+) : PermissionBeaconRequest() {
+    public fun toV1(): V1BeaconMessage =
+        V1MockPermissionBeaconRequest(
+            type,
+            version,
+            id,
+            senderId,
+            V1AppMetadata.fromAppMetadata(appMetadata),
+            rest,
+        )
+
+    public fun toV2(): V2BeaconMessage =
+        V2MockPermissionBeaconRequest(
+            type,
+            version,
+            id,
+            senderId,
+            V2AppMetadata.fromAppMetadata(appMetadata),
+            rest,
+        )
+
+    public fun toV3(): V3BeaconMessage.Content =
+        PermissionV3BeaconRequestContent(
+            blockchainIdentifier,
+            V3MockPermissionBeaconRequestData(
+                type,
+                V3AppMetadata.fromAppMetadata(appMetadata),
+                rest,
+            ),
+        )
+}
+
+@Serializable
+public data class BlockchainMockRequest(
+    val type: String,
+    override val id: String,
+    override val version: String,
+    override val blockchainIdentifier: String,
+    override val senderId: String,
+    override val appMetadata: AppMetadata?,
+    override val origin: Origin,
+    override val accountId: String?,
+    val rest: Map<String, JsonElement> = emptyMap(),
+) : BlockchainBeaconRequest() {
+    public fun toV1(): V1BeaconMessage =
+        V1MockBlockchainBeaconMessage(
+            type,
+            version,
+            id,
+            senderId,
+            rest,
+            MockBeaconMessageType.Request,
+        )
+
+    public fun toV2(): V2BeaconMessage =
+        V2MockBlockchainBeaconMessage(
+            type,
+            version,
+            id,
+            senderId,
+            rest,
+            MockBeaconMessageType.Request,
+        )
+
+    public fun toV3(): V3BeaconMessage.Content =
+        BlockchainV3BeaconRequestContent(
+            blockchainIdentifier,
+            accountId ?: "",
+            V3MockBlockchainBeaconRequestData(type, rest),
+        )
+}
+
+@Serializable
+public data class PermissionMockResponse(
+    val type: String,
+    override val id: String,
+    override val version: String,
+    override val requestOrigin: Origin,
+    override val blockchainIdentifier: String,
+    override val accountId: String,
+    override val threshold: Threshold?,
+    val rest: Map<String, JsonElement> = emptyMap(),
+) : PermissionBeaconResponse() {
+    public fun toV1(senderId: String): V1BeaconMessage =
+        V1MockPermissionBeaconResponse(
+            type,
+            version,
+            id,
+            senderId,
+            accountId,
+            threshold,
+            rest,
+        )
+
+    public fun toV2(senderId: String): V2BeaconMessage =
+        V2MockPermissionBeaconResponse(
+            type,
+            version,
+            id,
+            senderId,
+            accountId,
+            threshold,
+            rest,
+        )
+
+    public fun toV3(blockchainIdentifier: String): V3BeaconMessage.Content =
+        PermissionV3BeaconResponseContent(
+            blockchainIdentifier,
+            accountId,
+            V3MockPermissionBeaconResponseData(
+                type,
+                threshold,
+                rest,
+            ),
+        )
+}
+
+@Serializable
+public data class BlockchainMockResponse(
+    val type: String,
+    override val id: String,
+    override val version: String,
+    override val requestOrigin: Origin,
+    override val blockchainIdentifier: String,
+    val rest: Map<String, JsonElement> = emptyMap(),
+) : BlockchainBeaconResponse() {
+    public fun toV1(senderId: String): V1BeaconMessage =
+        V1MockBlockchainBeaconMessage(
+            type,
+            version,
+            id,
+            senderId,
+            rest,
+            MockBeaconMessageType.Response,
+        )
+
+    public fun toV2(senderId: String): V2BeaconMessage =
+        V2MockBlockchainBeaconMessage(
+            type,
+            version,
+            id,
+            senderId,
+            rest,
+            MockBeaconMessageType.Response,
+        )
+
+    public fun toV3(blockchainIdentifier: String): V3BeaconMessage.Content =
+        BlockchainV3BeaconResponseContent(
+            blockchainIdentifier,
+            V3MockBlockchainBeaconResponseData(type, rest),
+        )
+}
+
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@Serializable
+public sealed class MockError : BeaconError()
