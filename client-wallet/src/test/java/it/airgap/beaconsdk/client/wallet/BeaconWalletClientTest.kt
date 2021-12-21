@@ -74,7 +74,7 @@ internal class BeaconWalletClientTest {
         mockBlockchainRegistry()
 
         coEvery { messageController.onIncomingMessage(any(), any()) } coAnswers {
-            Result.success(secondArg<VersionedBeaconMessage>().toBeaconMessage(firstArg(), storageManager))
+            Result.success(secondArg<VersionedBeaconMessage>().toBeaconMessage(firstArg(), storageManager, identifierCreator))
         }
 
         coEvery { messageController.onOutgoingMessage(any(), any(), any()) } coAnswers {
@@ -112,7 +112,7 @@ internal class BeaconWalletClientTest {
                     .take(requests.size)
                     .toList()
 
-            val expected = requests.map { it.toBeaconMessage(origin, storageManager) }
+            val expected = requests.map { it.toBeaconMessage(origin, storageManager, identifierCreator) }
 
             assertEquals(expected.sortedBy { it.toString() }, messages.sortedBy { it.toString() })
             coVerify(exactly = expected.size) { messageController.onIncomingMessage(any(), any()) }

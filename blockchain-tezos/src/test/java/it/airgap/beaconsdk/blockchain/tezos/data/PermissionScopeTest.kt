@@ -43,16 +43,14 @@ internal class PermissionScopeTest {
     private fun expectedWithJsonValues(): List<Pair<TezosPermission.Scope, String>> = listOf(
         TezosPermission.Scope.Sign to "\"sign\"",
         TezosPermission.Scope.OperationRequest to "\"operation_request\"",
-        TezosPermission.Scope.Threshold to "\"threshold\"",
     )
 
     private fun expectedWithJsonArray(): List<Pair<List<TezosPermission.Scope>, String>> = listOf(
-        listOf(TezosPermission.Scope.Sign, TezosPermission.Scope.OperationRequest, TezosPermission.Scope.Threshold) to
+        listOf(TezosPermission.Scope.Sign, TezosPermission.Scope.OperationRequest) to
                 """
                     [
                         "sign", 
-                        "operation_request", 
-                        "threshold"
+                        "operation_request" 
                     ]
                 """.trimIndent(),
     )

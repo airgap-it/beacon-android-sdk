@@ -2,6 +2,7 @@ package it.airgap.beaconsdk.blockchain.tezos.internal.message.v2
 
 import fromValues
 import io.mockk.MockKAnnotations
+import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import it.airgap.beaconsdk.blockchain.tezos.Tezos
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosNetwork
@@ -47,6 +48,8 @@ internal class V2TezosMessageTest {
         MockKAnnotations.init(this)
 
         storageManager = StorageManager(MockStorage(), MockSecureStorage(), identifierCreator)
+
+        every { identifierCreator.accountId(any(), any(), any()) } answers { Result.success(secondArg()) }
     }
 
     @Test
@@ -93,7 +96,7 @@ internal class V2TezosMessageTest {
 
         runBlocking {
             versionedWithBeacon(senderId = senderId, appMetadata = matchingAppMetadata, origin = origin)
-                .map { it.first.toBeaconMessage(origin, storageManager) to it.second }
+                .map { it.first.toBeaconMessage(origin, storageManager, identifierCreator) to it.second }
                 .forEach {
                     assertEquals(it.second, it.first)
                 }
@@ -326,7 +329,7 @@ internal class V2TezosMessageTest {
         origin: Origin = Origin.P2P(senderId),
     ): Pair<OperationV2TezosRequest, BlockchainBeaconRequest> =
         OperationV2TezosRequest(version, id, senderId, network, tezosOperations, sourceAddress) to
-                OperationTezosRequest(id, version, Tezos.IDENTIFIER, senderId, appMetadata, origin, network, tezosOperations, sourceAddress)
+                OperationTezosRequest(id, version, Tezos.IDENTIFIER, senderId, appMetadata, origin, null, network, tezosOperations, sourceAddress)
 
     private fun createSignPayloadRequestPair(
         version: String = "2",
@@ -339,7 +342,7 @@ internal class V2TezosMessageTest {
         origin: Origin = Origin.P2P(senderId),
     ): Pair<SignPayloadV2TezosRequest, BlockchainBeaconRequest> =
         SignPayloadV2TezosRequest(version, id, senderId, signingType, payload, sourceAddress) to
-                SignPayloadTezosRequest(id, version, Tezos.IDENTIFIER, senderId, appMetadata, origin, signingType, payload, sourceAddress)
+                SignPayloadTezosRequest(id, version, Tezos.IDENTIFIER, senderId, appMetadata, origin, null, signingType, payload, sourceAddress)
 
     private fun createBroadcastRequestPair(
         version: String = "2",
@@ -351,7 +354,7 @@ internal class V2TezosMessageTest {
         origin: Origin = Origin.P2P(senderId),
     ): Pair<BroadcastV2TezosRequest, BlockchainBeaconRequest> =
         BroadcastV2TezosRequest(version, id, senderId, network, signedTransaction) to
-                BroadcastTezosRequest(id, version, Tezos.IDENTIFIER, senderId, appMetadata, origin, network, signedTransaction)
+                BroadcastTezosRequest(id, version, Tezos.IDENTIFIER, senderId, appMetadata, origin, null, network, signedTransaction)
 
     // -- response to BeaconMessage --
 
@@ -365,7 +368,7 @@ internal class V2TezosMessageTest {
         origin: Origin = Origin.P2P(senderId),
     ): Pair<PermissionV2TezosResponse, PermissionBeaconResponse> =
         PermissionV2TezosResponse(version, id, senderId, publicKey, network, scopes) to
-            PermissionTezosResponse(id, version, origin, Tezos.IDENTIFIER, publicKey, network, scopes)
+            PermissionTezosResponse(id, version, origin, Tezos.IDENTIFIER, publicKey, publicKey, network, scopes)
 
     private fun createOperationResponsePair(
         version: String = "2",

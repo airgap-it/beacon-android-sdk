@@ -31,6 +31,7 @@ internal fun mockBlockchainRegistry(): BlockchainRegistry =
     mockkClass(BlockchainRegistry::class).also {
         val dependencyRegistry = mockkClass(DependencyRegistry::class)
 
+        every { it.get(any()) } returns MockBlockchain()
         every { it.getOrNull(any()) } returns MockBlockchain()
         every { dependencyRegistry.blockchainRegistry } returns it
 

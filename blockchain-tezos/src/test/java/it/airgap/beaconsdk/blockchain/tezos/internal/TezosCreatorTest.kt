@@ -4,7 +4,7 @@ import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
-import it.airgap.beaconsdk.blockchain.tezos.internal.creator.TezosCreator
+import it.airgap.beaconsdk.blockchain.tezos.internal.creator.*
 import it.airgap.beaconsdk.blockchain.tezos.internal.wallet.TezosWallet
 import it.airgap.beaconsdk.blockchain.tezos.mockTime
 import it.airgap.beaconsdk.core.data.AppMetadata
@@ -50,7 +50,12 @@ internal class TezosCreatorTest {
         every { identifierCreator.senderId(any()) } answers { Result.success(firstArg<ByteArray>().toHexString().asString()) }
 
         storageManager = StorageManager(MockStorage(), MockSecureStorage(), identifierCreator)
-        creator = TezosCreator(wallet, storageManager, identifierCreator)
+        creator = TezosCreator(
+            DataTezosCreator(wallet, storageManager, identifierCreator),
+            V1BeaconMessageTezosCreator(),
+            V2BeaconMessageTezosCreator(),
+            V3BeaconMessageTezosCreator(),
+        )
     }
 
     @Test
@@ -63,7 +68,7 @@ internal class TezosCreatorTest {
 
         runBlocking {
             storageManager.setAppMetadata(listOf(appMetadata))
-            val permission = creator.extractPermission(permissionRequest, permissionResponse).getOrThrow()
+            val permission = creator.data.extractPermission(permissionRequest, permissionResponse).getOrThrow()
 
             val expected = TezosPermission(
                 "@${permissionResponse.publicKey}",
@@ -74,7 +79,6 @@ internal class TezosCreatorTest {
                 currentTimeMillis,
                 permissionResponse.network,
                 permissionResponse.scopes,
-                null,
             )
 
             assertEquals(expected, permission)
@@ -94,8 +98,7 @@ internal class TezosCreatorTest {
         }
 
         assertFailsWith<IllegalStateException> {
-            runBlocking { creator.extractPermission(permissionRequest, permissionResponse).getOrThrow() }
+            runBlocking { creator.data.extractPermission(permissionRequest, permissionResponse).getOrThrow() }
         }
     }
-
 }

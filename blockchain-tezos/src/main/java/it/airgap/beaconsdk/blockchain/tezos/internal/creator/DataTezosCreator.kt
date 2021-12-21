@@ -41,7 +41,6 @@ internal class DataTezosCreator(
                 connectedAt = currentTimestamp(),
                 response.network,
                 response.scopes,
-                response.threshold,
             )
         }
 
