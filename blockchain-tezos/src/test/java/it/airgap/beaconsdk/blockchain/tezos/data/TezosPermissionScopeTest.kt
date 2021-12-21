@@ -7,7 +7,7 @@ import kotlinx.serialization.json.JsonArray
 import org.junit.Test
 import kotlin.test.assertEquals
 
-internal class PermissionScopeTest {
+internal class TezosPermissionScopeTest {
 
     @Test
     fun `is deserialized from string`() {

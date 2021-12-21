@@ -1,6 +1,7 @@
-package it.airgap.beaconsdk.core.internal.message.v2
+package it.airgap.beaconsdk.blockchain.tezos.internal.message.v1
 
 import fromValues
+import it.airgap.beaconsdk.blockchain.tezos.data.TezosAppMetadata
 import it.airgap.beaconsdk.core.data.AppMetadata
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -9,12 +10,12 @@ import kotlinx.serialization.json.JsonObject
 import org.junit.Test
 import kotlin.test.assertEquals
 
-internal class V2AppMetadataTest {
+internal class V1TezosAppMetadataTest {
 
     @Test
     fun `is deserialized from JSON`() {
         listOf(expectedWithJson(), expectedWithJson(includeNulls = true), expectedWithJson(icon = "icon"))
-            .map { Json.decodeFromString<V2AppMetadata>(it.second) to it.first }
+            .map { Json.decodeFromString<V1TezosAppMetadata>(it.second) to it.first }
             .forEach {
                 assertEquals(it.second, it.first)
             }
@@ -33,7 +34,7 @@ internal class V2AppMetadataTest {
     @Test
     fun `is created from AppMetadata`() {
         listOf(expectedWithAppMetadata(), expectedWithAppMetadata(icon = "icon"))
-            .map { V2AppMetadata.fromAppMetadata(it.second) to it.first }
+            .map { V1TezosAppMetadata.fromAppMetadata(it.second) to it.first }
             .forEach { assertEquals(it.second, it.first) }
     }
 
@@ -45,26 +46,26 @@ internal class V2AppMetadataTest {
     }
 
     private fun expectedWithJson(
-        senderId: String = "senderId",
+        beaconId: String = "beaconId",
         name: String = "name",
         icon: String? = null,
         includeNulls: Boolean = false,
-    ): Pair<V2AppMetadata, String> {
+    ): Pair<V1TezosAppMetadata, String> {
         val values = mapOf(
-            "senderId" to senderId,
+            "beaconId" to beaconId,
             "name" to name,
             "icon" to icon,
         )
 
         val json = JsonObject.fromValues(values, includeNulls).toString()
 
-        return V2AppMetadata(senderId, name, icon) to json
+        return V1TezosAppMetadata(beaconId, name, icon) to json
     }
 
     private fun expectedWithAppMetadata(
-        senderId: String = "senderId",
+        beaconId: String = "beaconId",
         name: String = "name",
         icon: String? = null,
-    ): Pair<V2AppMetadata, AppMetadata> =
-        V2AppMetadata(senderId, name, icon) to AppMetadata(senderId, name, icon)
+    ): Pair<V1TezosAppMetadata, TezosAppMetadata> =
+        V1TezosAppMetadata(beaconId, name, icon) to TezosAppMetadata(beaconId, name, icon)
 }

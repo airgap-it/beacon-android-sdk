@@ -10,7 +10,7 @@ object Android {
 object Version {
     const val kotlin = "1.5.30"
 
-    const val kotlinSerialization = "1.2.2"
+    const val kotlinSerialization = "1.3.1"
 
     const val androidxCore = "1.6.0"
     const val androidxAppCompat = "1.3.1"

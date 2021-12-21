@@ -5,6 +5,7 @@ import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import it.airgap.beaconsdk.blockchain.tezos.Tezos
+import it.airgap.beaconsdk.blockchain.tezos.data.TezosAppMetadata
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosNetwork
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
 import it.airgap.beaconsdk.blockchain.tezos.data.operation.TezosEndorsementOperation
@@ -20,7 +21,6 @@ import it.airgap.beaconsdk.blockchain.tezos.message.response.SignPayloadTezosRes
 import it.airgap.beaconsdk.core.data.AppMetadata
 import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.data.SigningType
-import it.airgap.beaconsdk.core.internal.message.v2.V2AppMetadata
 import it.airgap.beaconsdk.core.internal.message.v2.V2BeaconMessage
 import it.airgap.beaconsdk.core.internal.storage.MockSecureStorage
 import it.airgap.beaconsdk.core.internal.storage.MockStorage
@@ -89,8 +89,8 @@ internal class V2TezosMessageTest {
         val otherId = "otherId"
         val origin = Origin.P2P(senderId)
 
-        val matchingAppMetadata = AppMetadata(senderId, "v2App")
-        val otherAppMetadata = AppMetadata(otherId, "v2OtherApp")
+        val matchingAppMetadata = TezosAppMetadata(senderId, "v2App")
+        val otherAppMetadata = TezosAppMetadata(otherId, "v2OtherApp")
 
         runBlocking { storageManager.setAppMetadata(listOf(otherAppMetadata, matchingAppMetadata)) }
 
@@ -127,7 +127,7 @@ internal class V2TezosMessageTest {
         version: String = "2",
         senderId: String = "senderId",
         origin: Origin = Origin.P2P(senderId),
-        appMetadata: AppMetadata? = null,
+        appMetadata: TezosAppMetadata? = null,
     ): List<Pair<V2BeaconMessage, BeaconMessage>> =
         listOf(
             createPermissionRequestPair(version = version, senderId = senderId, origin = origin),
@@ -154,7 +154,7 @@ internal class V2TezosMessageTest {
         version: String = "2",
         id: String = "id",
         senderId: String = "senderId",
-        appMetadata: V2AppMetadata = V2AppMetadata("senderId", "v2App"),
+        appMetadata: V2TezosAppMetadata = V2TezosAppMetadata("senderId", "v2App"),
         network: TezosNetwork = TezosNetwork.Custom(),
         scopes: List<TezosPermission.Scope> = emptyList()
     ): Pair<PermissionV2TezosRequest, String> =
@@ -310,7 +310,7 @@ internal class V2TezosMessageTest {
         version: String = "2",
         id: String = "id",
         senderId: String = "senderId",
-        appMetadata: V2AppMetadata = V2AppMetadata("senderId", "v2App"),
+        appMetadata: V2TezosAppMetadata = V2TezosAppMetadata("senderId", "v2App"),
         network: TezosNetwork = TezosNetwork.Custom(),
         scopes: List<TezosPermission.Scope> = emptyList(),
         origin: Origin = Origin.P2P(senderId),
@@ -325,7 +325,7 @@ internal class V2TezosMessageTest {
         network: TezosNetwork = TezosNetwork.Custom(),
         tezosOperations: List<TezosOperation> = emptyList(),
         sourceAddress: String = "sourceAddress",
-        appMetadata: AppMetadata? = null,
+        appMetadata: TezosAppMetadata? = null,
         origin: Origin = Origin.P2P(senderId),
     ): Pair<OperationV2TezosRequest, BlockchainBeaconRequest> =
         OperationV2TezosRequest(version, id, senderId, network, tezosOperations, sourceAddress) to
@@ -338,7 +338,7 @@ internal class V2TezosMessageTest {
         signingType: SigningType = SigningType.Raw,
         payload: String = "payload",
         sourceAddress: String = "sourceAddress",
-        appMetadata: AppMetadata? = null,
+        appMetadata: TezosAppMetadata? = null,
         origin: Origin = Origin.P2P(senderId),
     ): Pair<SignPayloadV2TezosRequest, BlockchainBeaconRequest> =
         SignPayloadV2TezosRequest(version, id, senderId, signingType, payload, sourceAddress) to
@@ -350,7 +350,7 @@ internal class V2TezosMessageTest {
         senderId: String = "senderId",
         network: TezosNetwork = TezosNetwork.Custom(),
         signedTransaction: String = "signedTransaction",
-        appMetadata: AppMetadata? = null,
+        appMetadata: TezosAppMetadata? = null,
         origin: Origin = Origin.P2P(senderId),
     ): Pair<BroadcastV2TezosRequest, BlockchainBeaconRequest> =
         BroadcastV2TezosRequest(version, id, senderId, network, signedTransaction) to

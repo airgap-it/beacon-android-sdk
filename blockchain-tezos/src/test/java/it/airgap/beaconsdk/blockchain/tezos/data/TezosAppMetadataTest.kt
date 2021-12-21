@@ -1,53 +1,25 @@
-package it.airgap.beaconsdk.core.data
+package it.airgap.beaconsdk.blockchain.tezos.data
 
 import fromValues
-import io.mockk.MockKAnnotations
-import io.mockk.every
-import io.mockk.impl.annotations.MockK
-import it.airgap.beaconsdk.core.internal.blockchain.BlockchainRegistry
-import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchain
-import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
+import it.airgap.beaconsdk.blockchain.tezos.Tezos
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
-import mockBeaconSdk
-import org.junit.Before
 import org.junit.Test
 import kotlin.test.assertEquals
 
-internal class AppMetadataTest {
-
-    @MockK
-    private lateinit var dependencyRegistry: DependencyRegistry
-
-    @MockK
-    private lateinit var blockchainRegistry: BlockchainRegistry
-
-    private lateinit var mockBlockchain: MockBlockchain
-
-    @Before
-    fun setup() {
-        MockKAnnotations.init(this)
-
-        mockBeaconSdk(dependencyRegistry = dependencyRegistry)
-
-        mockBlockchain = MockBlockchain()
-
-        every { dependencyRegistry.blockchainRegistry } returns blockchainRegistry
-
-        every { blockchainRegistry.get(any()) } returns mockBlockchain
-        every { blockchainRegistry.getOrNull(any()) } returns mockBlockchain
-    }
-
+internal class TezosAppMetadataTest {
     @Test
     fun `is deserialized from JSON`() {
         listOf(
             expectedWithJson(),
+            expectedWithJson(blockchainIdentifier = null),
             expectedWithJson(icon = "icon"),
             expectedWithJson(includeNulls = true),
         ).map {
-            Json.decodeFromString<AppMetadata>(it.second) to it.first
+            println(it.second)
+            Json.decodeFromString<TezosAppMetadata>(it.second) to it.first
         }.forEach {
             assertEquals(it.second, it.first)
         }
@@ -64,12 +36,12 @@ internal class AppMetadataTest {
     }
 
     private fun expectedWithJson(
-        blockchainIdentifier: String = MockBlockchain.IDENTIFIER,
+        blockchainIdentifier: String? = Tezos.IDENTIFIER,
         senderId: String = "senderId",
         name: String = "name",
         icon: String? = null,
         includeNulls: Boolean = false
-    ): Pair<AppMetadata, String> {
+    ): Pair<TezosAppMetadata, String> {
         val values = mapOf(
             "blockchainIdentifier" to blockchainIdentifier,
             "senderId" to senderId,
@@ -79,6 +51,6 @@ internal class AppMetadataTest {
 
         val json = JsonObject.fromValues(values, includeNulls).toString()
 
-        return MockAppMetadata(senderId, name, icon) to json
+        return TezosAppMetadata(senderId, name, icon) to json
     }
 }

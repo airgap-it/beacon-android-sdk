@@ -98,8 +98,8 @@ internal class V2BeaconMessageTest {
         val otherId = "otherId"
         val origin = Origin.P2P(senderId)
 
-        val matchingAppMetadata = AppMetadata(senderId, "v2App")
-        val otherAppMetadata = AppMetadata(otherId, "v2OtherApp")
+        val matchingAppMetadata = MockAppMetadata(senderId, "v2App")
+        val otherAppMetadata = MockAppMetadata(otherId, "v2OtherApp")
 
         runBlocking { storageManager.setAppMetadata(listOf(otherAppMetadata, matchingAppMetadata)) }
 
@@ -160,7 +160,7 @@ internal class V2BeaconMessageTest {
         version: String = "2",
         id: String = "id",
         senderId: String = "senderId",
-        appMetadata: V2AppMetadata = V2AppMetadata("senderId", "v2App"),
+        appMetadata: MockAppMetadata = MockAppMetadata("senderId", "v2App"),
         network: Network = MockNetwork(),
         scopes: List<String> = emptyList()
     ): Pair<V2MockPermissionBeaconRequest, String> =
@@ -419,7 +419,7 @@ internal class V2BeaconMessageTest {
         version: String = "2",
         id: String = "id",
         senderId: String = "senderId",
-        appMetadata: V2AppMetadata = V2AppMetadata("senderId", "v2App"),
+        appMetadata: MockAppMetadata = MockAppMetadata("senderId", "v2App"),
         network: Network = MockNetwork(),
         scopes: List<String> = emptyList(),
         origin: Origin = Origin.P2P(senderId),
@@ -432,7 +432,7 @@ internal class V2BeaconMessageTest {
 
         return (
             V2MockPermissionBeaconRequest(type, version, id, senderId, appMetadata, rest)
-                to PermissionMockRequest(type, id, version, MockBlockchain.IDENTIFIER, senderId, origin, appMetadata.toAppMetadata(), rest)
+                to PermissionMockRequest(type, id, version, MockBlockchain.IDENTIFIER, senderId, origin, appMetadata, rest)
         )
     }
 

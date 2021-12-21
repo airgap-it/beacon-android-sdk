@@ -2,8 +2,7 @@ package it.airgap.beaconsdk.core.internal.blockchain.message
 
 import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchain
-import it.airgap.beaconsdk.core.internal.message.v1.V1AppMetadata
-import it.airgap.beaconsdk.core.internal.message.v2.V2AppMetadata
+import it.airgap.beaconsdk.core.data.MockAppMetadata
 import it.airgap.beaconsdk.core.internal.message.v2.V2BeaconMessage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.utils.*
@@ -22,7 +21,7 @@ internal data class V2MockPermissionBeaconRequest(
     override val version: String,
     override val id: String,
     override val senderId: String,
-    val appMetadata: V2AppMetadata,
+    val appMetadata: MockAppMetadata,
     val rest: Map<String, JsonElement>,
 ) : V2BeaconMessage() {
     override suspend fun toBeaconMessage(origin: Origin, storageManager: StorageManager, identifierCreator: IdentifierCreator): BeaconMessage =
@@ -33,7 +32,7 @@ internal data class V2MockPermissionBeaconRequest(
             MockBlockchain.IDENTIFIER,
             senderId,
             origin,
-            appMetadata.toAppMetadata(),
+            appMetadata,
             rest,
         )
 
@@ -46,7 +45,7 @@ internal data class V2MockPermissionBeaconRequest(
             element<String>("version")
             element<String>("id")
             element<String>("senderId")
-            element<V1AppMetadata>("appMetadata")
+            element<MockAppMetadata>("appMetadata")
         }
 
         override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): V2MockPermissionBeaconRequest {
@@ -54,7 +53,7 @@ internal data class V2MockPermissionBeaconRequest(
             val version = jsonElement.jsonObject.getString(descriptor.getElementName(1))
             val id = jsonElement.jsonObject.getString(descriptor.getElementName(2))
             val senderId = jsonElement.jsonObject.getString(descriptor.getElementName(3))
-            val appMetadata = jsonElement.jsonObject.getSerializable(descriptor.getElementName(4), jsonDecoder, V2AppMetadata.serializer())
+            val appMetadata = jsonElement.jsonObject.getSerializable(descriptor.getElementName(4), jsonDecoder, MockAppMetadata.serializer())
             val rest = jsonElement.jsonObject.filterKeys { !knownFields.contains(it) }
 
             return V2MockPermissionBeaconRequest(type, version, id, senderId, appMetadata, rest)

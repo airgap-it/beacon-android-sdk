@@ -1,5 +1,6 @@
 package it.airgap.beaconsdk.blockchain.tezos.internal.creator
 
+import it.airgap.beaconsdk.blockchain.tezos.data.TezosAppMetadata
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
 import it.airgap.beaconsdk.blockchain.tezos.internal.utils.failWithUnknownMessage
 import it.airgap.beaconsdk.blockchain.tezos.internal.wallet.TezosWallet
@@ -30,16 +31,16 @@ internal class DataTezosCreator(
 
             val address = wallet.addressFromPublicKey(response.publicKey).getOrThrow()
             val accountId = identifierCreator.accountId(address, response.network).getOrThrow()
-            val appMetadata = storageManager.findAppMetadata { it.senderId == request.senderId } ?: failWithAppMetadataNotFound()
+            val appMetadata = storageManager.findInstanceAppMetadata<TezosAppMetadata> { it.senderId == request.senderId } ?: failWithAppMetadataNotFound()
 
             TezosPermission(
                 accountId,
-                address,
                 identifierCreator.senderId(request.origin.id.asHexString().toByteArray()).getOrThrow(),
-                appMetadata,
-                response.publicKey,
                 connectedAt = currentTimestamp(),
+                address,
+                response.publicKey,
                 response.network,
+                appMetadata,
                 response.scopes,
             )
         }

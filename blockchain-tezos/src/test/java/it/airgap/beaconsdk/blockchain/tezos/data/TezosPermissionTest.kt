@@ -1,52 +1,25 @@
-package it.airgap.beaconsdk.core.data
+package it.airgap.beaconsdk.blockchain.tezos.data
 
 import fromValues
-import io.mockk.MockKAnnotations
-import io.mockk.every
-import io.mockk.impl.annotations.MockK
-import it.airgap.beaconsdk.core.internal.blockchain.BlockchainRegistry
-import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchain
-import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
+import it.airgap.beaconsdk.blockchain.tezos.Tezos
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
-import mockBeaconSdk
-import org.junit.Before
+import kotlinx.serialization.json.encodeToJsonElement
 import org.junit.Test
 import kotlin.test.assertEquals
 
-internal class PermissionTest {
-
-    @MockK
-    private lateinit var dependencyRegistry: DependencyRegistry
-
-    @MockK
-    private lateinit var blockchainRegistry: BlockchainRegistry
-
-    private lateinit var mockBlockchain: MockBlockchain
-
-    @Before
-    fun setup() {
-        MockKAnnotations.init(this)
-
-        mockBeaconSdk(dependencyRegistry = dependencyRegistry)
-
-        mockBlockchain = MockBlockchain()
-
-        every { dependencyRegistry.blockchainRegistry } returns blockchainRegistry
-
-        every { blockchainRegistry.get(any()) } returns mockBlockchain
-        every { blockchainRegistry.getOrNull(any()) } returns mockBlockchain
-    }
+internal class TezosPermissionTest {
 
     @Test
     fun `is deserialized from JSON`() {
         listOf(
             expectedWithJson(),
+            expectedWithJson(blockchainIdentifier = null),
             expectedWithJson(includeNulls = true),
         ).map {
-            Json.decodeFromString<Permission>(it.second) to it.first
+            Json.decodeFromString<TezosPermission>(it.second) to it.first
         }.forEach {
             assertEquals(it.second, it.first)
         }
@@ -64,26 +37,40 @@ internal class PermissionTest {
     }
 
     private fun expectedWithJson(
-        blockchainIdentifier: String = MockBlockchain.IDENTIFIER,
+        blockchainIdentifier: String? = Tezos.IDENTIFIER,
         accountId: String = "accountId",
         senderId: String = "senderId",
         connectedAt: Long = 0,
+        address: String = "address",
+        publicKey: String = "publicKey",
+        network: TezosNetwork = TezosNetwork.Custom(),
+        appMetadata: TezosAppMetadata = TezosAppMetadata(senderId, "name"),
+        scopes: List<TezosPermission.Scope> = emptyList(),
         includeNulls: Boolean = false,
-    ): Pair<Permission, String> {
+    ): Pair<TezosPermission, String> {
         val values = mapOf(
             "blockchainIdentifier" to blockchainIdentifier,
             "accountId" to accountId,
             "senderId" to senderId,
             "connectedAt" to connectedAt,
+            "address" to address,
+            "publicKey" to publicKey,
+            "network" to Json.encodeToJsonElement(network),
+            "appMetadata" to Json.encodeToJsonElement(appMetadata),
+            "scopes" to Json.encodeToJsonElement(scopes),
         )
 
         val json = JsonObject.fromValues(values, includeNulls).toString()
 
-        return MockPermission(
-            blockchainIdentifier,
+        return TezosPermission(
             accountId,
             senderId,
             connectedAt,
+            address,
+            publicKey,
+            network,
+            appMetadata,
+            scopes,
         ) to json
     }
 }

@@ -37,6 +37,9 @@ public class MockBlockchainSerializer : Blockchain.Serializer {
         override val permission: KSerializer<Permission>
             get() = SuperClassSerializer(MockPermission.serializer())
 
+        override val appMetadata: KSerializer<AppMetadata>
+            get() = SuperClassSerializer(MockAppMetadata.serializer())
+
         override val error: KSerializer<BeaconError>
             get() = SuperClassSerializer(MockError.serializer())
     }

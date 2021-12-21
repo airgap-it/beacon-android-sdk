@@ -1,6 +1,5 @@
 package it.airgap.beaconsdk.core.internal.message.v1
 
-import fromValues
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
@@ -99,8 +98,8 @@ internal class V1BeaconMessageTest {
         val otherId = "otherId"
         val origin = Origin.P2P("v1App")
 
-        val matchingAppMetadata = AppMetadata(senderId, "v1App")
-        val otherAppMetadata = AppMetadata(otherId, "v1OtherApp")
+        val matchingAppMetadata = MockAppMetadata(senderId, "v1App")
+        val otherAppMetadata = MockAppMetadata(otherId, "v1OtherApp")
 
         runBlocking { storageManager.setAppMetadata(listOf(otherAppMetadata, matchingAppMetadata)) }
 
@@ -160,7 +159,7 @@ internal class V1BeaconMessageTest {
         version: String = "1",
         id: String = "id",
         beaconId: String = "beaconId",
-        appMetadata: V1AppMetadata = V1AppMetadata("beaconId", "v1App"),
+        appMetadata: MockAppMetadata = MockAppMetadata("beaconId", "v1App"),
         network: Network = MockNetwork(),
         scopes: List<String> = emptyList()
     ): Pair<V1MockPermissionBeaconRequest, String> =
@@ -412,7 +411,7 @@ internal class V1BeaconMessageTest {
         version: String = "1",
         id: String = "id",
         beaconId: String = "beaconId",
-        appMetadata: V1AppMetadata = V1AppMetadata("beaconId", "v1App"),
+        appMetadata: MockAppMetadata = MockAppMetadata("beaconId", "v1App"),
         network: Network = MockNetwork(),
         scopes: List<String> = emptyList(),
         origin: Origin = Origin.P2P(beaconId),
@@ -425,7 +424,7 @@ internal class V1BeaconMessageTest {
 
         return (
             V1MockPermissionBeaconRequest(type, version, id, beaconId, appMetadata, rest)
-                to PermissionMockRequest(type, id, version, MockBlockchain.IDENTIFIER, beaconId, origin, appMetadata.toAppMetadata(), rest)
+                to PermissionMockRequest(type, id, version, MockBlockchain.IDENTIFIER, beaconId, origin, appMetadata, rest)
         )
     }
 

@@ -1,5 +1,6 @@
 package it.airgap.beaconsdk.blockchain.tezos.message.request
 
+import it.airgap.beaconsdk.blockchain.tezos.data.TezosAppMetadata
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosNetwork
 import it.airgap.beaconsdk.blockchain.tezos.data.operation.TezosOperation
 import it.airgap.beaconsdk.blockchain.tezos.message.response.BroadcastTezosResponse
@@ -39,7 +40,7 @@ public data class OperationTezosRequest internal constructor(
     override val version: String,
     override val blockchainIdentifier: String,
     override val senderId: String,
-    override val appMetadata: AppMetadata?,
+    override val appMetadata: TezosAppMetadata?,
     override val origin: Origin,
     override val accountId: String?,
     public val network: TezosNetwork,
@@ -70,7 +71,7 @@ public data class SignPayloadTezosRequest internal constructor(
     override val version: String,
     override val blockchainIdentifier: String,
     override val senderId: String,
-    override val appMetadata: AppMetadata?,
+    override val appMetadata: TezosAppMetadata?,
     override val origin: Origin,
     override val accountId: String?,
     public val signingType: SigningType,
@@ -100,7 +101,7 @@ public data class BroadcastTezosRequest internal constructor(
     override val version: String,
     override val blockchainIdentifier: String,
     override val senderId: String,
-    override val appMetadata: AppMetadata?,
+    override val appMetadata: TezosAppMetadata?,
     override val origin: Origin,
     override val accountId: String?,
     public val network: TezosNetwork,

@@ -3,6 +3,7 @@ package it.airgap.beaconsdk.blockchain.tezos.internal
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
+import it.airgap.beaconsdk.blockchain.tezos.data.TezosAppMetadata
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
 import it.airgap.beaconsdk.blockchain.tezos.internal.creator.*
 import it.airgap.beaconsdk.blockchain.tezos.internal.wallet.TezosWallet
@@ -62,7 +63,7 @@ internal class TezosCreatorTest {
     fun `extracts permission`() {
         val id = "id"
 
-        val appMetadata = AppMetadata(senderId, "mockApp")
+        val appMetadata = TezosAppMetadata(senderId, "mockApp")
         val permissionRequest = permissionTezosRequest(id = id, version = version, senderId = senderId)
         val permissionResponse = permissionTezosResponse(id = id, version = version)
 
@@ -72,12 +73,12 @@ internal class TezosCreatorTest {
 
             val expected = TezosPermission(
                 "@${permissionResponse.publicKey}",
-                "@${permissionResponse.publicKey}",
                 appMetadata.senderId,
-                appMetadata,
-                permissionResponse.publicKey,
                 currentTimeMillis,
+                "@${permissionResponse.publicKey}",
+                permissionResponse.publicKey,
                 permissionResponse.network,
+                appMetadata,
                 permissionResponse.scopes,
             )
 

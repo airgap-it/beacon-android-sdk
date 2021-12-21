@@ -69,6 +69,11 @@ internal class DecoratedStorage(private val storage: Storage) : ExtendedStorage,
     override suspend fun findAppMetadata(predicate: (AppMetadata) -> Boolean): AppMetadata? =
         selectFirst(Storage::getAppMetadata, predicate)
 
+    override suspend fun <T : AppMetadata> findAppMetadata(
+        instanceClass: Class<T>,
+        predicate: (T) -> Boolean,
+    ): T? = selectFirstInstance(Storage::getAppMetadata, instanceClass, predicate)
+
     override suspend fun removeAppMetadata(predicate: ((AppMetadata) -> Boolean)?) {
         if (predicate != null) remove(Storage::getAppMetadata, Storage::setAppMetadata, predicate)
         else removeAll(Storage::setAppMetadata)

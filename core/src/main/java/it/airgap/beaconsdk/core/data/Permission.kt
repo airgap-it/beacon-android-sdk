@@ -22,7 +22,6 @@ import kotlinx.serialization.json.jsonObject
  * @property [blockchainIdentifier] The unique name of the blockchain on which the permission is valid.
  * @property [accountId] The value that identifies the account which granted the permissions.
  * @property [senderId] The value that identifies the sender to whom the permissions were granted.
- * @property [appMetadata] The metadata describing the dApp to which the permissions were granted.
  * @property [connectedAt] The timestamp at which the permissions were granted.
  */
 @Serializable(with = Permission.Serializer::class)
@@ -30,8 +29,9 @@ public abstract class Permission {
     public abstract val blockchainIdentifier: String
     public abstract val accountId: String
     public abstract val senderId: String
-    public abstract val appMetadata: AppMetadata
     public abstract val connectedAt: Long
+
+    public companion object {}
 
     @OptIn(ExperimentalSerializationApi::class)
     internal object Serializer : KJsonSerializer<Permission> {
@@ -56,6 +56,6 @@ public abstract class Permission {
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public interface Creator {
-        public fun fromPermissionResponse(appMetadata: AppMetadata, response: PermissionBeaconResponse): Permission
+        public fun fromPermissionResponse(response: PermissionBeaconResponse): Permission
     }
 }

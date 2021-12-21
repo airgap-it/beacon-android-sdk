@@ -1,5 +1,6 @@
 package it.airgap.beaconsdk.blockchain.tezos.message.request
 
+import it.airgap.beaconsdk.blockchain.tezos.data.TezosAppMetadata
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosNetwork
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
 import it.airgap.beaconsdk.blockchain.tezos.message.response.PermissionTezosResponse
@@ -26,7 +27,7 @@ public data class PermissionTezosRequest internal constructor(
     override val version: String,
     override val blockchainIdentifier: String,
     override val senderId: String,
-    override val appMetadata: AppMetadata,
+    override val appMetadata: TezosAppMetadata,
     override val origin: Origin,
     public val network: TezosNetwork,
     public val scopes: List<TezosPermission.Scope>,

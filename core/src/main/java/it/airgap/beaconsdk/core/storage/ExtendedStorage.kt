@@ -29,6 +29,7 @@ public interface ExtendedStorage : Storage {
     )
 
     public suspend fun findAppMetadata(predicate: (AppMetadata) -> Boolean): AppMetadata?
+    public suspend fun <T : AppMetadata> findAppMetadata(instanceClass: Class<T>, predicate: (T) -> Boolean): T?
     public suspend fun removeAppMetadata(predicate: ((AppMetadata) -> Boolean)? = null)
 
     public suspend fun addPermissions(

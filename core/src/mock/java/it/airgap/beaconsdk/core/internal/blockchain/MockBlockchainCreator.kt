@@ -33,7 +33,6 @@ public class MockBlockchainCreator : Blockchain.Creator {
                 response.blockchainIdentifier,
                 response.accountId,
                 request.senderId,
-                request.appMetadata,
                 currentTimestamp(),
                 if (response is PermissionMockResponse) response.rest else emptyMap(),
             )

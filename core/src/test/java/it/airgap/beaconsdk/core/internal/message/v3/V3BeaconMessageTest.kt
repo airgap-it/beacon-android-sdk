@@ -98,8 +98,8 @@ internal class V3BeaconMessageTest {
         val otherId = "otherId"
         val origin = Origin.P2P(senderId)
 
-        val matchingAppMetadata = AppMetadata(senderId, "v3App")
-        val otherAppMetadata = AppMetadata(otherId, "v3OtherApp")
+        val matchingAppMetadata = MockAppMetadata(senderId, "v3App")
+        val otherAppMetadata = MockAppMetadata(otherId, "v3OtherApp")
 
         runBlocking { storageManager.setAppMetadata(listOf(otherAppMetadata, matchingAppMetadata)) }
 
@@ -155,7 +155,7 @@ internal class V3BeaconMessageTest {
         id: String = "id",
         senderId: String = "senderId",
         blockchainIdentifier: String = MockBlockchain.IDENTIFIER,
-        appMetadata: V3AppMetadata = V3AppMetadata("senderId", "v3App"),
+        appMetadata: MockAppMetadata = MockAppMetadata("senderId", "v3App"),
         network: Network = MockNetwork(),
         scopes: List<String> = emptyList()
     ): Pair<V3BeaconMessage, String> =
@@ -363,7 +363,7 @@ internal class V3BeaconMessageTest {
         id: String = "id",
         senderId: String = "senderId",
         blockchainIdentifier: String = MockBlockchain.IDENTIFIER,
-        appMetadata: V3AppMetadata = V3AppMetadata("senderId", "v3App"),
+        appMetadata: MockAppMetadata = MockAppMetadata("senderId", "v3App"),
         network: Network = MockNetwork(),
         scopes: List<String> = emptyList(),
         origin: Origin = Origin.P2P(senderId),
@@ -384,7 +384,7 @@ internal class V3BeaconMessageTest {
                     rest,
                 ),
             ),
-        ) to PermissionMockRequest("permission_request", id, version, blockchainIdentifier, senderId, origin, appMetadata.toAppMetadata(), rest)
+        ) to PermissionMockRequest("permission_request", id, version, blockchainIdentifier, senderId, origin, appMetadata, rest)
     }
 
     private fun createBlockchainRequestPair(

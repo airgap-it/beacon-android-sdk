@@ -79,7 +79,7 @@ public data class PermissionV3BeaconRequestContent(
         origin: Origin,
         storageManager: StorageManager,
         identifierCreator: IdentifierCreator,
-    ): BeaconMessage = blockchainData.toBeaconMessage(id, version, senderId, origin, storageManager, identifierCreator)
+    ): BeaconMessage = blockchainData.toBeaconMessage(id, version, senderId, origin, blockchainIdentifier, storageManager, identifierCreator)
 
     @Serializable
     public abstract class BlockchainData {
@@ -88,6 +88,7 @@ public data class PermissionV3BeaconRequestContent(
             version: String,
             senderId: String,
             origin: Origin,
+            blockchainIdentifier: String,
             storageManager: StorageManager,
             identifierCreator: IdentifierCreator,
         ): BeaconMessage

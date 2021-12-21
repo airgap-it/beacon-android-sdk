@@ -1,9 +1,12 @@
 package it.airgap.beaconsdk.core.internal.blockchain.message
 
+import it.airgap.beaconsdk.core.data.MockAppMetadata
 import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchain
-import it.airgap.beaconsdk.core.internal.message.v1.V1AppMetadata
-import it.airgap.beaconsdk.core.internal.message.v3.*
+import it.airgap.beaconsdk.core.internal.message.v3.BlockchainV3BeaconRequestContent
+import it.airgap.beaconsdk.core.internal.message.v3.BlockchainV3BeaconResponseContent
+import it.airgap.beaconsdk.core.internal.message.v3.PermissionV3BeaconRequestContent
+import it.airgap.beaconsdk.core.internal.message.v3.PermissionV3BeaconResponseContent
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
 import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
@@ -19,7 +22,7 @@ import kotlinx.serialization.json.*
 
 @Serializable(with = V3MockPermissionBeaconRequestData.Serializer::class)
 internal data class V3MockPermissionBeaconRequestData(
-    val appMetadata: V3AppMetadata,
+    val appMetadata: MockAppMetadata,
     val rest: Map<String, JsonElement>,
 ) : PermissionV3BeaconRequestContent.BlockchainData() {
     override suspend fun toBeaconMessage(
@@ -27,16 +30,17 @@ internal data class V3MockPermissionBeaconRequestData(
         version: String,
         senderId: String,
         origin: Origin,
+        blockchainIdentifier: String,
         storageManager: StorageManager,
         identifierCreator: IdentifierCreator,
     ): BeaconMessage = PermissionMockRequest(
         "permission_request",
         id,
         version,
-        MockBlockchain.IDENTIFIER,
+        blockchainIdentifier,
         senderId,
         origin,
-        appMetadata.toAppMetadata(),
+        appMetadata,
         rest,
     )
 
@@ -45,11 +49,11 @@ internal data class V3MockPermissionBeaconRequestData(
         private val knownFields: Set<String> get() = descriptor.elementNames.toSet()
 
         override val descriptor: SerialDescriptor = buildClassSerialDescriptor("V3MockPermissionBeaconRequestData") {
-            element<V1AppMetadata>("appMetadata")
+            element<MockAppMetadata>("appMetadata")
         }
 
         override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): V3MockPermissionBeaconRequestData {
-            val appMetadata = jsonElement.jsonObject.getSerializable(descriptor.getElementName(0), jsonDecoder, V3AppMetadata.serializer())
+            val appMetadata = jsonElement.jsonObject.getSerializable(descriptor.getElementName(0), jsonDecoder, MockAppMetadata.serializer())
             val rest = jsonElement.jsonObject.filterKeys { !knownFields.contains(it) }
 
             return V3MockPermissionBeaconRequestData(appMetadata, rest)

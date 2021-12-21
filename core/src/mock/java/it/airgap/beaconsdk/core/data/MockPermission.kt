@@ -8,7 +8,6 @@ public data class MockPermission(
     override val blockchainIdentifier: String,
     override val accountId: String,
     override val senderId: String,
-    override val appMetadata: AppMetadata,
     override val connectedAt: Long,
     val rest: Map<String, JsonElement> = emptyMap(),
 ) : Permission()

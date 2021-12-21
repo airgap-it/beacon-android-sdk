@@ -1,4 +1,5 @@
 
+import it.airgap.beaconsdk.blockchain.tezos.data.TezosAppMetadata
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosNetwork
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
 import it.airgap.beaconsdk.blockchain.tezos.message.request.PermissionTezosRequest
@@ -35,7 +36,7 @@ internal fun JsonObject.Companion.fromValues(values: Map<String, Any?>, includeN
 internal fun permissionTezosRequest(
     id: String = "id",
     senderId: String = "senderId",
-    appMetadata: AppMetadata = AppMetadata(senderId, "mockApp"),
+    appMetadata: TezosAppMetadata = TezosAppMetadata(senderId, "mockApp"),
     network: TezosNetwork = TezosNetwork.Custom(),
     scopes: List<TezosPermission.Scope> = emptyList(),
     blockchainIdentifier: String = MockBlockchain.IDENTIFIER,

@@ -1,6 +1,7 @@
 
 import it.airgap.beaconsdk.core.data.AppMetadata
 import it.airgap.beaconsdk.core.data.BeaconError
+import it.airgap.beaconsdk.core.data.MockAppMetadata
 import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchain
 import it.airgap.beaconsdk.core.internal.blockchain.message.BlockchainMockRequest
@@ -38,7 +39,7 @@ internal fun permissionBeaconRequest(
     type: String = "permission_request",
     id: String = "id",
     senderId: String = "senderId",
-    appMetadata: AppMetadata = AppMetadata(senderId, "mockApp"),
+    appMetadata: MockAppMetadata = MockAppMetadata(senderId, "mockApp"),
     blockchainIdentifier: String = MockBlockchain.IDENTIFIER,
     origin: Origin = Origin.P2P(senderId),
     version: String = "version",
@@ -49,7 +50,7 @@ internal fun blockchainBeaconRequest(
     id: String = "id",
     senderId: String = "senderId",
     accountId: String? = "accountId",
-    appMetadata: AppMetadata = AppMetadata(senderId, "mockApp"),
+    appMetadata: MockAppMetadata = MockAppMetadata(senderId, "mockApp"),
     blockchainIdentifier: String = MockBlockchain.IDENTIFIER,
     origin: Origin = Origin.P2P(senderId),
     version: String = "version"

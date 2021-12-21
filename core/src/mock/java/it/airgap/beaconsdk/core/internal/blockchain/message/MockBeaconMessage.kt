@@ -4,9 +4,8 @@ import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.data.AppMetadata
 import it.airgap.beaconsdk.core.data.BeaconError
 import it.airgap.beaconsdk.core.data.Origin
-import it.airgap.beaconsdk.core.internal.message.v1.V1AppMetadata
 import it.airgap.beaconsdk.core.internal.message.v1.V1BeaconMessage
-import it.airgap.beaconsdk.core.internal.message.v2.V2AppMetadata
+import it.airgap.beaconsdk.core.data.MockAppMetadata
 import it.airgap.beaconsdk.core.internal.message.v2.V2BeaconMessage
 import it.airgap.beaconsdk.core.internal.message.v3.*
 import it.airgap.beaconsdk.core.message.BlockchainBeaconRequest
@@ -33,7 +32,7 @@ public data class PermissionMockRequest(
     override val blockchainIdentifier: String,
     override val senderId: String,
     override val origin: Origin,
-    override val appMetadata: AppMetadata,
+    override val appMetadata: MockAppMetadata,
     val rest: Map<String, JsonElement> = emptyMap(),
 ) : PermissionBeaconRequest() {
     public fun toV1(): V1BeaconMessage =
@@ -42,7 +41,7 @@ public data class PermissionMockRequest(
             version,
             id,
             senderId,
-            V1AppMetadata.fromAppMetadata(appMetadata),
+            appMetadata,
             rest,
         )
 
@@ -52,7 +51,7 @@ public data class PermissionMockRequest(
             version,
             id,
             senderId,
-            V2AppMetadata.fromAppMetadata(appMetadata),
+            appMetadata,
             rest,
         )
 
@@ -60,7 +59,7 @@ public data class PermissionMockRequest(
         PermissionV3BeaconRequestContent(
             blockchainIdentifier,
             V3MockPermissionBeaconRequestData(
-                V3AppMetadata.fromAppMetadata(appMetadata),
+                appMetadata,
                 rest,
             ),
         )

@@ -86,7 +86,7 @@ public class StorageManager(
             removePermissions { permission ->
                 toRemove.any {
                     val senderId = identifierCreator.senderId(it.publicKey.asHexString().toByteArray()).getOrThrow()
-                    senderId == permission.appMetadata.senderId
+                    senderId == permission.senderId
                 }
             }
 
@@ -97,6 +97,9 @@ public class StorageManager(
             }
         }
     }
+
+    public suspend inline fun <reified T : AppMetadata> findInstanceAppMetadata(noinline predicate: (T) -> Boolean): T? =
+        storage.findAppMetadata(T::class.java, predicate)
 
     public suspend fun removeAppMetadata(appsMetadata: List<AppMetadata>) {
         removeAppMetadata { metadata -> appsMetadata.any { it.senderId == metadata.senderId } }

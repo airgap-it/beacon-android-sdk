@@ -7,10 +7,7 @@ import beaconVersionedRequests
 import disconnectBeaconMessage
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
-import it.airgap.beaconsdk.core.data.AppMetadata
-import it.airgap.beaconsdk.core.data.Origin
-import it.airgap.beaconsdk.core.data.P2pPeer
-import it.airgap.beaconsdk.core.data.Permission
+import it.airgap.beaconsdk.core.data.*
 import it.airgap.beaconsdk.core.exception.BeaconException
 import it.airgap.beaconsdk.core.internal.controller.ConnectionController
 import it.airgap.beaconsdk.core.internal.controller.MessageController
@@ -103,7 +100,7 @@ internal class BeaconWalletClientTest {
 
             every { connectionController.subscribe() } answers { beaconMessageFlow }
 
-            storageManager.addAppMetadata(listOf(AppMetadata(dAppId, "otherApp")))
+            storageManager.addAppMetadata(listOf(MockAppMetadata(dAppId, "otherApp")))
 
             val messages =
                 beaconWalletClient.connect()
@@ -224,7 +221,7 @@ internal class BeaconWalletClientTest {
             val beaconMessageFlow = beaconConnectionMessageFlow(2)
             every { connectionController.subscribe() } answers { beaconMessageFlow }
 
-            storageManager.addAppMetadata(listOf(AppMetadata(dAppId, "otherApp")))
+            storageManager.addAppMetadata(listOf(MockAppMetadata(dAppId, "otherApp")))
 
             beaconWalletClient.connect()
                 .onStart { beaconMessageFlow.tryEmitValues(listOf(connectionDisconnectMessage, connectionRequestMessage)) }

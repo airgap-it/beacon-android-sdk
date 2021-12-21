@@ -145,7 +145,6 @@ internal class MessageControllerTest {
                 MockBlockchain.IDENTIFIER,
                 permissionResponse.accountId,
                 appMetadata.senderId,
-                appMetadata,
                 currentTimeMillis
             )
         )

@@ -65,7 +65,7 @@ internal fun permissionBeaconRequest(
     type: String = "permission_request",
     id: String = "id",
     senderId: String = "senderId",
-    appMetadata: AppMetadata = AppMetadata(senderId, "mockApp"),
+    appMetadata: MockAppMetadata = MockAppMetadata(senderId, "mockApp"),
     blockchainIdentifier: String = MockBlockchain.IDENTIFIER,
     origin: Origin = Origin.P2P(senderId),
     version: String = "version",
@@ -75,7 +75,7 @@ internal fun blockchainBeaconRequest(
     type: String = "beacon_request",
     id: String = "id",
     senderId: String = "senderId",
-    appMetadata: AppMetadata = AppMetadata(senderId, "mockApp"),
+    appMetadata: MockAppMetadata = MockAppMetadata(senderId, "mockApp"),
     blockchainIdentifier: String = MockBlockchain.IDENTIFIER,
     origin: Origin = Origin.P2P(senderId),
     accountId: String = "accountId",
@@ -198,20 +198,19 @@ internal fun p2pPeers(
         P2pPeer("id#$it", "name#$it", "publicKey#$it", "relayServer#$it", version, isPaired = paired)
     }
 
-internal fun appMetadata(@IntRange(from = 1) number: Int = 1): List<AppMetadata> =
-    (0 until number).map { AppMetadata("sender#$it", "name#$it") }
+internal fun appMetadata(@IntRange(from = 1) number: Int = 1): List<MockAppMetadata> =
+    (0 until number).map { MockAppMetadata("sender#$it", "name#$it") }
 
 internal fun permissions(
     @IntRange(from = 1) number: Int = 1,
     blockchainIdentifier: String = MockBlockchain.IDENTIFIER,
 ): List<Permission> =
-    appMetadata(number).mapIndexed { index, appMetadata ->
+    (0 until number).map {
         MockPermission(
             blockchainIdentifier,
-            "accountIdentifier#$index",
-            "sender#$index",
-            appMetadata,
-            index.toLong(),
+            "accountIdentifier#$it",
+            "sender#$it",
+            it.toLong(),
         )
     }
 
