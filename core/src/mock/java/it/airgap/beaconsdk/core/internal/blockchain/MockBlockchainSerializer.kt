@@ -100,16 +100,16 @@ public class MockBlockchainSerializer : Blockchain.Serializer {
         }
 
     override val v3: V3BeaconMessageBlockchainSerializer = object : V3BeaconMessageBlockchainSerializer {
-        override val permissionRequestData: KSerializer<PermissionV3BeaconRequestContent.ChainData>
+        override val permissionRequestData: KSerializer<PermissionV3BeaconRequestContent.BlockchainData>
             get() = SuperClassSerializer(V3MockPermissionBeaconRequestData.serializer())
 
-        override val blockchainRequestData: KSerializer<BlockchainV3BeaconRequestContent.ChainData>
+        override val blockchainRequestData: KSerializer<BlockchainV3BeaconRequestContent.BlockchainData>
             get() = SuperClassSerializer(V3MockBlockchainBeaconRequestData.serializer())
 
-        override val permissionResponseData: KSerializer<PermissionV3BeaconResponseContent.ChainData>
+        override val permissionResponseData: KSerializer<PermissionV3BeaconResponseContent.BlockchainData>
             get() = SuperClassSerializer(V3MockPermissionBeaconResponseData.serializer())
 
-        override val blockchainResponseData: KSerializer<BlockchainV3BeaconResponseContent.ChainData>
+        override val blockchainResponseData: KSerializer<BlockchainV3BeaconResponseContent.BlockchainData>
             get() = SuperClassSerializer(V3MockBlockchainBeaconResponseData.serializer())
 
     }

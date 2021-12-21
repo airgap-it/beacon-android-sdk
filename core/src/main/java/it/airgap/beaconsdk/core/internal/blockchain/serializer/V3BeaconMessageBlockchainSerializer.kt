@@ -12,11 +12,11 @@ public interface V3BeaconMessageBlockchainSerializer {
 
     // -- request --
 
-    public val permissionRequestData: KSerializer<PermissionV3BeaconRequestContent.ChainData>
-    public val blockchainRequestData: KSerializer<BlockchainV3BeaconRequestContent.ChainData>
+    public val permissionRequestData: KSerializer<PermissionV3BeaconRequestContent.BlockchainData>
+    public val blockchainRequestData: KSerializer<BlockchainV3BeaconRequestContent.BlockchainData>
 
     // -- response --
 
-    public val permissionResponseData: KSerializer<PermissionV3BeaconResponseContent.ChainData>
-    public val blockchainResponseData: KSerializer<BlockchainV3BeaconResponseContent.ChainData>
+    public val permissionResponseData: KSerializer<PermissionV3BeaconResponseContent.BlockchainData>
+    public val blockchainResponseData: KSerializer<BlockchainV3BeaconResponseContent.BlockchainData>
 }

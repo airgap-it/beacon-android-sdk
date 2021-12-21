@@ -181,7 +181,7 @@ internal class V3BeaconMessageTest {
                 "message": {
                     "type": "permission_request",
                     "blockchainIdentifier": "$blockchainIdentifier",
-                    "chainData": {
+                    "blockchainData": {
                         "appMetadata": ${Json.encodeToString(appMetadata)},
                         "network": ${Json.encodeToString(network)},
                         "scopes": ${Json.encodeToString(scopes)}
@@ -220,7 +220,7 @@ internal class V3BeaconMessageTest {
                     "type": "blockchain_request",
                     "blockchainIdentifier": "$blockchainIdentifier",
                     "accountId": "$accountId",
-                    "chainData": {
+                    "blockchainData": {
                         "message": "$message"
                     }
                 }
@@ -263,7 +263,7 @@ internal class V3BeaconMessageTest {
                     "type": "permission_response",
                     "blockchainIdentifier": "$blockchainIdentifier",
                     "accountId": "$accountId",
-                    "chainData": {
+                    "blockchainData": {
                         "publicKey": "$publicKey",
                         "network": ${Json.encodeToString(network)},
                         "scopes": ${Json.encodeToString(scopes)}
@@ -299,7 +299,7 @@ internal class V3BeaconMessageTest {
                 "message": {
                     "type": "blockchain_response",
                     "blockchainIdentifier": "$blockchainIdentifier",
-                    "chainData": {
+                    "blockchainData": {
                         "signature": "$signature"
                     }
                 }

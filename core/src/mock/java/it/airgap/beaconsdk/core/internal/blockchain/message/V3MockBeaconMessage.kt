@@ -21,7 +21,7 @@ import kotlinx.serialization.json.*
 internal data class V3MockPermissionBeaconRequestData(
     val appMetadata: V3AppMetadata,
     val rest: Map<String, JsonElement>,
-) : PermissionV3BeaconRequestContent.ChainData() {
+) : PermissionV3BeaconRequestContent.BlockchainData() {
     override suspend fun toBeaconMessage(
         id: String,
         version: String,
@@ -68,7 +68,7 @@ internal data class V3MockPermissionBeaconRequestData(
 @Serializable(with = V3MockPermissionBeaconResponseData.Serializer::class)
 internal data class V3MockPermissionBeaconResponseData(
     val rest: Map<String, JsonElement>,
-) : PermissionV3BeaconResponseContent.ChainData() {
+) : PermissionV3BeaconResponseContent.BlockchainData() {
     override suspend fun toBeaconMessage(
         id: String,
         version: String,
@@ -111,7 +111,7 @@ internal data class V3MockPermissionBeaconResponseData(
 @Serializable(with = V3MockBlockchainBeaconRequestData.Serializer::class)
 internal data class V3MockBlockchainBeaconRequestData(
     val rest: Map<String, JsonElement>
-) : BlockchainV3BeaconRequestContent.ChainData() {
+) : BlockchainV3BeaconRequestContent.BlockchainData() {
     override suspend fun toBeaconMessage(
         id: String,
         version: String,
@@ -158,7 +158,7 @@ internal data class V3MockBlockchainBeaconRequestData(
 @Serializable(with = V3MockBlockchainBeaconResponseData.Serializer::class)
 internal data class V3MockBlockchainBeaconResponseData(
     val rest: Map<String, JsonElement>
-) : BlockchainV3BeaconResponseContent.ChainData() {
+) : BlockchainV3BeaconResponseContent.BlockchainData() {
     override suspend fun toBeaconMessage(
         id: String,
         version: String,
