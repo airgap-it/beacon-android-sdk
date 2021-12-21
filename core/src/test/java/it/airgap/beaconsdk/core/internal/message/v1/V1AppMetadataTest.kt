@@ -1,8 +1,7 @@
-package it.airgap.beaconsdk.core.internal.message.beacon.v1
+package it.airgap.beaconsdk.core.internal.message.v1
 
 import fromValues
 import it.airgap.beaconsdk.core.data.AppMetadata
-import it.airgap.beaconsdk.core.internal.message.v1.V1AppMetadata
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json

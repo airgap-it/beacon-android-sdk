@@ -2,7 +2,10 @@
 import androidx.annotation.IntRange
 import it.airgap.beaconsdk.core.data.*
 import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchain
-import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchainSerializer
+import it.airgap.beaconsdk.core.internal.blockchain.message.BlockchainMockRequest
+import it.airgap.beaconsdk.core.internal.blockchain.message.BlockchainMockResponse
+import it.airgap.beaconsdk.core.internal.blockchain.message.PermissionMockRequest
+import it.airgap.beaconsdk.core.internal.blockchain.message.PermissionMockResponse
 import it.airgap.beaconsdk.core.internal.message.BeaconConnectionMessage
 import it.airgap.beaconsdk.core.internal.message.VersionedBeaconMessage
 import it.airgap.beaconsdk.core.message.*
@@ -38,27 +41,27 @@ internal fun permissionBeaconRequest(
     blockchainIdentifier: String = MockBlockchain.IDENTIFIER,
     origin: Origin = Origin.P2P(senderId),
     version: String = "version",
-): PermissionBeaconRequest = MockBlockchainSerializer.PermissionMockRequest(type, id, version, blockchainIdentifier, senderId, origin, appMetadata)
+): PermissionBeaconRequest = PermissionMockRequest(type, id, version, blockchainIdentifier, senderId, origin, appMetadata)
 
 internal fun blockchainBeaconRequest(
     type: String = "beacon_request",
     id: String = "id",
     senderId: String = "senderId",
+    accountId: String = "accountId",
     appMetadata: AppMetadata = AppMetadata(senderId, "mockApp"),
     blockchainIdentifier: String = MockBlockchain.IDENTIFIER,
     origin: Origin = Origin.P2P(senderId),
     version: String = "version"
-): BlockchainBeaconRequest = MockBlockchainSerializer.BlockchainMockRequest(type, id, version, blockchainIdentifier, senderId, appMetadata, origin)
+): BlockchainBeaconRequest = BlockchainMockRequest(type, id, version, blockchainIdentifier, senderId, appMetadata, origin, accountId)
 
 internal fun permissionBeaconResponse(
     type: String = "permission_response",
     id: String = "id",
     publicKey: String = "publicKey",
     blockchainIdentifier: String = MockBlockchain.IDENTIFIER,
-    threshold: Threshold? = null,
     version: String = "version",
     requestOrigin: Origin = Origin.P2P("senderId"),
-): PermissionBeaconResponse = MockBlockchainSerializer.PermissionMockResponse(type, id, version, requestOrigin, blockchainIdentifier, publicKey, threshold)
+): PermissionBeaconResponse = PermissionMockResponse(type, id, version, requestOrigin, blockchainIdentifier, publicKey)
 
 internal fun blockchainBeaconResponse(
     type: String = "beacon_response",
@@ -66,7 +69,7 @@ internal fun blockchainBeaconResponse(
     blockchainIdentifier: String = MockBlockchain.IDENTIFIER,
     version: String = "version",
     requestOrigin: Origin = Origin.P2P("senderId"),
-): BlockchainBeaconResponse = MockBlockchainSerializer.BlockchainMockResponse(type, id, version, requestOrigin, blockchainIdentifier)
+): BlockchainBeaconResponse = BlockchainMockResponse(type, id, version, requestOrigin, blockchainIdentifier)
 
 internal fun acknowledgeBeaconResponse(
     id: String = "id",
@@ -80,9 +83,10 @@ internal fun errorBeaconResponse(
     id: String = "id",
     identifier: String = MockBlockchain.IDENTIFIER,
     errorType: BeaconError = BeaconError.Unknown,
+    description: String? = null,
     version: String = "version",
     requestOrigin: Origin = Origin.P2P("senderId"),
-): ErrorBeaconResponse = ErrorBeaconResponse(id, version, requestOrigin, identifier, errorType)
+): ErrorBeaconResponse = ErrorBeaconResponse(id, version, requestOrigin, errorType, description, identifier)
 
 internal fun disconnectBeaconMessage(
     id: String = "id",
@@ -134,13 +138,11 @@ internal fun permissions(
     blockchainIdentifier: String = MockBlockchain.IDENTIFIER,
 ): List<Permission> =
     appMetadata(number).mapIndexed { index, appMetadata ->
-        MockBlockchainSerializer.MockPermission(
+        MockPermission(
             blockchainIdentifier,
             "accountIdentifier#$index",
-            "address#$index",
             "sender#$index",
             appMetadata,
-            "publicKey#$index",
             index.toLong(),
         )
     }

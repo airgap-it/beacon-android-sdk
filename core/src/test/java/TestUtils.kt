@@ -87,10 +87,9 @@ internal fun permissionBeaconResponse(
     id: String = "id",
     accountId: String = "accountId",
     blockchainIdentifier: String = MockBlockchain.IDENTIFIER,
-    threshold: Threshold? = null,
     version: String = "version",
     requestOrigin: Origin = Origin.P2P("senderId"),
-): PermissionBeaconResponse = PermissionMockResponse(type, id, version, requestOrigin, blockchainIdentifier, accountId, threshold)
+): PermissionBeaconResponse = PermissionMockResponse(type, id, version, requestOrigin, blockchainIdentifier, accountId)
 
 internal fun blockchainBeaconResponse(
     type: String = "beacon_response",
@@ -112,9 +111,10 @@ internal fun errorBeaconResponse(
     id: String = "id",
     identifier: String = MockBlockchain.IDENTIFIER,
     errorType: BeaconError = BeaconError.Unknown,
+    description: String? = null,
     version: String = "version",
     requestOrigin: Origin = Origin.P2P("senderId"),
-): ErrorBeaconResponse = ErrorBeaconResponse(id, version, requestOrigin, errorType, identifier)
+): ErrorBeaconResponse = ErrorBeaconResponse(id, version, requestOrigin, errorType, description, identifier)
 
 internal fun disconnectBeaconMessage(
     id: String = "id",

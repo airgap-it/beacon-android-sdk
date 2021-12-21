@@ -5,7 +5,6 @@ import it.airgap.beaconsdk.blockchain.tezos.data.TezosNetwork
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
 import it.airgap.beaconsdk.blockchain.tezos.message.request.PermissionTezosRequest
 import it.airgap.beaconsdk.core.data.Origin
-import it.airgap.beaconsdk.core.data.Threshold
 import it.airgap.beaconsdk.core.exception.BeaconException
 import it.airgap.beaconsdk.core.internal.utils.dependencyRegistry
 import it.airgap.beaconsdk.core.message.PermissionBeaconResponse
@@ -32,18 +31,16 @@ public data class PermissionTezosResponse internal constructor(
     val publicKey: String,
     public val network: TezosNetwork,
     public val scopes: List<TezosPermission.Scope>,
-    override val threshold: Threshold? = null,
 ) : PermissionBeaconResponse() {
 
     public companion object {
 
         /**
          * Creates a new instance of [PermissionTezosResponse] from the [request]
-         * with the specified [publicKey] and optional [network], [scopes] and [threshold].
+         * with the specified [publicKey] and optional [network] and [scopes].
          *
          * The response will have an id matching the one of the [request].
          * If no custom [network] and [scopes] are provided, the values will be also taken from the [request].
-         * By default [threshold] is set to `null`.
          */
         @Throws(BeaconException::class)
         public fun from(
@@ -51,7 +48,6 @@ public data class PermissionTezosResponse internal constructor(
             publicKey: String,
             network: TezosNetwork = request.network,
             scopes: List<TezosPermission.Scope> = request.scopes,
-            threshold: Threshold? = null,
         ): PermissionTezosResponse =
             PermissionTezosResponse(
                 request.id,
@@ -62,7 +58,6 @@ public data class PermissionTezosResponse internal constructor(
                 publicKey,
                 network,
                 scopes,
-                threshold
             )
     }
 }

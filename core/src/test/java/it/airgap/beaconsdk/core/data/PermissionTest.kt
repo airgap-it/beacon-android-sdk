@@ -45,7 +45,6 @@ internal class PermissionTest {
     fun `is deserialized from JSON`() {
         listOf(
             expectedWithJson(),
-            expectedWithJson(threshold = Threshold("amount", "frame")),
             expectedWithJson(includeNulls = true),
         ).map {
             Json.decodeFromString<Permission>(it.second) to it.first
@@ -56,7 +55,7 @@ internal class PermissionTest {
 
     @Test
     fun `serializes to JSON`() {
-        listOf(expectedWithJson(), expectedWithJson(threshold = Threshold("amount", "frame")))
+        listOf(expectedWithJson())
             .map {
                 Json.decodeFromString(JsonObject.serializer(), Json.encodeToString(it.first)) to
                     Json.decodeFromString(JsonObject.serializer(), it.second) }
@@ -71,11 +70,9 @@ internal class PermissionTest {
         senderId: String = "senderId",
         appMetadata: AppMetadata = AppMetadata(senderId, "name"),
         connectedAt: Long = 0,
-        threshold: Threshold? = null,
         includeNulls: Boolean = false,
     ): Pair<Permission, String> {
         val values = mapOf(
-            "threshold" to threshold?.let { Json.encodeToJsonElement(it) },
             "blockchainIdentifier" to blockchainIdentifier,
             "accountId" to accountId,
             "senderId" to senderId,
@@ -91,7 +88,6 @@ internal class PermissionTest {
             senderId,
             appMetadata,
             connectedAt,
-            threshold,
         ) to json
     }
 }

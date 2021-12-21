@@ -24,7 +24,6 @@ import kotlinx.serialization.json.jsonObject
  * @property [senderId] The value that identifies the sender to whom the permissions were granted.
  * @property [appMetadata] The metadata describing the dApp to which the permissions were granted.
  * @property [connectedAt] The timestamp at which the permissions were granted.
- * @property [threshold] An optional threshold configuration.
  */
 @Serializable(with = Permission.Serializer::class)
 public abstract class Permission {
@@ -33,7 +32,6 @@ public abstract class Permission {
     public abstract val senderId: String
     public abstract val appMetadata: AppMetadata
     public abstract val connectedAt: Long
-    public abstract val threshold: Threshold?
 
     @OptIn(ExperimentalSerializationApi::class)
     internal object Serializer : KJsonSerializer<Permission> {

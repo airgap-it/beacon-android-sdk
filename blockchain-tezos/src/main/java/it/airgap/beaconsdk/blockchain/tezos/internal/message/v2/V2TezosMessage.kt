@@ -15,8 +15,6 @@ import it.airgap.beaconsdk.blockchain.tezos.message.response.PermissionTezosResp
 import it.airgap.beaconsdk.blockchain.tezos.message.response.SignPayloadTezosResponse
 import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.data.SigningType
-import it.airgap.beaconsdk.core.data.Threshold
-import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.core.internal.message.v2.V2AppMetadata
 import it.airgap.beaconsdk.core.internal.message.v2.V2BeaconMessage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
@@ -80,7 +78,6 @@ internal sealed class V2TezosMessage : V2BeaconMessage() {
                     content.publicKey,
                     content.network,
                     content.scopes,
-                    content.threshold,
                 )
                 is OperationTezosResponse -> OperationV2TezosResponse(
                     content.version,
@@ -269,7 +266,6 @@ internal data class PermissionV2TezosResponse(
     val publicKey: String,
     val network: TezosNetwork,
     val scopes: List<TezosPermission.Scope>,
-    val threshold: Threshold? = null,
 ) : V2TezosMessage() {
     @Required
     override val type: String = TYPE
@@ -285,7 +281,6 @@ internal data class PermissionV2TezosResponse(
             publicKey,
             network,
             scopes,
-            threshold,
         )
     }
 

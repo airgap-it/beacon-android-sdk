@@ -35,7 +35,6 @@ public class MockBlockchainCreator : Blockchain.Creator {
                 request.senderId,
                 request.appMetadata,
                 currentTimestamp(),
-                null,
                 if (response is PermissionMockResponse) response.rest else emptyMap(),
             )
         }
@@ -68,13 +67,13 @@ public class MockBlockchainCreator : Blockchain.Creator {
     }
 
     override val v3: V3BeaconMessageBlockchainCreator = object : V3BeaconMessageBlockchainCreator {
-        override fun contentFrom(senderId: String, message: BeaconMessage): Result<V3BeaconMessage.Content> =
+        override fun contentFrom(message: BeaconMessage): Result<V3BeaconMessage.Content> =
             runCatching {
                 when (message) {
                     is PermissionMockRequest -> message.toV3()
                     is BlockchainMockRequest -> message.toV3()
-                    is PermissionMockResponse -> message.toV3(senderId)
-                    is BlockchainMockResponse -> message.toV3(senderId)
+                    is PermissionMockResponse -> message.toV3()
+                    is BlockchainMockResponse -> message.toV3()
                     else -> failWithUnsupportedMessage(message, message.version)
                 }
             }

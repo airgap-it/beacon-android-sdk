@@ -1,7 +1,6 @@
 package it.airgap.beaconsdk.core.internal.blockchain.message
 
 import it.airgap.beaconsdk.core.data.Origin
-import it.airgap.beaconsdk.core.data.Threshold
 import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchain
 import it.airgap.beaconsdk.core.internal.message.v1.V1AppMetadata
 import it.airgap.beaconsdk.core.internal.message.v2.V2AppMetadata
@@ -81,8 +80,6 @@ internal data class V2MockPermissionBeaconResponse(
     override val version: String,
     override val id: String,
     override val senderId: String,
-    val accountId: String,
-    val threshold: Threshold?,
     val rest: Map<String, JsonElement>,
 ) : V2BeaconMessage() {
     override suspend fun toBeaconMessage(origin: Origin, storageManager: StorageManager, identifierCreator: IdentifierCreator): BeaconMessage =
@@ -92,8 +89,7 @@ internal data class V2MockPermissionBeaconResponse(
             version,
             origin,
             MockBlockchain.IDENTIFIER,
-            accountId,
-            threshold,
+            "",
             rest,
         )
 
@@ -106,8 +102,6 @@ internal data class V2MockPermissionBeaconResponse(
             element<String>("version")
             element<String>("id")
             element<String>("senderId")
-            element<String>("accountId")
-            element<Threshold>("threshold", isOptional = true)
         }
 
         override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): V2MockPermissionBeaconResponse {
@@ -115,11 +109,9 @@ internal data class V2MockPermissionBeaconResponse(
             val version = jsonElement.jsonObject.getString(descriptor.getElementName(1))
             val id = jsonElement.jsonObject.getString(descriptor.getElementName(2))
             val senderId = jsonElement.jsonObject.getString(descriptor.getElementName(3))
-            val accountId = jsonElement.jsonObject.getString(descriptor.getElementName(4))
-            val threshold = jsonElement.jsonObject.getSerializableOrNull(descriptor.getElementName(5), jsonDecoder, Threshold.serializer())
             val rest = jsonElement.jsonObject.filterKeys { !knownFields.contains(it) }
 
-            return V2MockPermissionBeaconResponse(type, version, id, senderId, accountId, threshold, rest)
+            return V2MockPermissionBeaconResponse(type, version, id, senderId, rest)
         }
 
         override fun serialize(jsonEncoder: JsonEncoder, value: V2MockPermissionBeaconResponse) {
@@ -128,8 +120,6 @@ internal data class V2MockPermissionBeaconResponse(
                 descriptor.getElementName(1) to JsonPrimitive(value.version),
                 descriptor.getElementName(2) to JsonPrimitive(value.id),
                 descriptor.getElementName(3) to JsonPrimitive(value.senderId),
-                descriptor.getElementName(4) to JsonPrimitive(value.accountId),
-                descriptor.getElementName(5) to Json.encodeToJsonElement(value.threshold)
             ) + value.rest
 
             jsonEncoder.encodeSerializableValue(JsonObject.serializer(), JsonObject(fields))

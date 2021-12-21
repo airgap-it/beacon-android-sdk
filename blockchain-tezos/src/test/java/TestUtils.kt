@@ -5,7 +5,6 @@ import it.airgap.beaconsdk.blockchain.tezos.message.request.PermissionTezosReque
 import it.airgap.beaconsdk.blockchain.tezos.message.response.PermissionTezosResponse
 import it.airgap.beaconsdk.core.data.AppMetadata
 import it.airgap.beaconsdk.core.data.Origin
-import it.airgap.beaconsdk.core.data.Threshold
 import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchain
 import it.airgap.beaconsdk.core.internal.utils.failWith
 import kotlinx.serialization.json.JsonElement
@@ -46,11 +45,11 @@ internal fun permissionTezosRequest(
 
 internal fun permissionTezosResponse(
     id: String = "id",
+    accountId: String = "accountId",
     publicKey: String = "publicKey",
     blockchainIdentifier: String = MockBlockchain.IDENTIFIER,
     network: TezosNetwork = TezosNetwork.Custom(),
     scopes: List<TezosPermission.Scope> = emptyList(),
-    threshold: Threshold? = null,
     version: String = "version",
     requestOrigin: Origin = Origin.P2P("senderId"),
-): PermissionTezosResponse = PermissionTezosResponse(id, version, requestOrigin, blockchainIdentifier, publicKey, network, scopes, threshold)
+): PermissionTezosResponse = PermissionTezosResponse(id, version, requestOrigin, blockchainIdentifier, accountId, publicKey, network, scopes)

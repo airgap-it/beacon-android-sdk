@@ -19,7 +19,6 @@ import it.airgap.beaconsdk.blockchain.tezos.message.response.SignPayloadTezosRes
 import it.airgap.beaconsdk.core.data.AppMetadata
 import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.data.SigningType
-import it.airgap.beaconsdk.core.data.Threshold
 import it.airgap.beaconsdk.core.internal.message.v2.V2AppMetadata
 import it.airgap.beaconsdk.core.internal.message.v2.V2BeaconMessage
 import it.airgap.beaconsdk.core.internal.storage.MockSecureStorage
@@ -114,7 +113,6 @@ internal class V2TezosMessageTest {
 
             createPermissionResponseJsonPair(),
             createPermissionResponseJsonPair(includeNulls = includeNulls),
-            createPermissionResponseJsonPair(threshold = Threshold("amount", "timeframe")),
             createOperationResponseJsonPair(),
             createSignPayloadResponseJsonPair(),
             createBroadcastResponseJsonPair(),
@@ -236,7 +234,6 @@ internal class V2TezosMessageTest {
         publicKey: String = "publicKey",
         network: TezosNetwork = TezosNetwork.Custom(),
         scopes: List<TezosPermission.Scope> = emptyList(),
-        threshold: Threshold? = null,
         includeNulls: Boolean = false,
     ): Pair<PermissionV2TezosResponse, String> {
         val values = mapOf(
@@ -247,12 +244,11 @@ internal class V2TezosMessageTest {
             "publicKey" to publicKey,
             "network" to Json.encodeToJsonElement(network),
             "scopes" to Json.encodeToJsonElement(scopes),
-            "threshold" to threshold?.let { Json.encodeToJsonElement(it) }
         )
 
         val json = JsonObject.fromValues(values, includeNulls).toString()
 
-        return PermissionV2TezosResponse(version, id, senderId, publicKey, network, scopes, threshold) to json
+        return PermissionV2TezosResponse(version, id, senderId, publicKey, network, scopes) to json
     }
 
     private fun createOperationResponseJsonPair(
@@ -366,11 +362,10 @@ internal class V2TezosMessageTest {
         publicKey: String = "publicKey",
         network: TezosNetwork = TezosNetwork.Custom(),
         scopes: List<TezosPermission.Scope> = emptyList(),
-        threshold: Threshold? = null,
         origin: Origin = Origin.P2P(senderId),
     ): Pair<PermissionV2TezosResponse, PermissionBeaconResponse> =
-        PermissionV2TezosResponse(version, id, senderId, publicKey, network, scopes, threshold) to
-            PermissionTezosResponse(id, version, origin, Tezos.IDENTIFIER, publicKey, network, scopes, threshold)
+        PermissionV2TezosResponse(version, id, senderId, publicKey, network, scopes) to
+            PermissionTezosResponse(id, version, origin, Tezos.IDENTIFIER, publicKey, network, scopes)
 
     private fun createOperationResponsePair(
         version: String = "2",

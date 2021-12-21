@@ -10,6 +10,5 @@ public data class MockPermission(
     override val senderId: String,
     override val appMetadata: AppMetadata,
     override val connectedAt: Long,
-    override val threshold: Threshold? = null,
     val rest: Map<String, JsonElement> = emptyMap(),
 ) : Permission()

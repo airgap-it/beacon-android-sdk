@@ -1,4 +1,4 @@
-package it.airgap.beaconsdk.core.internal.message.beacon.v2
+package it.airgap.beaconsdk.core.internal.message.v1
 
 import fromValues
 import io.mockk.MockKAnnotations
@@ -10,10 +10,6 @@ import it.airgap.beaconsdk.core.internal.blockchain.BlockchainRegistry
 import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchain
 import it.airgap.beaconsdk.core.internal.blockchain.message.*
 import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
-import it.airgap.beaconsdk.core.internal.message.v2.DisconnectV2BeaconMessage
-import it.airgap.beaconsdk.core.internal.message.v2.ErrorV2BeaconResponse
-import it.airgap.beaconsdk.core.internal.message.v2.V2AppMetadata
-import it.airgap.beaconsdk.core.internal.message.v2.V2BeaconMessage
 import it.airgap.beaconsdk.core.internal.storage.MockSecureStorage
 import it.airgap.beaconsdk.core.internal.storage.MockStorage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
@@ -32,7 +28,7 @@ import org.junit.Before
 import org.junit.Test
 import kotlin.test.assertEquals
 
-internal class V2BeaconMessageTest {
+internal class V1BeaconMessageTest {
 
     @MockK
     private lateinit var dependencyRegistry: DependencyRegistry
@@ -69,7 +65,7 @@ internal class V2BeaconMessageTest {
     @Test
     fun `is deserialized from JSON`() {
         messagesWithJsonStrings()
-            .map { Json.decodeFromString<V2BeaconMessage>(it.second) to it.first }
+            .map { Json.decodeFromString<V1BeaconMessage>(it.second) to it.first }
             .forEach {
                 assertEquals(it.second, it.first)
             }
@@ -87,11 +83,11 @@ internal class V2BeaconMessageTest {
 
     @Test
     fun `is created from Beacon message`() {
-        val version = "2"
+        val version = "1"
         val senderId = "senderId"
 
         versionedWithBeacon(version, senderId)
-            .map { V2BeaconMessage.from(senderId, it.second) to it.first }
+            .map { V1BeaconMessage.from(senderId, it.second) to it.first }
             .forEach {
                 assertEquals(it.second, it.first)
             }
@@ -101,15 +97,15 @@ internal class V2BeaconMessageTest {
     fun `converts to Beacon message`() {
         val senderId = "senderId"
         val otherId = "otherId"
-        val origin = Origin.P2P(senderId)
+        val origin = Origin.P2P("v1App")
 
-        val matchingAppMetadata = AppMetadata(senderId, "v2App")
-        val otherAppMetadata = AppMetadata(otherId, "v2OtherApp")
+        val matchingAppMetadata = AppMetadata(senderId, "v1App")
+        val otherAppMetadata = AppMetadata(otherId, "v1OtherApp")
 
         runBlocking { storageManager.setAppMetadata(listOf(otherAppMetadata, matchingAppMetadata)) }
 
         runBlocking {
-            versionedWithBeacon(senderId = senderId, appMetadata = matchingAppMetadata, origin = origin)
+            versionedWithBeacon(beaconId = senderId, appMetadata = matchingAppMetadata, origin = origin)
                 .map { it.first.toBeaconMessage(origin, storageManager, identifierCreator) to it.second }
                 .forEach {
                     assertEquals(it.second, it.first)
@@ -119,62 +115,60 @@ internal class V2BeaconMessageTest {
 
     // -- message to JSON --
 
-    private fun messagesWithJsonStrings() =
-        listOf(
-            createPermissionRequestJsonPair(),
-            createPermissionRequestJsonPair(scopes = listOf("sign")),
-            createOperationRequestJsonPair(),
-            createSignPayloadRequestJsonPair(),
-            createBroadcastRequestJsonPair(),
+    private fun messagesWithJsonStrings() = listOf(
+        createPermissionRequestJsonPair(),
+        createPermissionRequestJsonPair(scopes = listOf("sign")),
+        createOperationRequestJsonPair(),
+        createSignPayloadRequestJsonPair(),
+        createBroadcastRequestJsonPair(),
 
-            createPermissionResponseJsonPair(),
-            createPermissionResponseJsonPair(threshold = Threshold("amount", "timeframe")),
-            createOperationResponseJsonPair(),
-            createSignPayloadResponseJsonPair(),
-            createBroadcastResponseJsonPair(),
+        createPermissionResponseJsonPair(),
+        createOperationResponseJsonPair(),
+        createSignPayloadResponseJsonPair(),
+        createBroadcastResponseJsonPair(),
 
-            createDisconnectJsonPair(),
-            createErrorJsonPair(),
-        )
+        createDisconnectJsonPair(),
+        createErrorJsonPair(),
+    )
 
-    // -- V2BeaconMessage to BeaconMessage --
+    // -- V1BeaconMessage to BeaconMessage --
 
     private fun versionedWithBeacon(
-        version: String = "2",
-        senderId: String = "senderId",
-        origin: Origin = Origin.P2P(senderId),
+        version: String = "1",
+        beaconId: String = "beaconId",
+        origin: Origin = Origin.P2P(beaconId),
         appMetadata: AppMetadata? = null,
-    ): List<Pair<V2BeaconMessage, BeaconMessage>> =
+    ): List<Pair<V1BeaconMessage, BeaconMessage>> =
         listOf(
-            createPermissionRequestPair(version = version, senderId = senderId, origin = origin),
-            createOperationRequestPair(version = version, senderId = senderId, appMetadata = appMetadata, origin = origin),
-            createSignPayloadRequestPair(version = version, senderId = senderId, appMetadata = appMetadata, origin = origin),
-            createBroadcastRequestPair(version = version, senderId = senderId, appMetadata = appMetadata, origin = origin),
+            createPermissionRequestPair(version = version, beaconId = beaconId, origin = origin),
+            createOperationRequestPair(version = version, beaconId = beaconId, appMetadata = appMetadata, origin = origin),
+            createSignPayloadRequestPair(version = version, beaconId = beaconId, appMetadata = appMetadata, origin = origin),
+            createBroadcastRequestPair(version = version, beaconId = beaconId, appMetadata = appMetadata, origin = origin),
 
-            createPermissionResponsePair(version = version, senderId = senderId, origin = origin),
-            createOperationResponsePair(version = version, senderId = senderId, origin = origin),
-            createSignPayloadResponsePair(version = version, senderId = senderId, origin = origin),
-            createBroadcastResponsePair(version = version, senderId = senderId, origin = origin),
+            createPermissionResponsePair(version = version, beaconId = beaconId, origin = origin),
+            createOperationResponsePair(version = version, beaconId = beaconId, origin = origin),
+            createSignPayloadResponsePair(version = version, beaconId = beaconId, origin = origin),
+            createBroadcastResponsePair(version = version, beaconId = beaconId, origin = origin),
 
-            createDisconnectPair(version = version, senderId = senderId, origin = origin),
-            createErrorResponsePair(version = version, senderId = senderId, origin = origin),
+            createDisconnectPair(version = version, beaconId = beaconId, origin = origin),
+            createErrorResponsePair(version = version, beaconId = beaconId, origin = origin),
         )
 
     // -- request to JSON --
 
     private fun createPermissionRequestJsonPair(
-        version: String = "2",
+        version: String = "1",
         id: String = "id",
-        senderId: String = "senderId",
-        appMetadata: V2AppMetadata = V2AppMetadata("senderId", "v2App"),
+        beaconId: String = "beaconId",
+        appMetadata: V1AppMetadata = V1AppMetadata("beaconId", "v1App"),
         network: Network = MockNetwork(),
         scopes: List<String> = emptyList()
-    ): Pair<V2MockPermissionBeaconRequest, String> =
-        V2MockPermissionBeaconRequest(
+    ): Pair<V1MockPermissionBeaconRequest, String> =
+        V1MockPermissionBeaconRequest(
             "permission_request",
             version,
             id,
-            senderId,
+            beaconId,
             appMetadata,
             mapOf(
                 "network" to Json.encodeToJsonElement(network),
@@ -185,7 +179,7 @@ internal class V2BeaconMessageTest {
                 "type": "permission_request",
                 "version": "$version",
                 "id": "$id",
-                "senderId": "$senderId",
+                "beaconId": "$beaconId",
                 "appMetadata": ${Json.encodeToString(appMetadata)},
                 "network": ${Json.encodeToString(network)},
                 "scopes": ${Json.encodeToString(scopes)}
@@ -193,18 +187,18 @@ internal class V2BeaconMessageTest {
         """.trimIndent()
 
     private fun createOperationRequestJsonPair(
-        version: String = "2",
+        version: String = "1",
         id: String = "id",
-        senderId: String = "senderId",
+        beaconId: String = "beaconId",
         network: Network = MockNetwork(),
         tezosOperations: List<Map<String, String>> = emptyList(),
         sourceAddress: String = "sourceAddress"
-    ): Pair<V2MockBlockchainBeaconMessage, String> =
-        V2MockBlockchainBeaconMessage.request(
+    ): Pair<V1MockBlockchainBeaconMessage, String> =
+        V1MockBlockchainBeaconMessage.request(
             "operation_request",
             version,
             id,
-            senderId,
+            beaconId,
             mapOf(
                 "network" to Json.encodeToJsonElement(network),
                 "operationDetails" to Json.encodeToJsonElement(tezosOperations),
@@ -215,7 +209,7 @@ internal class V2BeaconMessageTest {
                 "type": "operation_request",
                 "version": "$version",
                 "id": "$id",
-                "senderId": "$senderId",
+                "beaconId": "$beaconId",
                 "network": ${Json.encodeToString(network)},
                 "operationDetails": ${Json.encodeToString(tezosOperations)},
                 "sourceAddress": "$sourceAddress"
@@ -223,57 +217,54 @@ internal class V2BeaconMessageTest {
         """.trimIndent()
 
     private fun createSignPayloadRequestJsonPair(
-        version: String = "2",
+        version: String = "1",
         id: String = "id",
-        senderId: String = "senderId",
-        signingType: SigningType = SigningType.Raw,
+        beaconId: String = "beaconId",
         payload: String = "payload",
         sourceAddress: String = "sourceAddress",
-    ): Pair<V2MockBlockchainBeaconMessage, String> =
-        V2MockBlockchainBeaconMessage.request(
+    ): Pair<V1MockBlockchainBeaconMessage, String> =
+        V1MockBlockchainBeaconMessage.request(
             "sign_payload_request",
             version,
             id,
-            senderId,
+            beaconId,
             mapOf(
-                "signingType" to Json.encodeToJsonElement(signingType),
                 "payload" to JsonPrimitive(payload),
                 "sourceAddress" to JsonPrimitive(sourceAddress),
-            )
+            ),
         ) to """
             {
                 "type": "sign_payload_request",
                 "version": "$version",
                 "id": "$id",
-                "senderId": "$senderId",
-                "signingType": ${Json.encodeToString(signingType)},
+                "beaconId": "$beaconId",
                 "payload": "$payload",
                 "sourceAddress": "$sourceAddress"
             }
         """.trimIndent()
 
     private fun createBroadcastRequestJsonPair(
-        version: String = "2",
+        version: String = "1",
         id: String = "id",
-        senderId: String = "senderId",
+        beaconId: String = "beaconId",
         network: Network = MockNetwork(),
         signedTransaction: String = "signedTransaction"
-    ): Pair<V2MockBlockchainBeaconMessage, String> =
-        V2MockBlockchainBeaconMessage.request(
+    ): Pair<V1MockBlockchainBeaconMessage, String> =
+        V1MockBlockchainBeaconMessage.request(
             "broadcast_request",
             version,
             id,
-            senderId,
+            beaconId,
             mapOf(
                 "network" to Json.encodeToJsonElement(network),
                 "signedTransaction" to JsonPrimitive(signedTransaction),
-            )
+            ),
         ) to """
             {
                 "type": "broadcast_request",
                 "version": "$version",
                 "id": "$id",
-                "senderId": "$senderId",
+                "beaconId": "$beaconId",
                 "network": ${Json.encodeToString(network)},
                 "signedTransaction": "$signedTransaction"
             }
@@ -282,79 +273,71 @@ internal class V2BeaconMessageTest {
     // -- response to JSON --
 
     private fun createPermissionResponseJsonPair(
-        version: String = "2",
+        version: String = "1",
         id: String = "id",
-        senderId: String = "senderId",
-        accountId: String = "accountId",
+        beaconId: String = "beaconId",
+        publicKey: String = "publicKey",
         network: Network = MockNetwork(),
         scopes: List<String> = emptyList(),
-        threshold: Threshold? = null,
-    ): Pair<V2MockPermissionBeaconResponse, String> {
-        val values = mapOf(
-            "type" to "permission_response",
-            "version" to version,
-            "id" to id,
-            "senderId" to senderId,
-            "accountId" to accountId,
-            "network" to Json.encodeToJsonElement(network),
-            "scopes" to Json.encodeToJsonElement(scopes),
-            "threshold" to threshold?.let { Json.encodeToJsonElement(it) }
-        )
-
-        val json = JsonObject.fromValues(values, includeNulls = true).toString()
-
-        return V2MockPermissionBeaconResponse(
+    ): Pair<V1MockPermissionBeaconResponse, String> =
+        V1MockPermissionBeaconResponse(
             "permission_response",
             version,
             id,
-            senderId,
-            accountId,
-            threshold,
+            beaconId,
             mapOf(
+                "publicKey" to Json.encodeToJsonElement(publicKey),
                 "network" to Json.encodeToJsonElement(network),
                 "scopes" to Json.encodeToJsonElement(scopes),
             ),
-        ) to json
-    }
+        ) to """
+            {
+                "type": "permission_response",
+                "version": "$version",
+                "id": "$id",
+                "beaconId": "$beaconId",
+                "publicKey": "$publicKey",
+                "network": ${Json.encodeToString(network)},
+                "scopes": ${Json.encodeToString(scopes)}
+            }
+        """.trimIndent()
 
     private fun createOperationResponseJsonPair(
-        version: String = "2",
+        version: String = "1",
         id: String = "id",
-        senderId: String = "senderId",
+        beaconId: String = "beaconId",
         transactionHash: String = "transactionHash"
-    ): Pair<V2MockBlockchainBeaconMessage, String> =
-        V2MockBlockchainBeaconMessage.response(
+    ): Pair<V1MockBlockchainBeaconMessage, String> =
+        V1MockBlockchainBeaconMessage.response(
             "operation_response",
             version,
             id,
-            senderId,
+            beaconId,
             mapOf(
-                "transactionHash" to JsonPrimitive(transactionHash),
+                "transactionHash" to JsonPrimitive(transactionHash)
             ),
         ) to """
             {
                 "type": "operation_response",
                 "version": "$version",
                 "id": "$id",
-                "senderId": "$senderId",
+                "beaconId": "$beaconId",
                 "transactionHash": "$transactionHash"
             }
         """.trimIndent()
 
     private fun createSignPayloadResponseJsonPair(
-        version: String = "2",
+        version: String = "1",
         id: String = "id",
-        senderId: String = "senderId",
-        signingType: SigningType = SigningType.Raw,
+        beaconId: String = "beaconId",
         signature: String = "signature",
-    ): Pair<V2MockBlockchainBeaconMessage, String> =
-        V2MockBlockchainBeaconMessage.response(
+    ): Pair<V1MockBlockchainBeaconMessage, String> =
+        V1MockBlockchainBeaconMessage.response(
             "sign_payload_response",
             version,
             id,
-            senderId,
+            beaconId,
             mapOf(
-                "signingType" to Json.encodeToJsonElement(signingType),
                 "signature" to JsonPrimitive(signature),
             ),
         ) to """
@@ -362,32 +345,31 @@ internal class V2BeaconMessageTest {
                 "type": "sign_payload_response",
                 "version": "$version",
                 "id": "$id",
-                "senderId": "$senderId",
-                "signingType": ${Json.encodeToString(signingType)},
+                "beaconId": "$beaconId",
                 "signature": "$signature"
             }
         """.trimIndent()
 
     private fun createBroadcastResponseJsonPair(
-        version: String = "2",
+        version: String = "1",
         id: String = "id",
-        senderId: String = "senderId",
+        beaconId: String = "beaconId",
         transactionHash: String = "transactionHash"
-    ): Pair<V2MockBlockchainBeaconMessage, String> =
-        V2MockBlockchainBeaconMessage.response(
+    ): Pair<V1MockBlockchainBeaconMessage, String> =
+        V1MockBlockchainBeaconMessage.response(
             "broadcast_response",
             version,
             id,
-            senderId,
+            beaconId,
             mapOf(
                 "transactionHash" to JsonPrimitive(transactionHash),
-            )
+            ),
         ) to """
             {
                 "type": "broadcast_response",
                 "version": "$version",
                 "id": "$id",
-                "senderId": "$senderId",
+                "beaconId": "$beaconId",
                 "transactionHash": "$transactionHash"
             }
         """.trimIndent()
@@ -395,31 +377,31 @@ internal class V2BeaconMessageTest {
     // -- other to JSON --
 
     private fun createDisconnectJsonPair(
-        version: String = "2",
+        version: String = "1",
         id: String = "id",
-        senderId: String = "senderId",
-    ): Pair<DisconnectV2BeaconMessage, String> =
-        DisconnectV2BeaconMessage(version, id, senderId) to """
+        beaconId: String = "beaconId",
+    ): Pair<DisconnectV1BeaconMessage, String> =
+        DisconnectV1BeaconMessage(version, id, beaconId) to """
             {
                 "type": "disconnect",
                 "version": "$version",
                 "id": "$id",
-                "senderId": "$senderId"
+                "beaconId": "$beaconId"
             }
         """.trimIndent()
 
     private fun createErrorJsonPair(
-        version: String = "2",
+        version: String = "1",
         id: String = "id",
-        senderId: String = "senderId",
+        beaconId: String = "beaconId",
         errorType: BeaconError = BeaconError.Unknown,
-    ): Pair<ErrorV2BeaconResponse, String> =
-        ErrorV2BeaconResponse(version, id, senderId, errorType) to """
+    ): Pair<ErrorV1BeaconResponse, String> =
+        ErrorV1BeaconResponse(version, id, beaconId, errorType) to """
             {
                 "type": "error",
                 "version": "$version",
                 "id": "$id",
-                "senderId": "$senderId",
+                "beaconId": "$beaconId",
                 "errorType": ${Json.encodeToString(errorType)}
             }
         """.trimIndent()
@@ -427,14 +409,14 @@ internal class V2BeaconMessageTest {
     // -- request to BeaconMessage --
 
     private fun createPermissionRequestPair(
-        version: String = "2",
+        version: String = "1",
         id: String = "id",
-        senderId: String = "senderId",
-        appMetadata: V2AppMetadata = V2AppMetadata("senderId", "v2App"),
+        beaconId: String = "beaconId",
+        appMetadata: V1AppMetadata = V1AppMetadata("beaconId", "v1App"),
         network: Network = MockNetwork(),
         scopes: List<String> = emptyList(),
-        origin: Origin = Origin.P2P(senderId),
-    ): Pair<V2MockPermissionBeaconRequest, PermissionBeaconRequest> {
+        origin: Origin = Origin.P2P(beaconId),
+    ): Pair<V1MockPermissionBeaconRequest, PermissionBeaconRequest> {
         val type = "permission_request"
         val rest = mapOf(
             "network" to Json.encodeToJsonElement(network),
@@ -442,22 +424,21 @@ internal class V2BeaconMessageTest {
         )
 
         return (
-            V2MockPermissionBeaconRequest(type, version, id, senderId, appMetadata, rest)
-                to PermissionMockRequest(type, id, version, MockBlockchain.IDENTIFIER, senderId, origin, appMetadata.toAppMetadata(), rest)
+            V1MockPermissionBeaconRequest(type, version, id, beaconId, appMetadata, rest)
+                to PermissionMockRequest(type, id, version, MockBlockchain.IDENTIFIER, beaconId, origin, appMetadata.toAppMetadata(), rest)
         )
     }
 
     private fun createOperationRequestPair(
-        version: String = "2",
+        version: String = "1",
         id: String = "id",
-        senderId: String = "senderId",
+        beaconId: String = "beaconId",
         network: Network = MockNetwork(),
         tezosOperations: List<Map<String, String>> = emptyList(),
         sourceAddress: String = "sourceAddress",
         appMetadata: AppMetadata? = null,
-        origin: Origin = Origin.P2P(senderId),
-        accountId: String? = null,
-    ): Pair<V2MockBlockchainBeaconMessage, BlockchainBeaconRequest> {
+        origin: Origin = Origin.P2P(beaconId),
+    ): Pair<V1MockBlockchainBeaconMessage, BlockchainBeaconRequest> {
         val type = "operation_request"
         val rest = mapOf(
             "network" to Json.encodeToJsonElement(network),
@@ -466,45 +447,42 @@ internal class V2BeaconMessageTest {
         )
 
         return (
-            V2MockBlockchainBeaconMessage.request(type, version, id, senderId, rest)
-                to BlockchainMockRequest(type, id, version, MockBlockchain.IDENTIFIER, senderId, appMetadata, origin, accountId, rest)
+            V1MockBlockchainBeaconMessage.request(type, version, id, beaconId, rest)
+                to BlockchainMockRequest(type, id, version, MockBlockchain.IDENTIFIER, beaconId, appMetadata, origin, null, rest)
         )
     }
 
     private fun createSignPayloadRequestPair(
-        version: String = "2",
+        version: String = "1",
         id: String = "id",
-        senderId: String = "senderId",
-        signingType: SigningType = SigningType.Raw,
+        beaconId: String = "beaconId",
         payload: String = "payload",
         sourceAddress: String = "sourceAddress",
         appMetadata: AppMetadata? = null,
-        origin: Origin = Origin.P2P(senderId),
-        accountId: String? = null,
-    ): Pair<V2MockBlockchainBeaconMessage, BlockchainBeaconRequest> {
+        origin: Origin = Origin.P2P(beaconId),
+    ): Pair<V1MockBlockchainBeaconMessage, BlockchainBeaconRequest> {
         val type = "sign_payload_request"
         val rest = mapOf(
-            "signingType" to Json.encodeToJsonElement(signingType),
             "payload" to JsonPrimitive(payload),
             "sourceAddress" to JsonPrimitive(sourceAddress),
         )
 
         return (
-            V2MockBlockchainBeaconMessage.request(type, version, id, senderId, rest)
-                to BlockchainMockRequest(type, id, version, MockBlockchain.IDENTIFIER, senderId, appMetadata, origin, accountId, rest)
+            V1MockBlockchainBeaconMessage.request(type, version, id, beaconId, rest)
+                to BlockchainMockRequest(type, id, version, MockBlockchain.IDENTIFIER, beaconId, appMetadata, origin, null, rest)
         )
     }
 
     private fun createBroadcastRequestPair(
-        version: String = "2",
+        version: String = "1",
         id: String = "id",
-        senderId: String = "senderId",
+        beaconId: String = "beaconId",
         network: Network = MockNetwork(),
         signedTransaction: String = "signedTransaction",
         appMetadata: AppMetadata? = null,
-        origin: Origin = Origin.P2P(senderId),
+        origin: Origin = Origin.P2P(beaconId),
         accountId: String? = null,
-    ): Pair<V2MockBlockchainBeaconMessage, BlockchainBeaconRequest> {
+    ): Pair<V1MockBlockchainBeaconMessage, BlockchainBeaconRequest> {
         val type = "broadcast_request"
         val rest = mapOf(
             "network" to Json.encodeToJsonElement(network),
@@ -512,107 +490,105 @@ internal class V2BeaconMessageTest {
         )
 
         return (
-            V2MockBlockchainBeaconMessage.request(type, version, id, senderId, rest)
-                to BlockchainMockRequest(type, id, version, MockBlockchain.IDENTIFIER, senderId, appMetadata, origin, accountId, rest)
+            V1MockBlockchainBeaconMessage.request(type, version, id, beaconId, rest)
+                to BlockchainMockRequest(type, id, version, MockBlockchain.IDENTIFIER, beaconId, appMetadata, origin, accountId, rest)
         )
     }
 
     // -- response to BeaconMessage --
 
     private fun createPermissionResponsePair(
-        version: String = "2",
+        version: String = "1",
         id: String = "id",
-        senderId: String = "senderId",
+        beaconId: String = "beaconId",
         publicKey: String = "publicKey",
         network: Network = MockNetwork(),
         scopes: List<String> = emptyList(),
-        threshold: Threshold? = null,
-        origin: Origin = Origin.P2P(senderId),
-    ): Pair<V2MockPermissionBeaconResponse, PermissionBeaconResponse> {
+        origin: Origin = Origin.P2P(beaconId),
+    ): Pair<V1MockPermissionBeaconResponse, PermissionBeaconResponse> {
         val type = "permission_response"
         val rest = mapOf(
+            "publicKey" to JsonPrimitive(publicKey),
             "network" to Json.encodeToJsonElement(network),
             "scopes" to Json.encodeToJsonElement(scopes),
         )
 
         return (
-            V2MockPermissionBeaconResponse(type, version, id, senderId, publicKey, threshold, rest)
-                to PermissionMockResponse(type, id, version, origin, MockBlockchain.IDENTIFIER, publicKey, threshold, rest)
+            V1MockPermissionBeaconResponse(type, version, id, beaconId, rest)
+                to PermissionMockResponse(type, id, version, origin, MockBlockchain.IDENTIFIER, "", rest)
         )
     }
 
     private fun createOperationResponsePair(
-        version: String = "2",
+        version: String = "1",
         id: String = "id",
-        senderId: String = "senderId",
+        beaconId: String = "beaconId",
         transactionHash: String = "transactionHash",
-        origin: Origin = Origin.P2P(senderId),
-    ): Pair<V2MockBlockchainBeaconMessage, BlockchainBeaconResponse> {
+        origin: Origin = Origin.P2P(beaconId),
+    ): Pair<V1MockBlockchainBeaconMessage, BlockchainBeaconResponse> {
         val type = "operation_response"
         val rest = mapOf(
             "transactionHash" to JsonPrimitive(transactionHash),
         )
 
         return (
-            V2MockBlockchainBeaconMessage.response(type, version, id, senderId, rest)
+            V1MockBlockchainBeaconMessage.response(type, version, id, beaconId, rest)
                 to BlockchainMockResponse(type, id, version, origin, MockBlockchain.IDENTIFIER, rest)
         )
     }
 
     private fun createSignPayloadResponsePair(
-        version: String = "2",
+        version: String = "1",
         id: String = "id",
-        senderId: String = "senderId",
-        signingType: SigningType = SigningType.Raw,
+        beaconId: String = "beaconId",
         signature: String = "signature",
-        origin: Origin = Origin.P2P(senderId),
-    ): Pair<V2MockBlockchainBeaconMessage, BlockchainBeaconResponse> {
+        origin: Origin = Origin.P2P(beaconId),
+    ): Pair<V1MockBlockchainBeaconMessage, BlockchainBeaconResponse> {
         val type = "sign_payload_response"
         val rest = mapOf(
-            "signingType" to Json.encodeToJsonElement(signingType),
             "signature" to JsonPrimitive(signature),
         )
 
         return (
-            V2MockBlockchainBeaconMessage.response(type, version, id, senderId, rest)
+            V1MockBlockchainBeaconMessage.response(type, version, id, beaconId, rest,)
                 to BlockchainMockResponse(type, id, version, origin, MockBlockchain.IDENTIFIER, rest)
         )
     }
 
     private fun createBroadcastResponsePair(
-        version: String = "2",
+        version: String = "1",
         id: String = "id",
-        senderId: String = "senderId",
+        beaconId: String = "beaconId",
         transactionHash: String = "transactionHash",
-        origin: Origin = Origin.P2P(senderId),
-    ): Pair<V2MockBlockchainBeaconMessage, BlockchainBeaconResponse> {
+        origin: Origin = Origin.P2P(beaconId),
+    ): Pair<V1MockBlockchainBeaconMessage, BlockchainBeaconResponse> {
         val type = "broadcast_response"
         val rest = mapOf(
             "transactionHash" to JsonPrimitive(transactionHash),
         )
 
         return (
-            V2MockBlockchainBeaconMessage.response(type, version, id, senderId, rest)
+            V1MockBlockchainBeaconMessage.response(type, version, id, beaconId, rest)
                 to BlockchainMockResponse(type, id, version, origin, MockBlockchain.IDENTIFIER, rest)
         )
     }
 
     private fun createErrorResponsePair(
-        version: String = "2",
+        version: String = "1",
         id: String = "id",
-        senderId: String = "senderId",
+        beaconId: String = "beaconId",
         errorType: BeaconError = BeaconError.Unknown,
-        origin: Origin = Origin.P2P(senderId),
-    ): Pair<ErrorV2BeaconResponse, ErrorBeaconResponse> =
-        ErrorV2BeaconResponse(version, id, senderId, errorType) to ErrorBeaconResponse(id, version, origin, errorType, MockBlockchain.IDENTIFIER)
+        origin: Origin = Origin.P2P(beaconId),
+    ): Pair<ErrorV1BeaconResponse, ErrorBeaconResponse> =
+        ErrorV1BeaconResponse(version, id, beaconId, errorType) to ErrorBeaconResponse(id, version, origin, errorType, null, MockBlockchain.IDENTIFIER)
 
     // -- other to BeaconMessage --
 
     private fun createDisconnectPair(
-        version: String = "2",
+        version: String = "1",
         id: String = "id",
-        senderId: String = "senderId",
-        origin: Origin = Origin.P2P(senderId),
-    ): Pair<DisconnectV2BeaconMessage, DisconnectBeaconMessage> =
-        DisconnectV2BeaconMessage(version, id, senderId) to DisconnectBeaconMessage(id, senderId, version, origin)
+        beaconId: String = "beaconId",
+        origin: Origin = Origin.P2P(beaconId),
+    ): Pair<DisconnectV1BeaconMessage, DisconnectBeaconMessage> =
+        DisconnectV1BeaconMessage(version, id, beaconId) to DisconnectBeaconMessage(id, beaconId, version, origin)
 }

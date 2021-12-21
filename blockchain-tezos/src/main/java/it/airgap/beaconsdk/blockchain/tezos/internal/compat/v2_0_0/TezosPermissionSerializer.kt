@@ -3,12 +3,10 @@ package it.airgap.beaconsdk.blockchain.tezos.internal.compat.v2_0_0
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosNetwork
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
 import it.airgap.beaconsdk.core.data.AppMetadata
-import it.airgap.beaconsdk.core.data.Threshold
 import it.airgap.beaconsdk.core.internal.utils.failWithMissingField
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.ListSerializer
-import kotlinx.serialization.builtins.nullable
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.element
@@ -26,7 +24,6 @@ internal object TezosPermissionSerializer : KSerializer<TezosPermission> {
         element<Long>("connectedAt")
         element<TezosNetwork>("network")
         element<List<TezosPermission.Scope>>("scopes")
-        element<Threshold>("threshold", isOptional = true)
     }
 
     override fun deserialize(decoder: Decoder): TezosPermission =
@@ -39,7 +36,6 @@ internal object TezosPermissionSerializer : KSerializer<TezosPermission> {
             var connectedAtOrNull: Long? = null
             var networkOrNull: TezosNetwork? = null
             var scopesOrNull: List<TezosPermission.Scope>? = null
-            var threshold: Threshold? = null
 
             while (true) {
                 when (val i = decodeElementIndex(descriptor)) {
@@ -52,7 +48,6 @@ internal object TezosPermissionSerializer : KSerializer<TezosPermission> {
                     6 -> connectedAtOrNull = decodeLongElement(descriptor, i)
                     7 -> networkOrNull = decodeSerializableElement(descriptor, i, TezosNetwork.serializer())
                     8 -> scopesOrNull = decodeSerializableElement(descriptor, i, ListSerializer(TezosPermission.Scope.serializer()))
-                    9 -> threshold = decodeNullableSerializableElement(descriptor, i, Threshold.serializer().nullable)
                 }
             }
 
@@ -65,7 +60,7 @@ internal object TezosPermissionSerializer : KSerializer<TezosPermission> {
             val network = networkOrNull ?: failWithMissingField(descriptor.getElementName(7))
             val scopes = scopesOrNull ?: failWithMissingField(descriptor.getElementName(8))
 
-            TezosPermission(accountIdentifier, address, senderId, appMetadata, publicKey, connectedAt, network, scopes, threshold)
+            TezosPermission(accountIdentifier, address, senderId, appMetadata, publicKey, connectedAt, network, scopes)
         }
 
     override fun serialize(encoder: Encoder, value: TezosPermission) {
@@ -80,7 +75,6 @@ internal object TezosPermissionSerializer : KSerializer<TezosPermission> {
                 encodeLongElement(descriptor, 6, connectedAt)
                 encodeSerializableElement(descriptor, 7, TezosNetwork.serializer(), value.network)
                 encodeSerializableElement(descriptor, 8, ListSerializer(TezosPermission.Scope.serializer()), value.scopes)
-                encodeNullableSerializableElement(descriptor, 9, Threshold.serializer().nullable, value.threshold)
             }
         }
     }

@@ -1,8 +1,7 @@
-package it.airgap.beaconsdk.core.internal.message.beacon
+package it.airgap.beaconsdk.core.internal.message
 
 import beaconMessages
 import io.mockk.unmockkAll
-import it.airgap.beaconsdk.core.internal.message.VersionedBeaconMessage
 import it.airgap.beaconsdk.core.internal.message.v1.V1BeaconMessage
 import it.airgap.beaconsdk.core.internal.message.v2.V2BeaconMessage
 import it.airgap.beaconsdk.core.internal.message.v3.V3BeaconMessage

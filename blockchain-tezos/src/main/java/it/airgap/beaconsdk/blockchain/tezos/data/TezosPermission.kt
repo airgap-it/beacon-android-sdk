@@ -4,7 +4,6 @@ import it.airgap.beaconsdk.blockchain.tezos.Tezos
 import it.airgap.beaconsdk.blockchain.tezos.internal.compat.TezosCompat
 import it.airgap.beaconsdk.core.data.AppMetadata
 import it.airgap.beaconsdk.core.data.Permission
-import it.airgap.beaconsdk.core.data.Threshold
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -21,7 +20,6 @@ import kotlinx.serialization.Serializable
  * @property [connectedAt] The timestamp at which the permissions were granted.
  * @property [network] The network to which the permission apply.
  * @property [scopes] The list of granted permission types.
- * @property [threshold] An optional threshold configuration.
  */
 @Serializable(with = TezosPermission.Serializer::class)
 public data class TezosPermission internal constructor(
@@ -33,7 +31,6 @@ public data class TezosPermission internal constructor(
     override val connectedAt: Long,
     public val network: TezosNetwork,
     public val scopes: List<Scope>,
-    override val threshold: Threshold? = null,
 ) : Permission() {
     override val blockchainIdentifier: String = Tezos.IDENTIFIER
 
@@ -43,8 +40,7 @@ public data class TezosPermission internal constructor(
     @Serializable
     public enum class Scope {
         @SerialName("sign") Sign,
-        @SerialName("operation_request") OperationRequest,
-        @SerialName("threshold") Threshold;
+        @SerialName("operation_request") OperationRequest;
 
         public companion object {}
     }

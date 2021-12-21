@@ -88,7 +88,7 @@ public data class ErrorV1BeaconResponse(
     override val type: String = TYPE
 
     override suspend fun toBeaconMessage(origin: Origin, storageManager: StorageManager, identifierCreator: IdentifierCreator): BeaconMessage =
-        ErrorBeaconResponse(id, version, origin, errorType, CoreCompat.versioned.blockchain.identifier)
+        ErrorBeaconResponse(id, version, origin, errorType, null, CoreCompat.versioned.blockchain.identifier)
 
     public companion object {
         internal const val TYPE: String = "error"
