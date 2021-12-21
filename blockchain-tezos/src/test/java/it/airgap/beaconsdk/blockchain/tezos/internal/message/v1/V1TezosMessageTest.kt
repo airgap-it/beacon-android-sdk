@@ -54,7 +54,7 @@ internal class V1TezosMessageTest {
 
     @Test
     fun `is deserialized from JSON`() {
-        messagesWithJsonStrings() + messagesWithJsonStrings(includeNulls = false)
+        messagesWithJsonStrings()
             .map { Json.decodeFromString<V1TezosMessage>(it.second) to it.first }
             .forEach {
                 assertEquals(it.second, it.first)
@@ -105,7 +105,7 @@ internal class V1TezosMessageTest {
 
     // -- message to JSON --
 
-    private fun messagesWithJsonStrings(includeNulls: Boolean = false) = listOf(
+    private fun messagesWithJsonStrings() = listOf(
         createPermissionRequestJsonPair(),
         createPermissionRequestJsonPair(scopes = listOf(TezosPermission.Scope.Sign)),
         createOperationRequestJsonPair(),
@@ -114,7 +114,6 @@ internal class V1TezosMessageTest {
         createBroadcastRequestJsonPair(),
 
         createPermissionResponseJsonPair(),
-        createPermissionResponseJsonPair(includeNulls = includeNulls),
         createOperationResponseJsonPair(),
         createSignPayloadResponseJsonPair(),
         createBroadcastResponseJsonPair(),
@@ -234,22 +233,18 @@ internal class V1TezosMessageTest {
         publicKey: String = "publicKey",
         network: TezosNetwork = TezosNetwork.Custom(),
         scopes: List<TezosPermission.Scope> = emptyList(),
-        includeNulls: Boolean = false,
-    ): Pair<PermissionV1TezosResponse, String> {
-        val values = mapOf(
-            "type" to "permission_response",
-            "version" to version,
-            "id" to id,
-            "beaconId" to beaconId,
-            "publicKey" to publicKey,
-            "network" to Json.encodeToJsonElement(network),
-            "scopes" to Json.encodeToJsonElement(scopes),
-        )
-
-        val json = JsonObject.fromValues(values, includeNulls).toString()
-
-        return PermissionV1TezosResponse(version, id, beaconId, publicKey, network, scopes) to json
-    }
+    ): Pair<PermissionV1TezosResponse, String> =
+        PermissionV1TezosResponse(version, id, beaconId, publicKey, network, scopes) to """
+            {
+                "type": "permission_response",
+                "version": "$version",
+                "id": "$id",
+                "beaconId": "$beaconId",
+                "publicKey": "$publicKey",
+                "network": ${Json.encodeToString(network)},
+                "scopes": ${Json.encodeToString(scopes)}
+            }
+        """.trimIndent()
 
     private fun createOperationResponseJsonPair(
         version: String = "1",

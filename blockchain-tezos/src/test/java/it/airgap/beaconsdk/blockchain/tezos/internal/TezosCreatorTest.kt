@@ -7,8 +7,7 @@ import it.airgap.beaconsdk.blockchain.tezos.data.TezosAppMetadata
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
 import it.airgap.beaconsdk.blockchain.tezos.internal.creator.*
 import it.airgap.beaconsdk.blockchain.tezos.internal.wallet.TezosWallet
-import it.airgap.beaconsdk.blockchain.tezos.mockTime
-import it.airgap.beaconsdk.core.data.AppMetadata
+import mockTime
 import it.airgap.beaconsdk.core.internal.storage.MockSecureStorage
 import it.airgap.beaconsdk.core.internal.storage.MockStorage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager

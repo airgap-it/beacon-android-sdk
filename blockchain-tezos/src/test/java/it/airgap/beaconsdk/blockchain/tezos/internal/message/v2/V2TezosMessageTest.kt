@@ -54,7 +54,7 @@ internal class V2TezosMessageTest {
 
     @Test
     fun `is deserialized from JSON`() {
-        messagesWithJsonStrings() + messagesWithJsonStrings(includeNulls = true)
+        messagesWithJsonStrings()
             .map { Json.decodeFromString<V2TezosMessage>(it.second) to it.first }
             .forEach {
                 assertEquals(it.second, it.first)
@@ -105,7 +105,7 @@ internal class V2TezosMessageTest {
 
     // -- message to JSON --
 
-    private fun messagesWithJsonStrings(includeNulls: Boolean = false) =
+    private fun messagesWithJsonStrings() =
         listOf(
             createPermissionRequestJsonPair(),
             createPermissionRequestJsonPair(scopes = listOf(TezosPermission.Scope.Sign)),
@@ -115,7 +115,6 @@ internal class V2TezosMessageTest {
             createBroadcastRequestJsonPair(),
 
             createPermissionResponseJsonPair(),
-            createPermissionResponseJsonPair(includeNulls = includeNulls),
             createOperationResponseJsonPair(),
             createSignPayloadResponseJsonPair(),
             createBroadcastResponseJsonPair(),
@@ -237,22 +236,18 @@ internal class V2TezosMessageTest {
         publicKey: String = "publicKey",
         network: TezosNetwork = TezosNetwork.Custom(),
         scopes: List<TezosPermission.Scope> = emptyList(),
-        includeNulls: Boolean = false,
-    ): Pair<PermissionV2TezosResponse, String> {
-        val values = mapOf(
-            "type" to "permission_response",
-            "version" to version,
-            "id" to id,
-            "senderId" to senderId,
-            "publicKey" to publicKey,
-            "network" to Json.encodeToJsonElement(network),
-            "scopes" to Json.encodeToJsonElement(scopes),
-        )
-
-        val json = JsonObject.fromValues(values, includeNulls).toString()
-
-        return PermissionV2TezosResponse(version, id, senderId, publicKey, network, scopes) to json
-    }
+    ): Pair<PermissionV2TezosResponse, String> =
+        PermissionV2TezosResponse(version, id, senderId, publicKey, network, scopes) to """
+            {
+                "type": "permission_response",
+                "version": "$version",
+                "id": "$id",
+                "senderId": "$senderId",
+                "publicKey": "$publicKey",
+                "network": ${Json.encodeToString(network)},
+                "scopes": ${Json.encodeToString(scopes)}
+            }
+        """.trimIndent()
 
     private fun createOperationResponseJsonPair(
         version: String = "2",

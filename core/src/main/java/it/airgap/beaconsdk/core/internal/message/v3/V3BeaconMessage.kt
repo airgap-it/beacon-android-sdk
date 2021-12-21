@@ -9,6 +9,7 @@ import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
 import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
 import it.airgap.beaconsdk.core.internal.utils.blockchainRegistry
 import it.airgap.beaconsdk.core.message.*
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -17,6 +18,7 @@ import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.element
 import kotlinx.serialization.encoding.decodeStructure
 import kotlinx.serialization.encoding.encodeStructure
+import kotlinx.serialization.json.JsonClassDiscriminator
 import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonEncoder
@@ -36,7 +38,9 @@ public data class V3BeaconMessage(
         identifierCreator: IdentifierCreator,
     ): BeaconMessage = message.toBeaconMessage(id, version, senderId, origin, storageManager, identifierCreator)
 
+    @OptIn(ExperimentalSerializationApi::class)
     @Serializable
+    @JsonClassDiscriminator("type")
     public sealed class Content {
         public abstract suspend fun toBeaconMessage(
             id: String,
@@ -145,7 +149,7 @@ public data class BlockchainV3BeaconRequestContent(
         origin: Origin,
         storageManager: StorageManager,
         identifierCreator: IdentifierCreator,
-    ): BeaconMessage = blockchainData.toBeaconMessage(id, version, senderId, origin, accountId, storageManager, identifierCreator)
+    ): BeaconMessage = blockchainData.toBeaconMessage(id, version, senderId, origin, accountId, blockchainIdentifier, storageManager, identifierCreator)
 
     @Serializable
     public abstract class BlockchainData {
@@ -155,6 +159,7 @@ public data class BlockchainV3BeaconRequestContent(
             senderId: String,
             origin: Origin,
             accountId: String,
+            blockchainIdentifier: String,
             storageManager: StorageManager,
             identifierCreator: IdentifierCreator,
         ): BeaconMessage
@@ -214,7 +219,7 @@ public data class PermissionV3BeaconResponseContent(
         origin: Origin,
         storageManager: StorageManager,
         identifierCreator: IdentifierCreator,
-    ): BeaconMessage = blockchainData.toBeaconMessage(id, version, senderId, origin, accountId, storageManager, identifierCreator)
+    ): BeaconMessage = blockchainData.toBeaconMessage(id, version, senderId, origin, accountId, blockchainIdentifier, storageManager, identifierCreator)
 
     @Serializable
     public abstract class BlockchainData {
@@ -224,6 +229,7 @@ public data class PermissionV3BeaconResponseContent(
             senderId: String,
             origin: Origin,
             accountId: String,
+            blockchainIdentifier: String,
             storageManager: StorageManager,
             identifierCreator: IdentifierCreator,
         ): BeaconMessage
@@ -282,7 +288,7 @@ public data class BlockchainV3BeaconResponseContent(
         origin: Origin,
         storageManager: StorageManager,
         identifierCreator: IdentifierCreator,
-    ): BeaconMessage = blockchainData.toBeaconMessage(id, version, senderId, origin, storageManager, identifierCreator)
+    ): BeaconMessage = blockchainData.toBeaconMessage(id, version, senderId, origin, blockchainIdentifier, storageManager, identifierCreator)
 
     @Serializable
     public abstract class BlockchainData {
@@ -291,6 +297,7 @@ public data class BlockchainV3BeaconResponseContent(
             version: String,
             senderId: String,
             origin: Origin,
+            blockchainIdentifier: String,
             storageManager: StorageManager,
             identifierCreator: IdentifierCreator,
         ): BeaconMessage
