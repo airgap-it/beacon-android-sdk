@@ -1,9 +1,9 @@
 package it.airgap.blockchain.substrate.internal.wallet
 
-import it.airgap.beaconsdk.core.blockchain.Blockchain
+import it.airgap.blockchain.substrate.Substrate
 
-internal class SubstrateWallet : Blockchain.Wallet {
-    override fun addressFromPublicKey(publicKey: String): Result<String> {
-        TODO("Not yet implemented")
+internal class SubstrateWallet {
+    fun address(publicKey: String, prefix: Int): Result<String> {
+        TODO()
     }
 }

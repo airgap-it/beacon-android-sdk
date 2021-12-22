@@ -10,6 +10,7 @@ import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
 import it.airgap.beaconsdk.blockchain.tezos.data.operation.TezosEndorsementOperation
 import it.airgap.beaconsdk.blockchain.tezos.data.operation.TezosOperation
 import it.airgap.beaconsdk.blockchain.tezos.internal.creator.*
+import it.airgap.beaconsdk.blockchain.tezos.internal.di.extend
 import it.airgap.beaconsdk.blockchain.tezos.internal.serializer.*
 import it.airgap.beaconsdk.blockchain.tezos.internal.wallet.TezosWallet
 import it.airgap.beaconsdk.blockchain.tezos.message.request.BroadcastTezosRequest
@@ -37,17 +38,12 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import mockBeaconSdk
+import mockDependencyRegistry
 import org.junit.Before
 import org.junit.Test
 import kotlin.test.assertEquals
 
 internal class V3TezosMessageTest {
-    @MockK
-    private lateinit var dependencyRegistry: DependencyRegistry
-
-    @MockK
-    private lateinit var blockchainRegistry: BlockchainRegistry
-
     @MockK
     private lateinit var tezosWallet: TezosWallet
 
@@ -56,16 +52,12 @@ internal class V3TezosMessageTest {
 
     private lateinit var storageManager: StorageManager
 
-    private lateinit var tezos: Tezos
-
     @Before
     fun setup() {
         MockKAnnotations.init(this)
 
-        mockBeaconSdk(dependencyRegistry = dependencyRegistry)
-
         storageManager = StorageManager(MockStorage(), MockSecureStorage(), identifierCreator)
-        tezos = Tezos(
+        val tezos = Tezos(
             tezosWallet,
             TezosCreator(
                 DataTezosCreator(tezosWallet, storageManager, identifierCreator),
@@ -81,10 +73,9 @@ internal class V3TezosMessageTest {
             ),
         )
 
-        every { dependencyRegistry.blockchainRegistry } returns blockchainRegistry
-
-        every { blockchainRegistry.get(any()) } returns tezos
-        every { blockchainRegistry.getOrNull(any()) } returns tezos
+        val dependencyRegistry = mockDependencyRegistry(tezos)
+        every { dependencyRegistry.storageManager } returns storageManager
+        every { dependencyRegistry.identifierCreator } returns identifierCreator
     }
 
     @Test
@@ -131,7 +122,7 @@ internal class V3TezosMessageTest {
 
         runBlocking {
             versionedWithBeacon(senderId = senderId, appMetadata = matchingAppMetadata, origin = origin)
-                .map { it.first.toBeaconMessage(origin, storageManager, identifierCreator) to it.second }
+                .map { it.first.toBeaconMessage(origin) to it.second }
                 .forEach {
                     assertEquals(it.second, it.first)
                 }

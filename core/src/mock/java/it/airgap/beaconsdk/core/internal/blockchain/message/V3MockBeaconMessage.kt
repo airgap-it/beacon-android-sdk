@@ -2,14 +2,12 @@ package it.airgap.beaconsdk.core.internal.blockchain.message
 
 import it.airgap.beaconsdk.core.data.MockAppMetadata
 import it.airgap.beaconsdk.core.data.Origin
-import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchain
 import it.airgap.beaconsdk.core.internal.message.v3.BlockchainV3BeaconRequestContent
 import it.airgap.beaconsdk.core.internal.message.v3.BlockchainV3BeaconResponseContent
 import it.airgap.beaconsdk.core.internal.message.v3.PermissionV3BeaconRequestContent
 import it.airgap.beaconsdk.core.internal.message.v3.PermissionV3BeaconResponseContent
-import it.airgap.beaconsdk.core.internal.storage.StorageManager
-import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
 import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
+import it.airgap.beaconsdk.core.internal.utils.dependencyRegistry
 import it.airgap.beaconsdk.core.internal.utils.getSerializable
 import it.airgap.beaconsdk.core.message.BeaconMessage
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -31,8 +29,6 @@ internal data class V3MockPermissionBeaconRequestData(
         senderId: String,
         origin: Origin,
         blockchainIdentifier: String,
-        storageManager: StorageManager,
-        identifierCreator: IdentifierCreator,
     ): BeaconMessage = PermissionMockRequest(
         "permission_request",
         id,
@@ -80,8 +76,6 @@ internal data class V3MockPermissionBeaconResponseData(
         origin: Origin,
         accountId: String,
         blockchainIdentifier: String,
-        storageManager: StorageManager,
-        identifierCreator: IdentifierCreator,
     ): BeaconMessage =
         PermissionMockResponse(
             "permission_response",
@@ -124,10 +118,8 @@ internal data class V3MockBlockchainBeaconRequestData(
         origin: Origin,
         accountId: String,
         blockchainIdentifier: String,
-        storageManager: StorageManager,
-        identifierCreator: IdentifierCreator,
     ): BeaconMessage {
-        val appMetadata = storageManager.findAppMetadata { it.senderId == senderId }
+        val appMetadata = dependencyRegistry.storageManager.findAppMetadata { it.senderId == senderId }
         return BlockchainMockRequest(
             "blockchain_request",
             id,
@@ -171,8 +163,6 @@ internal data class V3MockBlockchainBeaconResponseData(
         senderId: String,
         origin: Origin,
         blockchainIdentifier: String,
-        storageManager: StorageManager,
-        identifierCreator: IdentifierCreator,
     ): BeaconMessage =
         BlockchainMockResponse(
             "blockchain_response",

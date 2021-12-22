@@ -9,15 +9,7 @@ import it.airgap.beaconsdk.core.internal.crypto.Crypto
 public class IdentifierCreator internal constructor(
     private val crypto: Crypto,
     private val base58Check: Base58Check,
-    private val blockchainRegistry: BlockchainRegistry,
 ) {
-
-    public fun accountId(blockchainIdentifier: String, publicKey: String, network: Network): Result<String> =
-        runCatchingFlat {
-            val address = blockchainRegistry.get(blockchainIdentifier).wallet.addressFromPublicKey(publicKey).getOrThrow()
-            accountId(address, network)
-        }
-
     public fun accountId(address: String, network: Network): Result<String> {
         val hash = crypto.hash("$address-${network.identifier}", 10)
 

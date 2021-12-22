@@ -24,24 +24,26 @@ internal class DataTezosCreator(
     override suspend fun extractPermission(
         request: PermissionBeaconRequest,
         response: PermissionBeaconResponse,
-    ): Result<Permission> =
+    ): Result<List<Permission>> =
         runCatching {
             if (request !is PermissionTezosRequest) failWithUnknownMessage(request)
             if (response !is PermissionTezosResponse) failWithUnknownMessage(response)
 
-            val address = wallet.addressFromPublicKey(response.publicKey).getOrThrow()
+            val address = wallet.address(response.publicKey).getOrThrow()
             val accountId = identifierCreator.accountId(address, response.network).getOrThrow()
             val appMetadata = storageManager.findInstanceAppMetadata<TezosAppMetadata> { it.senderId == request.senderId } ?: failWithAppMetadataNotFound()
 
-            TezosPermission(
-                accountId,
-                identifierCreator.senderId(request.origin.id.asHexString().toByteArray()).getOrThrow(),
-                connectedAt = currentTimestamp(),
-                address,
-                response.publicKey,
-                response.network,
-                appMetadata,
-                response.scopes,
+            listOf(
+                TezosPermission(
+                    accountId,
+                    identifierCreator.senderId(request.origin.id.asHexString().toByteArray()).getOrThrow(),
+                    connectedAt = currentTimestamp(),
+                    address,
+                    response.publicKey,
+                    response.network,
+                    appMetadata,
+                    response.scopes,
+                ),
             )
         }
 

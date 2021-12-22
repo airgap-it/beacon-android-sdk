@@ -28,13 +28,15 @@ public class MockBlockchainCreator : Blockchain.Creator {
         override suspend fun extractPermission(
             request: PermissionBeaconRequest,
             response: PermissionBeaconResponse,
-        ): Result<Permission> = runCatching {
-            MockPermission(
-                response.blockchainIdentifier,
-                response.accountId,
-                request.senderId,
-                currentTimestamp(),
-                if (response is PermissionMockResponse) response.rest else emptyMap(),
+        ): Result<List<Permission>> = runCatching {
+            listOf(
+                MockPermission(
+                    response.blockchainIdentifier,
+                    response.accountId,
+                    request.senderId,
+                    currentTimestamp(),
+                    if (response is PermissionMockResponse) response.rest else emptyMap(),
+                ),
             )
         }
     }

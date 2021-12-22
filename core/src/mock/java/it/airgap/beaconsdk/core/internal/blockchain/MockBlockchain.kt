@@ -8,7 +8,6 @@ import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class MockBlockchain : Blockchain {
     override val identifier: String = IDENTIFIER
-    override val wallet: Blockchain.Wallet = MockBlockchainWallet()
     override val creator: Blockchain.Creator = MockBlockchainCreator()
     override val serializer: Blockchain.Serializer = MockBlockchainSerializer()
 

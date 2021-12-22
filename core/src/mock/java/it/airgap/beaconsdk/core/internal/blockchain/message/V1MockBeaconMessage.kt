@@ -4,7 +4,6 @@ import it.airgap.beaconsdk.core.data.MockAppMetadata
 import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchain
 import it.airgap.beaconsdk.core.internal.message.v1.V1BeaconMessage
-import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.utils.*
 import it.airgap.beaconsdk.core.message.BeaconMessage
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -24,7 +23,7 @@ internal data class V1MockPermissionBeaconRequest(
     val appMetadata: MockAppMetadata,
     val rest: Map<String, JsonElement>,
 ) : V1BeaconMessage() {
-    override suspend fun toBeaconMessage(origin: Origin, storageManager: StorageManager, identifierCreator: IdentifierCreator): BeaconMessage =
+    override suspend fun toBeaconMessage(origin: Origin): BeaconMessage =
         PermissionMockRequest(
             type,
             id,
@@ -81,7 +80,7 @@ internal data class V1MockPermissionBeaconResponse(
     override val beaconId: String,
     val rest: Map<String, JsonElement>,
 ) : V1BeaconMessage() {
-    override suspend fun toBeaconMessage(origin: Origin, storageManager: StorageManager, identifierCreator: IdentifierCreator): BeaconMessage =
+    override suspend fun toBeaconMessage(origin: Origin): BeaconMessage =
         PermissionMockResponse(
             type,
             id,
@@ -135,10 +134,10 @@ internal data class V1MockBlockchainBeaconMessage(
     val rest: Map<String, JsonElement>,
     val mockType: MockBeaconMessageType,
 ) : V1BeaconMessage() {
-    override suspend fun toBeaconMessage(origin: Origin, storageManager: StorageManager, identifierCreator: IdentifierCreator): BeaconMessage =
+    override suspend fun toBeaconMessage(origin: Origin): BeaconMessage =
         when (mockType) {
             MockBeaconMessageType.Request -> {
-                val appMetadata = storageManager.findAppMetadata { it.senderId == beaconId }
+                val appMetadata = dependencyRegistry.storageManager.findAppMetadata { it.senderId == beaconId }
                 BlockchainMockRequest(
                     type,
                     id,

@@ -4,6 +4,7 @@ import it.airgap.beaconsdk.blockchain.tezos.internal.creator.TezosCreator
 import it.airgap.beaconsdk.blockchain.tezos.internal.serializer.TezosSerializer
 import it.airgap.beaconsdk.blockchain.tezos.internal.wallet.TezosWallet
 import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
+import it.airgap.beaconsdk.core.internal.di.findExtension
 
 internal interface ExtendedDependencyRegistry : DependencyRegistry {
 
@@ -22,4 +23,4 @@ internal interface ExtendedDependencyRegistry : DependencyRegistry {
 
 internal fun DependencyRegistry.extend(): ExtendedDependencyRegistry =
     if (this is ExtendedDependencyRegistry) this
-    else TezosDependencyRegistry(this)
+    else findExtension() ?: TezosDependencyRegistry(this).also { addExtension(it) }

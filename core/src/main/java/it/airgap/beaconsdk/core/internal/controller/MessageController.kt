@@ -23,7 +23,7 @@ public class MessageController internal constructor(
 
     public suspend fun onIncomingMessage(origin: Origin, message: VersionedBeaconMessage): Result<BeaconMessage> =
         runCatching {
-            message.toBeaconMessage(origin, storageManager, identifierCreator).also {
+            message.toBeaconMessage(origin).also {
                 when (it) {
                     is BeaconRequest -> onIncomingRequest(it)
                     else -> { /* no action */ }
@@ -73,9 +73,9 @@ public class MessageController internal constructor(
         if (request !is PermissionBeaconRequest) /* unknown state, no action */ return
 
         val blockchain = blockchainRegistry.get(response.blockchainIdentifier)
-        val permission = blockchain.creator.data.extractPermission(request, response).getOrThrow()
+        val permissions = blockchain.creator.data.extractPermission(request, response).getOrThrow()
 
-        storageManager.addPermissions(listOf(permission))
+        storageManager.addPermissions(permissions)
     }
 
     private fun failWithNoPendingRequest(): Nothing = failWithIllegalArgument("No matching request found")

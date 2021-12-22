@@ -15,9 +15,18 @@ import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
 import it.airgap.beaconsdk.core.internal.utils.Base58Check
 import it.airgap.beaconsdk.core.internal.utils.Poller
 import it.airgap.beaconsdk.core.network.provider.HttpProvider
+import kotlin.reflect.KClass
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface DependencyRegistry {
+
+    // -- extensions --
+
+    public val extensions: Map<String, DependencyRegistry>
+    public fun addExtension(extension: DependencyRegistry)
+
+    // -- storage --
+
     public val storageManager: StorageManager
 
     // -- blockchain --
@@ -49,4 +58,10 @@ public interface DependencyRegistry {
     // -- migration --
 
     public val migration: Migration
+}
+
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public inline fun <reified T : DependencyRegistry> DependencyRegistry.findExtension(): T? {
+    val key = T::class.simpleName ?: return null
+    return extensions[key] as? T
 }

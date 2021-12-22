@@ -13,8 +13,7 @@ import it.airgap.beaconsdk.core.internal.message.v3.BlockchainV3BeaconRequestCon
 import it.airgap.beaconsdk.core.internal.message.v3.BlockchainV3BeaconResponseContent
 import it.airgap.beaconsdk.core.internal.message.v3.PermissionV3BeaconRequestContent
 import it.airgap.beaconsdk.core.internal.message.v3.PermissionV3BeaconResponseContent
-import it.airgap.beaconsdk.core.internal.storage.StorageManager
-import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
+import it.airgap.beaconsdk.core.internal.utils.dependencyRegistry
 import it.airgap.beaconsdk.core.message.BeaconMessage
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
@@ -34,8 +33,6 @@ internal data class PermissionV3TezosRequest(
         senderId: String,
         origin: Origin,
         blockchainIdentifier: String,
-        storageManager: StorageManager,
-        identifierCreator: IdentifierCreator,
     ): BeaconMessage = PermissionTezosRequest(id, version, blockchainIdentifier, senderId, appMetadata.toAppMetadata(), origin, network, scopes)
 
     companion object {
@@ -95,10 +92,8 @@ internal data class OperationV3TezosRequest(
         origin: Origin,
         accountId: String,
         blockchainIdentifier: String,
-        storageManager: StorageManager,
-        identifierCreator: IdentifierCreator,
     ): BeaconMessage {
-        val appMetadata = storageManager.findInstanceAppMetadata<TezosAppMetadata> { it.senderId == senderId }
+        val appMetadata = dependencyRegistry.storageManager.findInstanceAppMetadata<TezosAppMetadata> { it.senderId == senderId }
         return OperationTezosRequest(
             id,
             version,
@@ -133,10 +128,8 @@ internal data class SignPayloadV3TezosRequest(
         origin: Origin,
         accountId: String,
         blockchainIdentifier: String,
-        storageManager: StorageManager,
-        identifierCreator: IdentifierCreator,
     ): BeaconMessage {
-        val appMetadata = storageManager.findInstanceAppMetadata<TezosAppMetadata> { it.senderId == senderId }
+        val appMetadata = dependencyRegistry.storageManager.findInstanceAppMetadata<TezosAppMetadata> { it.senderId == senderId }
         return SignPayloadTezosRequest(
             id,
             version,
@@ -170,10 +163,8 @@ internal data class BroadcastV3TezosRequest(
         origin: Origin,
         accountId: String,
         blockchainIdentifier: String,
-        storageManager: StorageManager,
-        identifierCreator: IdentifierCreator,
     ): BeaconMessage {
-        val appMetadata = storageManager.findInstanceAppMetadata<TezosAppMetadata> { it.senderId == senderId }
+        val appMetadata = dependencyRegistry.storageManager.findInstanceAppMetadata<TezosAppMetadata> { it.senderId == senderId }
         return BroadcastTezosRequest(
             id,
             version,
@@ -216,8 +207,6 @@ internal data class PermissionV3TezosResponse(
         origin: Origin,
         accountId: String,
         blockchainIdentifier: String,
-        storageManager: StorageManager,
-        identifierCreator: IdentifierCreator,
     ): BeaconMessage = PermissionTezosResponse(id, version, origin, blockchainIdentifier, accountId, publicKey, network, scopes)
 }
 
@@ -250,8 +239,6 @@ internal data class OperationV3TezosResponse(
         senderId: String,
         origin: Origin,
         blockchainIdentifier: String,
-        storageManager: StorageManager,
-        identifierCreator: IdentifierCreator,
     ): BeaconMessage = OperationTezosResponse(id, version, origin, blockchainIdentifier, transactionHash)
 
     companion object {
@@ -272,8 +259,6 @@ internal data class SignPayloadV3TezosResponse(
         senderId: String,
         origin: Origin,
         blockchainIdentifier: String,
-        storageManager: StorageManager,
-        identifierCreator: IdentifierCreator,
     ): BeaconMessage = SignPayloadTezosResponse(id, version, origin, blockchainIdentifier, signingType, signature)
 
     companion object {
@@ -293,8 +278,6 @@ internal data class BroadcastV3TezosResponse(
         senderId: String,
         origin: Origin,
         blockchainIdentifier: String,
-        storageManager: StorageManager,
-        identifierCreator: IdentifierCreator,
     ): BeaconMessage = BroadcastTezosResponse(id, version, origin, Tezos.IDENTIFIER, transactionHash)
 
     companion object {

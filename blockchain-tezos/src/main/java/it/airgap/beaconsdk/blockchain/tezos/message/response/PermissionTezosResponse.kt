@@ -3,6 +3,7 @@ package it.airgap.beaconsdk.blockchain.tezos.message.response
 import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosNetwork
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
+import it.airgap.beaconsdk.blockchain.tezos.internal.di.extend
 import it.airgap.beaconsdk.blockchain.tezos.message.request.PermissionTezosRequest
 import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.exception.BeaconException
@@ -48,16 +49,20 @@ public data class PermissionTezosResponse internal constructor(
             publicKey: String,
             network: TezosNetwork = request.network,
             scopes: List<TezosPermission.Scope> = request.scopes,
-        ): PermissionTezosResponse =
-            PermissionTezosResponse(
+        ): PermissionTezosResponse {
+            val address = dependencyRegistry.extend().tezosWallet.address(publicKey).getOrThrow()
+            val accountId = dependencyRegistry.identifierCreator.accountId(address, network).getOrThrow()
+
+            return PermissionTezosResponse(
                 request.id,
                 request.version,
                 request.origin,
                 request.blockchainIdentifier,
-                dependencyRegistry.identifierCreator.accountId(request.blockchainIdentifier, publicKey, network).getOrThrow(),
+                accountId,
                 publicKey,
                 network,
                 scopes,
             )
+        }
     }
 }

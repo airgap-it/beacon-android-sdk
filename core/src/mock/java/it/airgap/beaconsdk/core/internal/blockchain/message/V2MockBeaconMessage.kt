@@ -1,10 +1,9 @@
 package it.airgap.beaconsdk.core.internal.blockchain.message
 
+import it.airgap.beaconsdk.core.data.MockAppMetadata
 import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchain
-import it.airgap.beaconsdk.core.data.MockAppMetadata
 import it.airgap.beaconsdk.core.internal.message.v2.V2BeaconMessage
-import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.utils.*
 import it.airgap.beaconsdk.core.message.BeaconMessage
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -24,7 +23,7 @@ internal data class V2MockPermissionBeaconRequest(
     val appMetadata: MockAppMetadata,
     val rest: Map<String, JsonElement>,
 ) : V2BeaconMessage() {
-    override suspend fun toBeaconMessage(origin: Origin, storageManager: StorageManager, identifierCreator: IdentifierCreator): BeaconMessage =
+    override suspend fun toBeaconMessage(origin: Origin): BeaconMessage =
         PermissionMockRequest(
             type,
             id,
@@ -81,7 +80,7 @@ internal data class V2MockPermissionBeaconResponse(
     override val senderId: String,
     val rest: Map<String, JsonElement>,
 ) : V2BeaconMessage() {
-    override suspend fun toBeaconMessage(origin: Origin, storageManager: StorageManager, identifierCreator: IdentifierCreator): BeaconMessage =
+    override suspend fun toBeaconMessage(origin: Origin): BeaconMessage =
         PermissionMockResponse(
             type,
             id,
@@ -136,10 +135,10 @@ internal data class V2MockBlockchainBeaconMessage(
     val mockType: MockBeaconMessageType
 ) : V2BeaconMessage() {
 
-    override suspend fun toBeaconMessage(origin: Origin, storageManager: StorageManager, identifierCreator: IdentifierCreator): BeaconMessage =
+    override suspend fun toBeaconMessage(origin: Origin): BeaconMessage =
         when (mockType) {
             MockBeaconMessageType.Request -> {
-                val appMetadata = storageManager.findAppMetadata { it.senderId == senderId }
+                val appMetadata = dependencyRegistry.storageManager.findAppMetadata { it.senderId == senderId }
                 BlockchainMockRequest(
                     type,
                     id,

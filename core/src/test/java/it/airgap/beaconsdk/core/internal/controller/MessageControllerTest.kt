@@ -11,7 +11,6 @@ import it.airgap.beaconsdk.core.data.MockPermission
 import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.internal.blockchain.BlockchainRegistry
 import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchain
-import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchainSerializer
 import it.airgap.beaconsdk.core.internal.message.VersionedBeaconMessage
 import it.airgap.beaconsdk.core.internal.storage.MockSecureStorage
 import it.airgap.beaconsdk.core.internal.storage.MockStorage
@@ -19,7 +18,7 @@ import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
 import it.airgap.beaconsdk.core.internal.utils.toHexString
 import kotlinx.coroutines.runBlocking
-import mockBlockchainRegistry
+import mockDependencyRegistry
 import mockTime
 import org.junit.After
 import org.junit.Before
@@ -33,12 +32,7 @@ import kotlin.test.assertTrue
 internal class MessageControllerTest {
 
     @MockK
-    private lateinit var blockchainRegistry: BlockchainRegistry
-
-    @MockK
     private lateinit var identifierCreator: IdentifierCreator
-
-    private lateinit var blockchain: MockBlockchain
 
     private lateinit var storageManager: StorageManager
     private lateinit var messageController: MessageController
@@ -54,19 +48,18 @@ internal class MessageControllerTest {
     fun setup() {
         MockKAnnotations.init(this)
 
-        mockBlockchainRegistry()
         mockTime(currentTimeMillis)
-
-        blockchain = MockBlockchain()
-
-        every { blockchainRegistry.get(any()) } returns blockchain
-        every { blockchainRegistry.getOrNull(any()) } returns blockchain
 
         every { identifierCreator.accountId(any(), any()) } answers { Result.success(firstArg()) }
         every { identifierCreator.senderId(any()) } answers { Result.success(firstArg<ByteArray>().toHexString().asString()) }
 
+        val dependencyRegistry = mockDependencyRegistry()
         storageManager = StorageManager(MockStorage(), MockSecureStorage(), identifierCreator)
-        messageController = MessageController(blockchainRegistry, storageManager, identifierCreator)
+        messageController = MessageController(dependencyRegistry.blockchainRegistry, storageManager, identifierCreator)
+
+        every { dependencyRegistry.storageManager } returns storageManager
+        every { dependencyRegistry.identifierCreator } returns identifierCreator
+        every { dependencyRegistry.messageController } returns messageController
     }
 
     @After
@@ -80,7 +73,7 @@ internal class MessageControllerTest {
 
         versionedMessages.forEach {
             val beaconMessage = runBlocking { messageController.onIncomingMessage(origin, it).getOrNull() }
-            val expected = runBlocking { it.toBeaconMessage(origin, storageManager, identifierCreator) }
+            val expected = runBlocking { it.toBeaconMessage(origin) }
 
             assertEquals(expected, beaconMessage)
         }

@@ -39,7 +39,7 @@ internal class TezosWalletTest {
     @Test
     fun `creates Tezos address from plain public key`() {
         val publicKey = "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff"
-        val address = wallet.addressFromPublicKey(publicKey).getOrThrow()
+        val address = wallet.address(publicKey).getOrThrow()
 
         assertEquals("${Tezos.PrefixBytes.tz1.toHexString().asString()}$publicKey", address)
     }
@@ -47,7 +47,7 @@ internal class TezosWalletTest {
     @Test
     fun `creates Tezos address from entrypted public key`() {
         val publicKey = "${Tezos.Prefix.edpk}00112233445566778899aabbccddeeff001122334455667788"
-        val address = wallet.addressFromPublicKey(publicKey).getOrThrow()
+        val address = wallet.address(publicKey).getOrThrow()
 
         assertEquals("${Tezos.PrefixBytes.tz1.toHexString().asString()}${publicKey.removePrefix(Tezos.Prefix.edpk)}", address)
     }
@@ -55,7 +55,7 @@ internal class TezosWalletTest {
     @Test
     fun `fails to create Tezos address from invalid public key`() {
         val publicKey = "00112233445566778899aabbccddeeff"
-        val address = wallet.addressFromPublicKey(publicKey)
+        val address = wallet.address(publicKey)
 
         assertTrue(address.isFailure, "Expected address result to be a failure.")
     }

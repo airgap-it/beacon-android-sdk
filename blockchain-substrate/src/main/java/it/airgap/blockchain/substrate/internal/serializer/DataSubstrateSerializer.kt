@@ -1,5 +1,6 @@
 package it.airgap.blockchain.substrate.internal.serializer
 
+import it.airgap.beaconsdk.core.data.AppMetadata
 import it.airgap.beaconsdk.core.data.BeaconError
 import it.airgap.beaconsdk.core.data.Network
 import it.airgap.beaconsdk.core.data.Permission
@@ -16,6 +17,9 @@ internal class DataSubstrateSerializer : DataBlockchainSerializer {
 
     override val permission: KSerializer<Permission>
         get() = SuperClassSerializer(SubstratePermission.serializer())
+
+    override val appMetadata: KSerializer<AppMetadata>
+        get() = SuperClassSerializer(AppMetadata.serializer())
 
     override val error: KSerializer<BeaconError>
         get() = SuperClassSerializer(SubstrateError.serializer())

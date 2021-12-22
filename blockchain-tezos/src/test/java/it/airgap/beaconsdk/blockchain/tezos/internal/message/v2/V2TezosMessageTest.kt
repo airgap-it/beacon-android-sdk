@@ -1,6 +1,5 @@
 package it.airgap.beaconsdk.blockchain.tezos.internal.message.v2
 
-import fromValues
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
@@ -10,6 +9,7 @@ import it.airgap.beaconsdk.blockchain.tezos.data.TezosNetwork
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
 import it.airgap.beaconsdk.blockchain.tezos.data.operation.TezosEndorsementOperation
 import it.airgap.beaconsdk.blockchain.tezos.data.operation.TezosOperation
+import it.airgap.beaconsdk.blockchain.tezos.internal.di.extend
 import it.airgap.beaconsdk.blockchain.tezos.message.request.BroadcastTezosRequest
 import it.airgap.beaconsdk.blockchain.tezos.message.request.OperationTezosRequest
 import it.airgap.beaconsdk.blockchain.tezos.message.request.PermissionTezosRequest
@@ -18,7 +18,6 @@ import it.airgap.beaconsdk.blockchain.tezos.message.response.BroadcastTezosRespo
 import it.airgap.beaconsdk.blockchain.tezos.message.response.OperationTezosResponse
 import it.airgap.beaconsdk.blockchain.tezos.message.response.PermissionTezosResponse
 import it.airgap.beaconsdk.blockchain.tezos.message.response.SignPayloadTezosResponse
-import it.airgap.beaconsdk.core.data.AppMetadata
 import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.data.SigningType
 import it.airgap.beaconsdk.core.internal.message.v2.V2BeaconMessage
@@ -32,7 +31,7 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.encodeToJsonElement
+import mockDependencyRegistry
 import org.junit.Before
 import org.junit.Test
 import kotlin.test.assertEquals
@@ -47,9 +46,14 @@ internal class V2TezosMessageTest {
     fun setup() {
         MockKAnnotations.init(this)
 
+        every { identifierCreator.accountId(any(), any()) } answers { Result.success(firstArg()) }
+
         storageManager = StorageManager(MockStorage(), MockSecureStorage(), identifierCreator)
 
-        every { identifierCreator.accountId(any(), any(), any()) } answers { Result.success(secondArg()) }
+        val dependencyRegistry = mockDependencyRegistry()
+        every { dependencyRegistry.storageManager } returns storageManager
+        every { dependencyRegistry.identifierCreator } returns identifierCreator
+        every { dependencyRegistry.extend().tezosWallet.address(any()) } answers { Result.success(firstArg()) }
     }
 
     @Test
@@ -96,7 +100,7 @@ internal class V2TezosMessageTest {
 
         runBlocking {
             versionedWithBeacon(senderId = senderId, appMetadata = matchingAppMetadata, origin = origin)
-                .map { it.first.toBeaconMessage(origin, storageManager, identifierCreator) to it.second }
+                .map { it.first.toBeaconMessage(origin) to it.second }
                 .forEach {
                     assertEquals(it.second, it.first)
                 }

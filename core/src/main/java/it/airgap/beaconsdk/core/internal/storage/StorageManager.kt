@@ -71,7 +71,7 @@ public class StorageManager(
     }
 
     public suspend inline fun <reified T : Peer> findInstancePeer(noinline predicate: (T) -> Boolean): T? =
-        storage.findPeer(T::class.java, predicate)
+        storage.findPeer(T::class, predicate)
 
     public suspend fun removePeers(peers: List<Peer>) {
         removePeers { peer -> peers.any { it.publicKey == peer.publicKey } }
@@ -99,7 +99,7 @@ public class StorageManager(
     }
 
     public suspend inline fun <reified T : AppMetadata> findInstanceAppMetadata(noinline predicate: (T) -> Boolean): T? =
-        storage.findAppMetadata(T::class.java, predicate)
+        storage.findAppMetadata(T::class, predicate)
 
     public suspend fun removeAppMetadata(appsMetadata: List<AppMetadata>) {
         removeAppMetadata { metadata -> appsMetadata.any { it.senderId == metadata.senderId } }

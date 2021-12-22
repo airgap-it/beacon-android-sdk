@@ -9,6 +9,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlin.reflect.KClass
 
 private typealias StorageSelectCollection<T> = suspend Storage.() -> List<T>
 private typealias StorageInsertCollection<T> = suspend Storage.(List<T>) -> Unit
@@ -42,7 +43,7 @@ internal class DecoratedStorage(private val storage: Storage) : ExtendedStorage,
         selectFirst(Storage::getPeers, predicate)
 
     override suspend fun <T : Peer> findPeer(
-        instanceClass: Class<T>,
+        instanceClass: KClass<T>,
         predicate: (T) -> Boolean,
     ): T? = selectFirstInstance(Storage::getPeers, instanceClass, predicate)
 
@@ -70,7 +71,7 @@ internal class DecoratedStorage(private val storage: Storage) : ExtendedStorage,
         selectFirst(Storage::getAppMetadata, predicate)
 
     override suspend fun <T : AppMetadata> findAppMetadata(
-        instanceClass: Class<T>,
+        instanceClass: KClass<T>,
         predicate: (T) -> Boolean,
     ): T? = selectFirstInstance(Storage::getAppMetadata, instanceClass, predicate)
 
@@ -117,11 +118,11 @@ internal class DecoratedStorage(private val storage: Storage) : ExtendedStorage,
         predicate: (T) -> Boolean,
     ): T? = select(this).find(predicate)
 
-    private suspend fun <T, Instance : T> selectFirstInstance(
+    private suspend fun <T : Any, Instance : T> selectFirstInstance(
         select: StorageSelectCollection<T>,
-        instanceClass: Class<Instance>,
+        instanceClass: KClass<Instance>,
         predicate: (Instance) -> Boolean,
-    ): Instance? = select(this).filterIsInstance(instanceClass).find(predicate)
+    ): Instance? = select(this).filterIsInstance(instanceClass.java).find(predicate)
 
     private suspend fun <T> add(
         select: StorageSelectCollection<T>,

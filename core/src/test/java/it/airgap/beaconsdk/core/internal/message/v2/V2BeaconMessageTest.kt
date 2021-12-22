@@ -5,10 +5,8 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.unmockkAll
 import it.airgap.beaconsdk.core.data.*
-import it.airgap.beaconsdk.core.internal.blockchain.BlockchainRegistry
 import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchain
 import it.airgap.beaconsdk.core.internal.blockchain.message.*
-import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.core.internal.storage.MockSecureStorage
 import it.airgap.beaconsdk.core.internal.storage.MockStorage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
@@ -21,7 +19,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.encodeToJsonElement
-import mockBeaconSdk
+import mockDependencyRegistry
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -30,30 +28,19 @@ import kotlin.test.assertEquals
 internal class V2BeaconMessageTest {
 
     @MockK
-    private lateinit var dependencyRegistry: DependencyRegistry
-
-    @MockK
-    private lateinit var blockchainRegistry: BlockchainRegistry
-
-    @MockK
     private lateinit var identifierCreator: IdentifierCreator
 
     private lateinit var storageManager: StorageManager
-
-    private val mockBlockchain: MockBlockchain = MockBlockchain()
 
     @Before
     fun setup() {
         MockKAnnotations.init(this)
 
-        mockBeaconSdk(dependencyRegistry = dependencyRegistry)
-
-        every { dependencyRegistry.blockchainRegistry } returns blockchainRegistry
-
-        every { blockchainRegistry.get(any()) } returns mockBlockchain
-        every { blockchainRegistry.getOrNull(any()) } returns mockBlockchain
-
         storageManager = StorageManager(MockStorage(), MockSecureStorage(), identifierCreator)
+
+        val dependencyRegistry = mockDependencyRegistry()
+        every { dependencyRegistry.storageManager } returns storageManager
+        every { dependencyRegistry.identifierCreator } returns identifierCreator
     }
 
     @After
@@ -105,7 +92,7 @@ internal class V2BeaconMessageTest {
 
         runBlocking {
             versionedWithBeacon(senderId = senderId, appMetadata = matchingAppMetadata, origin = origin)
-                .map { it.first.toBeaconMessage(origin, storageManager, identifierCreator) to it.second }
+                .map { it.first.toBeaconMessage(origin) to it.second }
                 .forEach {
                     assertEquals(it.second, it.first)
                 }

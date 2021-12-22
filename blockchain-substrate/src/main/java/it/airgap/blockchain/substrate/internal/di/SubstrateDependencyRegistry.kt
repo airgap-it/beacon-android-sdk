@@ -16,7 +16,7 @@ internal class SubstrateDependencyRegistry(dependencyRegistry: DependencyRegistr
 
     override val substrateCreator: SubstrateCreator by lazyWeak {
         SubstrateCreator(
-            DataSubstrateCreator(),
+            DataSubstrateCreator(substrateWallet, storageManager, identifierCreator),
             V1BeaconMessageSubstrateCreator(),
             V2BeaconMessageSubstrateCreator(),
             V3BeaconMessageSubstrateCreator(),

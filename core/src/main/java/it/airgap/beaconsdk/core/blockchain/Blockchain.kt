@@ -24,18 +24,10 @@ public interface Blockchain {
     public val identifier: String
 
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public val wallet: Wallet
-
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public val creator: Creator
 
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public val serializer: Serializer
-
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public interface Wallet {
-        public fun addressFromPublicKey(publicKey: String): Result<String>
-    }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public interface Creator {

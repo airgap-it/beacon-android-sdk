@@ -5,18 +5,23 @@ import it.airgap.beaconsdk.core.internal.message.v3.BlockchainV3BeaconRequestCon
 import it.airgap.beaconsdk.core.internal.message.v3.BlockchainV3BeaconResponseContent
 import it.airgap.beaconsdk.core.internal.message.v3.PermissionV3BeaconRequestContent
 import it.airgap.beaconsdk.core.internal.message.v3.PermissionV3BeaconResponseContent
+import it.airgap.beaconsdk.core.internal.utils.SuperClassSerializer
+import it.airgap.blockchain.substrate.internal.message.v3.BlockchainV3SubstrateRequest
+import it.airgap.blockchain.substrate.internal.message.v3.BlockchainV3SubstrateResponse
+import it.airgap.blockchain.substrate.internal.message.v3.PermissionV3SubstrateRequest
+import it.airgap.blockchain.substrate.internal.message.v3.PermissionV3SubstrateResponse
 import kotlinx.serialization.KSerializer
 
 internal class V3BeaconMessageSubstrateSerializer : V3BeaconMessageBlockchainSerializer {
     override val permissionRequestData: KSerializer<PermissionV3BeaconRequestContent.BlockchainData>
-        get() = TODO("Not yet implemented")
+        get() = SuperClassSerializer(PermissionV3SubstrateRequest.serializer())
 
     override val blockchainRequestData: KSerializer<BlockchainV3BeaconRequestContent.BlockchainData>
-        get() = TODO("Not yet implemented")
+        get() = SuperClassSerializer(BlockchainV3SubstrateRequest.serializer())
 
     override val permissionResponseData: KSerializer<PermissionV3BeaconResponseContent.BlockchainData>
-        get() = TODO("Not yet implemented")
+        get() = SuperClassSerializer(PermissionV3SubstrateResponse.serializer())
 
     override val blockchainResponseData: KSerializer<BlockchainV3BeaconResponseContent.BlockchainData>
-        get() = TODO("Not yet implemented")
+        get() = SuperClassSerializer(BlockchainV3SubstrateResponse.serializer())
 }

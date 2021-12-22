@@ -30,6 +30,17 @@ import it.airgap.beaconsdk.core.storage.Storage
 
 internal class CoreDependencyRegistry(blockchainFactories: List<Blockchain.Factory<*>>, storage: Storage, secureStorage: SecureStorage) : DependencyRegistry {
 
+    // -- extensions --
+
+    private val _extensions: MutableMap<String, DependencyRegistry> = mutableMapOf()
+    override val extensions: Map<String, DependencyRegistry>
+        get() = _extensions
+
+    override fun addExtension(extension: DependencyRegistry) {
+        val key = extension::class.simpleName ?: return
+        _extensions[key] = extension
+    }
+
     // -- storage --
 
     override val storageManager: StorageManager by lazyWeak { StorageManager(storage, secureStorage, identifierCreator) }
@@ -66,7 +77,7 @@ internal class CoreDependencyRegistry(blockchainFactories: List<Blockchain.Facto
     override val crypto: Crypto by lazyWeak { Crypto(cryptoProvider) }
     override val serializer: Serializer by lazyWeak { Serializer(serializerProvider) }
 
-    override val identifierCreator: IdentifierCreator by lazyWeak { IdentifierCreator(crypto, base58Check, blockchainRegistry) }
+    override val identifierCreator: IdentifierCreator by lazyWeak { IdentifierCreator(crypto, base58Check) }
     override val base58Check: Base58Check by lazyWeak { Base58Check(crypto) }
     override val poller: Poller by lazyWeak { Poller() }
 

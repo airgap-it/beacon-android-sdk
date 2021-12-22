@@ -5,6 +5,7 @@ import it.airgap.beaconsdk.blockchain.tezos.data.TezosAppMetadata
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosNetwork
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
 import it.airgap.beaconsdk.blockchain.tezos.data.operation.TezosOperation
+import it.airgap.beaconsdk.blockchain.tezos.internal.di.extend
 import it.airgap.beaconsdk.blockchain.tezos.internal.utils.failWithUnknownMessage
 import it.airgap.beaconsdk.blockchain.tezos.message.request.BroadcastTezosRequest
 import it.airgap.beaconsdk.blockchain.tezos.message.request.OperationTezosRequest
@@ -17,8 +18,7 @@ import it.airgap.beaconsdk.blockchain.tezos.message.response.SignPayloadTezosRes
 import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.data.SigningType
 import it.airgap.beaconsdk.core.internal.message.v2.V2BeaconMessage
-import it.airgap.beaconsdk.core.internal.storage.StorageManager
-import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
+import it.airgap.beaconsdk.core.internal.utils.dependencyRegistry
 import it.airgap.beaconsdk.core.message.BeaconMessage
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
@@ -112,7 +112,7 @@ internal data class PermissionV2TezosRequest(
     @Transient
     override val type: String = TYPE
 
-    override suspend fun toBeaconMessage(origin: Origin, storageManager: StorageManager, identifierCreator: IdentifierCreator): BeaconMessage =
+    override suspend fun toBeaconMessage(origin: Origin): BeaconMessage =
         PermissionTezosRequest(id, version, Tezos.IDENTIFIER, senderId, appMetadata.toAppMetadata(), origin, network, scopes)
 
     companion object {
@@ -133,8 +133,8 @@ internal data class OperationV2TezosRequest(
     @Transient
     override val type: String = TYPE
 
-    override suspend fun toBeaconMessage(origin: Origin, storageManager: StorageManager, identifierCreator: IdentifierCreator): BeaconMessage {
-        val appMetadata = storageManager.findInstanceAppMetadata<TezosAppMetadata> { it.senderId == senderId }
+    override suspend fun toBeaconMessage(origin: Origin): BeaconMessage {
+        val appMetadata = dependencyRegistry.storageManager.findInstanceAppMetadata<TezosAppMetadata> { it.senderId == senderId }
         return OperationTezosRequest(
             id,
             version,
@@ -167,8 +167,8 @@ internal data class SignPayloadV2TezosRequest(
     @Transient
     override val type: String = TYPE
 
-    override suspend fun toBeaconMessage(origin: Origin, storageManager: StorageManager, identifierCreator: IdentifierCreator): BeaconMessage {
-        val appMetadata = storageManager.findInstanceAppMetadata<TezosAppMetadata> { it.senderId == senderId }
+    override suspend fun toBeaconMessage(origin: Origin): BeaconMessage {
+        val appMetadata = dependencyRegistry.storageManager.findInstanceAppMetadata<TezosAppMetadata> { it.senderId == senderId }
         return SignPayloadTezosRequest(
             id,
             version,
@@ -200,8 +200,8 @@ internal data class BroadcastV2TezosRequest(
     @Transient
     override val type: String = TYPE
 
-    override suspend fun toBeaconMessage(origin: Origin, storageManager: StorageManager, identifierCreator: IdentifierCreator): BeaconMessage {
-        val appMetadata = storageManager.findInstanceAppMetadata<TezosAppMetadata> { it.senderId == senderId }
+    override suspend fun toBeaconMessage(origin: Origin): BeaconMessage {
+        val appMetadata = dependencyRegistry.storageManager.findInstanceAppMetadata<TezosAppMetadata> { it.senderId == senderId }
         return BroadcastTezosRequest(
             id,
             version,
@@ -233,8 +233,9 @@ internal data class PermissionV2TezosResponse(
     @Transient
     override val type: String = TYPE
 
-    override suspend fun toBeaconMessage(origin: Origin, storageManager: StorageManager, identifierCreator: IdentifierCreator): BeaconMessage {
-        val accountId = identifierCreator.accountId(Tezos.IDENTIFIER, publicKey, network).getOrThrow()
+    override suspend fun toBeaconMessage(origin: Origin): BeaconMessage {
+        val address = dependencyRegistry.extend().tezosWallet.address(publicKey).getOrThrow()
+        val accountId = dependencyRegistry.identifierCreator.accountId(address, network).getOrThrow()
         return PermissionTezosResponse(
             id,
             version,
@@ -263,7 +264,7 @@ internal data class OperationV2TezosResponse(
     @Transient
     override val type: String = TYPE
 
-    override suspend fun toBeaconMessage(origin: Origin, storageManager: StorageManager, identifierCreator: IdentifierCreator): BeaconMessage =
+    override suspend fun toBeaconMessage(origin: Origin): BeaconMessage =
         OperationTezosResponse(
             id,
             version,
@@ -289,7 +290,7 @@ internal data class SignPayloadV2TezosResponse(
     @Transient
     override val type: String = TYPE
 
-    override suspend fun toBeaconMessage(origin: Origin, storageManager: StorageManager, identifierCreator: IdentifierCreator): BeaconMessage =
+    override suspend fun toBeaconMessage(origin: Origin): BeaconMessage =
         SignPayloadTezosResponse(
             id,
             version,
@@ -315,7 +316,7 @@ internal data class BroadcastV2TezosResponse(
     @Transient
     override val type: String = TYPE
 
-    override suspend fun toBeaconMessage(origin: Origin, storageManager: StorageManager, identifierCreator: IdentifierCreator): BeaconMessage =
+    override suspend fun toBeaconMessage(origin: Origin): BeaconMessage =
         BroadcastTezosResponse(
             id,
             version,

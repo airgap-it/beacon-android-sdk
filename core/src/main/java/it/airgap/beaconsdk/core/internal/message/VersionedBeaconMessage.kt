@@ -25,11 +25,7 @@ import kotlinx.serialization.json.jsonObject
 public abstract class VersionedBeaconMessage {
     public abstract val version: String
 
-    public abstract suspend fun toBeaconMessage(
-        origin: Origin,
-        storageManager: StorageManager,
-        identifierCreator: IdentifierCreator,
-    ): BeaconMessage
+    public abstract suspend fun toBeaconMessage(origin: Origin): BeaconMessage
 
     public companion object {
         public fun from(senderId: String, message: BeaconMessage): VersionedBeaconMessage {

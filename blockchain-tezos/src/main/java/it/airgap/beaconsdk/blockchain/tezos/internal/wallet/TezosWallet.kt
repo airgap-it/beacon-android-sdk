@@ -1,12 +1,11 @@
 package it.airgap.beaconsdk.blockchain.tezos.internal.wallet
 
 import it.airgap.beaconsdk.blockchain.tezos.Tezos
-import it.airgap.beaconsdk.core.blockchain.Blockchain
 import it.airgap.beaconsdk.core.internal.crypto.Crypto
 import it.airgap.beaconsdk.core.internal.utils.*
 
-internal class TezosWallet internal constructor(private val crypto: Crypto, private val base58Check: Base58Check) : Blockchain.Wallet {
-    override fun addressFromPublicKey(publicKey: String): Result<String> =
+internal class TezosWallet internal constructor(private val crypto: Crypto, private val base58Check: Base58Check) {
+    fun address(publicKey: String): Result<String> =
         runCatchingFlat {
             val publicKeyBytes = with(publicKey) {
                 when {

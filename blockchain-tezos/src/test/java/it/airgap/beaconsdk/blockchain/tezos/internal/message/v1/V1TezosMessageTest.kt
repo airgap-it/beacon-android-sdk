@@ -1,6 +1,5 @@
 package it.airgap.beaconsdk.blockchain.tezos.internal.message.v1
 
-import fromValues
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
@@ -10,6 +9,10 @@ import it.airgap.beaconsdk.blockchain.tezos.data.TezosNetwork
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
 import it.airgap.beaconsdk.blockchain.tezos.data.operation.TezosEndorsementOperation
 import it.airgap.beaconsdk.blockchain.tezos.data.operation.TezosOperation
+import it.airgap.beaconsdk.blockchain.tezos.internal.creator.*
+import it.airgap.beaconsdk.blockchain.tezos.internal.di.extend
+import it.airgap.beaconsdk.blockchain.tezos.internal.serializer.*
+import it.airgap.beaconsdk.blockchain.tezos.internal.wallet.TezosWallet
 import it.airgap.beaconsdk.blockchain.tezos.message.request.BroadcastTezosRequest
 import it.airgap.beaconsdk.blockchain.tezos.message.request.OperationTezosRequest
 import it.airgap.beaconsdk.blockchain.tezos.message.request.PermissionTezosRequest
@@ -18,7 +21,6 @@ import it.airgap.beaconsdk.blockchain.tezos.message.response.BroadcastTezosRespo
 import it.airgap.beaconsdk.blockchain.tezos.message.response.OperationTezosResponse
 import it.airgap.beaconsdk.blockchain.tezos.message.response.PermissionTezosResponse
 import it.airgap.beaconsdk.blockchain.tezos.message.response.SignPayloadTezosResponse
-import it.airgap.beaconsdk.core.data.AppMetadata
 import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.data.SigningType
 import it.airgap.beaconsdk.core.internal.message.v1.V1BeaconMessage
@@ -32,12 +34,15 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.encodeToJsonElement
+import mockDependencyRegistry
 import org.junit.Before
 import org.junit.Test
 import kotlin.test.assertEquals
 
 internal class V1TezosMessageTest {
+    @MockK
+    private lateinit var tezosWallet: TezosWallet
+
     @MockK
     private lateinit var identifierCreator: IdentifierCreator
 
@@ -47,9 +52,29 @@ internal class V1TezosMessageTest {
     fun setup() {
         MockKAnnotations.init(this)
 
-        storageManager = StorageManager(MockStorage(), MockSecureStorage(), identifierCreator)
+        every { identifierCreator.accountId(any(), any()) } answers { Result.success(firstArg()) }
 
-        every { identifierCreator.accountId(any(), any(), any()) } answers { Result.success(secondArg()) }
+        storageManager = StorageManager(MockStorage(), MockSecureStorage(), identifierCreator)
+        val tezos = Tezos(
+            tezosWallet,
+            TezosCreator(
+                DataTezosCreator(tezosWallet, storageManager, identifierCreator),
+                V1BeaconMessageTezosCreator(),
+                V2BeaconMessageTezosCreator(),
+                V3BeaconMessageTezosCreator(),
+            ),
+            TezosSerializer(
+                DataTezosSerializer(),
+                V1BeaconMessageTezosSerializer(),
+                V2BeaconMessageTezosSerializer(),
+                V3BeaconMessageTezosSerializer(),
+            ),
+        )
+
+        val dependencyRegistry = mockDependencyRegistry(tezos)
+        every { dependencyRegistry.storageManager } returns storageManager
+        every { dependencyRegistry.identifierCreator } returns identifierCreator
+        every { tezosWallet.address(any()) } answers { Result.success(firstArg()) }
     }
 
     @Test
@@ -96,7 +121,7 @@ internal class V1TezosMessageTest {
 
         runBlocking {
             versionedWithBeacon(beaconId = senderId, appMetadata = matchingAppMetadata, origin = origin)
-                .map { it.first.toBeaconMessage(origin, storageManager, identifierCreator) to it.second }
+                .map { it.first.toBeaconMessage(origin) to it.second }
                 .forEach {
                     assertEquals(it.second, it.first)
                 }

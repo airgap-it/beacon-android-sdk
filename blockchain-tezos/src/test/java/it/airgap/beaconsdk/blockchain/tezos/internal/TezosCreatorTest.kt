@@ -44,7 +44,7 @@ internal class TezosCreatorTest {
 
         mockTime(currentTimeMillis)
 
-        every { wallet.addressFromPublicKey(any()) } answers { Result.success("@${firstArg<String>()}") }
+        every { wallet.address(any()) } answers { Result.success("@${firstArg<String>()}") }
 
         every { identifierCreator.accountId(any(), any()) } answers { Result.success(firstArg()) }
         every { identifierCreator.senderId(any()) } answers { Result.success(firstArg<ByteArray>().toHexString().asString()) }
@@ -70,7 +70,7 @@ internal class TezosCreatorTest {
             storageManager.setAppMetadata(listOf(appMetadata))
             val permission = creator.data.extractPermission(permissionRequest, permissionResponse).getOrThrow()
 
-            val expected = TezosPermission(
+            val expected = listOf(TezosPermission(
                 "@${permissionResponse.publicKey}",
                 appMetadata.senderId,
                 currentTimeMillis,
@@ -79,7 +79,7 @@ internal class TezosCreatorTest {
                 permissionResponse.network,
                 appMetadata,
                 permissionResponse.scopes,
-            )
+            ))
 
             assertEquals(expected, permission)
         }

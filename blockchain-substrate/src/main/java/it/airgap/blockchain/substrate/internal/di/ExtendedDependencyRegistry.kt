@@ -1,6 +1,7 @@
 package it.airgap.blockchain.substrate.internal.di
 
 import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
+import it.airgap.beaconsdk.core.internal.di.findExtension
 import it.airgap.blockchain.substrate.internal.creator.SubstrateCreator
 import it.airgap.blockchain.substrate.internal.serializer.SubstrateSerializer
 import it.airgap.blockchain.substrate.internal.wallet.SubstrateWallet
@@ -22,4 +23,4 @@ internal interface ExtendedDependencyRegistry : DependencyRegistry {
 
 internal fun DependencyRegistry.extend(): ExtendedDependencyRegistry =
     if (this is ExtendedDependencyRegistry) this
-    else SubstrateDependencyRegistry(this)
+    else findExtension() ?: SubstrateDependencyRegistry(this).also { addExtension(it) }

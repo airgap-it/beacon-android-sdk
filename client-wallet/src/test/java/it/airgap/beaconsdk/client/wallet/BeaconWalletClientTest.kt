@@ -25,7 +25,7 @@ import it.airgap.beaconsdk.core.message.BeaconMessage
 import it.airgap.beaconsdk.core.message.DisconnectBeaconMessage
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.test.runBlockingTest
-import mockBlockchainRegistry
+import mockDependencyRegistry
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -68,10 +68,8 @@ internal class BeaconWalletClientTest {
     fun setup() {
         MockKAnnotations.init(this)
 
-        mockBlockchainRegistry()
-
         coEvery { messageController.onIncomingMessage(any(), any()) } coAnswers {
-            Result.success(secondArg<VersionedBeaconMessage>().toBeaconMessage(firstArg(), storageManager, identifierCreator))
+            Result.success(secondArg<VersionedBeaconMessage>().toBeaconMessage(firstArg()))
         }
 
         coEvery { messageController.onOutgoingMessage(any(), any(), any()) } coAnswers {
@@ -84,6 +82,11 @@ internal class BeaconWalletClientTest {
 
         storageManager = StorageManager(MockStorage(), MockSecureStorage(), identifierCreator)
         beaconWalletClient = BeaconWalletClient(appName, beaconId, connectionController, messageController, storageManager, crypto)
+
+        val dependencyRegistry = mockDependencyRegistry()
+        every { dependencyRegistry.storageManager } returns storageManager
+        every { dependencyRegistry.identifierCreator } returns identifierCreator
+        every { dependencyRegistry.messageController } returns messageController
     }
 
     @After
@@ -109,7 +112,7 @@ internal class BeaconWalletClientTest {
                     .take(requests.size)
                     .toList()
 
-            val expected = requests.map { it.toBeaconMessage(origin, storageManager, identifierCreator) }
+            val expected = requests.map { it.toBeaconMessage(origin) }
 
             assertEquals(expected.sortedBy { it.toString() }, messages.sortedBy { it.toString() })
             coVerify(exactly = expected.size) { messageController.onIncomingMessage(any(), any()) }

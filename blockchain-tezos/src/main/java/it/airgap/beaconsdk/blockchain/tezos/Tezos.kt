@@ -13,7 +13,7 @@ import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
  * Tezos implementation of the [Blockchain] interface.
  */
 public class Tezos internal constructor(
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) override val wallet: Blockchain.Wallet,
+    internal val wallet: TezosWallet,
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) override val creator: Blockchain.Creator,
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) override val serializer: Blockchain.Serializer,
 ) : Blockchain {
