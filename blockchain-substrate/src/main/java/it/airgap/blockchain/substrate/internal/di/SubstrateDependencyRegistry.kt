@@ -10,7 +10,7 @@ internal class SubstrateDependencyRegistry(dependencyRegistry: DependencyRegistr
 
     // -- wallet --
 
-    override val substrateWallet: SubstrateWallet by lazyWeak { SubstrateWallet() }
+    override val substrateWallet: SubstrateWallet by lazyWeak { SubstrateWallet(base58, crypto) }
 
     // -- creator --
 

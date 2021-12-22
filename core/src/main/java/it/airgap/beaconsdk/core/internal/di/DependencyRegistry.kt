@@ -11,6 +11,7 @@ import it.airgap.beaconsdk.core.internal.network.HttpClient
 import it.airgap.beaconsdk.core.internal.serializer.Serializer
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.transport.Transport
+import it.airgap.beaconsdk.core.internal.utils.Base58
 import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
 import it.airgap.beaconsdk.core.internal.utils.Base58Check
 import it.airgap.beaconsdk.core.internal.utils.Poller
@@ -48,6 +49,7 @@ public interface DependencyRegistry {
     public val serializer: Serializer
 
     public val identifierCreator: IdentifierCreator
+    public val base58: Base58
     public val base58Check: Base58Check
     public val poller: Poller
 

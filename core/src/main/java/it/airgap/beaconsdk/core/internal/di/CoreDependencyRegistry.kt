@@ -20,6 +20,7 @@ import it.airgap.beaconsdk.core.internal.serializer.provider.SerializerProvider
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.transport.Transport
 import it.airgap.beaconsdk.core.internal.transport.p2p.P2pTransport
+import it.airgap.beaconsdk.core.internal.utils.Base58
 import it.airgap.beaconsdk.core.internal.utils.Base58Check
 import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
 import it.airgap.beaconsdk.core.internal.utils.Poller
@@ -78,7 +79,8 @@ internal class CoreDependencyRegistry(blockchainFactories: List<Blockchain.Facto
     override val serializer: Serializer by lazyWeak { Serializer(serializerProvider) }
 
     override val identifierCreator: IdentifierCreator by lazyWeak { IdentifierCreator(crypto, base58Check) }
-    override val base58Check: Base58Check by lazyWeak { Base58Check(crypto) }
+    override val base58: Base58 by lazyWeak { Base58() }
+    override val base58Check: Base58Check by lazyWeak { Base58Check(base58, crypto) }
     override val poller: Poller by lazyWeak { Poller() }
 
     private val cryptoProvider: CryptoProvider by lazyWeak {

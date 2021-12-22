@@ -70,7 +70,7 @@ internal class Base58CheckTest {
 
         every { crypto.hashSha256(any<ByteArray>()) } answers { Result.success(messageDigest.digest(firstArg())) }
 
-        base58Check = Base58Check(crypto)
+        base58Check = Base58Check(Base58(), crypto)
     }
 
     @Test
@@ -96,7 +96,7 @@ internal class Base58CheckTest {
     }
 
     @Test
-    fun `fails when decoding invalid base58 string`() {
+    fun `fails when decoding invalid Base58 string`() {
         invalidBase58Strings.forEach {
             assertFailsWith<IllegalArgumentException> {
                 base58Check.decode(it).getOrThrow()
