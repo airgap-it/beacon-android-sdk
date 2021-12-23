@@ -32,6 +32,7 @@ To add `Beacon Android SDK` into your project:
 
   implementation "com.github.airgap-it.beacon-android-sdk:client-wallet:$beaconVersion" // client-wallet, optional 
   implementation "com.github.airgap-it.beacon-android-sdk:client-wallet-compat:$beaconVersion" // client-wallet-compat, optional 
+  implementation "com.github.airgap-it.beacon-android-sdk:blockchain-substrate:$beaconVersion" // blockchain-substrate, optional 
   implementation "com.github.airgap-it.beacon-android-sdk:blockchain-tezos:$beaconVersion" // blockchain-tezos, optional 
   implementation "com.github.airgap-it.beacon-android-sdk:transport-p2p-matrix:$beaconVersion" // blockchain-tezos, optional 
   
@@ -78,6 +79,7 @@ For more examples or examples of how to use the SDK without coroutines or in Jav
 ### Create a Beacon wallet client and listen for incoming requests
 
 ```kotlin
+import it.airgap.beaconsdk.blockchain.substrate.substrate
 import it.airgap.beaconsdk.blockchain.tezos.tezos
 import it.airgap.beaconsdk.client.wallet.BeaconWalletClient
 import it.airgap.beaconsdk.core.data.P2P
@@ -89,8 +91,8 @@ class MainActivity : AppCompatActivity() {
   // ...
 
   suspend fun listenForBeaconMessages() {
-    // create a wallet Beacon client that can listen for Tezos messages via Matrix network 
-    client = BeaconWalletClient("My App", listOf(tezos())) { 
+    // create a wallet Beacon client that can listen for Tezos and Substrate messages via Matrix network 
+    client = BeaconWalletClient("My App", listOf(tezos(), substrate())) { 
         addConnections(P2P(p2pMatrix()))
     }
 
@@ -101,6 +103,14 @@ class MainActivity : AppCompatActivity() {
   }
 }
 ```
+
+## Proguard and R8
+
+`Beacon Android SDK` internally uses various libraries that may require custom ProGuard rules. If you're using ProGuard or R8, please follow the guides listed below to make sure your app works correctly after obfuscation:
+
+- [ProGuard rules for Kotlin Serialization](https://github.com/Kotlin/kotlinx.serialization#android)
+- [ProGuard rules for LazySodium](https://github.com/terl/lazysodium-java/wiki/installation#proguard)
+
 
 ## Migration
 
