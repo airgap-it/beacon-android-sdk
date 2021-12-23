@@ -1,10 +1,7 @@
 package it.airgap.beaconsdk.blockchain.substrate.internal.wallet
 
 import it.airgap.beaconsdk.core.internal.crypto.Crypto
-import it.airgap.beaconsdk.core.internal.utils.Base58
-import it.airgap.beaconsdk.core.internal.utils.asHexString
-import it.airgap.beaconsdk.core.internal.utils.runCatchingFlat
-import it.airgap.beaconsdk.core.internal.utils.toByteArray
+import it.airgap.beaconsdk.core.internal.utils.*
 
 internal class SubstrateWallet(
     private val crypto: Crypto,
@@ -12,7 +9,8 @@ internal class SubstrateWallet(
 ) {
     fun address(publicKey: String, prefix: Int): Result<String> = runCatchingFlat {
         val version = prefix.toByteArray(trim = true)
-        val payload = publicKey.asHexString().toByteArray()
+        val payload = publicKey.asHexString().toByteArray().also { if (it.size != 32) failWithInvalidPublicKey() }
+
         val checksum = checksum(version + payload).getOrThrow()
         val checksumBytes = if (payload.size == 32) 2 else 1
 
@@ -21,6 +19,8 @@ internal class SubstrateWallet(
 
     private fun checksum(input: ByteArray): Result<ByteArray> =
         crypto.hash(CONTEXT_PREFIX.encodeToByteArray() + input, 512)
+
+    private fun failWithInvalidPublicKey(): Nothing = failWithIllegalArgument("Public key is invalid, expected a 32-byte hex string")
 
     companion object {
         const val CONTEXT_PREFIX = "SS58PRE"
