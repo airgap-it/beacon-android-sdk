@@ -4,7 +4,7 @@ import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.internal.crypto.Crypto
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class Base58Check internal constructor(private val base58: Base58, private val crypto: Crypto) {
+public class Base58Check(private val base58: Base58, private val crypto: Crypto) {
 
     public fun encode(bytes: ByteArray): Result<String> =
         runCatchingFlat {

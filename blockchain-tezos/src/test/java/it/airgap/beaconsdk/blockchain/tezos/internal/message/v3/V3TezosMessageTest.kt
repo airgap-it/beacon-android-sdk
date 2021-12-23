@@ -10,7 +10,6 @@ import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
 import it.airgap.beaconsdk.blockchain.tezos.data.operation.TezosEndorsementOperation
 import it.airgap.beaconsdk.blockchain.tezos.data.operation.TezosOperation
 import it.airgap.beaconsdk.blockchain.tezos.internal.creator.*
-import it.airgap.beaconsdk.blockchain.tezos.internal.di.extend
 import it.airgap.beaconsdk.blockchain.tezos.internal.serializer.*
 import it.airgap.beaconsdk.blockchain.tezos.internal.wallet.TezosWallet
 import it.airgap.beaconsdk.blockchain.tezos.message.request.BroadcastTezosRequest
@@ -23,9 +22,6 @@ import it.airgap.beaconsdk.blockchain.tezos.message.response.PermissionTezosResp
 import it.airgap.beaconsdk.blockchain.tezos.message.response.SignPayloadTezosResponse
 import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.data.SigningType
-import it.airgap.beaconsdk.core.internal.blockchain.BlockchainRegistry
-import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchain
-import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.core.internal.message.v3.*
 import it.airgap.beaconsdk.core.internal.storage.MockSecureStorage
 import it.airgap.beaconsdk.core.internal.storage.MockStorage
@@ -37,7 +33,6 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
-import mockBeaconSdk
 import mockDependencyRegistry
 import org.junit.Before
 import org.junit.Test
@@ -45,7 +40,7 @@ import kotlin.test.assertEquals
 
 internal class V3TezosMessageTest {
     @MockK
-    private lateinit var tezosWallet: TezosWallet
+    private lateinit var wallet: TezosWallet
 
     @MockK
     private lateinit var identifierCreator: IdentifierCreator
@@ -58,9 +53,9 @@ internal class V3TezosMessageTest {
 
         storageManager = StorageManager(MockStorage(), MockSecureStorage(), identifierCreator)
         val tezos = Tezos(
-            tezosWallet,
+            wallet,
             TezosCreator(
-                DataTezosCreator(tezosWallet, storageManager, identifierCreator),
+                DataTezosCreator(wallet, storageManager, identifierCreator),
                 V1BeaconMessageTezosCreator(),
                 V2BeaconMessageTezosCreator(),
                 V3BeaconMessageTezosCreator(),
@@ -179,7 +174,7 @@ internal class V3TezosMessageTest {
         version: String = "3",
         id: String = "id",
         senderId: String = "senderId",
-        appMetadata: V3TezosAppMetadata = V3TezosAppMetadata("senderId", "v2App"),
+        appMetadata: V3TezosAppMetadata = V3TezosAppMetadata(senderId, "v3App"),
         network: TezosNetwork = TezosNetwork.Custom(),
         scopes: List<TezosPermission.Scope> = emptyList()
     ): Pair<V3BeaconMessage, String> =

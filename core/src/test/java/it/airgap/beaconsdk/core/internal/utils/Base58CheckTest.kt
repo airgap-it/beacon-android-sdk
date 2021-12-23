@@ -66,9 +66,10 @@ internal class Base58CheckTest {
     fun setup() {
         MockKAnnotations.init(this)
 
-        val messageDigest = MessageDigest.getInstance("SHA-256")
-
-        every { crypto.hashSha256(any<ByteArray>()) } answers { Result.success(messageDigest.digest(firstArg())) }
+        every { crypto.hashSha256(any<ByteArray>()) } answers {
+            val messageDigest = MessageDigest.getInstance("SHA-256")
+            Result.success(messageDigest.digest(firstArg()))
+        }
 
         base58Check = Base58Check(Base58(), crypto)
     }

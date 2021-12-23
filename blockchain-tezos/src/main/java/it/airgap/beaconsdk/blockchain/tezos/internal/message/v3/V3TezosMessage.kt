@@ -16,6 +16,7 @@ import it.airgap.beaconsdk.core.internal.message.v3.PermissionV3BeaconResponseCo
 import it.airgap.beaconsdk.core.internal.utils.dependencyRegistry
 import it.airgap.beaconsdk.core.message.BeaconMessage
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.Required
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonClassDiscriminator
@@ -50,6 +51,8 @@ internal data class PermissionV3TezosRequest(
 @Serializable
 @JsonClassDiscriminator(BlockchainV3TezosRequest.CLASS_DISCRIMINATOR)
 internal sealed class BlockchainV3TezosRequest : BlockchainV3BeaconRequestContent.BlockchainData() {
+    abstract val type: String
+
     companion object {
         const val CLASS_DISCRIMINATOR = "type"
 
@@ -84,6 +87,8 @@ internal data class OperationV3TezosRequest(
     val operationDetails: List<TezosOperation>,
     val sourceAddress: String,
 ) : BlockchainV3TezosRequest() {
+    @Required
+    override val type: String = TYPE
 
     override suspend fun toBeaconMessage(
         id: String,
@@ -120,6 +125,8 @@ internal data class SignPayloadV3TezosRequest(
     val payload: String,
     val sourceAddress: String,
 ) : BlockchainV3TezosRequest() {
+    @Required
+    override val type: String = OperationV3TezosRequest.TYPE
 
     override suspend fun toBeaconMessage(
         id: String,
@@ -155,6 +162,8 @@ internal data class BroadcastV3TezosRequest(
     val network: TezosNetwork,
     val signedTransaction: String,
 ) : BlockchainV3TezosRequest() {
+    @Required
+    override val type: String = OperationV3TezosRequest.TYPE
 
     override suspend fun toBeaconMessage(
         id: String,

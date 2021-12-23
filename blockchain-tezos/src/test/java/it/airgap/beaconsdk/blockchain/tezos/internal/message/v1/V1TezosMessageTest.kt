@@ -177,7 +177,7 @@ internal class V1TezosMessageTest {
         version: String = "1",
         id: String = "id",
         beaconId: String = "beaconId",
-        appMetadata: V1TezosAppMetadata = V1TezosAppMetadata("beaconId", "v1App"),
+        appMetadata: V1TezosAppMetadata = V1TezosAppMetadata(beaconId, "v1App"),
         network: TezosNetwork = TezosNetwork.Custom(),
         scopes: List<TezosPermission.Scope> = emptyList()
     ): Pair<PermissionV1TezosRequest, String> =

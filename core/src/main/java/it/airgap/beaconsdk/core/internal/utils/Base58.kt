@@ -5,7 +5,7 @@ import it.airgap.beaconsdk.core.internal.crypto.Crypto
 import java.math.BigInteger
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class Base58 internal constructor() {
+public class Base58 {
     private val bs58Regex = Regex("^[${ALPHABET}]+$")
 
     private val bi0: BigInteger by lazy { BigInteger.ZERO }

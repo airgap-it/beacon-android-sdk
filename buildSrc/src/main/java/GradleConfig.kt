@@ -36,6 +36,8 @@ object Version {
     const val androidxEspresso = "3.4.0"
 
     const val mockk = "1.12.0"
+
+    const val bouncyCastle = "1.70"
 }
 
 object Dependencies {
@@ -80,4 +82,6 @@ object TestDependencies {
     const val androidxEspresso = "androidx.test.espresso:espresso-core:${Version.androidxEspresso}"
 
     const val mockk = "io.mockk:mockk:${Version.mockk}"
+
+    const val bouncyCastle = "org.bouncycastle:bcprov-jdk15on:${Version.bouncyCastle}"
 }

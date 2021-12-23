@@ -34,7 +34,7 @@ public data class V3BeaconMessage(
 
     @OptIn(ExperimentalSerializationApi::class)
     @Serializable
-    @JsonClassDiscriminator("type")
+    @JsonClassDiscriminator(Content.CLASS_DISCRIMINATOR)
     public sealed class Content {
         public abstract suspend fun toBeaconMessage(
             id: String,
@@ -42,6 +42,10 @@ public data class V3BeaconMessage(
             senderId: String,
             origin: Origin,
         ): BeaconMessage
+
+        public companion object {
+            internal const val CLASS_DISCRIMINATOR = "type"
+        }
     }
 
     public companion object {

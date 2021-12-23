@@ -4,7 +4,6 @@ import it.airgap.beaconsdk.blockchain.tezos.data.TezosNetwork
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
 import it.airgap.beaconsdk.blockchain.tezos.message.request.PermissionTezosRequest
 import it.airgap.beaconsdk.blockchain.tezos.message.response.PermissionTezosResponse
-import it.airgap.beaconsdk.core.data.AppMetadata
 import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchain
 import it.airgap.beaconsdk.core.internal.utils.failWith

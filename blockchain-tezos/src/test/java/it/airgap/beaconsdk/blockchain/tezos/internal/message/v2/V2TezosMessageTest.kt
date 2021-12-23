@@ -157,7 +157,7 @@ internal class V2TezosMessageTest {
         version: String = "2",
         id: String = "id",
         senderId: String = "senderId",
-        appMetadata: V2TezosAppMetadata = V2TezosAppMetadata("senderId", "v2App"),
+        appMetadata: V2TezosAppMetadata = V2TezosAppMetadata(senderId, "v2App"),
         network: TezosNetwork = TezosNetwork.Custom(),
         scopes: List<TezosPermission.Scope> = emptyList()
     ): Pair<PermissionV2TezosRequest, String> =
