@@ -16,7 +16,7 @@ import kotlinx.serialization.Serializable
  * @property [appMetadata] The metadata describing the dApp to which the permissions were granted.
  * @property [connectedAt] The timestamp at which the permissions were granted.
  * @property [scopes] The list of granted permission types.
- * @property [account]
+ * @property [account] The account to which the permission apply.
  */
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable
