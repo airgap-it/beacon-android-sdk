@@ -155,7 +155,6 @@ fun PermissionTezosResponse.toJson(json: Json = Json.Default): JsonElement =
             "publicKey" to json.encodeToJsonElement(publicKey),
             "network" to json.encodeToJsonElement(network),
             "scopes" to json.encodeToJsonElement(scopes),
-            "threshold" to json.encodeToJsonElement(threshold),
         )
     )
 
