@@ -13,13 +13,19 @@ import it.airgap.beaconsdk.core.internal.message.v3.BlockchainV3BeaconRequestCon
 import it.airgap.beaconsdk.core.internal.message.v3.BlockchainV3BeaconResponseContent
 import it.airgap.beaconsdk.core.internal.message.v3.PermissionV3BeaconRequestContent
 import it.airgap.beaconsdk.core.internal.message.v3.PermissionV3BeaconResponseContent
+import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
 import it.airgap.beaconsdk.core.internal.utils.dependencyRegistry
+import it.airgap.beaconsdk.core.internal.utils.failWithIllegalArgument
+import it.airgap.beaconsdk.core.internal.utils.getString
 import it.airgap.beaconsdk.core.message.BeaconMessage
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Required
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonClassDiscriminator
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.descriptors.element
+import kotlinx.serialization.json.*
 
 @Serializable
 internal data class PermissionV3TezosRequest(
@@ -48,7 +54,7 @@ internal data class PermissionV3TezosRequest(
 }
 
 @OptIn(ExperimentalSerializationApi::class)
-@Serializable
+@Serializable(with = BlockchainV3TezosRequest.Serializer::class)
 @JsonClassDiscriminator(BlockchainV3TezosRequest.CLASS_DISCRIMINATOR)
 internal sealed class BlockchainV3TezosRequest : BlockchainV3BeaconRequestContent.BlockchainData() {
     abstract val type: String
@@ -77,6 +83,34 @@ internal sealed class BlockchainV3TezosRequest : BlockchainV3BeaconRequestConten
                     )
             }
         }
+    }
+
+    @OptIn(ExperimentalSerializationApi::class)
+    object Serializer : KJsonSerializer<BlockchainV3TezosRequest> {
+        override val descriptor: SerialDescriptor = buildClassSerialDescriptor("BlockchainV3TezosRequest") {
+            element<String>(CLASS_DISCRIMINATOR)
+        }
+
+        override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): BlockchainV3TezosRequest {
+            val type = jsonElement.jsonObject.getString(descriptor.getElementName(0))
+
+            return when (type) {
+                OperationV3TezosRequest.TYPE -> jsonDecoder.json.decodeFromJsonElement(OperationV3TezosRequest.serializer(), jsonElement)
+                SignPayloadV3TezosRequest.TYPE -> jsonDecoder.json.decodeFromJsonElement(SignPayloadV3TezosRequest.serializer(), jsonElement)
+                BroadcastV3TezosRequest.TYPE -> jsonDecoder.json.decodeFromJsonElement(BroadcastV3TezosRequest.serializer(), jsonElement)
+                else -> failWithUnknownType(type)
+            }
+        }
+
+        override fun serialize(jsonEncoder: JsonEncoder, value: BlockchainV3TezosRequest) {
+            when (value) {
+                is OperationV3TezosRequest -> jsonEncoder.encodeSerializableValue(OperationV3TezosRequest.serializer(), value)
+                is SignPayloadV3TezosRequest -> jsonEncoder.encodeSerializableValue(SignPayloadV3TezosRequest.serializer(), value)
+                is BroadcastV3TezosRequest -> jsonEncoder.encodeSerializableValue(BroadcastV3TezosRequest.serializer(), value)
+            }
+        }
+
+        private fun failWithUnknownType(type: String): Nothing = failWithIllegalArgument("Unknown Tezos message type $type")
     }
 }
 
@@ -126,7 +160,7 @@ internal data class SignPayloadV3TezosRequest(
     val sourceAddress: String,
 ) : BlockchainV3TezosRequest() {
     @Required
-    override val type: String = OperationV3TezosRequest.TYPE
+    override val type: String = TYPE
 
     override suspend fun toBeaconMessage(
         id: String,
@@ -163,7 +197,7 @@ internal data class BroadcastV3TezosRequest(
     val signedTransaction: String,
 ) : BlockchainV3TezosRequest() {
     @Required
-    override val type: String = OperationV3TezosRequest.TYPE
+    override val type: String = TYPE
 
     override suspend fun toBeaconMessage(
         id: String,
@@ -220,9 +254,11 @@ internal data class PermissionV3TezosResponse(
 }
 
 @OptIn(ExperimentalSerializationApi::class)
-@Serializable
+@Serializable(with = BlockchainV3TezosResponse.Serializer::class)
 @JsonClassDiscriminator(BlockchainV3TezosResponse.CLASS_DISCRIMINATOR)
 internal sealed class BlockchainV3TezosResponse : BlockchainV3BeaconResponseContent.BlockchainData() {
+    abstract val type: String
+
     companion object {
         const val CLASS_DISCRIMINATOR = "type"
 
@@ -234,6 +270,34 @@ internal sealed class BlockchainV3TezosResponse : BlockchainV3BeaconResponseCont
             }
         }
     }
+
+    @OptIn(ExperimentalSerializationApi::class)
+    object Serializer : KJsonSerializer<BlockchainV3TezosResponse> {
+        override val descriptor: SerialDescriptor = buildClassSerialDescriptor("BlockchainV3TezosResponse") {
+            element<String>(CLASS_DISCRIMINATOR)
+        }
+
+        override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): BlockchainV3TezosResponse {
+            val type = jsonElement.jsonObject.getString(descriptor.getElementName(0))
+
+            return when (type) {
+                OperationV3TezosResponse.TYPE -> jsonDecoder.json.decodeFromJsonElement(OperationV3TezosResponse.serializer(), jsonElement)
+                SignPayloadV3TezosResponse.TYPE -> jsonDecoder.json.decodeFromJsonElement(SignPayloadV3TezosResponse.serializer(), jsonElement)
+                BroadcastV3TezosResponse.TYPE -> jsonDecoder.json.decodeFromJsonElement(BroadcastV3TezosResponse.serializer(), jsonElement)
+                else -> failWithUnknownType(type)
+            }
+        }
+
+        override fun serialize(jsonEncoder: JsonEncoder, value: BlockchainV3TezosResponse) {
+            when (value) {
+                is OperationV3TezosResponse -> jsonEncoder.encodeSerializableValue(OperationV3TezosResponse.serializer(), value)
+                is SignPayloadV3TezosResponse -> jsonEncoder.encodeSerializableValue(SignPayloadV3TezosResponse.serializer(), value)
+                is BroadcastV3TezosResponse -> jsonEncoder.encodeSerializableValue(BroadcastV3TezosResponse.serializer(), value)
+            }
+        }
+
+        private fun failWithUnknownType(type: String): Nothing = failWithIllegalArgument("Unknown Tezos message type $type")
+    }
 }
 
 @Serializable
@@ -241,6 +305,8 @@ internal sealed class BlockchainV3TezosResponse : BlockchainV3BeaconResponseCont
 internal data class OperationV3TezosResponse(
     val transactionHash: String,
 ) : BlockchainV3TezosResponse() {
+    @Required
+    override val type: String = TYPE
 
     override suspend fun toBeaconMessage(
         id: String,
@@ -261,6 +327,8 @@ internal data class SignPayloadV3TezosResponse(
     val signingType: SigningType,
     val signature: String,
 ) : BlockchainV3TezosResponse() {
+    @Required
+    override val type: String = TYPE
 
     override suspend fun toBeaconMessage(
         id: String,
@@ -280,6 +348,8 @@ internal data class SignPayloadV3TezosResponse(
 internal data class BroadcastV3TezosResponse(
     val transactionHash: String,
 ) : BlockchainV3TezosResponse() {
+    @Required
+    override val type: String = TYPE
 
     override suspend fun toBeaconMessage(
         id: String,

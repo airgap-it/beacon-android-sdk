@@ -18,16 +18,19 @@ import it.airgap.beaconsdk.blockchain.tezos.message.response.SignPayloadTezosRes
 import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.data.SigningType
 import it.airgap.beaconsdk.core.internal.message.v2.V2BeaconMessage
+import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
 import it.airgap.beaconsdk.core.internal.utils.dependencyRegistry
+import it.airgap.beaconsdk.core.internal.utils.failWithIllegalArgument
+import it.airgap.beaconsdk.core.internal.utils.getString
 import it.airgap.beaconsdk.core.message.BeaconMessage
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
-import kotlinx.serialization.json.JsonClassDiscriminator
+import kotlinx.serialization.*
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.descriptors.element
+import kotlinx.serialization.json.*
 
 @OptIn(ExperimentalSerializationApi::class)
-@Serializable
+@Serializable(with = V2TezosMessage.Serializer::class)
 @JsonClassDiscriminator(V2TezosMessage.CLASS_DISCRIMINATOR)
 internal sealed class V2TezosMessage : V2BeaconMessage() {
 
@@ -97,6 +100,45 @@ internal sealed class V2TezosMessage : V2BeaconMessage() {
                 else -> failWithUnknownMessage(message)
             }
     }
+
+    @OptIn(ExperimentalSerializationApi::class)
+    object Serializer : KJsonSerializer<V2TezosMessage> {
+        override val descriptor: SerialDescriptor = buildClassSerialDescriptor("V2TezosMessage") {
+            element<String>(CLASS_DISCRIMINATOR)
+        }
+
+        override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): V2TezosMessage {
+            val type = jsonElement.jsonObject.getString(descriptor.getElementName(0))
+
+            return when (type) {
+                PermissionV2TezosRequest.TYPE -> jsonDecoder.json.decodeFromJsonElement(PermissionV2TezosRequest.serializer(), jsonElement)
+                OperationV2TezosRequest.TYPE -> jsonDecoder.json.decodeFromJsonElement(OperationV2TezosRequest.serializer(), jsonElement)
+                SignPayloadV2TezosRequest.TYPE -> jsonDecoder.json.decodeFromJsonElement(SignPayloadV2TezosRequest.serializer(), jsonElement)
+                BroadcastV2TezosRequest.TYPE -> jsonDecoder.json.decodeFromJsonElement(BroadcastV2TezosRequest.serializer(), jsonElement)
+                PermissionV2TezosResponse.TYPE -> jsonDecoder.json.decodeFromJsonElement(PermissionV2TezosResponse.serializer(), jsonElement)
+                OperationV2TezosResponse.TYPE -> jsonDecoder.json.decodeFromJsonElement(OperationV2TezosResponse.serializer(), jsonElement)
+                SignPayloadV2TezosResponse.TYPE -> jsonDecoder.json.decodeFromJsonElement(SignPayloadV2TezosResponse.serializer(), jsonElement)
+                BroadcastV2TezosResponse.TYPE -> jsonDecoder.json.decodeFromJsonElement(BroadcastV2TezosResponse.serializer(), jsonElement)
+                else -> failWithUnknownType(type)
+            }
+        }
+
+        override fun serialize(jsonEncoder: JsonEncoder, value: V2TezosMessage) {
+            when (value) {
+                is PermissionV2TezosRequest -> jsonEncoder.encodeSerializableValue(PermissionV2TezosRequest.serializer(), value)
+                is OperationV2TezosRequest -> jsonEncoder.encodeSerializableValue(OperationV2TezosRequest.serializer(), value)
+                is SignPayloadV2TezosRequest -> jsonEncoder.encodeSerializableValue(SignPayloadV2TezosRequest.serializer(), value)
+                is BroadcastV2TezosRequest -> jsonEncoder.encodeSerializableValue(BroadcastV2TezosRequest.serializer(), value)
+                is PermissionV2TezosResponse -> jsonEncoder.encodeSerializableValue(PermissionV2TezosResponse.serializer(), value)
+                is OperationV2TezosResponse -> jsonEncoder.encodeSerializableValue(OperationV2TezosResponse.serializer(), value)
+                is SignPayloadV2TezosResponse -> jsonEncoder.encodeSerializableValue(SignPayloadV2TezosResponse.serializer(), value)
+                is BroadcastV2TezosResponse -> jsonEncoder.encodeSerializableValue(BroadcastV2TezosResponse.serializer(), value)
+            }
+        }
+
+        private fun failWithUnknownType(type: String): Nothing = failWithIllegalArgument("Unknown Tezos message type $type")
+    }
+
 }
 
 @Serializable
@@ -109,7 +151,7 @@ internal data class PermissionV2TezosRequest(
     val network: TezosNetwork,
     val scopes: List<TezosPermission.Scope>,
 ) : V2TezosMessage() {
-    @Transient
+    @Required
     override val type: String = TYPE
 
     override suspend fun toBeaconMessage(origin: Origin): BeaconMessage =
@@ -130,7 +172,7 @@ internal data class OperationV2TezosRequest(
     val operationDetails: List<TezosOperation>,
     val sourceAddress: String,
 ) : V2TezosMessage() {
-    @Transient
+    @Required
     override val type: String = TYPE
 
     override suspend fun toBeaconMessage(origin: Origin): BeaconMessage {
@@ -164,7 +206,7 @@ internal data class SignPayloadV2TezosRequest(
     val payload: String,
     val sourceAddress: String,
 ) : V2TezosMessage() {
-    @Transient
+    @Required
     override val type: String = TYPE
 
     override suspend fun toBeaconMessage(origin: Origin): BeaconMessage {
@@ -197,7 +239,7 @@ internal data class BroadcastV2TezosRequest(
     val network: TezosNetwork,
     val signedTransaction: String,
 ) : V2TezosMessage() {
-    @Transient
+    @Required
     override val type: String = TYPE
 
     override suspend fun toBeaconMessage(origin: Origin): BeaconMessage {
@@ -230,7 +272,7 @@ internal data class PermissionV2TezosResponse(
     val network: TezosNetwork,
     val scopes: List<TezosPermission.Scope>,
 ) : V2TezosMessage() {
-    @Transient
+    @Required
     override val type: String = TYPE
 
     override suspend fun toBeaconMessage(origin: Origin): BeaconMessage {
@@ -261,7 +303,7 @@ internal data class OperationV2TezosResponse(
     override val senderId: String,
     val transactionHash: String,
 ) : V2TezosMessage() {
-    @Transient
+    @Required
     override val type: String = TYPE
 
     override suspend fun toBeaconMessage(origin: Origin): BeaconMessage =
@@ -287,7 +329,7 @@ internal data class SignPayloadV2TezosResponse(
     val signingType: SigningType,
     val signature: String,
 ) : V2TezosMessage() {
-    @Transient
+    @Required
     override val type: String = TYPE
 
     override suspend fun toBeaconMessage(origin: Origin): BeaconMessage =
@@ -313,7 +355,7 @@ internal data class BroadcastV2TezosResponse(
     override val senderId: String,
     val transactionHash: String,
 ) : V2TezosMessage() {
-    @Transient
+    @Required
     override val type: String = TYPE
 
     override suspend fun toBeaconMessage(origin: Origin): BeaconMessage =

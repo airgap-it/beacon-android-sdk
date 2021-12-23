@@ -17,10 +17,16 @@ import it.airgap.beaconsdk.blockchain.substrate.message.response.BlockchainSubst
 import it.airgap.beaconsdk.blockchain.substrate.message.response.PermissionSubstrateResponse
 import it.airgap.beaconsdk.blockchain.substrate.message.response.SignSubstrateResponse
 import it.airgap.beaconsdk.blockchain.substrate.message.response.TransferSubstrateResponse
+import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
+import it.airgap.beaconsdk.core.internal.utils.getString
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.Required
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonClassDiscriminator
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.descriptors.element
+import kotlinx.serialization.json.*
 
 @Serializable
 internal data class PermissionV3SubstrateRequest(
@@ -48,9 +54,10 @@ internal data class PermissionV3SubstrateRequest(
 }
 
 @OptIn(ExperimentalSerializationApi::class)
-@Serializable
+@Serializable(with = BlockchainV3SubstrateRequest.Serializer::class)
 @JsonClassDiscriminator(BlockchainV3SubstrateRequest.CLASS_DISCRIMINATOR)
 internal sealed class BlockchainV3SubstrateRequest : BlockchainV3BeaconRequestContent.BlockchainData() {
+    abstract val type: String
     abstract val scope: SubstratePermission.Scope
 
     companion object {
@@ -76,6 +83,32 @@ internal sealed class BlockchainV3SubstrateRequest : BlockchainV3BeaconRequestCo
             }
         }
     }
+
+    @OptIn(ExperimentalSerializationApi::class)
+    object Serializer : KJsonSerializer<BlockchainV3SubstrateRequest> {
+        override val descriptor: SerialDescriptor = buildClassSerialDescriptor("BlockchainV3SubstrateRequest") {
+            element<String>("type")
+        }
+
+        override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): BlockchainV3SubstrateRequest {
+            val type = jsonElement.jsonObject.getString(descriptor.getElementName(0))
+
+            return when (type) {
+                TransferV3SubstrateRequest.TYPE -> jsonDecoder.json.decodeFromJsonElement(TransferV3SubstrateRequest.serializer(), jsonElement)
+                SignV3SubstrateRequest.TYPE -> jsonDecoder.json.decodeFromJsonElement(SignV3SubstrateRequest.serializer(), jsonElement)
+                else -> failWithUnknownType(type)
+            }
+        }
+
+        override fun serialize(jsonEncoder: JsonEncoder, value: BlockchainV3SubstrateRequest) {
+            when (value) {
+                is TransferV3SubstrateRequest -> jsonEncoder.encodeSerializableValue(TransferV3SubstrateRequest.serializer(), value)
+                is SignV3SubstrateRequest -> jsonEncoder.encodeSerializableValue(SignV3SubstrateRequest.serializer(), value)
+            }
+        }
+
+        private fun failWithUnknownType(type: String): Nothing = failWithIllegalArgument("Unknown Substrate message type $type")
+    }
 }
 
 @Serializable
@@ -88,6 +121,9 @@ internal data class TransferV3SubstrateRequest(
     val network: SubstrateNetwork,
     val mode: Mode
 ) : BlockchainV3SubstrateRequest() {
+    @Required
+    override val type: String = TYPE
+    
     override suspend fun toBeaconMessage(
         id: String,
         version: String,
@@ -151,6 +187,9 @@ internal data class SignV3SubstrateRequest(
     val payload: String,
     val mode: Mode
 ) : BlockchainV3SubstrateRequest() {
+    @Required
+    override val type: String = TYPE
+    
     override suspend fun toBeaconMessage(
         id: String,
         version: String,
@@ -231,9 +270,11 @@ internal data class PermissionV3SubstrateResponse(
 }
 
 @OptIn(ExperimentalSerializationApi::class)
-@Serializable
+@Serializable(with = BlockchainV3SubstrateResponse.Serializer::class)
 @JsonClassDiscriminator(BlockchainV3SubstrateResponse.CLASS_DISCRIMINATOR)
 internal sealed class BlockchainV3SubstrateResponse : BlockchainV3BeaconResponseContent.BlockchainData() {
+    abstract val type: String
+    
     companion object {
         const val CLASS_DISCRIMINATOR = "type"
 
@@ -244,6 +285,32 @@ internal sealed class BlockchainV3SubstrateResponse : BlockchainV3BeaconResponse
             }
         }
     }
+
+    @OptIn(ExperimentalSerializationApi::class)
+    object Serializer : KJsonSerializer<BlockchainV3SubstrateResponse> {
+        override val descriptor: SerialDescriptor = buildClassSerialDescriptor("BlockchainV3SubstrateResponse") {
+            element<String>("type")
+        }
+
+        override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): BlockchainV3SubstrateResponse {
+            val type = jsonElement.jsonObject.getString(descriptor.getElementName(0))
+
+            return when (type) {
+                TransferV3SubstrateResponse.TYPE -> jsonDecoder.json.decodeFromJsonElement(TransferV3SubstrateResponse.serializer(), jsonElement)
+                SignV3SubstrateResponse.TYPE -> jsonDecoder.json.decodeFromJsonElement(SignV3SubstrateResponse.serializer(), jsonElement)
+                else -> failWithUnknownType(type)
+            }
+        }
+
+        override fun serialize(jsonEncoder: JsonEncoder, value: BlockchainV3SubstrateResponse) {
+            when (value) {
+                is TransferV3SubstrateResponse -> jsonEncoder.encodeSerializableValue(TransferV3SubstrateResponse.serializer(), value)
+                is SignV3SubstrateResponse -> jsonEncoder.encodeSerializableValue(SignV3SubstrateResponse.serializer(), value)
+            }
+        }
+
+        private fun failWithUnknownType(type: String): Nothing = failWithIllegalArgument("Unknown Substrate message type $type")
+    }
 }
 
 @Serializable
@@ -252,6 +319,8 @@ internal data class TransferV3SubstrateResponse(
     val transactionHash: String? = null,
     val payload: String? = null,
 ) : BlockchainV3SubstrateResponse() {
+    @Required
+    override val type: String = TYPE
     
     override suspend fun toBeaconMessage(
         id: String,
@@ -287,6 +356,8 @@ internal data class SignV3SubstrateResponse(
     val signature: String? = null,
     val payload: String? = null,
 ) : BlockchainV3SubstrateResponse() {
+    @Required
+    override val type: String = TYPE
 
     override suspend fun toBeaconMessage(
         id: String,
