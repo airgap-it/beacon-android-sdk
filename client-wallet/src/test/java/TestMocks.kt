@@ -27,12 +27,14 @@ internal fun mockBeaconSdk(
 
 // -- static --
 
-internal fun mockBlockchainRegistry(): BlockchainRegistry =
-    mockkClass(BlockchainRegistry::class).also {
-        val dependencyRegistry = mockkClass(DependencyRegistry::class)
+internal fun mockDependencyRegistry(): DependencyRegistry =
+    mockkClass(DependencyRegistry::class).also {
+        val blockchainRegistry = mockkClass(BlockchainRegistry::class)
+        val mockBlockchain = MockBlockchain()
 
-        every { it.get(any()) } returns MockBlockchain()
-        every { dependencyRegistry.blockchainRegistry } returns it
+        every { blockchainRegistry.get(any()) } returns mockBlockchain
+        every { blockchainRegistry.getOrNull(any()) } returns mockBlockchain
+        every { it.blockchainRegistry } returns blockchainRegistry
 
-        mockBeaconSdk(dependencyRegistry = dependencyRegistry)
+        mockBeaconSdk(dependencyRegistry = it)
     }

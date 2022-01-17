@@ -7,10 +7,7 @@ import beaconVersionedRequests
 import disconnectBeaconMessage
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
-import it.airgap.beaconsdk.core.data.AppMetadata
-import it.airgap.beaconsdk.core.data.Origin
-import it.airgap.beaconsdk.core.data.P2pPeer
-import it.airgap.beaconsdk.core.data.Permission
+import it.airgap.beaconsdk.core.data.*
 import it.airgap.beaconsdk.core.exception.BeaconException
 import it.airgap.beaconsdk.core.internal.controller.ConnectionController
 import it.airgap.beaconsdk.core.internal.controller.MessageController
@@ -28,7 +25,7 @@ import it.airgap.beaconsdk.core.message.BeaconMessage
 import it.airgap.beaconsdk.core.message.DisconnectBeaconMessage
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.test.runBlockingTest
-import mockBlockchainRegistry
+import mockDependencyRegistry
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -71,10 +68,8 @@ internal class BeaconWalletClientTest {
     fun setup() {
         MockKAnnotations.init(this)
 
-        mockBlockchainRegistry()
-
         coEvery { messageController.onIncomingMessage(any(), any()) } coAnswers {
-            Result.success(secondArg<VersionedBeaconMessage>().toBeaconMessage(firstArg(), storageManager))
+            Result.success(secondArg<VersionedBeaconMessage>().toBeaconMessage(firstArg()))
         }
 
         coEvery { messageController.onOutgoingMessage(any(), any(), any()) } coAnswers {
@@ -87,6 +82,11 @@ internal class BeaconWalletClientTest {
 
         storageManager = StorageManager(MockStorage(), MockSecureStorage(), identifierCreator)
         beaconWalletClient = BeaconWalletClient(appName, beaconId, connectionController, messageController, storageManager, crypto)
+
+        val dependencyRegistry = mockDependencyRegistry()
+        every { dependencyRegistry.storageManager } returns storageManager
+        every { dependencyRegistry.identifierCreator } returns identifierCreator
+        every { dependencyRegistry.messageController } returns messageController
     }
 
     @After
@@ -103,7 +103,7 @@ internal class BeaconWalletClientTest {
 
             every { connectionController.subscribe() } answers { beaconMessageFlow }
 
-            storageManager.addAppMetadata(listOf(AppMetadata(dAppId, "otherApp")))
+            storageManager.addAppMetadata(listOf(MockAppMetadata(dAppId, "otherApp")))
 
             val messages =
                 beaconWalletClient.connect()
@@ -112,7 +112,7 @@ internal class BeaconWalletClientTest {
                     .take(requests.size)
                     .toList()
 
-            val expected = requests.map { it.toBeaconMessage(origin, storageManager) }
+            val expected = requests.map { it.toBeaconMessage(origin) }
 
             assertEquals(expected.sortedBy { it.toString() }, messages.sortedBy { it.toString() })
             coVerify(exactly = expected.size) { messageController.onIncomingMessage(any(), any()) }
@@ -224,7 +224,7 @@ internal class BeaconWalletClientTest {
             val beaconMessageFlow = beaconConnectionMessageFlow(2)
             every { connectionController.subscribe() } answers { beaconMessageFlow }
 
-            storageManager.addAppMetadata(listOf(AppMetadata(dAppId, "otherApp")))
+            storageManager.addAppMetadata(listOf(MockAppMetadata(dAppId, "otherApp")))
 
             beaconWalletClient.connect()
                 .onStart { beaconMessageFlow.tryEmitValues(listOf(connectionDisconnectMessage, connectionRequestMessage)) }
@@ -435,7 +435,7 @@ internal class BeaconWalletClientTest {
             storageManager.setPermissions(storagePermissions)
 
             val toFind = storagePermissions.random()
-            val fromClient = beaconWalletClient.getPermissionsFor(toFind.accountIdentifier)
+            val fromClient = beaconWalletClient.getPermissionsFor(toFind.accountId)
 
             assertEquals(toFind, fromClient)
         }
@@ -448,7 +448,7 @@ internal class BeaconWalletClientTest {
             val (toKeep, toRemove) = permissions(4).splitAt { it.size / 2 }
             storageManager.setPermissions(toKeep + toRemove)
 
-            val (toRemoveVararg, toRemoveList) = toRemove.map(Permission::accountIdentifier)
+            val (toRemoveVararg, toRemoveList) = toRemove.map(Permission::accountId)
                 .splitAt { it.size / 2 }
             with(beaconWalletClient) {
                 removePermissionsFor(*toRemoveVararg.toTypedArray())

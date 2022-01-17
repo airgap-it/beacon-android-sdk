@@ -34,14 +34,14 @@ internal class IdentifierCreatorTest {
     @Test
     fun `creates account identifier from address and network`() {
         expectedIdentifiers()
-            .map { identifierCreator.accountIdentifier(it.first.first, it.first.second).getOrThrow() to it.second }
+            .map { identifierCreator.accountId(it.first.first, it.first.second).getOrThrow() to it.second }
             .forEach { assertEquals(it.second, it.first) }
     }
 
     @Test
     fun `creates sender identifier from public key`() {
         val publicKey = "00"
-        val senderId = identifierCreator.senderIdentifier(publicKey.asHexString().toByteArray()).getOrThrow()
+        val senderId = identifierCreator.senderId(publicKey.asHexString().toByteArray()).getOrThrow()
 
         assertEquals(publicKey, senderId)
     }

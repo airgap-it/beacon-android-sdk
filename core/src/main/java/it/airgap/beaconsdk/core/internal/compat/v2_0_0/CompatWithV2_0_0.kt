@@ -4,7 +4,6 @@ import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.blockchain.Blockchain
 import it.airgap.beaconsdk.core.internal.compat.VersionedCompat
 import it.airgap.beaconsdk.core.internal.utils.blockchainRegistry
-import it.airgap.beaconsdk.core.internal.utils.failWithBlockchainNotFound
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Suppress("ClassName")
@@ -13,5 +12,5 @@ public object CompatWithV2_0_0 : VersionedCompat {
 
     private const val CHAIN_IDENTIFIER: String = "tezos"
     override val blockchain: Blockchain
-        get() = blockchainRegistry.get(CHAIN_IDENTIFIER) ?: failWithBlockchainNotFound(CHAIN_IDENTIFIER)
+        get() = blockchainRegistry.get(CHAIN_IDENTIFIER)
 }

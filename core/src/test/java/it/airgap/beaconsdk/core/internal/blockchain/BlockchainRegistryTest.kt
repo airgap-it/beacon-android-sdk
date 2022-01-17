@@ -35,7 +35,7 @@ internal class BlockchainRegistryTest {
     fun `returns specified blockchain`() {
         identifiersWithClasses
             .forEach {
-                val blockchain = blockchainRegistry.get(it.first)
+                val blockchain = blockchainRegistry.getOrNull(it.first)
 
                 assertTrue(
                     it.second.isInstance(blockchain),
@@ -46,7 +46,7 @@ internal class BlockchainRegistryTest {
 
     @Test
     fun `returns null if blockchain is not registered`() {
-        val nullBlockchain = blockchainRegistry.get("unregistered")
+        val nullBlockchain = blockchainRegistry.getOrNull("unregistered")
 
         assertNull(nullBlockchain, "Expected unregistered blockchain to be null")
     }
@@ -55,8 +55,8 @@ internal class BlockchainRegistryTest {
     fun `creates only one instance of each blockchain`() {
         identifiersWithClasses
             .forEach {
-                val blockchain1 = blockchainRegistry.get(it.first)
-                val blockchain2 = blockchainRegistry.get(it.first)
+                val blockchain1 = blockchainRegistry.getOrNull(it.first)
+                val blockchain2 = blockchainRegistry.getOrNull(it.first)
 
                 assertEquals(blockchain1, blockchain2)
             }

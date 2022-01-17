@@ -49,3 +49,6 @@ public fun failWithMissingField(name: String): Nothing =
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun failWithUnsupportedMessage(message: BeaconMessage, version: String): Nothing =
     throw IllegalArgumentException("Message $message is not supported in version $version")
+
+public fun failWithUnsupportedMessageVersion(version: String, blockchainIdentifier: String): Nothing =
+    throw IllegalArgumentException("Message version $version is not supported for $blockchainIdentifier")

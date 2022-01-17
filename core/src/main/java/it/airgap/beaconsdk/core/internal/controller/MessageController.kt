@@ -5,7 +5,10 @@ import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.internal.blockchain.BlockchainRegistry
 import it.airgap.beaconsdk.core.internal.message.VersionedBeaconMessage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
-import it.airgap.beaconsdk.core.internal.utils.*
+import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
+import it.airgap.beaconsdk.core.internal.utils.asHexString
+import it.airgap.beaconsdk.core.internal.utils.failWithIllegalArgument
+import it.airgap.beaconsdk.core.internal.utils.get
 import it.airgap.beaconsdk.core.message.*
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -20,7 +23,7 @@ public class MessageController internal constructor(
 
     public suspend fun onIncomingMessage(origin: Origin, message: VersionedBeaconMessage): Result<BeaconMessage> =
         runCatching {
-            message.toBeaconMessage(origin, storageManager).also {
+            message.toBeaconMessage(origin).also {
                 when (it) {
                     is BeaconRequest -> onIncomingRequest(it)
                     else -> { /* no action */ }
@@ -54,7 +57,7 @@ public class MessageController internal constructor(
                 else -> { /* no action */ }
             }
 
-            val senderId = identifierCreator.senderIdentifier(beaconId.asHexString().toByteArray()).getOrThrow()
+            val senderId = identifierCreator.senderId(beaconId.asHexString().toByteArray()).getOrThrow()
             Pair(message.associatedOrigin, VersionedBeaconMessage.from(senderId, message))
         }
 
@@ -69,10 +72,10 @@ public class MessageController internal constructor(
     private suspend fun onPermissionResponse(response: PermissionBeaconResponse, request: BeaconRequest) {
         if (request !is PermissionBeaconRequest) /* unknown state, no action */ return
 
-        val blockchain = blockchainRegistry.get(response.blockchainIdentifier) ?: failWithBlockchainNotFound(response.blockchainIdentifier)
-        val permission = blockchain.creator.extractPermission(request, response).getOrThrow()
+        val blockchain = blockchainRegistry.get(response.blockchainIdentifier)
+        val permissions = blockchain.creator.data.extractPermission(request, response).getOrThrow()
 
-        storageManager.addPermissions(listOf(permission))
+        storageManager.addPermissions(permissions)
     }
 
     private fun failWithNoPendingRequest(): Nothing = failWithIllegalArgument("No matching request found")

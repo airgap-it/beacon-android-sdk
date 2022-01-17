@@ -1,8 +1,8 @@
 package it.airgap.beaconsdk.core.data
 
+import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
 import it.airgap.beaconsdk.core.internal.utils.blockchainRegistry
-import it.airgap.beaconsdk.core.internal.utils.failWithBlockchainNotFound
 import it.airgap.beaconsdk.core.internal.utils.getString
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
@@ -20,20 +20,15 @@ import kotlinx.serialization.json.jsonObject
  * @property [blockchainIdentifier] A unique name of the blockchain which the network applies to.
  * @property [name] An optional name of the network.
  * @property [rpcUrl] An optional URL for the network RPC interface.
- * @property [type] A unique value that identifies the network.
  */
 @Serializable(with = Network.Serializer::class)
 public abstract class Network {
     public abstract val blockchainIdentifier: String
     public abstract val name: String?
     public abstract val rpcUrl: String?
-    public abstract val type: String
 
-    public open val identifier: String
-        get() = mutableListOf(type).apply {
-            name?.let { add("name:$it") }
-            rpcUrl?.let { add("rpc:$it") }
-        }.joinToString("-")
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public abstract val identifier: String
 
     public companion object {}
 
@@ -43,19 +38,18 @@ public abstract class Network {
             element<String>("blockchainIdentifier")
             element<String>("name", isOptional = true)
             element<String>("rpcUrl", isOptional = true)
-            element<String>("type", isOptional = true)
         }
 
         override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): Network {
             val blockchainIdentifier = jsonElement.jsonObject.getString(descriptor.getElementName(0))
-            val blockchain = blockchainRegistry.get(blockchainIdentifier) ?: failWithBlockchainNotFound(blockchainIdentifier)
+            val blockchain = blockchainRegistry.get(blockchainIdentifier)
 
-            return jsonDecoder.json.decodeFromJsonElement(blockchain.serializer.network, jsonElement)
+            return jsonDecoder.json.decodeFromJsonElement(blockchain.serializer.data.network, jsonElement)
         }
 
         override fun serialize(jsonEncoder: JsonEncoder, value: Network) {
-            val blockchain = blockchainRegistry.get(value.blockchainIdentifier) ?: failWithBlockchainNotFound(value.blockchainIdentifier)
-            jsonEncoder.encodeSerializableValue(blockchain.serializer.network, value)
+            val blockchain = blockchainRegistry.get(value.blockchainIdentifier)
+            jsonEncoder.encodeSerializableValue(blockchain.serializer.data.network, value)
         }
     }
 }
