@@ -4,6 +4,7 @@ import it.airgap.beaconsdk.core.data.AppMetadata
 import it.airgap.beaconsdk.core.data.Peer
 import it.airgap.beaconsdk.core.data.Permission
 import kotlinx.coroutines.flow.Flow
+import kotlin.reflect.KClass
 
 public interface ExtendedStorage : Storage {
     public val appMetadata: Flow<AppMetadata>
@@ -19,7 +20,7 @@ public interface ExtendedStorage : Storage {
     )
 
     public suspend fun findPeer(predicate: (Peer) -> Boolean): Peer?
-    public suspend fun <T : Peer> findPeer(instanceClass: Class<T>, predicate: (T) -> Boolean): T?
+    public suspend fun <T : Peer> findPeer(instanceClass: KClass<T>, predicate: (T) -> Boolean): T?
     public suspend fun removePeers(predicate: ((Peer) -> Boolean)? = null)
 
     public suspend fun addAppMetadata(
@@ -29,6 +30,7 @@ public interface ExtendedStorage : Storage {
     )
 
     public suspend fun findAppMetadata(predicate: (AppMetadata) -> Boolean): AppMetadata?
+    public suspend fun <T : AppMetadata> findAppMetadata(instanceClass: KClass<T>, predicate: (T) -> Boolean): T?
     public suspend fun removeAppMetadata(predicate: ((AppMetadata) -> Boolean)? = null)
 
     public suspend fun addPermissions(

@@ -5,7 +5,7 @@ import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class Disposable<V: Any> : ReadWriteProperty<Any?, V?> {
+public class Disposable<V : Any> : ReadWriteProperty<Any?, V?> {
     private var value: V? = null
 
     override fun getValue(thisRef: Any?, property: KProperty<*>): V? =

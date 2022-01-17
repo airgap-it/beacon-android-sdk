@@ -45,6 +45,7 @@ public class SuperClassSerializer<T : Any, S : T>(private val subClass: KClass<S
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@Suppress("FunctionName")
 public inline fun <T : Any, reified S : T> SuperClassSerializer(subClassSerializer: KSerializer<S>): SuperClassSerializer<T, S> =
     SuperClassSerializer(S::class, subClassSerializer)
 

@@ -4,7 +4,9 @@ import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.internal.message.v1.V1BeaconMessage
 import it.airgap.beaconsdk.core.internal.message.v2.V2BeaconMessage
+import it.airgap.beaconsdk.core.internal.message.v3.V3BeaconMessage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
+import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
 import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
 import it.airgap.beaconsdk.core.internal.utils.getString
 import it.airgap.beaconsdk.core.message.BeaconMessage
@@ -21,19 +23,19 @@ import kotlinx.serialization.json.jsonObject
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Serializable(with = VersionedBeaconMessage.Serializer::class)
 public abstract class VersionedBeaconMessage {
-    public abstract val type: String
     public abstract val version: String
 
-    public abstract suspend fun toBeaconMessage(origin: Origin, storageManager: StorageManager): BeaconMessage
+    public abstract suspend fun toBeaconMessage(origin: Origin): BeaconMessage
 
     public companion object {
-        public fun from(senderId: String, content: BeaconMessage): VersionedBeaconMessage {
-            return when (content.version.major) {
-                "1" -> V1BeaconMessage.from(senderId, content)
-                "2" -> V2BeaconMessage.from(senderId, content)
+        public fun from(senderId: String, message: BeaconMessage): VersionedBeaconMessage {
+            return when (message.version.major) {
+                "1" -> V1BeaconMessage.from(senderId, message)
+                "2" -> V2BeaconMessage.from(senderId, message)
+                "3" -> V3BeaconMessage.from(senderId, message)
 
                 // fallback to the newest version
-                else -> V2BeaconMessage.from(senderId, content)
+                else -> V3BeaconMessage.from(senderId, message)
             }
         }
 
@@ -53,9 +55,10 @@ public abstract class VersionedBeaconMessage {
             return when (version.major) {
                 "1" -> jsonDecoder.json.decodeFromJsonElement(V1BeaconMessage.serializer(), jsonElement)
                 "2" -> jsonDecoder.json.decodeFromJsonElement(V2BeaconMessage.serializer(), jsonElement)
+                "3" -> jsonDecoder.json.decodeFromJsonElement(V3BeaconMessage.serializer(), jsonElement)
 
                 // fallback to the newest version
-                else -> jsonDecoder.json.decodeFromJsonElement(V2BeaconMessage.serializer(), jsonElement)
+                else -> jsonDecoder.json.decodeFromJsonElement(V3BeaconMessage.serializer(), jsonElement)
             }
         }
 
@@ -63,6 +66,7 @@ public abstract class VersionedBeaconMessage {
             when (value) {
                 is V1BeaconMessage -> jsonEncoder.encodeSerializableValue(V1BeaconMessage.serializer(), value)
                 is V2BeaconMessage -> jsonEncoder.encodeSerializableValue(V2BeaconMessage.serializer(), value)
+                is V3BeaconMessage -> jsonEncoder.encodeSerializableValue(V3BeaconMessage.serializer(), value)
             }
         }
     }

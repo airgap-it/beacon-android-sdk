@@ -3,6 +3,7 @@ package it.airgap.beaconsdk.transport.p2p.matrix.internal.di
 import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.core.internal.migration.Migration
 import it.airgap.beaconsdk.core.internal.utils.app
+import it.airgap.beaconsdk.core.internal.utils.delegate.lazyWeak
 import it.airgap.beaconsdk.core.network.provider.HttpProvider
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.P2pMatrixCommunicator
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.P2pMatrixSecurity
@@ -19,8 +20,8 @@ internal class P2pMatrixDependencyRegistry(dependencyRegistry: DependencyRegistr
 
     // -- P2P --
 
-    override val p2pMatrixCommunicator: P2pMatrixCommunicator by lazy { P2pMatrixCommunicator(app, crypto) }
-    override val p2pMatrixSecurity: P2pMatrixSecurity by lazy { P2pMatrixSecurity(app, crypto) }
+    override val p2pMatrixCommunicator: P2pMatrixCommunicator by lazyWeak { P2pMatrixCommunicator(app, crypto) }
+    override val p2pMatrixSecurity: P2pMatrixSecurity by lazyWeak { P2pMatrixSecurity(app, crypto) }
 
     override fun p2pMatrixStore(httpProvider: HttpProvider?, matrixNodes: List<String>): P2pMatrixStore =
         P2pMatrixStore(app, p2pMatrixCommunicator, matrixClient(httpProvider), matrixNodes, storageManager, migration)
@@ -45,7 +46,7 @@ internal class P2pMatrixDependencyRegistry(dependencyRegistry: DependencyRegistr
 
     // -- migration --
 
-    override val migration: Migration by lazy {
+    override val migration: Migration by lazyWeak {
         dependencyRegistry.migration.apply {
             register(
                 P2pMatrixMigrationFromV1_0_4(storageManager)

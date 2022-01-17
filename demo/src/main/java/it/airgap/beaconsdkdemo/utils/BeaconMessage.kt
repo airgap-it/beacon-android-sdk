@@ -139,8 +139,7 @@ fun ErrorBeaconResponse.toJson(json: Json = Json.Default): JsonElement =
         mapOf(
             "type" to json.encodeToJsonElement("error_response"),
             "id" to json.encodeToJsonElement(id),
-            "blockchainIdentifier" to json.encodeToJsonElement(blockchainIdentifier),
-            "errorType" to json.encodeToJsonElement(BeaconError.serializer(blockchainIdentifier), errorType),
+            "errorType" to json.encodeToJsonElement(BeaconError.serializer(errorType.blockchainIdentifier), errorType),
             "version" to json.encodeToJsonElement(version),
         )
     )
@@ -155,7 +154,6 @@ fun PermissionTezosResponse.toJson(json: Json = Json.Default): JsonElement =
             "publicKey" to json.encodeToJsonElement(publicKey),
             "network" to json.encodeToJsonElement(network),
             "scopes" to json.encodeToJsonElement(scopes),
-            "threshold" to json.encodeToJsonElement(threshold),
         )
     )
 

@@ -5,7 +5,6 @@ import it.airgap.beaconsdk.core.data.BeaconError
 import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.internal.compat.CoreCompat
 import it.airgap.beaconsdk.core.internal.message.VersionedBeaconMessage
-import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
 import it.airgap.beaconsdk.core.internal.utils.failWithUnsupportedMessage
 import it.airgap.beaconsdk.core.internal.utils.getString
@@ -31,20 +30,21 @@ import kotlinx.serialization.json.jsonObject
 @Serializable(with = V1BeaconMessage.Serializer::class)
 public abstract class V1BeaconMessage : VersionedBeaconMessage() {
     public abstract val id: String
+    public abstract val type: String
     public abstract val beaconId: String
 
     public companion object {
-        public fun from(senderId: String, content: BeaconMessage): V1BeaconMessage =
-            with(content) {
+        public fun from(senderId: String, message: BeaconMessage): V1BeaconMessage =
+            with(message) {
                 when (this) {
-                    is AcknowledgeBeaconResponse -> failWithUnsupportedMessage(content, version)
+                    is AcknowledgeBeaconResponse -> failWithUnsupportedMessage(message, version)
                     is ErrorBeaconResponse -> ErrorV1BeaconResponse(version, id, senderId, errorType)
                     is DisconnectBeaconMessage -> DisconnectV1BeaconMessage(version, id, senderId)
-                    else -> CoreCompat.versioned.blockchain.creator.v1From(senderId, content).getOrThrow()
+                    else -> CoreCompat.versioned.blockchain.creator.v1.from(senderId, message).getOrThrow()
                 }
             }
 
-        public fun compatSerializer(): KSerializer<V1BeaconMessage> = CoreCompat.versioned.blockchain.serializer.v1
+        public fun compatSerializer(): KSerializer<V1BeaconMessage> = CoreCompat.versioned.blockchain.serializer.v1.message
     }
 
     @OptIn(ExperimentalSerializationApi::class)
@@ -84,11 +84,11 @@ public data class ErrorV1BeaconResponse(
     @Required
     override val type: String = TYPE
 
-    override suspend fun toBeaconMessage(origin: Origin, storageManager: StorageManager): BeaconMessage =
-        ErrorBeaconResponse(id, version, origin, CoreCompat.versioned.blockchain.identifier, errorType)
+    override suspend fun toBeaconMessage(origin: Origin): BeaconMessage =
+        ErrorBeaconResponse(id, version, origin, errorType, null)
 
     public companion object {
-        public const val TYPE: String = "error"
+        internal const val TYPE: String = "error"
     }
 
     internal class Serializer : KJsonSerializer<ErrorV1BeaconResponse> {
@@ -136,10 +136,10 @@ public data class DisconnectV1BeaconMessage(
     @Required
     override val type: String = TYPE
 
-    override suspend fun toBeaconMessage(origin: Origin, storageManager: StorageManager): BeaconMessage =
+    override suspend fun toBeaconMessage(origin: Origin): BeaconMessage =
         DisconnectBeaconMessage(id, beaconId, version, origin)
 
     public companion object {
-        public const val TYPE: String = "disconnect"
+        internal const val TYPE: String = "disconnect"
     }
 }

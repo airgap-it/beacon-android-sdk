@@ -8,6 +8,7 @@ import it.airgap.beaconsdk.core.data.Peer
 import it.airgap.beaconsdk.core.data.Permission
 import it.airgap.beaconsdk.core.exception.BeaconException
 import it.airgap.beaconsdk.core.blockchain.Blockchain
+import it.airgap.beaconsdk.core.builder.InitBuilder
 import it.airgap.beaconsdk.core.internal.controller.ConnectionController
 import it.airgap.beaconsdk.core.internal.controller.MessageController
 import it.airgap.beaconsdk.core.internal.crypto.Crypto
@@ -159,20 +160,20 @@ public class BeaconWalletClient @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) cons
      * Returns permissions granted for the specified [accountIdentifier].
      */
     public suspend fun getPermissionsFor(accountIdentifier: String): Permission? =
-        storageManager.findPermission { it.accountIdentifier == accountIdentifier }
+        storageManager.findPermission { it.accountId == accountIdentifier }
 
     /**
      * Removes permissions granted for the specified [accountIdentifiers].
      */
     public suspend fun removePermissionsFor(vararg accountIdentifiers: String) {
-        storageManager.removePermissions { accountIdentifiers.contains(it.accountIdentifier) }
+        storageManager.removePermissions { accountIdentifiers.contains(it.accountId) }
     }
 
     /**
      * Removes permissions granted for the specified [accountIdentifiers].
      */
     public suspend fun removePermissionsFor(accountIdentifiers: List<String>) {
-        storageManager.removePermissions { accountIdentifiers.contains(it.accountIdentifier) }
+        storageManager.removePermissions { accountIdentifiers.contains(it.accountId) }
     }
 
     /**
@@ -220,46 +221,12 @@ public class BeaconWalletClient @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) cons
      *
      * @constructor Creates a builder configured with the specified application [name] and [blockchains] that will be supported by the client.
      */
-    public class Builder(private val name: String, private val blockchains: List<Blockchain.Factory<*>>) {
+    public class Builder(name: String, blockchains: List<Blockchain.Factory<*>>) : InitBuilder<BeaconWalletClient, Builder>(name, blockchains) {
 
         /**
-         * A URL to the application's website.
+         * Creates a new instance of [BeaconWalletClient].
          */
-        public var appUrl: String? = null
-
-        /**
-         * A URL to the application's icon.
-         */
-        public var iconUrl: String? = null
-
-        /**
-         * Connection types that will be supported by the configured client.
-         */
-        private var connections: MutableList<Connection> = mutableListOf()
-
-        /**
-         * Registers connections that should be supported by the configured client.
-         */
-        public fun addConnections(vararg connections: Connection): Builder = apply {
-            this.connections.addAll(connections.toList())
-        }
-
-        /**
-         * An optional external implementation of [Storage]. If not provided, an internal implementation will be used.
-         */
-        public var storage: Storage by default { SharedPreferencesStorage.create(applicationContext) }
-
-        /**
-         * An optional external implementation of [SecureStorage]. If not provided, an internal implementation will be used.
-         */
-        public var secureStorage: SecureStorage by default { SharedPreferencesSecureStorage.create(applicationContext) }
-
-        /**
-         * Builds a new instance of [BeaconWalletClient].
-         */
-        public suspend fun build(): BeaconWalletClient {
-            beaconSdk.init(name, appUrl, iconUrl, blockchains, storage, secureStorage)
-
+        override suspend fun createInstance(): BeaconWalletClient {
             with(dependencyRegistry) {
                 return BeaconWalletClient(
                     name,
