@@ -9,6 +9,7 @@ import it.airgap.beaconsdk.client.wallet.BeaconWalletClient
 import it.airgap.beaconsdk.core.data.MockAppMetadata
 import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.exception.BeaconException
+import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.controller.ConnectionController
 import it.airgap.beaconsdk.core.internal.controller.MessageController
 import it.airgap.beaconsdk.core.internal.crypto.Crypto
@@ -78,8 +79,9 @@ internal class BeaconWalletClientTest {
 
         coEvery { connectionController.send(any()) } coAnswers { Result.success() }
 
-        storageManager = StorageManager(MockStorage(), MockSecureStorage(), identifierCreator)
-        beaconWalletClient = BeaconWalletClient(appName, beaconId, connectionController, messageController, storageManager, crypto)
+        val configuration = BeaconConfiguration(ignoreUnsupportedBlockchains = false)
+        storageManager = StorageManager(MockStorage(), MockSecureStorage(), identifierCreator, configuration)
+        beaconWalletClient = BeaconWalletClient(appName, beaconId, connectionController, messageController, storageManager, crypto, configuration)
 
         val dependencyRegistry = mockDependencyRegistry()
         every { dependencyRegistry.storageManager } returns storageManager

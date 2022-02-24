@@ -50,7 +50,7 @@ internal class TezosPermissionTest {
     ): Pair<TezosPermission, String> {
         val values = mapOf(
             "blockchainIdentifier" to blockchainIdentifier,
-            "accountIdentifier" to accountId,
+            "accountId" to accountId,
             "senderId" to senderId,
             "connectedAt" to connectedAt,
             "address" to address,

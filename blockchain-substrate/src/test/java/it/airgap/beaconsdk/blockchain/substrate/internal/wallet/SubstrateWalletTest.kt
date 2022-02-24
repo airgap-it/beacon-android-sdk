@@ -26,9 +26,9 @@ internal class SubstrateWalletTest {
         every { crypto.hash(any<ByteArray>(), any()) } answers {
             val message = firstArg<ByteArray>()
             val size = secondArg<Int>()
-            val blake2bDigest = Blake2bDigest(min(size * 8, 512))
+            val blake2bDigest = Blake2bDigest(size * 8)
 
-            ByteArray(blake2bDigest.digestSize * 8).let {
+            ByteArray(blake2bDigest.digestSize).let {
                 blake2bDigest.update(message, 0, message.size)
                 blake2bDigest.doFinal(it, 0)
 

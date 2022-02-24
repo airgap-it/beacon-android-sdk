@@ -6,6 +6,7 @@ import io.mockk.impl.annotations.MockK
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosAppMetadata
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
 import it.airgap.beaconsdk.blockchain.tezos.internal.wallet.TezosWallet
+import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import mockTime
 import it.airgap.beaconsdk.core.internal.storage.MockSecureStorage
 import it.airgap.beaconsdk.core.internal.storage.MockStorage
@@ -48,7 +49,7 @@ internal class TezosCreatorTest {
         every { identifierCreator.accountId(any(), any()) } answers { Result.success(firstArg()) }
         every { identifierCreator.senderId(any()) } answers { Result.success(firstArg<ByteArray>().toHexString().asString()) }
 
-        storageManager = StorageManager(MockStorage(), MockSecureStorage(), identifierCreator)
+        storageManager = StorageManager(MockStorage(), MockSecureStorage(), identifierCreator, BeaconConfiguration(ignoreUnsupportedBlockchains = false))
         creator = TezosCreator(
             DataTezosCreator(wallet, storageManager, identifierCreator),
             V1BeaconMessageTezosCreator(),

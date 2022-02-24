@@ -6,7 +6,9 @@ import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.data.P2P
 import it.airgap.beaconsdk.core.internal.BeaconSdk
 import it.airgap.beaconsdk.core.blockchain.Blockchain
+import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchain
+import it.airgap.beaconsdk.core.internal.data.BeaconApplication
 import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.SharedPreferencesSecureStorage
 import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.SharedPreferencesStorage
@@ -48,7 +50,15 @@ internal class BeaconWalletClientBuilderTest {
             assertEquals(appName, beaconWalletClient.name)
             assertEquals(beaconId, beaconWalletClient.beaconId)
 
-            coVerify(exactly = 1) { beaconSdk.init(appName, null, null, blockchains, ofType(SharedPreferencesStorage::class), ofType(SharedPreferencesSecureStorage::class)) }
+            coVerify(exactly = 1) {
+                beaconSdk.init(
+                    BeaconApplication.Partial(appName, null, null),
+                    BeaconConfiguration(ignoreUnsupportedBlockchains = false),
+                    blockchains,
+                    ofType(SharedPreferencesStorage::class),
+                    ofType(SharedPreferencesSecureStorage::class)
+                )
+            }
             verify(exactly = 1) { dependencyRegistry.connectionController(defaultConnections) }
         }
     }
@@ -66,7 +76,15 @@ internal class BeaconWalletClientBuilderTest {
             assertEquals(appName, beaconWalletClient.name)
             assertEquals(beaconId, beaconWalletClient.beaconId)
 
-            coVerify(exactly = 1) { beaconSdk.init(appName, null, null, blockchains, ofType(SharedPreferencesStorage::class), ofType(SharedPreferencesSecureStorage::class)) }
+            coVerify(exactly = 1) {
+                beaconSdk.init(
+                    BeaconApplication.Partial(appName, null, null),
+                    BeaconConfiguration(ignoreUnsupportedBlockchains = false),
+                    blockchains,
+                    ofType(SharedPreferencesStorage::class),
+                    ofType(SharedPreferencesSecureStorage::class)
+                )
+            }
             verify(exactly = 1) { dependencyRegistry.connectionController(customConnections) }
         }
     }
@@ -80,7 +98,15 @@ internal class BeaconWalletClientBuilderTest {
             assertEquals(appName, beaconWalletClient.name)
             assertEquals(beaconId, beaconWalletClient.beaconId)
 
-            coVerify(exactly = 1) { beaconSdk.init(appName, null, null, blockchains, ofType(SharedPreferencesStorage::class), ofType(SharedPreferencesSecureStorage::class)) }
+            coVerify(exactly = 1) {
+                beaconSdk.init(
+                    BeaconApplication.Partial(appName, null, null),
+                    BeaconConfiguration(ignoreUnsupportedBlockchains = false),
+                    blockchains,
+                    ofType(SharedPreferencesStorage::class),
+                    ofType(SharedPreferencesSecureStorage::class)
+                )
+            }
             verify(exactly = 1) { dependencyRegistry.connectionController(defaultConnections) }
         }
     }
@@ -96,7 +122,15 @@ internal class BeaconWalletClientBuilderTest {
             assertEquals(appName, beaconWalletClient.name)
             assertEquals(beaconId, beaconWalletClient.beaconId)
 
-            coVerify(exactly = 1) { beaconSdk.init(appName, null, null, blockchains, ofType(SharedPreferencesStorage::class), ofType(SharedPreferencesSecureStorage::class)) }
+            coVerify(exactly = 1) {
+                beaconSdk.init(
+                    BeaconApplication.Partial(appName, null, null),
+                    BeaconConfiguration(ignoreUnsupportedBlockchains = false),
+                    blockchains,
+                    ofType(SharedPreferencesStorage::class),
+                    ofType(SharedPreferencesSecureStorage::class)
+                )
+            }
             verify(exactly = 1) { dependencyRegistry.connectionController(customConnections) }
         }
     }

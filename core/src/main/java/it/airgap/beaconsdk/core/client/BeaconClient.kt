@@ -3,6 +3,8 @@ package it.airgap.beaconsdk.core.client
 import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.data.Peer
 import it.airgap.beaconsdk.core.exception.BeaconException
+import it.airgap.beaconsdk.core.exception.BlockchainNotFoundException
+import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.controller.ConnectionController
 import it.airgap.beaconsdk.core.internal.controller.MessageController
 import it.airgap.beaconsdk.core.internal.crypto.Crypto
@@ -14,10 +16,7 @@ import it.airgap.beaconsdk.core.internal.utils.runCatchingFlat
 import it.airgap.beaconsdk.core.internal.utils.success
 import it.airgap.beaconsdk.core.message.BeaconMessage
 import it.airgap.beaconsdk.core.message.DisconnectBeaconMessage
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.mapNotNull
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.*
 
 /**
  * An abstract base for different client types provided in Beacon.
@@ -29,6 +28,7 @@ public abstract class BeaconClient<BM : BeaconMessage>(
     protected val messageController: MessageController,
     protected val storageManager: StorageManager,
     protected val crypto: Crypto,
+    protected val configuration: BeaconConfiguration,
 ) {
 
     /**
@@ -40,6 +40,7 @@ public abstract class BeaconClient<BM : BeaconMessage>(
         connectionController.subscribe()
             .map { result -> result.flatMap { messageController.onIncomingMessage(it.origin, it.content) } }
             .onEach { result -> result.getOrNull()?.let { processMessage(it) } }
+            .filterWithConfiguration()
             .mapNotNull { result ->
                 result.fold(
                     onSuccess = { transformMessage(it)?.let(Result.Companion::success) },
@@ -128,6 +129,18 @@ public abstract class BeaconClient<BM : BeaconMessage>(
     protected suspend fun send(message: BeaconMessage, isTerminal: Boolean): Result<Unit> =
         messageController.onOutgoingMessage(beaconId, message, isTerminal)
             .flatMap { connectionController.send(BeaconConnectionMessage(it)) }
+
+    protected fun <T> Flow<Result<T>>.filterWithConfiguration(): Flow<Result<T>> =
+        filterNot { it.shouldBeIgnored() }
+
+    protected fun <T> Result<T>.takeIfNotIgnored(): Result<T>? = takeIf { !shouldBeIgnored() }
+
+    private fun <T> Result<T>.shouldBeIgnored(): Boolean = with(configuration) {
+        when {
+            exceptionOrNull() is BlockchainNotFoundException && ignoreUnsupportedBlockchains -> true
+            else -> false
+        }
+    }
 
     public companion object {}
 }

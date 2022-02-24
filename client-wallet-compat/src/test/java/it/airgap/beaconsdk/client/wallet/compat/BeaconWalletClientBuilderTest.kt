@@ -7,7 +7,9 @@ import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.data.P2P
 import it.airgap.beaconsdk.core.internal.BeaconSdk
 import it.airgap.beaconsdk.core.blockchain.Blockchain
+import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchain
+import it.airgap.beaconsdk.core.internal.data.BeaconApplication
 import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.SharedPreferencesSecureStorage
 import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.SharedPreferencesStorage
@@ -66,7 +68,15 @@ internal class BeaconWalletClientBuilderTest {
         assertEquals(appName, client?.name)
         assertEquals(beaconId, client?.beaconId)
 
-        coVerify(exactly = 1) { beaconApp.init(appName, null, null, blockchains, ofType(SharedPreferencesStorage::class), ofType(SharedPreferencesSecureStorage::class)) }
+        coVerify(exactly = 1) {
+            beaconApp.init(
+                BeaconApplication.Partial(appName, null, null),
+                BeaconConfiguration(ignoreUnsupportedBlockchains = false),
+                blockchains,
+                ofType(SharedPreferencesStorage::class),
+                ofType(SharedPreferencesSecureStorage::class)
+            )
+        }
         verify(exactly = 1) { dependencyRegistry.connectionController(defaultConnections) }
         verify(exactly = 1) { callback.onSuccess(any()) }
         verify(exactly = 0) { callback.onError(any()) }
@@ -99,7 +109,15 @@ internal class BeaconWalletClientBuilderTest {
         assertEquals(appName, client!!.name)
         assertEquals(beaconId, client!!.beaconId)
 
-        coVerify(exactly = 1) { beaconApp.init(appName, null, null, blockchains, ofType(SharedPreferencesStorage::class), ofType(SharedPreferencesSecureStorage::class)) }
+        coVerify(exactly = 1) {
+            beaconApp.init(
+                BeaconApplication.Partial(appName, null, null),
+                BeaconConfiguration(ignoreUnsupportedBlockchains = false),
+                blockchains,
+                ofType(SharedPreferencesStorage::class),
+                ofType(SharedPreferencesSecureStorage::class)
+            )
+        }
         verify(exactly = 1) { dependencyRegistry.connectionController(customConnections) }
         verify(exactly = 1) { callback.onSuccess(any()) }
         verify(exactly = 0) { callback.onError(any()) }

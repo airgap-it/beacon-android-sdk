@@ -1,31 +1,25 @@
 package it.airgap.beaconsdk.client.wallet
 
 import androidx.annotation.RestrictTo
+import it.airgap.beaconsdk.core.blockchain.Blockchain
+import it.airgap.beaconsdk.core.builder.InitBuilder
 import it.airgap.beaconsdk.core.client.BeaconClient
 import it.airgap.beaconsdk.core.data.AppMetadata
-import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.data.Peer
 import it.airgap.beaconsdk.core.data.Permission
 import it.airgap.beaconsdk.core.exception.BeaconException
-import it.airgap.beaconsdk.core.blockchain.Blockchain
-import it.airgap.beaconsdk.core.builder.InitBuilder
+import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.controller.ConnectionController
 import it.airgap.beaconsdk.core.internal.controller.MessageController
 import it.airgap.beaconsdk.core.internal.crypto.Crypto
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
-import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.SharedPreferencesSecureStorage
-import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.SharedPreferencesStorage
-import it.airgap.beaconsdk.core.internal.utils.applicationContext
 import it.airgap.beaconsdk.core.internal.utils.beaconSdk
-import it.airgap.beaconsdk.core.internal.utils.delegate.default
 import it.airgap.beaconsdk.core.internal.utils.dependencyRegistry
 import it.airgap.beaconsdk.core.internal.utils.mapException
 import it.airgap.beaconsdk.core.message.AcknowledgeBeaconResponse
 import it.airgap.beaconsdk.core.message.BeaconMessage
 import it.airgap.beaconsdk.core.message.BeaconRequest
 import it.airgap.beaconsdk.core.message.BeaconResponse
-import it.airgap.beaconsdk.core.storage.SecureStorage
-import it.airgap.beaconsdk.core.storage.Storage
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -90,7 +84,8 @@ public class BeaconWalletClient @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) cons
     messageController: MessageController,
     storageManager: StorageManager,
     crypto: Crypto,
-) : BeaconClient<BeaconRequest>(name, beaconId, connectionController, messageController, storageManager, crypto) {
+    configuration: BeaconConfiguration,
+) : BeaconClient<BeaconRequest>(name, beaconId, connectionController, messageController, storageManager, crypto, configuration) {
 
     /**
      * Sends the [response] in reply to a previously received request.
@@ -99,7 +94,10 @@ public class BeaconWalletClient @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) cons
      */
     @Throws(IllegalArgumentException::class, IllegalStateException::class, BeaconException::class)
     public suspend fun respond(response: BeaconResponse) {
-        send(response, isTerminal = true).mapException { BeaconException.from(it) }.getOrThrow()
+        send(response, isTerminal = true)
+            .takeIfNotIgnored()
+            ?.mapException { BeaconException.from(it) }
+            ?.getOrThrow()
     }
 
     /**
@@ -226,7 +224,7 @@ public class BeaconWalletClient @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) cons
         /**
          * Creates a new instance of [BeaconWalletClient].
          */
-        override suspend fun createInstance(): BeaconWalletClient {
+        override suspend fun createInstance(configuration: BeaconConfiguration): BeaconWalletClient {
             with(dependencyRegistry) {
                 return BeaconWalletClient(
                     name,
@@ -235,6 +233,7 @@ public class BeaconWalletClient @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) cons
                     messageController,
                     storageManager,
                     crypto,
+                    configuration,
                 )
             }
         }

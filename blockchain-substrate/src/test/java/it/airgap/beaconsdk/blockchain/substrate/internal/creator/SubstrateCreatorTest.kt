@@ -12,6 +12,7 @@ import it.airgap.beaconsdk.core.internal.utils.toHexString
 import it.airgap.beaconsdk.blockchain.substrate.data.SubstrateAppMetadata
 import it.airgap.beaconsdk.blockchain.substrate.data.SubstratePermission
 import it.airgap.beaconsdk.blockchain.substrate.internal.wallet.SubstrateWallet
+import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
@@ -48,7 +49,7 @@ internal class SubstrateCreatorTest {
         every { identifierCreator.accountId(any(), any()) } answers { Result.success(firstArg()) }
         every { identifierCreator.senderId(any()) } answers { Result.success(firstArg<ByteArray>().toHexString().asString()) }
 
-        storageManager = StorageManager(MockStorage(), MockSecureStorage(), identifierCreator)
+        storageManager = StorageManager(MockStorage(), MockSecureStorage(), identifierCreator, BeaconConfiguration(ignoreUnsupportedBlockchains = false))
         creator = SubstrateCreator(
             DataSubstrateCreator(wallet, storageManager, identifierCreator),
             V1BeaconMessageSubstrateCreator(),
