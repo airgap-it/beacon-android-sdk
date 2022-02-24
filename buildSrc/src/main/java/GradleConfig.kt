@@ -4,7 +4,7 @@ object Android {
     const val targetSdk = 30
 
     const val versionCode = 13
-    const val versionName = "3.0.1-beta02"
+    const val versionName = "3.0.1-beta03"
 }
 
 object Version {
