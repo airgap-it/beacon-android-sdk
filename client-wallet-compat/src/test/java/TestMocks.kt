@@ -18,7 +18,7 @@ internal fun mockBeaconSdk(
 
         val contextMock = mockk<Context>(relaxed = true)
 
-        coEvery { it.init(any(), any(), any(), any(), any(), any()) } returns Unit
+        coEvery { it.init(any(), any(), any(), any(), any()) } returns Unit
 
         every { it.applicationContext } returns contextMock
         every { it.beaconId } returns beaconId

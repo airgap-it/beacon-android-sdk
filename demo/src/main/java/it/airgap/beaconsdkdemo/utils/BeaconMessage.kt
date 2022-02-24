@@ -1,8 +1,20 @@
 package it.airgap.beaconsdkdemo.utils
 
+import it.airgap.beaconsdk.blockchain.substrate.data.SubstrateAccount
+import it.airgap.beaconsdk.blockchain.substrate.data.SubstrateAppMetadata
+import it.airgap.beaconsdk.blockchain.substrate.data.SubstratePermission
+import it.airgap.beaconsdk.blockchain.substrate.message.request.BlockchainSubstrateRequest
+import it.airgap.beaconsdk.blockchain.substrate.message.request.PermissionSubstrateRequest
+import it.airgap.beaconsdk.blockchain.substrate.message.request.SignSubstrateRequest
+import it.airgap.beaconsdk.blockchain.substrate.message.request.TransferSubstrateRequest
+import it.airgap.beaconsdk.blockchain.substrate.message.response.BlockchainSubstrateResponse
+import it.airgap.beaconsdk.blockchain.substrate.message.response.PermissionSubstrateResponse
+import it.airgap.beaconsdk.blockchain.substrate.message.response.SignSubstrateResponse
+import it.airgap.beaconsdk.blockchain.substrate.message.response.TransferSubstrateResponse
 import it.airgap.beaconsdk.blockchain.tezos.message.request.*
 import it.airgap.beaconsdk.blockchain.tezos.message.response.*
 import it.airgap.beaconsdk.core.data.BeaconError
+import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.internal.utils.failWithIllegalArgument
 import it.airgap.beaconsdk.core.message.*
 import kotlinx.serialization.json.Json
@@ -26,14 +38,70 @@ fun BeaconRequest.toJson(json: Json = Json.Default): JsonElement =
 fun PermissionBeaconRequest.toJson(json: Json = Json.Default): JsonElement =
     when (this) {
         is PermissionTezosRequest -> toJson(json)
+        is PermissionSubstrateRequest -> toJson(json)
         else -> failWithUnknownPermissionBeaconRequest(this)
     }
 
 fun BlockchainBeaconRequest.toJson(json: Json = Json.Default): JsonElement =
     when (this) {
         is BlockchainTezosRequest -> toJson(json)
+        is BlockchainSubstrateRequest -> toJson(json)
         else -> failWithUnknownBlockchainBeaconRequest(this)
     }
+
+fun BeaconResponse.toJson(json: Json = Json.Default): JsonElement =
+    when (this) {
+        is PermissionBeaconResponse -> toJson(json)
+        is BlockchainBeaconResponse -> toJson(json)
+        is AcknowledgeBeaconResponse -> toJson(json)
+        is ErrorBeaconResponse -> toJson(json)
+    }
+
+fun PermissionBeaconResponse.toJson(json: Json = Json.Default): JsonElement =
+    when (this) {
+        is PermissionTezosResponse -> toJson(json)
+        is PermissionSubstrateResponse -> toJson(json)
+        else -> failWithUnknownPermissionBeaconResponse(this)
+    }
+
+fun BlockchainBeaconResponse.toJson(json: Json = Json.Default): JsonElement =
+    when (this) {
+        is BlockchainTezosResponse -> toJson(json)
+        is BlockchainSubstrateResponse -> toJson(json)
+        else -> failWithUnknownBlockchainBeaconResponse(this)
+    }
+
+fun AcknowledgeBeaconResponse.toJson(json: Json = Json.Default): JsonElement =
+    JsonObject(
+        mapOf(
+            "type" to json.encodeToJsonElement("acknowledge_response"),
+            "id" to json.encodeToJsonElement(id),
+            "senderId" to json.encodeToJsonElement(senderId),
+            "version" to json.encodeToJsonElement(version),
+        )
+    )
+
+fun ErrorBeaconResponse.toJson(json: Json = Json.Default): JsonElement =
+    JsonObject(
+        mapOf(
+            "type" to json.encodeToJsonElement("error_response"),
+            "id" to json.encodeToJsonElement(id),
+            "errorType" to json.encodeToJsonElement(BeaconError.serializer(errorType.blockchainIdentifier), errorType),
+            "version" to json.encodeToJsonElement(version),
+        )
+    )
+
+fun DisconnectBeaconMessage.toJson(json: Json = Json.Default): JsonElement =
+    JsonObject(
+        mapOf(
+            "id" to json.encodeToJsonElement(id),
+            "senderId" to json.encodeToJsonElement(senderId),
+            "version" to json.encodeToJsonElement(version),
+            "origin" to json.encodeToJsonElement(origin),
+        )
+    )
+
+// -- Tezos --
 
 fun PermissionTezosRequest.toJson(json: Json = Json.Default): JsonElement =
     JsonObject(
@@ -104,46 +172,6 @@ fun BroadcastTezosRequest.toJson(json: Json = Json.Default): JsonElement =
         )
     )
 
-fun BeaconResponse.toJson(json: Json = Json.Default): JsonElement =
-    when (this) {
-        is PermissionBeaconResponse -> toJson(json)
-        is BlockchainBeaconResponse -> toJson(json)
-        is AcknowledgeBeaconResponse -> toJson(json)
-        is ErrorBeaconResponse -> toJson(json)
-    }
-
-fun PermissionBeaconResponse.toJson(json: Json = Json.Default): JsonElement =
-    when (this) {
-        is PermissionTezosResponse -> toJson(json)
-        else -> failWithUnknownPermissionBeaconResponse(this)
-    }
-
-fun BlockchainBeaconResponse.toJson(json: Json = Json.Default): JsonElement =
-    when (this) {
-        is BlockchainTezosResponse -> toJson(json)
-        else -> failWithUnknownBlockchainBeaconResponse(this)
-    }
-
-fun AcknowledgeBeaconResponse.toJson(json: Json = Json.Default): JsonElement =
-    JsonObject(
-        mapOf(
-            "type" to json.encodeToJsonElement("acknowledge_response"),
-            "id" to json.encodeToJsonElement(id),
-            "senderId" to json.encodeToJsonElement(senderId),
-            "version" to json.encodeToJsonElement(version),
-        )
-    )
-
-fun ErrorBeaconResponse.toJson(json: Json = Json.Default): JsonElement =
-    JsonObject(
-        mapOf(
-            "type" to json.encodeToJsonElement("error_response"),
-            "id" to json.encodeToJsonElement(id),
-            "errorType" to json.encodeToJsonElement(BeaconError.serializer(errorType.blockchainIdentifier), errorType),
-            "version" to json.encodeToJsonElement(version),
-        )
-    )
-
 fun PermissionTezosResponse.toJson(json: Json = Json.Default): JsonElement =
     JsonObject(
         mapOf(
@@ -198,13 +226,260 @@ fun BroadcastTezosResponse.toJson(json: Json = Json.Default): JsonElement =
         )
     )
 
-fun DisconnectBeaconMessage.toJson(json: Json = Json.Default): JsonElement =
+// -- Substrate --
+
+fun PermissionSubstrateRequest.toJson(json: Json = Json.Default): JsonElement =
     JsonObject(
         mapOf(
+            "type" to json.encodeToJsonElement("substrate_permission_request"),
             "id" to json.encodeToJsonElement(id),
-            "senderId" to json.encodeToJsonElement(senderId),
             "version" to json.encodeToJsonElement(version),
+            "blockchainIdentifier" to json.encodeToJsonElement(blockchainIdentifier),
+            "senderId" to json.encodeToJsonElement(senderId),
             "origin" to json.encodeToJsonElement(origin),
+            "appMetadata" to json.encodeToJsonElement(appMetadata),
+            "scopes" to json.encodeToJsonElement(scopes),
+            "networks" to json.encodeToJsonElement(networks),
+        )
+    )
+
+fun BlockchainSubstrateRequest.toJson(json: Json = Json.Default): JsonElement =
+    when (this) {
+        is TransferSubstrateRequest -> toJson(json)
+        is SignSubstrateRequest -> toJson(json)
+    }
+
+fun TransferSubstrateRequest.toJson(json: Json = Json.Default): JsonElement =
+    when (this) {
+        is TransferSubstrateRequest.Broadcast -> toJson(json)
+        is TransferSubstrateRequest.BroadcastAndReturn -> toJson(json)
+        is TransferSubstrateRequest.Return -> toJson(json)
+    }
+
+fun SignSubstrateRequest.toJson(json: Json = Json.Default): JsonElement =
+    when (this) {
+        is SignSubstrateRequest.Broadcast -> toJson(json)
+        is SignSubstrateRequest.BroadcastAndReturn -> toJson(json)
+        is SignSubstrateRequest.Return -> toJson(json)
+    }
+
+fun TransferSubstrateRequest.Broadcast.toJson(json: Json = Json.Default): JsonElement =
+    JsonObject(
+        mapOf(
+            "type" to json.encodeToJsonElement("substrate_transfer_broadcast_request"),
+            "id" to json.encodeToJsonElement(id),
+            "version" to json.encodeToJsonElement(version),
+            "blockchainIdentifier" to json.encodeToJsonElement(blockchainIdentifier),
+            "senderId" to json.encodeToJsonElement(senderId),
+            "appMetadata" to json.encodeToJsonElement(appMetadata),
+            "origin" to json.encodeToJsonElement(origin),
+            "accountId" to json.encodeToJsonElement(accountId),
+            "scope" to json.encodeToJsonElement(scope),
+            "sourceAddress" to json.encodeToJsonElement(sourceAddress),
+            "amount" to json.encodeToJsonElement(amount),
+            "recipient" to json.encodeToJsonElement(recipient),
+            "network" to json.encodeToJsonElement(network),
+        )
+    )
+
+fun TransferSubstrateRequest.BroadcastAndReturn.toJson(json: Json = Json.Default): JsonElement =
+    JsonObject(
+        mapOf(
+            "type" to json.encodeToJsonElement("substrate_transfer_broadcast_and_return_request"),
+            "id" to json.encodeToJsonElement(id),
+            "version" to json.encodeToJsonElement(version),
+            "blockchainIdentifier" to json.encodeToJsonElement(blockchainIdentifier),
+            "senderId" to json.encodeToJsonElement(senderId),
+            "appMetadata" to json.encodeToJsonElement(appMetadata),
+            "origin" to json.encodeToJsonElement(origin),
+            "accountId" to json.encodeToJsonElement(accountId),
+            "scope" to json.encodeToJsonElement(scope),
+            "sourceAddress" to json.encodeToJsonElement(sourceAddress),
+            "amount" to json.encodeToJsonElement(amount),
+            "recipient" to json.encodeToJsonElement(recipient),
+            "network" to json.encodeToJsonElement(network),
+        )
+    )
+
+fun TransferSubstrateRequest.Return.toJson(json: Json = Json.Default): JsonElement =
+    JsonObject(
+        mapOf(
+            "type" to json.encodeToJsonElement("substrate_transfer_return_request"),
+            "id" to json.encodeToJsonElement(id),
+            "version" to json.encodeToJsonElement(version),
+            "blockchainIdentifier" to json.encodeToJsonElement(blockchainIdentifier),
+            "senderId" to json.encodeToJsonElement(senderId),
+            "appMetadata" to json.encodeToJsonElement(appMetadata),
+            "origin" to json.encodeToJsonElement(origin),
+            "accountId" to json.encodeToJsonElement(accountId),
+            "scope" to json.encodeToJsonElement(scope),
+            "sourceAddress" to json.encodeToJsonElement(sourceAddress),
+            "amount" to json.encodeToJsonElement(amount),
+            "recipient" to json.encodeToJsonElement(recipient),
+            "network" to json.encodeToJsonElement(network),
+        )
+    )
+
+fun SignSubstrateRequest.Broadcast.toJson(json: Json = Json.Default): JsonElement =
+    JsonObject(
+        mapOf(
+            "type" to json.encodeToJsonElement("substrate_sign_broadcast_request"),
+            "id" to json.encodeToJsonElement(id),
+            "version" to json.encodeToJsonElement(version),
+            "blockchainIdentifier" to json.encodeToJsonElement(blockchainIdentifier),
+            "senderId" to json.encodeToJsonElement(senderId),
+            "appMetadata" to json.encodeToJsonElement(appMetadata),
+            "origin" to json.encodeToJsonElement(origin),
+            "accountId" to json.encodeToJsonElement(accountId),
+            "scope" to json.encodeToJsonElement(scope),
+            "network" to json.encodeToJsonElement(network),
+            "runtimeSpec" to json.encodeToJsonElement(runtimeSpec),
+            "payload" to json.encodeToJsonElement(payload),
+        )
+    )
+
+fun SignSubstrateRequest.BroadcastAndReturn.toJson(json: Json = Json.Default): JsonElement =
+    JsonObject(
+        mapOf(
+            "type" to json.encodeToJsonElement("substrate_sign_broadcast_and_return_request"),
+            "id" to json.encodeToJsonElement(id),
+            "version" to json.encodeToJsonElement(version),
+            "blockchainIdentifier" to json.encodeToJsonElement(blockchainIdentifier),
+            "senderId" to json.encodeToJsonElement(senderId),
+            "appMetadata" to json.encodeToJsonElement(appMetadata),
+            "origin" to json.encodeToJsonElement(origin),
+            "accountId" to json.encodeToJsonElement(accountId),
+            "scope" to json.encodeToJsonElement(scope),
+            "network" to json.encodeToJsonElement(network),
+            "runtimeSpec" to json.encodeToJsonElement(runtimeSpec),
+            "payload" to json.encodeToJsonElement(payload),
+        )
+    )
+
+fun SignSubstrateRequest.Return.toJson(json: Json = Json.Default): JsonElement =
+    JsonObject(
+        mapOf(
+            "type" to json.encodeToJsonElement("substrate_sign_return_request"),
+            "id" to json.encodeToJsonElement(id),
+            "version" to json.encodeToJsonElement(version),
+            "blockchainIdentifier" to json.encodeToJsonElement(blockchainIdentifier),
+            "senderId" to json.encodeToJsonElement(senderId),
+            "appMetadata" to json.encodeToJsonElement(appMetadata),
+            "origin" to json.encodeToJsonElement(origin),
+            "accountId" to json.encodeToJsonElement(accountId),
+            "scope" to json.encodeToJsonElement(scope),
+            "network" to json.encodeToJsonElement(network),
+            "runtimeSpec" to json.encodeToJsonElement(runtimeSpec),
+            "payload" to json.encodeToJsonElement(payload),
+        )
+    )
+
+fun PermissionSubstrateResponse.toJson(json: Json = Json.Default): JsonElement =
+    JsonObject(
+        mapOf(
+            "type" to json.encodeToJsonElement("substrate_permission_response"),
+            "id" to json.encodeToJsonElement(id),
+            "version" to json.encodeToJsonElement(version),
+            "requestOrigin" to json.encodeToJsonElement(requestOrigin),
+            "blockchainIdentifier" to json.encodeToJsonElement(blockchainIdentifier),
+            "accountIds" to json.encodeToJsonElement(accountIds),
+            "appMetadata" to json.encodeToJsonElement(appMetadata),
+            "scopes" to json.encodeToJsonElement(scopes),
+            "accounts" to json.encodeToJsonElement(accounts),
+        )
+    )
+
+fun BlockchainSubstrateResponse.toJson(json: Json = Json.Default): JsonElement =
+    when (this) {
+        is TransferSubstrateResponse -> toJson(json)
+        is SignSubstrateResponse -> toJson(json)
+    }
+
+fun TransferSubstrateResponse.toJson(json: Json = Json.Default): JsonElement =
+    when (this) {
+        is TransferSubstrateResponse.Broadcast -> toJson(json)
+        is TransferSubstrateResponse.BroadcastAndReturn -> toJson(json)
+        is TransferSubstrateResponse.Return -> toJson(json)
+    }
+
+fun SignSubstrateResponse.toJson(json: Json = Json.Default): JsonElement =
+    when (this) {
+        is SignSubstrateResponse.Broadcast -> toJson(json)
+        is SignSubstrateResponse.BroadcastAndReturn -> toJson(json)
+        is SignSubstrateResponse.Return -> toJson(json)
+    }
+
+fun TransferSubstrateResponse.Broadcast.toJson(json: Json = Json.Default): JsonElement =
+    JsonObject(
+        mapOf(
+            "type" to json.encodeToJsonElement("substrate_transfer_broadcast_response"),
+            "id" to json.encodeToJsonElement(id),
+            "version" to json.encodeToJsonElement(version),
+            "requestOrigin" to json.encodeToJsonElement(requestOrigin),
+            "blockchainIdentifier" to json.encodeToJsonElement(blockchainIdentifier),
+            "transactionHash" to json.encodeToJsonElement(transactionHash),
+        )
+    )
+
+fun TransferSubstrateResponse.BroadcastAndReturn.toJson(json: Json = Json.Default): JsonElement =
+    JsonObject(
+        mapOf(
+            "type" to json.encodeToJsonElement("substrate_transfer_broadcast_and_return_response"),
+            "id" to json.encodeToJsonElement(id),
+            "version" to json.encodeToJsonElement(version),
+            "requestOrigin" to json.encodeToJsonElement(requestOrigin),
+            "blockchainIdentifier" to json.encodeToJsonElement(blockchainIdentifier),
+            "transactionHash" to json.encodeToJsonElement(transactionHash),
+            "payload" to json.encodeToJsonElement(payload),
+        )
+    )
+
+fun TransferSubstrateResponse.Return.toJson(json: Json = Json.Default): JsonElement =
+    JsonObject(
+        mapOf(
+            "type" to json.encodeToJsonElement("substrate_transfer_return_response"),
+            "id" to json.encodeToJsonElement(id),
+            "version" to json.encodeToJsonElement(version),
+            "requestOrigin" to json.encodeToJsonElement(requestOrigin),
+            "blockchainIdentifier" to json.encodeToJsonElement(blockchainIdentifier),
+            "payload" to json.encodeToJsonElement(payload),
+        )
+    )
+
+fun SignSubstrateResponse.Broadcast.toJson(json: Json = Json.Default): JsonElement =
+    JsonObject(
+        mapOf(
+            "type" to json.encodeToJsonElement("substrate_sign_broadcast_response"),
+            "id" to json.encodeToJsonElement(id),
+            "version" to json.encodeToJsonElement(version),
+            "requestOrigin" to json.encodeToJsonElement(requestOrigin),
+            "blockchainIdentifier" to json.encodeToJsonElement(blockchainIdentifier),
+            "signature" to json.encodeToJsonElement(signature),
+        )
+    )
+
+fun SignSubstrateResponse.BroadcastAndReturn.toJson(json: Json = Json.Default): JsonElement =
+    JsonObject(
+        mapOf(
+            "type" to json.encodeToJsonElement("substrate_sign_broadcast_and_return_response"),
+            "id" to json.encodeToJsonElement(id),
+            "version" to json.encodeToJsonElement(version),
+            "requestOrigin" to json.encodeToJsonElement(requestOrigin),
+            "blockchainIdentifier" to json.encodeToJsonElement(blockchainIdentifier),
+            "signature" to json.encodeToJsonElement(signature),
+            "payload" to json.encodeToJsonElement(payload),
+        )
+    )
+
+fun SignSubstrateResponse.Return.toJson(json: Json = Json.Default): JsonElement =
+    JsonObject(
+        mapOf(
+            "type" to json.encodeToJsonElement("substrate_sign_return_response"),
+            "id" to json.encodeToJsonElement(id),
+            "version" to json.encodeToJsonElement(version),
+            "requestOrigin" to json.encodeToJsonElement(requestOrigin),
+            "blockchainIdentifier" to json.encodeToJsonElement(blockchainIdentifier),
+            "payload" to json.encodeToJsonElement(payload),
         )
     )
 

@@ -5,6 +5,7 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.unmockkAll
 import it.airgap.beaconsdk.core.data.*
+import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchain
 import it.airgap.beaconsdk.core.internal.blockchain.message.*
 import it.airgap.beaconsdk.core.internal.storage.MockSecureStorage
@@ -36,7 +37,7 @@ internal class V2BeaconMessageTest {
     fun setup() {
         MockKAnnotations.init(this)
 
-        storageManager = StorageManager(MockStorage(), MockSecureStorage(), identifierCreator)
+        storageManager = StorageManager(MockStorage(), MockSecureStorage(), identifierCreator, BeaconConfiguration(ignoreUnsupportedBlockchains = false))
 
         val dependencyRegistry = mockDependencyRegistry()
         every { dependencyRegistry.storageManager } returns storageManager

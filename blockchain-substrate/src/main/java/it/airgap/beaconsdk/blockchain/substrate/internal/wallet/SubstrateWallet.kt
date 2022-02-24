@@ -18,7 +18,7 @@ internal class SubstrateWallet(
     }
 
     private fun checksum(input: ByteArray): Result<ByteArray> =
-        crypto.hash(CONTEXT_PREFIX.encodeToByteArray() + input, 512)
+        crypto.hash(CONTEXT_PREFIX.encodeToByteArray() + input, 64)
 
     private fun failWithInvalidPublicKey(): Nothing = failWithIllegalArgument("Public key is invalid, expected a 32-byte hex string")
 

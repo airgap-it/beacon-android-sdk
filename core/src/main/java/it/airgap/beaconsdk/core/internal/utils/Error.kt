@@ -1,6 +1,7 @@
 package it.airgap.beaconsdk.core.internal.utils
 
 import androidx.annotation.RestrictTo
+import it.airgap.beaconsdk.core.exception.BlockchainNotFoundException
 import it.airgap.beaconsdk.core.exception.InternalException
 import it.airgap.beaconsdk.core.message.BeaconMessage
 import kotlinx.serialization.SerializationException
@@ -28,7 +29,7 @@ public fun failWithIllegalArgument(message: String? = null): Nothing =
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun failWithBlockchainNotFound(identifier: String): Nothing =
-    throw IllegalStateException("Blockchain \"$identifier\" could not be found")
+    throw BlockchainNotFoundException(identifier)
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun failWithExpectedJsonDecoder(actual: KClass<out Decoder>): Nothing =

@@ -5,6 +5,7 @@ import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.data.P2pPeer
+import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.message.SerializedConnectionMessage
 import it.airgap.beaconsdk.core.internal.storage.MockSecureStorage
 import it.airgap.beaconsdk.core.internal.storage.MockStorage
@@ -42,7 +43,7 @@ internal class P2pTransportTest {
 
         coEvery { p2pClient.sendPairingResponse(any()) } returns Result.success()
 
-        storageManager = StorageManager(MockStorage(), MockSecureStorage(), identifierCreator)
+        storageManager = StorageManager(MockStorage(), MockSecureStorage(), identifierCreator, BeaconConfiguration(ignoreUnsupportedBlockchains = false))
         p2pTransport = P2pTransport(storageManager, p2pClient)
     }
 

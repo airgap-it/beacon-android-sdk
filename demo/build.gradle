@@ -64,6 +64,7 @@ dependencies {
     implementation project(path: ':core')
     implementation project(path: ':client-wallet')
     implementation project(path: ':blockchain-tezos')
+    implementation project(path: ':blockchain-substrate')
     implementation project(path: ':transport-p2p-matrix')
 
     // // Published

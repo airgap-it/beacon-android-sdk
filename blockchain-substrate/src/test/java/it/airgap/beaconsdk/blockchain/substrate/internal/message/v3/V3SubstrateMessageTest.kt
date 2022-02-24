@@ -23,6 +23,7 @@ import it.airgap.beaconsdk.blockchain.substrate.message.request.TransferSubstrat
 import it.airgap.beaconsdk.blockchain.substrate.message.response.PermissionSubstrateResponse
 import it.airgap.beaconsdk.blockchain.substrate.message.response.SignSubstrateResponse
 import it.airgap.beaconsdk.blockchain.substrate.message.response.TransferSubstrateResponse
+import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -46,7 +47,7 @@ internal class V3SubstrateMessageTest {
     fun setup() {
         MockKAnnotations.init(this)
 
-        storageManager = StorageManager(MockStorage(), MockSecureStorage(), identifierCreator)
+        storageManager = StorageManager(MockStorage(), MockSecureStorage(), identifierCreator, BeaconConfiguration(ignoreUnsupportedBlockchains = false))
         val substrate = Substrate(
             wallet,
             SubstrateCreator(

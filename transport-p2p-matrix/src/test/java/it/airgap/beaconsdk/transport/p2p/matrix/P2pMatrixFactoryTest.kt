@@ -2,6 +2,7 @@ package it.airgap.beaconsdk.transport.p2p.matrix
 
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
+import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.migration.Migration
 import it.airgap.beaconsdk.core.internal.storage.MockSecureStorage
 import it.airgap.beaconsdk.core.internal.storage.MockStorage
@@ -38,7 +39,7 @@ internal class P2pMatrixFactoryTest {
 
         mockApp()
 
-        storageManager = spyk(StorageManager(MockStorage(), MockSecureStorage(), identifierCreator))
+        storageManager = spyk(StorageManager(MockStorage(), MockSecureStorage(), identifierCreator, BeaconConfiguration(ignoreUnsupportedBlockchains = false)))
 
         every { dependencyRegistry.storageManager } returns storageManager
         every { dependencyRegistry.migration } returns migration

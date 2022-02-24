@@ -6,6 +6,7 @@ import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonNames
 
 /**
  * Tezos permission data.
@@ -23,7 +24,7 @@ import kotlinx.serialization.Serializable
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable
 public data class TezosPermission internal constructor(
-    @SerialName("accountIdentifier") override val accountId: String,
+    @JsonNames("accountIdentifier") override val accountId: String,
     override val senderId: String,
     override val connectedAt: Long,
     public val address: String,

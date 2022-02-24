@@ -30,7 +30,12 @@ import it.airgap.beaconsdk.core.storage.SecureStorage
 import it.airgap.beaconsdk.core.storage.Storage
 import kotlin.reflect.KClass
 
-internal class CoreDependencyRegistry(blockchainFactories: List<Blockchain.Factory<*>>, storage: Storage, secureStorage: SecureStorage) : DependencyRegistry {
+internal class CoreDependencyRegistry(
+    blockchainFactories: List<Blockchain.Factory<*>>,
+    storage: Storage,
+    secureStorage: SecureStorage,
+    private val beaconConfiguration: BeaconConfiguration,
+) : DependencyRegistry {
 
     // -- extended --
 
@@ -51,7 +56,7 @@ internal class CoreDependencyRegistry(blockchainFactories: List<Blockchain.Facto
 
     // -- storage --
 
-    override val storageManager: StorageManager by lazyWeak { StorageManager(storage, secureStorage, identifierCreator) }
+    override val storageManager: StorageManager by lazyWeak { StorageManager(storage, secureStorage, identifierCreator, beaconConfiguration) }
 
     // -- blockchain --
 

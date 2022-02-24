@@ -1,8 +1,8 @@
 package it.airgap.beaconsdk.core.internal.storage.decorator
 
 import appMetadata
-import it.airgap.beaconsdk.core.data.MockPermission
-import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchainSerializer
+import it.airgap.beaconsdk.core.data.*
+import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.storage.MockStorage
 import it.airgap.beaconsdk.core.internal.utils.splitAt
 import it.airgap.beaconsdk.core.storage.Storage
@@ -27,7 +27,7 @@ internal class DecoratedStorageTest {
     @Before
     fun setup() {
         storage = MockStorage()
-        decoratedStorage = DecoratedStorage(storage)
+        decoratedStorage = DecoratedStorage(storage, BeaconConfiguration(ignoreUnsupportedBlockchains = false))
     }
 
     @Test
@@ -434,4 +434,15 @@ internal class DecoratedStorageTest {
                 subscribed.await().sortedBy { it.name })
         }
     }
+
+    private suspend fun Storage.getPeers(): List<Peer> = getMaybePeers().mapNotNull { it.getOrNull() }
+    private suspend fun Storage.getAppMetadata(): List<AppMetadata> = getMaybeAppMetadata().mapNotNull { it.getOrNull() }
+    private suspend fun Storage.getPermissions(): List<Permission> = getMaybePermissions().mapNotNull { it.getOrNull() }
+
+    private fun <T> Maybe<T>.getOrNull(): T? =
+        when (this) {
+            is Maybe.Some -> value
+            is Maybe.None -> null
+            is Maybe.NoneWithError -> null
+        }
 }

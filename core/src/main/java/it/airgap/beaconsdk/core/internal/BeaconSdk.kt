@@ -21,39 +21,39 @@ public class BeaconSdk(context: Context) {
     public val applicationContext: Context = context.applicationContext
 
     private var _dependencyRegistry: DependencyRegistry? = null
-    public val dependencyRegistry: DependencyRegistry
+    public var dependencyRegistry: DependencyRegistry
         get() = _dependencyRegistry ?: failWithUninitialized(TAG)
+        private set(value) {
+            _dependencyRegistry = value
+        }
 
     private var _app: BeaconApplication? = null
-    public val app: BeaconApplication
+    public var app: BeaconApplication
         get() = _app ?: failWithUninitialized(TAG)
+        private set(value) {
+            _app = value
+        }
 
     public val beaconId: String
         get() = app.keyPair.publicKey.toHexString().asString()
 
     public suspend fun init(
-        appName: String,
-        appIcon: String?,
-        appUrl: String?,
+        partialApp: BeaconApplication.Partial,
+        configuration: BeaconConfiguration,
         blockchainFactories: List<Blockchain.Factory<*>>,
         storage: Storage,
         secureStorage: SecureStorage,
     ) {
         if (isInitialized) return
 
-        _dependencyRegistry = CoreDependencyRegistry(blockchainFactories, storage, secureStorage)
+        dependencyRegistry = CoreDependencyRegistry(blockchainFactories, storage, secureStorage, configuration)
 
         val storageManager = dependencyRegistry.storageManager
         val crypto = dependencyRegistry.crypto
 
         setSdkVersion(storageManager)
 
-        _app = BeaconApplication(
-            loadOrGenerateKeyPair(storageManager, crypto),
-            appName,
-            appIcon,
-            appUrl,
-        )
+        app = partialApp.toFinal(loadOrGenerateKeyPair(storageManager, crypto))
 
         isInitialized = true
     }
@@ -74,11 +74,14 @@ public class BeaconSdk(context: Context) {
 
         @Suppress("ObjectPropertyName")
         private var _instance: BeaconSdk? = null
-        public val instance: BeaconSdk
+        public var instance: BeaconSdk
             get() = _instance ?: failWithUninitialized(TAG)
+            private set(value) {
+                _instance = value
+            }
 
         internal fun create(context: Context) {
-            _instance = BeaconSdk(context)
+            instance = BeaconSdk(context)
         }
     }
 }
