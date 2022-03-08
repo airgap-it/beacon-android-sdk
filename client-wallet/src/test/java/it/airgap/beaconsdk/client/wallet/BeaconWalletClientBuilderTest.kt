@@ -44,7 +44,9 @@ internal class BeaconWalletClientBuilderTest {
     @Test
     fun `builds BeaconWalletClient with default settings`() {
         runBlocking {
-            val beaconWalletClient = BeaconWalletClient.Builder(appName, blockchains).build()
+            val beaconWalletClient = BeaconWalletClient.Builder(appName).apply {
+                support(*blockchains.toTypedArray())
+            }.build()
             val defaultConnections = emptyList<Connection>()
 
             assertEquals(appName, beaconWalletClient.name)
@@ -69,8 +71,9 @@ internal class BeaconWalletClientBuilderTest {
             val mockP2pFactory = mockkClass(P2pClient.Factory::class)
             val customConnections = listOf(P2P(mockP2pFactory))
 
-            val beaconWalletClient = BeaconWalletClient.Builder(appName, blockchains).apply {
-                addConnections(*customConnections.toTypedArray())
+            val beaconWalletClient = BeaconWalletClient.Builder(appName).apply {
+                support(*blockchains.toTypedArray())
+                use(*customConnections.toTypedArray())
             }.build()
 
             assertEquals(appName, beaconWalletClient.name)
@@ -92,7 +95,9 @@ internal class BeaconWalletClientBuilderTest {
     @Test
     fun `builds BeaconWalletClient with default settings when used as builder function`() {
         runBlocking {
-            val beaconWalletClient = BeaconWalletClient(appName, blockchains)
+            val beaconWalletClient = BeaconWalletClient(appName) {
+                support(*blockchains.toTypedArray())
+            }
             val defaultConnections = emptyList<Connection>()
 
             assertEquals(appName, beaconWalletClient.name)
@@ -117,7 +122,10 @@ internal class BeaconWalletClientBuilderTest {
             val mockP2pFactory = mockkClass(P2pClient.Factory::class)
             val customConnections = listOf(P2P(mockP2pFactory))
 
-            val beaconWalletClient = BeaconWalletClient(appName, blockchains) { addConnections(*customConnections.toTypedArray()) }
+            val beaconWalletClient = BeaconWalletClient(appName) {
+                support(*blockchains.toTypedArray())
+                use(*customConnections.toTypedArray())
+            }
 
             assertEquals(appName, beaconWalletClient.name)
             assertEquals(beaconId, beaconWalletClient.beaconId)

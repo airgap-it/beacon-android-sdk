@@ -61,7 +61,9 @@ internal class BeaconWalletClientBuilderTest {
             override fun onError(error: Throwable) = Unit
         })
 
-        BeaconWalletClient.Builder(appName, blockchains).build(callback)
+        BeaconWalletClient.Builder(appName).apply {
+            support(*blockchains.toTypedArray())
+        }.build(callback)
 
         runBlocking { testDeferred.await() }
 
@@ -100,8 +102,9 @@ internal class BeaconWalletClientBuilderTest {
             override fun onError(error: Throwable) = Unit
         })
 
-        BeaconWalletClient.Builder(appName, blockchains).apply {
-            addConnections(*customConnections.toTypedArray())
+        BeaconWalletClient.Builder(appName).apply {
+            support(*blockchains.toTypedArray())
+            use(*customConnections.toTypedArray())
         }.build(callback)
 
         runBlocking { testDeferred.await() }

@@ -41,6 +41,10 @@ internal object BeaconCompat {
         jobScope(Scope.Build, block)
     }
 
+    fun storageScope(block: suspend () -> Unit) {
+        jobScope(Scope.Storage, block)
+    }
+
     private fun jobScope(scope: Scope, block: suspend () -> Unit) {
         _scopes
             .getActiveOrPut(scope) { CoroutineScope(CoroutineName("BeaconClient#$scope")) }
@@ -54,6 +58,7 @@ internal object BeaconCompat {
         Receive("receive"),
         Send("send"),
         Build("build"),
+        Storage("storage"),
     }
 
     private fun MutableMap<Scope, CoroutineScope>.getActiveOrPut(key: Scope, defaultValue: () -> CoroutineScope): CoroutineScope {

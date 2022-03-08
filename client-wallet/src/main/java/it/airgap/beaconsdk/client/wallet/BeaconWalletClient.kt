@@ -135,17 +135,17 @@ public class BeaconWalletClient @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) cons
     }
 
     /**
-     * Removes all app metadata.
-     */
-    public suspend fun removeAllAppMetadata() {
-        storageManager.removeAppMetadata()
-    }
-
-    /**
      * Removes the specified [appMetadata].
      */
     public suspend fun removeAppMetadata(appMetadata: List<AppMetadata>) {
         storageManager.removeAppMetadata(appMetadata)
+    }
+
+    /**
+     * Removes all app metadata.
+     */
+    public suspend fun removeAllAppMetadata() {
+        storageManager.removeAppMetadata()
     }
 
     /**
@@ -155,7 +155,8 @@ public class BeaconWalletClient @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) cons
         storageManager.getPermissions()
 
     /**
-     * Returns permissions granted for the specified [accountIdentifier].
+     * Returns the first permission granted for the specified [accountIdentifier]
+     * or `null` if no such permission was found.
      */
     public suspend fun getPermissionsFor(accountIdentifier: String): Permission? =
         storageManager.findPermission { it.accountId == accountIdentifier }
@@ -217,9 +218,9 @@ public class BeaconWalletClient @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) cons
     /**
      * Asynchronous builder for [BeaconWalletClient].
      *
-     * @constructor Creates a builder configured with the specified application [name] and [blockchains] that will be supported by the client.
+     * @constructor Creates a builder configured with the specified application [name].
      */
-    public class Builder(name: String, blockchains: List<Blockchain.Factory<*>>) : InitBuilder<BeaconWalletClient, Builder>(name, blockchains) {
+    public class Builder(name: String) : InitBuilder<BeaconWalletClient, Builder>(name) {
 
         /**
          * Creates a new instance of [BeaconWalletClient].
@@ -241,13 +242,12 @@ public class BeaconWalletClient @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) cons
 }
 
 /**
- * Creates a new instance of [BeaconWalletClient] with the specified application [name], supporting registered [blockchains] and configured with [builderAction].
+ * Creates a new instance of [BeaconWalletClient] with the specified application [name] and configured with [builderAction].
  *
  * @see [BeaconWalletClient.Builder]
  */
 public suspend fun BeaconWalletClient(
     name: String,
-    blockchains: List<Blockchain.Factory<*>>,
     builderAction: BeaconWalletClient.Builder.() -> Unit = {},
-): BeaconWalletClient = BeaconWalletClient.Builder(name, blockchains).apply(builderAction).build()
+): BeaconWalletClient = BeaconWalletClient.Builder(name).apply(builderAction).build()
 
