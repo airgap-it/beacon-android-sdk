@@ -1,5 +1,7 @@
 package it.airgap.beaconsdk.transport.p2p.matrix
 
+import it.airgap.beaconsdk.core.data.Connection
+import it.airgap.beaconsdk.core.data.P2P
 import it.airgap.beaconsdk.core.data.P2pPeer
 import it.airgap.beaconsdk.core.internal.data.HexString
 import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
@@ -316,4 +318,4 @@ public fun p2pMatrix(
     storagePlugin: P2pMatrixStoragePlugin? = null,
     matrixNodes: List<String> = BeaconP2pMatrixConfiguration.defaultNodes,
     httpProvider: HttpProvider? = null,
-): P2pMatrix.Factory = P2pMatrix.Factory(storagePlugin, matrixNodes, httpProvider)
+): Connection = P2P(P2pMatrix.Factory(storagePlugin, matrixNodes, httpProvider))

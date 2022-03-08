@@ -56,7 +56,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-
     private fun onBeaconRequest(beaconRequest: BeaconRequest) {
         messageTextView.text = json.encodeToString(beaconRequest.toJson(json))
     }

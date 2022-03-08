@@ -16,7 +16,6 @@ import it.airgap.beaconsdk.blockchain.tezos.message.response.PermissionTezosResp
 import it.airgap.beaconsdk.blockchain.tezos.tezos
 import it.airgap.beaconsdk.client.wallet.BeaconWalletClient
 import it.airgap.beaconsdk.core.data.BeaconError
-import it.airgap.beaconsdk.core.data.P2P
 import it.airgap.beaconsdk.core.data.P2pPeer
 import it.airgap.beaconsdk.core.message.BeaconMessage
 import it.airgap.beaconsdk.core.message.BeaconRequest
@@ -35,16 +34,10 @@ class MainActivityViewModel : ViewModel() {
     private var awaitingRequest: BeaconRequest? = null
 
     fun startBeacon(): LiveData<Result<BeaconRequest>> = liveData {
-        beaconClient = BeaconWalletClient(
-            "Beacon SDK Demo",
-            listOf(
-                tezos(),
-                substrate(),
-            ),
-        ) {
-            addConnections(
-                P2P(p2pMatrix()),
-            )
+        beaconClient = BeaconWalletClient("Beacon SDK Demo") {
+            support(tezos(), substrate())
+            use(p2pMatrix())
+
             ignoreUnsupportedBlockchains = true
         }
 

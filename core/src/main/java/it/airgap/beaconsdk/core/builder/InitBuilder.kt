@@ -15,12 +15,9 @@ import it.airgap.beaconsdk.core.storage.Storage
 /**
  * A base builder for the Beacon SDK's public entry points.
  *
- * @constructor Creates a builder configured with the specified application [name] and [blockchains] that will be supported in the SDK.
+ * @constructor Creates a builder configured with the specified application [name].
  */
-public abstract class InitBuilder<T, Self : InitBuilder<T, Self>>(
-    protected val name: String,
-    protected val blockchains: List<Blockchain.Factory<*>>,
-) {
+public abstract class InitBuilder<T, Self : InitBuilder<T, Self>>(protected val name: String) {
     // -- app --
 
     /**
@@ -33,17 +30,31 @@ public abstract class InitBuilder<T, Self : InitBuilder<T, Self>>(
      */
     public var iconUrl: String? = null
 
+    // -- blockchains --
+
+    /**
+     * Blockchains that will be supported in the SDK.
+     */
+    protected val blockchains: MutableList<Blockchain.Factory<*>> = mutableListOf()
+
+    /**
+     * Registers blockchains that should be supported by the configured client.
+     */
+    public fun support(vararg blockchains: Blockchain.Factory<*>): Self = self.apply {
+        this.blockchains.addAll(blockchains.toList())
+    }
+
     // -- connections --
 
     /**
      * Connection types that will be supported by the configured client.
      */
-    protected var connections: MutableList<Connection> = mutableListOf()
+    protected val connections: MutableList<Connection> = mutableListOf()
 
     /**
      * Registers connections that should be supported by the configured client.
      */
-    public fun addConnections(vararg connections: Connection): Self = self.apply {
+    public fun use(vararg connections: Connection): Self = self.apply {
         this.connections.addAll(connections.toList())
     }
 
