@@ -85,8 +85,6 @@ dependencies {
 
     androidTestImplementation(TestDependencies.androidxJunit)
     androidTestImplementation(TestDependencies.androidxEspresso)
-
-    testImplementation(TestDependencies.bouncyCastle)
 }
 
 dokkaHtml.configure {

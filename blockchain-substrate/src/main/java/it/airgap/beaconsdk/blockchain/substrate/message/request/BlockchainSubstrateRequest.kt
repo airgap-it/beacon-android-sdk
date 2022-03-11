@@ -1,11 +1,8 @@
 package it.airgap.beaconsdk.blockchain.substrate.message.request
 
+import it.airgap.beaconsdk.blockchain.substrate.data.*
 import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.message.BlockchainBeaconRequest
-import it.airgap.beaconsdk.blockchain.substrate.data.SubstrateAppMetadata
-import it.airgap.beaconsdk.blockchain.substrate.data.SubstrateNetwork
-import it.airgap.beaconsdk.blockchain.substrate.data.SubstratePermission
-import it.airgap.beaconsdk.blockchain.substrate.data.SubstrateRuntimeSpec
 import it.airgap.beaconsdk.core.data.AppMetadata
 
 public sealed class BlockchainSubstrateRequest : BlockchainBeaconRequest() {
@@ -15,12 +12,14 @@ public sealed class BlockchainSubstrateRequest : BlockchainBeaconRequest() {
 }
 
 public sealed class TransferSubstrateRequest : BlockchainSubstrateRequest() {
+    override val scope: SubstratePermission.Scope = SubstratePermission.Scope.Transfer
+
     public abstract val sourceAddress: String
     public abstract val amount: String
     public abstract val recipient: String
     public abstract val network: SubstrateNetwork
 
-    public data class Broadcast internal constructor(
+    public data class Submit internal constructor(
         override val id: String,
         override val version: String,
         override val blockchainIdentifier: String,
@@ -28,16 +27,13 @@ public sealed class TransferSubstrateRequest : BlockchainSubstrateRequest() {
         override val appMetadata: AppMetadata?,
         override val origin: Origin,
         override val accountId: String,
-        override val scope: SubstratePermission.Scope,
         override val sourceAddress: String,
         override val amount: String,
         override val recipient: String,
         override val network: SubstrateNetwork,
-    ) : TransferSubstrateRequest() {
-        public companion object {}
-    }
+    ) : TransferSubstrateRequest()
 
-    public data class BroadcastAndReturn internal constructor(
+    public data class SubmitAndReturn internal constructor(
         override val id: String,
         override val version: String,
         override val blockchainIdentifier: String,
@@ -45,14 +41,11 @@ public sealed class TransferSubstrateRequest : BlockchainSubstrateRequest() {
         override val appMetadata: AppMetadata?,
         override val origin: Origin,
         override val accountId: String,
-        override val scope: SubstratePermission.Scope,
         override val sourceAddress: String,
         override val amount: String,
         override val recipient: String,
         override val network: SubstrateNetwork,
-    ) : TransferSubstrateRequest() {
-        public companion object {}
-    }
+    ) : TransferSubstrateRequest()
 
     public data class Return internal constructor(
         override val id: String,
@@ -62,54 +55,48 @@ public sealed class TransferSubstrateRequest : BlockchainSubstrateRequest() {
         override val appMetadata: AppMetadata?,
         override val origin: Origin,
         override val accountId: String,
-        override val scope: SubstratePermission.Scope,
         override val sourceAddress: String,
         override val amount: String,
         override val recipient: String,
         override val network: SubstrateNetwork,
-    ) : TransferSubstrateRequest() {
-        public companion object {}
-    }
+    ) : TransferSubstrateRequest()
 
     public companion object {}
 }
 
-public sealed class SignSubstrateRequest : BlockchainSubstrateRequest() {
-    public abstract val network: SubstrateNetwork
-    public abstract val runtimeSpec: SubstrateRuntimeSpec
-    public abstract val payload: String
+public sealed class SignPayloadSubstrateRequest : BlockchainSubstrateRequest() {
+    override val scope: SubstratePermission.Scope
+        get() = when (payload) {
+            is SubstrateSignerPayload.Json -> SubstratePermission.Scope.SignPayloadJson
+            is SubstrateSignerPayload.Raw -> SubstratePermission.Scope.SignPayloadRaw
+        }
 
-    public data class Broadcast internal constructor(
+    public abstract val address: String
+    public abstract val payload: SubstrateSignerPayload
+
+    public data class Submit internal constructor(
         override val id: String,
         override val version: String,
         override val blockchainIdentifier: String,
         override val senderId: String,
         override val appMetadata: AppMetadata?,
         override val origin: Origin,
-        override val accountId: String,
-        override val scope: SubstratePermission.Scope,
-        override val network: SubstrateNetwork,
-        override val runtimeSpec: SubstrateRuntimeSpec,
-        override val payload: String,
-    ) : SignSubstrateRequest() {
-        public companion object {}
-    }
+        override val accountId: String?,
+        override val address: String,
+        override val payload: SubstrateSignerPayload,
+    ) : SignPayloadSubstrateRequest()
 
-    public data class BroadcastAndReturn internal constructor(
+    public data class SubmitAndReturn internal constructor(
         override val id: String,
         override val version: String,
         override val blockchainIdentifier: String,
         override val senderId: String,
         override val appMetadata: AppMetadata?,
         override val origin: Origin,
-        override val accountId: String,
-        override val scope: SubstratePermission.Scope,
-        override val network: SubstrateNetwork,
-        override val runtimeSpec: SubstrateRuntimeSpec,
-        override val payload: String,
-    ) : SignSubstrateRequest() {
-        public companion object {}
-    }
+        override val accountId: String?,
+        override val address: String,
+        override val payload: SubstrateSignerPayload,
+    ) : SignPayloadSubstrateRequest()
 
     public data class Return internal constructor(
         override val id: String,
@@ -118,14 +105,10 @@ public sealed class SignSubstrateRequest : BlockchainSubstrateRequest() {
         override val senderId: String,
         override val appMetadata: AppMetadata?,
         override val origin: Origin,
-        override val accountId: String,
-        override val scope: SubstratePermission.Scope,
-        override val network: SubstrateNetwork,
-        override val runtimeSpec: SubstrateRuntimeSpec,
-        override val payload: String,
-    ) : SignSubstrateRequest() {
-        public companion object {}
-    }
+        override val accountId: String?,
+        override val address: String,
+        override val payload: SubstrateSignerPayload,
+    ) : SignPayloadSubstrateRequest()
 
     public companion object {}
 }

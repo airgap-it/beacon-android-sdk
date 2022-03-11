@@ -32,15 +32,17 @@ internal class SubstrateAccountTest {
     }
 
     private fun expectedWithJsonStrings(
+        accountId: String = "accountId",
         network: SubstrateNetwork = SubstrateNetwork("genesisHash"),
-        addressPrefix: Int = 42,
         publicKey: String = "publicKey",
+        address: String = "address",
     ): Pair<SubstrateAccount, String> =
-        SubstrateAccount(network, addressPrefix, publicKey) to """
+        SubstrateAccount(accountId, network, publicKey, address) to """
             {
+                "accountId": "$accountId",
                 "network": ${Json.encodeToString(network)},
-                "addressPrefix": $addressPrefix,
-                "publicKey": "$publicKey"
+                "publicKey": "$publicKey",
+                "address": "$address"
             }
         """.trimIndent()
 }

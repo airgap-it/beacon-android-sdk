@@ -91,12 +91,10 @@ public sealed class BeaconResponse : BeaconMessage() {
  * Message responding to [PermissionBeaconRequest].
  *
  * @property [id] The value that identifies the request to which the message is responding.
- * @property [accountIds] The account identifiers of the accounts that are granting the permissions.
  * @property [blockchainIdentifier] The unique name of the blockchain that specifies the request.
  */
 public abstract class PermissionBeaconResponse : BeaconResponse() {
     public abstract val blockchainIdentifier: String
-    public abstract val accountIds: List<String>
 
     public companion object {}
 }

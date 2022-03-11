@@ -1,15 +1,15 @@
 import android.content.Context
 import io.mockk.*
-import it.airgap.beaconsdk.core.internal.BeaconSdk
-import it.airgap.beaconsdk.core.internal.blockchain.BlockchainRegistry
-import it.airgap.beaconsdk.core.internal.data.BeaconApplication
-import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
-import it.airgap.beaconsdk.core.internal.utils.currentTimestamp
 import it.airgap.beaconsdk.blockchain.substrate.Substrate
 import it.airgap.beaconsdk.blockchain.substrate.internal.creator.SubstrateCreator
 import it.airgap.beaconsdk.blockchain.substrate.internal.di.ExtendedDependencyRegistry
 import it.airgap.beaconsdk.blockchain.substrate.internal.di.extend
 import it.airgap.beaconsdk.blockchain.substrate.internal.serializer.SubstrateSerializer
+import it.airgap.beaconsdk.core.internal.BeaconSdk
+import it.airgap.beaconsdk.core.internal.blockchain.BlockchainRegistry
+import it.airgap.beaconsdk.core.internal.data.BeaconApplication
+import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
+import it.airgap.beaconsdk.core.internal.utils.currentTimestamp
 
 // -- class --
 
@@ -52,7 +52,6 @@ internal fun mockDependencyRegistry(substrate: Substrate? = null): DependencyReg
             every { blockchainRegistry.getOrNull(any()) } returns substrate
             every { it.blockchainRegistry } returns blockchainRegistry
 
-            every { extendedDependencyRegistry.substrateWallet } returns substrate.wallet
             every { extendedDependencyRegistry.substrateCreator } returns substrate.creator as SubstrateCreator
             every { extendedDependencyRegistry.substrateSerializer } returns substrate.serializer as SubstrateSerializer
         }

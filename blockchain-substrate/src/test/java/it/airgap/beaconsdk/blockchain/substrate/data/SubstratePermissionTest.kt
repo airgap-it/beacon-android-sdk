@@ -39,7 +39,7 @@ internal class SubstratePermissionTest {
         senderId: String = "senderId",
         connectedAt: Long = 0,
         appMetadata: SubstrateAppMetadata = SubstrateAppMetadata(senderId, "name"),
-        account: SubstrateAccount = SubstrateAccount(SubstrateNetwork("genesisHash"), 42, "publicKey"),
+        account: SubstrateAccount = SubstrateAccount(accountId, SubstrateNetwork("genesisHash"), "publicKey", "address"),
         scopes: List<SubstratePermission.Scope> = emptyList(),
     ): Pair<SubstratePermission, String> =
         SubstratePermission(

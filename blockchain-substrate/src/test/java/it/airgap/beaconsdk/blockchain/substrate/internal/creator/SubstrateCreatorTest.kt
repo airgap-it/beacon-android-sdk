@@ -3,17 +3,16 @@ package it.airgap.beaconsdk.blockchain.substrate.internal.creator
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
-import mockTime
+import it.airgap.beaconsdk.blockchain.substrate.data.SubstrateAppMetadata
+import it.airgap.beaconsdk.blockchain.substrate.data.SubstratePermission
+import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.storage.MockSecureStorage
 import it.airgap.beaconsdk.core.internal.storage.MockStorage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
 import it.airgap.beaconsdk.core.internal.utils.toHexString
-import it.airgap.beaconsdk.blockchain.substrate.data.SubstrateAppMetadata
-import it.airgap.beaconsdk.blockchain.substrate.data.SubstratePermission
-import it.airgap.beaconsdk.blockchain.substrate.internal.wallet.SubstrateWallet
-import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import kotlinx.coroutines.runBlocking
+import mockTime
 import org.junit.Before
 import org.junit.Test
 import permissionSubstrateRequest
@@ -22,9 +21,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 internal class SubstrateCreatorTest {
-
-    @MockK
-    private lateinit var wallet: SubstrateWallet
 
     @MockK
     private lateinit var identifierCreator: IdentifierCreator
@@ -44,14 +40,12 @@ internal class SubstrateCreatorTest {
 
         mockTime(currentTimeMillis)
 
-        every { wallet.address(any(), any()) } answers { Result.success("@${firstArg<String>()}") }
-
         every { identifierCreator.accountId(any(), any()) } answers { Result.success(firstArg()) }
         every { identifierCreator.senderId(any()) } answers { Result.success(firstArg<ByteArray>().toHexString().asString()) }
 
         storageManager = StorageManager(MockStorage(), MockSecureStorage(), identifierCreator, BeaconConfiguration(ignoreUnsupportedBlockchains = false))
         creator = SubstrateCreator(
-            DataSubstrateCreator(wallet, storageManager, identifierCreator),
+            DataSubstrateCreator(storageManager, identifierCreator),
             V1BeaconMessageSubstrateCreator(),
             V2BeaconMessageSubstrateCreator(),
             V3BeaconMessageSubstrateCreator(),
@@ -72,7 +66,7 @@ internal class SubstrateCreatorTest {
 
             val expected = permissionResponse.accounts.map {
                 SubstratePermission(
-                    "@${it.publicKey}",
+                    it.address,
                     appMetadata.senderId,
                     currentTimeMillis,
                     appMetadata,

@@ -6,7 +6,9 @@ import it.airgap.beaconsdk.blockchain.substrate.data.SubstrateNetwork
 import it.airgap.beaconsdk.blockchain.substrate.message.request.PermissionSubstrateRequest
 import it.airgap.beaconsdk.blockchain.substrate.message.response.PermissionSubstrateResponse
 import it.airgap.beaconsdk.blockchain.substrate.substrate
+import it.airgap.beaconsdk.blockchain.tezos.data.TezosAccount
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosError
+import it.airgap.beaconsdk.blockchain.tezos.data.TezosNetwork
 import it.airgap.beaconsdk.blockchain.tezos.extension.from
 import it.airgap.beaconsdk.blockchain.tezos.message.request.BroadcastTezosRequest
 import it.airgap.beaconsdk.blockchain.tezos.message.request.OperationTezosRequest
@@ -56,14 +58,14 @@ class MainActivityViewModel : ViewModel() {
 
                 /* Tezos */
 
-                is PermissionTezosRequest -> PermissionTezosResponse.from(request, exampleTezosPublicKey)
+                is PermissionTezosRequest -> PermissionTezosResponse.from(request, exampleTezosAccount(request.network))
                 is OperationTezosRequest -> ErrorBeaconResponse.from(request, BeaconError.Aborted)
                 is SignPayloadTezosRequest -> ErrorBeaconResponse.from(request, TezosError.SignatureTypeNotSupported)
                 is BroadcastTezosRequest -> ErrorBeaconResponse.from(request, TezosError.BroadcastError)
 
                 /* Substrate*/
 
-                is PermissionSubstrateRequest -> PermissionSubstrateResponse.from(request, listOf(exampleSubstrateAccount))
+                is PermissionSubstrateRequest -> PermissionSubstrateResponse.from(request, listOf(exampleSubstrateAccount(request.networks.first())))
 
                 /* Others */
                 else -> ErrorBeaconResponse.from(request, BeaconError.Unknown)
@@ -111,11 +113,16 @@ class MainActivityViewModel : ViewModel() {
     }
 
     companion object {
-        const val exampleTezosPublicKey = "edpktpzo8UZieYaJZgCHP6M6hKHPdWBSNqxvmEt6dwWRgxDh1EAFw9"
-        val exampleSubstrateAccount = SubstrateAccount(
-            SubstrateNetwork("91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3"),
-            0,
-            "628f3940a6210a2135ba355f7ff9f8e9fbbfd04f8571e99e1df75554d4bcd24f",
+        fun exampleTezosAccount(network: TezosNetwork): TezosAccount = TezosAccount(
+            network,
+            "edpktpzo8UZieYaJZgCHP6M6hKHPdWBSNqxvmEt6dwWRgxDh1EAFw9",
+            "tz1Mg6uXUhJzuCh4dH2mdBdYBuaiVZCCZsak",
+        )
+
+        fun exampleSubstrateAccount(network: SubstrateNetwork): SubstrateAccount = SubstrateAccount(
+            network,
+            "724867a19e4a9422ac85f3b9a7c4bf5ccf12c2df60d858b216b81329df716535",
+            "13aqy7vzMjuS2Nd6TYahHHetGt7dTgaqijT6Tpw3NS2MDFug",
         )
     }
 }

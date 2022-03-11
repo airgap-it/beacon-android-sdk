@@ -1,27 +1,31 @@
+@file:OptIn(ExperimentalSerializationApi::class)
+
 package it.airgap.beaconsdk.blockchain.substrate.internal.message.v3
 
+import it.airgap.beaconsdk.blockchain.substrate.data.*
+import it.airgap.beaconsdk.blockchain.substrate.message.request.BlockchainSubstrateRequest
+import it.airgap.beaconsdk.blockchain.substrate.message.request.PermissionSubstrateRequest
+import it.airgap.beaconsdk.blockchain.substrate.message.request.SignPayloadSubstrateRequest
+import it.airgap.beaconsdk.blockchain.substrate.message.request.TransferSubstrateRequest
+import it.airgap.beaconsdk.blockchain.substrate.message.response.BlockchainSubstrateResponse
+import it.airgap.beaconsdk.blockchain.substrate.message.response.PermissionSubstrateResponse
+import it.airgap.beaconsdk.blockchain.substrate.message.response.SignPayloadSubstrateResponse
+import it.airgap.beaconsdk.blockchain.substrate.message.response.TransferSubstrateResponse
+import it.airgap.beaconsdk.core.data.AppMetadata
 import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.internal.message.v3.BlockchainV3BeaconRequestContent
 import it.airgap.beaconsdk.core.internal.message.v3.BlockchainV3BeaconResponseContent
 import it.airgap.beaconsdk.core.internal.message.v3.PermissionV3BeaconRequestContent
 import it.airgap.beaconsdk.core.internal.message.v3.PermissionV3BeaconResponseContent
+import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
 import it.airgap.beaconsdk.core.internal.utils.dependencyRegistry
 import it.airgap.beaconsdk.core.internal.utils.failWithIllegalArgument
-import it.airgap.beaconsdk.core.message.BeaconMessage
-import it.airgap.beaconsdk.blockchain.substrate.data.*
-import it.airgap.beaconsdk.blockchain.substrate.message.request.BlockchainSubstrateRequest
-import it.airgap.beaconsdk.blockchain.substrate.message.request.PermissionSubstrateRequest
-import it.airgap.beaconsdk.blockchain.substrate.message.request.SignSubstrateRequest
-import it.airgap.beaconsdk.blockchain.substrate.message.request.TransferSubstrateRequest
-import it.airgap.beaconsdk.blockchain.substrate.message.response.BlockchainSubstrateResponse
-import it.airgap.beaconsdk.blockchain.substrate.message.response.PermissionSubstrateResponse
-import it.airgap.beaconsdk.blockchain.substrate.message.response.SignSubstrateResponse
-import it.airgap.beaconsdk.blockchain.substrate.message.response.TransferSubstrateResponse
-import it.airgap.beaconsdk.core.data.AppMetadata
-import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
 import it.airgap.beaconsdk.core.internal.utils.getString
+import it.airgap.beaconsdk.core.message.BeaconMessage
+import it.airgap.beaconsdk.core.storage.findAppMetadata
+import it.airgap.beaconsdk.core.storage.findPermission
+import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.Required
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -48,7 +52,7 @@ internal data class PermissionV3SubstrateRequest(
             PermissionV3SubstrateRequest(
                 appMetadata,
                 scopes,
-                if (networks.isNotEmpty()) networks else null,
+                networks.ifEmpty { null },
             )
         }
     }
@@ -68,18 +72,15 @@ internal sealed class BlockchainV3SubstrateRequest : BlockchainV3BeaconRequestCo
             when (this) {
                 is TransferSubstrateRequest -> TransferV3SubstrateRequest(
                     scope,
-                    sourceAddress,
                     amount,
                     recipient,
                     network,
                     TransferV3SubstrateRequest.Mode.from(this),
                 )
-                is SignSubstrateRequest -> SignV3SubstrateRequest(
+                is SignPayloadSubstrateRequest -> SignPayloadV3SubstrateRequest(
                     scope,
-                    network,
-                    runtimeSpec,
+                    SignPayloadV3SubstrateRequest.Mode.from(this),
                     payload,
-                    SignV3SubstrateRequest.Mode.from(this),
                 )
             }
         }
@@ -96,7 +97,7 @@ internal sealed class BlockchainV3SubstrateRequest : BlockchainV3BeaconRequestCo
 
             return when (type) {
                 TransferV3SubstrateRequest.TYPE -> jsonDecoder.json.decodeFromJsonElement(TransferV3SubstrateRequest.serializer(), jsonElement)
-                SignV3SubstrateRequest.TYPE -> jsonDecoder.json.decodeFromJsonElement(SignV3SubstrateRequest.serializer(), jsonElement)
+                SignPayloadV3SubstrateRequest.TYPE -> jsonDecoder.json.decodeFromJsonElement(SignPayloadV3SubstrateRequest.serializer(), jsonElement)
                 else -> failWithUnknownType(type)
             }
         }
@@ -104,7 +105,7 @@ internal sealed class BlockchainV3SubstrateRequest : BlockchainV3BeaconRequestCo
         override fun serialize(jsonEncoder: JsonEncoder, value: BlockchainV3SubstrateRequest) {
             when (value) {
                 is TransferV3SubstrateRequest -> jsonEncoder.encodeSerializableValue(TransferV3SubstrateRequest.serializer(), value)
-                is SignV3SubstrateRequest -> jsonEncoder.encodeSerializableValue(SignV3SubstrateRequest.serializer(), value)
+                is SignPayloadV3SubstrateRequest -> jsonEncoder.encodeSerializableValue(SignPayloadV3SubstrateRequest.serializer(), value)
             }
         }
 
@@ -116,13 +117,12 @@ internal sealed class BlockchainV3SubstrateRequest : BlockchainV3BeaconRequestCo
 @SerialName(TransferV3SubstrateRequest.TYPE)
 internal data class TransferV3SubstrateRequest(
     override val scope: SubstratePermission.Scope,
-    val sourceAddress: String,
     val amount: String,
     val recipient: String,
     val network: SubstrateNetwork,
     val mode: Mode
 ) : BlockchainV3SubstrateRequest() {
-    @Required
+    @EncodeDefault
     override val type: String = TYPE
     
     override suspend fun toBeaconMessage(
@@ -133,7 +133,9 @@ internal data class TransferV3SubstrateRequest(
         accountId: String,
         blockchainIdentifier: String,
     ): BeaconMessage {
-        val appMetadata = dependencyRegistry.storageManager.findInstanceAppMetadata<SubstrateAppMetadata> { it.senderId == senderId }
+        val appMetadata = dependencyRegistry.storageManager.findAppMetadata<SubstrateAppMetadata> { it.senderId == senderId }
+        val account = dependencyRegistry.storageManager.findPermission<SubstratePermission> { it.accountId == accountId }?.account ?: failWithAccountNotFound(accountId)
+
         return mode.createTransferSubstrateRequest(
             id,
             version,
@@ -142,8 +144,7 @@ internal data class TransferV3SubstrateRequest(
             appMetadata,
             origin,
             accountId,
-            scope,
-            sourceAddress,
+            account.address,
             amount,
             recipient,
             network,
@@ -152,7 +153,7 @@ internal data class TransferV3SubstrateRequest(
 
     @Serializable
     enum class Mode {
-        @SerialName("broadcast") Broadcast {
+        @SerialName("submit") Submit {
             override fun createTransferSubstrateRequest(
                 id: String,
                 version: String,
@@ -161,12 +162,11 @@ internal data class TransferV3SubstrateRequest(
                 appMetadata: AppMetadata?,
                 origin: Origin,
                 accountId: String,
-                scope: SubstratePermission.Scope,
                 sourceAddress: String,
                 amount: String,
                 recipient: String,
                 network: SubstrateNetwork,
-            ): TransferSubstrateRequest = TransferSubstrateRequest.Broadcast(
+            ): TransferSubstrateRequest = TransferSubstrateRequest.Submit(
                 id,
                 version,
                 blockchainIdentifier,
@@ -174,14 +174,13 @@ internal data class TransferV3SubstrateRequest(
                 appMetadata,
                 origin,
                 accountId,
-                scope,
                 sourceAddress,
                 amount,
                 recipient,
                 network,
             )
         },
-        @SerialName("broadcast-and-return") BroadcastAndReturn {
+        @SerialName("submit-and-return") SubmitAndReturn {
             override fun createTransferSubstrateRequest(
                 id: String,
                 version: String,
@@ -190,12 +189,11 @@ internal data class TransferV3SubstrateRequest(
                 appMetadata: AppMetadata?,
                 origin: Origin,
                 accountId: String,
-                scope: SubstratePermission.Scope,
                 sourceAddress: String,
                 amount: String,
                 recipient: String,
                 network: SubstrateNetwork,
-            ): TransferSubstrateRequest = TransferSubstrateRequest.BroadcastAndReturn(
+            ): TransferSubstrateRequest = TransferSubstrateRequest.SubmitAndReturn(
                 id,
                 version,
                 blockchainIdentifier,
@@ -203,7 +201,6 @@ internal data class TransferV3SubstrateRequest(
                 appMetadata,
                 origin,
                 accountId,
-                scope,
                 sourceAddress,
                 amount,
                 recipient,
@@ -219,7 +216,6 @@ internal data class TransferV3SubstrateRequest(
                 appMetadata: AppMetadata?,
                 origin: Origin,
                 accountId: String,
-                scope: SubstratePermission.Scope,
                 sourceAddress: String,
                 amount: String,
                 recipient: String,
@@ -232,7 +228,6 @@ internal data class TransferV3SubstrateRequest(
                 appMetadata,
                 origin,
                 accountId,
-                scope,
                 sourceAddress,
                 amount,
                 recipient,
@@ -248,7 +243,6 @@ internal data class TransferV3SubstrateRequest(
             appMetadata: AppMetadata?,
             origin: Origin,
             accountId: String,
-            scope: SubstratePermission.Scope,
             sourceAddress: String,
             amount: String,
             recipient: String,
@@ -257,8 +251,8 @@ internal data class TransferV3SubstrateRequest(
         
         companion object {
             fun from(transferRequest: TransferSubstrateRequest): Mode = when (transferRequest) {
-                is TransferSubstrateRequest.Broadcast -> Broadcast
-                is TransferSubstrateRequest.BroadcastAndReturn -> BroadcastAndReturn
+                is TransferSubstrateRequest.Submit -> Submit
+                is TransferSubstrateRequest.SubmitAndReturn -> SubmitAndReturn
                 is TransferSubstrateRequest.Return -> Return
             }
         }
@@ -270,17 +264,15 @@ internal data class TransferV3SubstrateRequest(
 }
 
 @Serializable
-@SerialName(SignV3SubstrateRequest.TYPE)
-internal data class SignV3SubstrateRequest(
+@SerialName(SignPayloadV3SubstrateRequest.TYPE)
+internal data class SignPayloadV3SubstrateRequest(
     override val scope: SubstratePermission.Scope,
-    val network: SubstrateNetwork,
-    val runtimeSpec: SubstrateRuntimeSpec,
-    val payload: String,
-    val mode: Mode
+    val mode: Mode,
+    val payload: SubstrateSignerPayload,
 ) : BlockchainV3SubstrateRequest() {
-    @Required
+    @EncodeDefault
     override val type: String = TYPE
-    
+
     override suspend fun toBeaconMessage(
         id: String,
         version: String,
@@ -289,8 +281,10 @@ internal data class SignV3SubstrateRequest(
         accountId: String,
         blockchainIdentifier: String,
     ): BeaconMessage {
-        val appMetadata = dependencyRegistry.storageManager.findInstanceAppMetadata<SubstrateAppMetadata> { it.senderId == senderId }
-        return mode.createSignSubstrateRequest(
+        val appMetadata = dependencyRegistry.storageManager.findAppMetadata<SubstrateAppMetadata> { it.senderId == senderId }
+        val account = dependencyRegistry.storageManager.findPermission<SubstratePermission> { it.accountId == accountId }?.account ?: failWithAccountNotFound(accountId)
+
+        return mode.createSignPayloadSubstrateRequest(
             id,
             version,
             blockchainIdentifier,
@@ -298,17 +292,15 @@ internal data class SignV3SubstrateRequest(
             appMetadata,
             origin,
             accountId,
-            scope,
-            network,
-            runtimeSpec,
-            payload,
+            account.address,
+            payload
         )
     }
 
     @Serializable
     enum class Mode {
-        @SerialName("broadcast") Broadcast {
-            override fun createSignSubstrateRequest(
+        @SerialName("submit") Submit {
+            override fun createSignPayloadSubstrateRequest(
                 id: String,
                 version: String,
                 blockchainIdentifier: String,
@@ -316,11 +308,9 @@ internal data class SignV3SubstrateRequest(
                 appMetadata: AppMetadata?,
                 origin: Origin,
                 accountId: String,
-                scope: SubstratePermission.Scope,
-                network: SubstrateNetwork,
-                runtimeSpec: SubstrateRuntimeSpec,
-                payload: String,
-            ): SignSubstrateRequest = SignSubstrateRequest.Broadcast(
+                address: String,
+                payload: SubstrateSignerPayload,
+            ): SignPayloadSubstrateRequest = SignPayloadSubstrateRequest.Submit(
                 id,
                 version,
                 blockchainIdentifier,
@@ -328,14 +318,12 @@ internal data class SignV3SubstrateRequest(
                 appMetadata,
                 origin,
                 accountId,
-                scope,
-                network,
-                runtimeSpec,
+                address,
                 payload,
             )
         },
-        @SerialName("broadcast-and-return") BroadcastAndReturn {
-            override fun createSignSubstrateRequest(
+        @SerialName("submit-and-return") SubmitAndReturn {
+            override fun createSignPayloadSubstrateRequest(
                 id: String,
                 version: String,
                 blockchainIdentifier: String,
@@ -343,11 +331,9 @@ internal data class SignV3SubstrateRequest(
                 appMetadata: AppMetadata?,
                 origin: Origin,
                 accountId: String,
-                scope: SubstratePermission.Scope,
-                network: SubstrateNetwork,
-                runtimeSpec: SubstrateRuntimeSpec,
-                payload: String,
-            ): SignSubstrateRequest = SignSubstrateRequest.BroadcastAndReturn(
+                address: String,
+                payload: SubstrateSignerPayload,
+            ): SignPayloadSubstrateRequest = SignPayloadSubstrateRequest.SubmitAndReturn(
                 id,
                 version,
                 blockchainIdentifier,
@@ -355,14 +341,12 @@ internal data class SignV3SubstrateRequest(
                 appMetadata,
                 origin,
                 accountId,
-                scope,
-                network,
-                runtimeSpec,
+                address,
                 payload,
             )
         },
         @SerialName("return") Return {
-            override fun createSignSubstrateRequest(
+            override fun createSignPayloadSubstrateRequest(
                 id: String,
                 version: String,
                 blockchainIdentifier: String,
@@ -370,11 +354,9 @@ internal data class SignV3SubstrateRequest(
                 appMetadata: AppMetadata?,
                 origin: Origin,
                 accountId: String,
-                scope: SubstratePermission.Scope,
-                network: SubstrateNetwork,
-                runtimeSpec: SubstrateRuntimeSpec,
-                payload: String,
-            ): SignSubstrateRequest = SignSubstrateRequest.Return(
+                address: String,
+                payload: SubstrateSignerPayload,
+            ): SignPayloadSubstrateRequest = SignPayloadSubstrateRequest.Return(
                 id,
                 version,
                 blockchainIdentifier,
@@ -382,14 +364,12 @@ internal data class SignV3SubstrateRequest(
                 appMetadata,
                 origin,
                 accountId,
-                scope,
-                network,
-                runtimeSpec,
+                address,
                 payload,
             )
         };
 
-        abstract fun createSignSubstrateRequest(
+        abstract fun createSignPayloadSubstrateRequest(
             id: String,
             version: String,
             blockchainIdentifier: String,
@@ -397,23 +377,21 @@ internal data class SignV3SubstrateRequest(
             appMetadata: AppMetadata?,
             origin: Origin,
             accountId: String,
-            scope: SubstratePermission.Scope,
-            network: SubstrateNetwork,
-            runtimeSpec: SubstrateRuntimeSpec,
-            payload: String,
-        ): SignSubstrateRequest
+            address: String,
+            payload: SubstrateSignerPayload,
+        ): SignPayloadSubstrateRequest
 
         companion object {
-            fun from(signRequest: SignSubstrateRequest): Mode = when (signRequest) {
-                is SignSubstrateRequest.Broadcast -> Broadcast
-                is SignSubstrateRequest.BroadcastAndReturn -> BroadcastAndReturn
-                is SignSubstrateRequest.Return -> Return
+            fun from(signPayloadRequest: SignPayloadSubstrateRequest): Mode = when (signPayloadRequest) {
+                is SignPayloadSubstrateRequest.Submit -> Submit
+                is SignPayloadSubstrateRequest.SubmitAndReturn -> SubmitAndReturn
+                is SignPayloadSubstrateRequest.Return -> Return
             }
         }
     }
 
     companion object {
-        const val TYPE = "sign_request"
+        const val TYPE = "sign_payload_request"
     }
 }
 
@@ -428,9 +406,8 @@ internal data class PermissionV3SubstrateResponse(
         version: String,
         senderId: String,
         origin: Origin,
-        accountIds: List<String>,
         blockchainIdentifier: String,
-    ): BeaconMessage = PermissionSubstrateResponse(id, version, origin, blockchainIdentifier, accountIds, appMetadata, scopes, accounts)
+    ): BeaconMessage = PermissionSubstrateResponse(id, version, origin, blockchainIdentifier, appMetadata, scopes, accounts)
 
     companion object {
         fun from(requestResponse: PermissionSubstrateResponse): PermissionV3SubstrateResponse = with(requestResponse) {
@@ -455,7 +432,7 @@ internal sealed class BlockchainV3SubstrateResponse : BlockchainV3BeaconResponse
         fun from(blockchainResponse: BlockchainSubstrateResponse): BlockchainV3SubstrateResponse = with(blockchainResponse) {
             when (this) {
                 is TransferSubstrateResponse -> TransferV3SubstrateResponse.from(this)
-                is SignSubstrateResponse -> SignV3SubstrateResponse.from(this)
+                is SignPayloadSubstrateResponse -> SignPayloadV3SubstrateResponse.from(this)
             }
         }
     }
@@ -471,7 +448,7 @@ internal sealed class BlockchainV3SubstrateResponse : BlockchainV3BeaconResponse
 
             return when (type) {
                 TransferV3SubstrateResponse.TYPE -> jsonDecoder.json.decodeFromJsonElement(TransferV3SubstrateResponse.serializer(), jsonElement)
-                SignV3SubstrateResponse.TYPE -> jsonDecoder.json.decodeFromJsonElement(SignV3SubstrateResponse.serializer(), jsonElement)
+                SignPayloadV3SubstrateResponse.TYPE -> jsonDecoder.json.decodeFromJsonElement(SignPayloadV3SubstrateResponse.serializer(), jsonElement)
                 else -> failWithUnknownType(type)
             }
         }
@@ -479,7 +456,7 @@ internal sealed class BlockchainV3SubstrateResponse : BlockchainV3BeaconResponse
         override fun serialize(jsonEncoder: JsonEncoder, value: BlockchainV3SubstrateResponse) {
             when (value) {
                 is TransferV3SubstrateResponse -> jsonEncoder.encodeSerializableValue(TransferV3SubstrateResponse.serializer(), value)
-                is SignV3SubstrateResponse -> jsonEncoder.encodeSerializableValue(SignV3SubstrateResponse.serializer(), value)
+                is SignPayloadV3SubstrateResponse -> jsonEncoder.encodeSerializableValue(SignPayloadV3SubstrateResponse.serializer(), value)
             }
         }
 
@@ -491,9 +468,10 @@ internal sealed class BlockchainV3SubstrateResponse : BlockchainV3BeaconResponse
 @SerialName(TransferV3SubstrateResponse.TYPE)
 internal data class TransferV3SubstrateResponse(
     val transactionHash: String? = null,
+    val signature: String? = null,
     val payload: String? = null,
 ) : BlockchainV3SubstrateResponse() {
-    @Required
+    @EncodeDefault
     override val type: String = TYPE
     
     override suspend fun toBeaconMessage(
@@ -503,9 +481,9 @@ internal data class TransferV3SubstrateResponse(
         origin: Origin,
         blockchainIdentifier: String,
     ): BeaconMessage = when {
-        transactionHash != null && payload == null -> TransferSubstrateResponse.Broadcast(id, version, origin, blockchainIdentifier, transactionHash)
-        transactionHash != null && payload != null -> TransferSubstrateResponse.BroadcastAndReturn(id, version, origin, blockchainIdentifier, transactionHash, payload)
-        transactionHash == null && payload != null -> TransferSubstrateResponse.Return(id, version, origin, blockchainIdentifier, payload)
+        transactionHash != null && signature == null && payload == null -> TransferSubstrateResponse.Submit(id, version, origin, blockchainIdentifier, transactionHash)
+        transactionHash != null && signature != null -> TransferSubstrateResponse.SubmitAndReturn(id, version, origin, blockchainIdentifier, transactionHash, signature, payload)
+        transactionHash == null && signature != null -> TransferSubstrateResponse.Return(id, version, origin, blockchainIdentifier, signature, payload)
         else -> failWithInvalidMessage(this)
     }
 
@@ -514,9 +492,9 @@ internal data class TransferV3SubstrateResponse(
         
         fun from(transferResponse: TransferSubstrateResponse): TransferV3SubstrateResponse = with(transferResponse) {
             when (this) {
-                is TransferSubstrateResponse.Broadcast -> TransferV3SubstrateResponse(transactionHash = transactionHash)
-                is TransferSubstrateResponse.BroadcastAndReturn -> TransferV3SubstrateResponse(transactionHash, payload)
-                is TransferSubstrateResponse.Return -> TransferV3SubstrateResponse(payload = payload)
+                is TransferSubstrateResponse.Submit -> TransferV3SubstrateResponse(transactionHash = transactionHash)
+                is TransferSubstrateResponse.SubmitAndReturn -> TransferV3SubstrateResponse(transactionHash, signature, payload)
+                is TransferSubstrateResponse.Return -> TransferV3SubstrateResponse(signature = signature, payload = payload)
             }
         }
     }
@@ -525,12 +503,13 @@ internal data class TransferV3SubstrateResponse(
 }
 
 @Serializable
-@SerialName(SignV3SubstrateResponse.TYPE)
-internal data class SignV3SubstrateResponse(
+@SerialName(SignPayloadV3SubstrateResponse.TYPE)
+internal data class SignPayloadV3SubstrateResponse(
+    val transactionHash: String? = null,
     val signature: String? = null,
     val payload: String? = null,
 ) : BlockchainV3SubstrateResponse() {
-    @Required
+    @EncodeDefault
     override val type: String = TYPE
 
     override suspend fun toBeaconMessage(
@@ -540,23 +519,25 @@ internal data class SignV3SubstrateResponse(
         origin: Origin,
         blockchainIdentifier: String,
     ): BeaconMessage = when {
-        signature != null && payload == null -> SignSubstrateResponse.Broadcast(id, version, origin, blockchainIdentifier, signature)
-        signature != null && payload != null -> SignSubstrateResponse.BroadcastAndReturn(id, version, origin, blockchainIdentifier, signature, payload)
-        signature == null && payload != null -> SignSubstrateResponse.Return(id, version, origin, blockchainIdentifier, payload)
+        transactionHash != null && signature == null && payload == null -> SignPayloadSubstrateResponse.Submit(id, version, origin, blockchainIdentifier, transactionHash)
+        transactionHash != null && signature != null -> SignPayloadSubstrateResponse.SubmitAndReturn(id, version, origin, blockchainIdentifier, transactionHash, signature, payload)
+        transactionHash == null && signature != null -> SignPayloadSubstrateResponse.Return(id, version, origin, blockchainIdentifier, signature, payload)
         else -> failWithInvalidMessage(this)
     }
 
     companion object {
-        const val TYPE = "sign_response"
+        const val TYPE = "sign_payload_response"
 
-        fun from(signResponse: SignSubstrateResponse): SignV3SubstrateResponse = with(signResponse) {
+        fun from(transferResponse: SignPayloadSubstrateResponse): SignPayloadV3SubstrateResponse = with(transferResponse) {
             when (this) {
-                is SignSubstrateResponse.Broadcast -> SignV3SubstrateResponse(signature = signature)
-                is SignSubstrateResponse.BroadcastAndReturn -> SignV3SubstrateResponse(signature, payload)
-                is SignSubstrateResponse.Return -> SignV3SubstrateResponse(payload = payload)
+                is SignPayloadSubstrateResponse.Submit -> SignPayloadV3SubstrateResponse(transactionHash = transactionHash)
+                is SignPayloadSubstrateResponse.SubmitAndReturn -> SignPayloadV3SubstrateResponse(transactionHash, signature, payload)
+                is SignPayloadSubstrateResponse.Return -> SignPayloadV3SubstrateResponse(signature = signature, payload = payload)
             }
         }
     }
 
-    private fun failWithInvalidMessage(message: SignV3SubstrateResponse): Nothing = failWithIllegalArgument("Message $message is invalid.")
+    private fun failWithInvalidMessage(message: SignPayloadV3SubstrateResponse): Nothing = failWithIllegalArgument("Message $message is invalid.")
 }
+
+private fun failWithAccountNotFound(accountId: String): Nothing = failWithIllegalArgument("Could not found an account that can handle the request ($accountId).")

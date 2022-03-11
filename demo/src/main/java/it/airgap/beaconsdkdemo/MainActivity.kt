@@ -84,11 +84,11 @@ class MainActivity : AppCompatActivity() {
         set(value) { editText?.setText(value) }
 
     companion object {
-        const val examplePeerId = "1a162fa5-77c3-4074-a47a-3f8bc9b940d6"
+        const val examplePeerId = "b77ec852-1ad4-e241-09b5-6c692fd534ca"
         const val examplePeerName = "Beacon Example Dapp"
-        const val examplePeerPublicKey = "580b592ada51238b20fa0e6762d517e530e077dd32903d22521a058cb78222f7"
-        const val examplePeerRelayServer = "beacon-node-0.papers.tech:8448"
-        const val examplePeerVersion = "2"
+        const val examplePeerPublicKey = "46fa3bc607eac0a656083f73a98c0e8b6b5559dc7a26721b12c3fd716f0e6cc4"
+        const val examplePeerRelayServer = "beacon-node-1.sky.papers.tech"
+        const val examplePeerVersion = "3"
     }
 
     data class State(

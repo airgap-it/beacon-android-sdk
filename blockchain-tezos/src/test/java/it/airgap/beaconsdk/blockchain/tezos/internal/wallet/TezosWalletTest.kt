@@ -55,11 +55,21 @@ internal class TezosWalletTest {
     }
 
     @Test
-    fun `creates Tezos address from entrypted public key`() {
-        val publicKey = "edpkuAh8moaRkqGnVJUuwJywGcTEcuDx72o4K6j6zvYszmxNBC4V3D"
-        val address = wallet.address(publicKey).getOrThrow()
+    fun `creates Tezos address from encrypted public key`() {
+        val publicKeysWithExpected = listOf(
+            "edpkuAh8moaRkqGnVJUuwJywGcTEcuDx72o4K6j6zvYszmxNBC4V3D" to "tz1MMDnKwxp6Qp54zFxxZKFnrRX6h46XbTwr",
+            "sppk7ZpH5qAjTDZn1o1TW7z2QbQZUcMHRn2wtV4rRfz15eLQrvPkt6k" to "tz2R3oTJR3cLfSyJVQiv8NGN4wXTQj58UYjp",
+            "p2pk67fo5oy6byruqDtzVixbM7L3cVBDRMcFhA33XD5w2HF4fRXDJhw" to "tz3duiskLgZdaEvkgEwWYF4mUnVXde7JTtef",
+        )
 
-        assertEquals("tz1MMDnKwxp6Qp54zFxxZKFnrRX6h46XbTwr", address)
+        publicKeysWithExpected.forEach {
+            val publicKey = it.first
+            val expected = it.second
+
+            val actual = wallet.address(publicKey).getOrThrow()
+
+            assertEquals(expected, actual)
+        }
     }
 
     @Test

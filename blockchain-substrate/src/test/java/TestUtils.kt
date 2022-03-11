@@ -49,11 +49,10 @@ internal fun permissionSubstrateResponse(
     version: String = "version",
     requestOrigin: Origin = Origin.P2P("senderId"),
     blockchainIdentifier: String = MockBlockchain.IDENTIFIER,
-    accountIds: List<String> = listOf("accountId"),
     appMetadata: SubstrateAppMetadata = SubstrateAppMetadata("senderId", "mockApp"),
     scopes: List<SubstratePermission.Scope> = emptyList(),
     accounts: List<SubstrateAccount> = listOf(
-      SubstrateAccount(SubstrateNetwork("genesisHash"), 42, "publicKey1"),
-      SubstrateAccount(SubstrateNetwork("genesisHash"), 42, "publicKey2"),
+      SubstrateAccount("accountId1", SubstrateNetwork("genesisHash"), "publicKey1", "address1"),
+      SubstrateAccount("accountId2", SubstrateNetwork("genesisHash"), "publicKey2", "address2"),
     ),
-): PermissionSubstrateResponse = PermissionSubstrateResponse(id, version, requestOrigin, blockchainIdentifier, accountIds, appMetadata, scopes, accounts)
+): PermissionSubstrateResponse = PermissionSubstrateResponse(id, version, requestOrigin, blockchainIdentifier, appMetadata, scopes, accounts)

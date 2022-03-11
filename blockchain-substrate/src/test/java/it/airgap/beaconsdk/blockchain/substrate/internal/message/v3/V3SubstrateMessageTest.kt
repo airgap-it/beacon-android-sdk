@@ -4,7 +4,18 @@ import fromValues
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
+import it.airgap.beaconsdk.blockchain.substrate.Substrate
+import it.airgap.beaconsdk.blockchain.substrate.data.*
+import it.airgap.beaconsdk.blockchain.substrate.internal.creator.*
+import it.airgap.beaconsdk.blockchain.substrate.internal.serializer.*
+import it.airgap.beaconsdk.blockchain.substrate.message.request.PermissionSubstrateRequest
+import it.airgap.beaconsdk.blockchain.substrate.message.request.SignPayloadSubstrateRequest
+import it.airgap.beaconsdk.blockchain.substrate.message.request.TransferSubstrateRequest
+import it.airgap.beaconsdk.blockchain.substrate.message.response.PermissionSubstrateResponse
+import it.airgap.beaconsdk.blockchain.substrate.message.response.SignPayloadSubstrateResponse
+import it.airgap.beaconsdk.blockchain.substrate.message.response.TransferSubstrateResponse
 import it.airgap.beaconsdk.core.data.Origin
+import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.message.v3.*
 import it.airgap.beaconsdk.core.internal.storage.MockSecureStorage
 import it.airgap.beaconsdk.core.internal.storage.MockStorage
@@ -12,18 +23,6 @@ import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
 import it.airgap.beaconsdk.core.internal.utils.failWithIllegalState
 import it.airgap.beaconsdk.core.message.*
-import it.airgap.beaconsdk.blockchain.substrate.Substrate
-import it.airgap.beaconsdk.blockchain.substrate.data.*
-import it.airgap.beaconsdk.blockchain.substrate.internal.creator.*
-import it.airgap.beaconsdk.blockchain.substrate.internal.serializer.*
-import it.airgap.beaconsdk.blockchain.substrate.internal.wallet.SubstrateWallet
-import it.airgap.beaconsdk.blockchain.substrate.message.request.PermissionSubstrateRequest
-import it.airgap.beaconsdk.blockchain.substrate.message.request.SignSubstrateRequest
-import it.airgap.beaconsdk.blockchain.substrate.message.request.TransferSubstrateRequest
-import it.airgap.beaconsdk.blockchain.substrate.message.response.PermissionSubstrateResponse
-import it.airgap.beaconsdk.blockchain.substrate.message.response.SignSubstrateResponse
-import it.airgap.beaconsdk.blockchain.substrate.message.response.TransferSubstrateResponse
-import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -36,9 +35,6 @@ import kotlin.test.assertEquals
 
 internal class V3SubstrateMessageTest {
     @MockK
-    private lateinit var wallet: SubstrateWallet
-
-    @MockK
     private lateinit var identifierCreator: IdentifierCreator
 
     private lateinit var storageManager: StorageManager
@@ -49,9 +45,8 @@ internal class V3SubstrateMessageTest {
 
         storageManager = StorageManager(MockStorage(), MockSecureStorage(), identifierCreator, BeaconConfiguration(ignoreUnsupportedBlockchains = false))
         val substrate = Substrate(
-            wallet,
             SubstrateCreator(
-                DataSubstrateCreator(wallet, storageManager, identifierCreator),
+                DataSubstrateCreator(storageManager, identifierCreator),
                 V1BeaconMessageSubstrateCreator(),
                 V2BeaconMessageSubstrateCreator(),
                 V3BeaconMessageSubstrateCreator(),
@@ -102,17 +97,50 @@ internal class V3SubstrateMessageTest {
 
     @Test
     fun `converts to Beacon message`() {
+        val network = SubstrateNetwork(genesisHash = "genesisHash")
+
         val senderId = "senderId"
-        val otherId = "otherId"
+        val otherSenderId = "otherSenderId"
         val origin = Origin.P2P(senderId)
 
         val matchingAppMetadata = SubstrateAppMetadata(senderId, "v3App")
-        val otherAppMetadata = SubstrateAppMetadata(otherId, "v3OtherApp")
+        val otherAppMetadata = SubstrateAppMetadata(otherSenderId, "v3OtherApp")
+
+        val accountId = "accountId"
+        val account = SubstrateAccount(accountId, network, "publicKey", "address")
+
+        val otherAccountId = "otherAccountId"
+        val otherAccount = SubstrateAccount(otherAccountId, network, "otherPublicKey", "otherAddress")
+
+        val matchingPermission = SubstratePermission(
+            accountId,
+            senderId,
+            0,
+            matchingAppMetadata,
+            listOf(SubstratePermission.Scope.Transfer, SubstratePermission.Scope.SignPayloadJson, SubstratePermission.Scope.SignPayloadRaw),
+            account,
+        )
+
+        val otherPermission = SubstratePermission(
+            otherAccountId,
+            senderId,
+            0,
+            matchingAppMetadata,
+            listOf(SubstratePermission.Scope.Transfer, SubstratePermission.Scope.SignPayloadJson, SubstratePermission.Scope.SignPayloadRaw),
+            otherAccount,
+        )
 
         runBlocking { storageManager.setAppMetadata(listOf(otherAppMetadata, matchingAppMetadata)) }
+        runBlocking { storageManager.setPermissions(listOf(otherPermission, matchingPermission)) }
 
         runBlocking {
-            versionedWithBeacon(senderId = senderId, appMetadata = matchingAppMetadata, origin = origin)
+            versionedWithBeacon(
+                senderId = senderId,
+                appMetadata = matchingAppMetadata,
+                origin = origin,
+                accountId = accountId,
+                account = account,
+            )
                 .map { it.first.toBeaconMessage(origin) to it.second }
                 .forEach {
                     assertEquals(it.second, it.first)
@@ -127,15 +155,28 @@ internal class V3SubstrateMessageTest {
             createPermissionRequestJsonPair(),
             createPermissionRequestJsonPair(scopes = listOf(SubstratePermission.Scope.Transfer)),
             createTransferRequestJsonPair(),
-            createSignRequestJsonPair(),
+            createSignPayloadRequestJsonPair(),
+            createSignPayloadRequestJsonPair(payload = SubstrateSignerPayload.Json(
+                blockHash = "blockHash",
+                blockNumber = "blockNumber",
+                era = "era",
+                genesisHash = "genesisHash",
+                method = "method",
+                nonce = "nonce",
+                specVersion = "specVersion",
+                tip = "tip",
+                transactionVersion = "transactionVersion",
+                signedExtensions = emptyList(),
+                version = 1,
+            )),
 
             createPermissionResponseJsonPair(),
             createTransferResponseJsonPair(),
             createTransferResponseJsonPair(transactionHash = null),
-            createTransferResponseJsonPair(payload = null),
-            createSignResponseJsonPair(),
-            createSignResponseJsonPair(signature = null),
-            createSignResponseJsonPair(payload = null),
+            createTransferResponseJsonPair(signature = null, payload = null),
+            createSignPayloadResponseJsonPair(),
+            createSignPayloadResponseJsonPair(transactionHash = null),
+            createSignPayloadResponseJsonPair(signature = null, payload = null),
         )
 
     // -- V2BeaconMessage to BeaconMessage --
@@ -145,25 +186,27 @@ internal class V3SubstrateMessageTest {
         senderId: String = "senderId",
         origin: Origin = Origin.P2P(senderId),
         appMetadata: SubstrateAppMetadata? = null,
+        accountId: String = "accountId",
+        account: SubstrateAccount = SubstrateAccount(accountId, SubstrateNetwork("genesisHash"), "publicKey", "address"),
     ): List<Pair<V3BeaconMessage, BeaconMessage>> =
         listOf(
             createPermissionRequestPair(version = version, senderId = senderId, origin = origin),
-            createTransferRequestPair(version = version, senderId = senderId, appMetadata = appMetadata, origin = origin),
-            createTransferRequestPair(version = version, senderId = senderId, appMetadata = appMetadata, origin = origin, mode = TransferV3SubstrateRequest.Mode.Broadcast),
-            createTransferRequestPair(version = version, senderId = senderId, appMetadata = appMetadata, origin = origin, mode = TransferV3SubstrateRequest.Mode.BroadcastAndReturn),
-            createTransferRequestPair(version = version, senderId = senderId, appMetadata = appMetadata, origin = origin, mode = TransferV3SubstrateRequest.Mode.Return),
-            createSignRequestPair(version = version, senderId = senderId, appMetadata = appMetadata, origin = origin),
-            createSignRequestPair(version = version, senderId = senderId, appMetadata = appMetadata, origin = origin, mode = SignV3SubstrateRequest.Mode.Broadcast),
-            createSignRequestPair(version = version, senderId = senderId, appMetadata = appMetadata, origin = origin, mode = SignV3SubstrateRequest.Mode.BroadcastAndReturn),
-            createSignRequestPair(version = version, senderId = senderId, appMetadata = appMetadata, origin = origin, mode = SignV3SubstrateRequest.Mode.Return),
+            createTransferRequestPair(version = version, senderId = senderId, appMetadata = appMetadata, origin = origin, accountId = accountId, sourceAddress = account.address),
+            createTransferRequestPair(version = version, senderId = senderId, appMetadata = appMetadata, origin = origin, accountId = accountId, sourceAddress = account.address, mode = TransferV3SubstrateRequest.Mode.Submit),
+            createTransferRequestPair(version = version, senderId = senderId, appMetadata = appMetadata, origin = origin, accountId = accountId, sourceAddress = account.address, mode = TransferV3SubstrateRequest.Mode.SubmitAndReturn),
+            createTransferRequestPair(version = version, senderId = senderId, appMetadata = appMetadata, origin = origin, accountId = accountId, sourceAddress = account.address, mode = TransferV3SubstrateRequest.Mode.Return),
+            createSignPayloadRequestPair(version = version, senderId = senderId, appMetadata = appMetadata, origin = origin, accountId = accountId, address = account.address),
+            createSignPayloadRequestPair(version = version, senderId = senderId, appMetadata = appMetadata, origin = origin, accountId = accountId, address = account.address, mode = SignPayloadV3SubstrateRequest.Mode.Submit),
+            createSignPayloadRequestPair(version = version, senderId = senderId, appMetadata = appMetadata, origin = origin, accountId = accountId, address = account.address, mode = SignPayloadV3SubstrateRequest.Mode.SubmitAndReturn),
+            createSignPayloadRequestPair(version = version, senderId = senderId, appMetadata = appMetadata, origin = origin, accountId = accountId, address = account.address, mode = SignPayloadV3SubstrateRequest.Mode.Return),
 
             createPermissionResponsePair(version = version, senderId = senderId, origin = origin),
             createTransferResponsePair(version = version, senderId = senderId, origin = origin),
             createTransferResponsePair(version = version, senderId = senderId, origin = origin, transactionHash = null),
-            createTransferResponsePair(version = version, senderId = senderId, origin = origin, payload = null),
-            createSignResponsePair(version = version, senderId = senderId, origin = origin),
-            createSignResponsePair(version = version, senderId = senderId, origin = origin, signature = null),
-            createSignResponsePair(version = version, senderId = senderId, origin = origin, payload = null),
+            createTransferResponsePair(version = version, senderId = senderId, origin = origin, signature = null, payload = null),
+            createSignPayloadResponsePair(version = version, senderId = senderId, origin = origin),
+            createSignPayloadResponsePair(version = version, senderId = senderId, origin = origin, transactionHash = null),
+            createSignPayloadResponsePair(version = version, senderId = senderId, origin = origin, signature = null, payload = null),
         )
 
     // -- request to JSON --
@@ -210,12 +253,10 @@ internal class V3SubstrateMessageTest {
         id: String = "id",
         senderId: String = "senderId",
         accountId: String = "accountId",
-        scope: SubstratePermission.Scope = SubstratePermission.Scope.Transfer,
-        sourceAddress: String = "sourceAddress",
         amount: String = "amount",
         recipient: String = "recipient",
         network: SubstrateNetwork = SubstrateNetwork("genesisHash"),
-        mode: TransferV3SubstrateRequest.Mode = TransferV3SubstrateRequest.Mode.BroadcastAndReturn,
+        mode: TransferV3SubstrateRequest.Mode = TransferV3SubstrateRequest.Mode.SubmitAndReturn,
     ): Pair<V3BeaconMessage, String> =
         V3BeaconMessage(
             id,
@@ -225,8 +266,7 @@ internal class V3SubstrateMessageTest {
                 Substrate.IDENTIFIER,
                 accountId,
                 TransferV3SubstrateRequest(
-                    scope,
-                    sourceAddress,
+                    SubstratePermission.Scope.Transfer,
                     amount,
                     recipient,
                     network,
@@ -244,8 +284,7 @@ internal class V3SubstrateMessageTest {
                     "accountId": "$accountId",
                     "blockchainData": {
                         "type": "transfer_request",
-                        "scope": ${Json.encodeToString(scope)},
-                        "sourceAddress": "$sourceAddress",
+                        "scope": "transfer",
                         "amount": "$amount",
                         "recipient": "$recipient",
                         "network": ${Json.encodeToString(network)},
@@ -256,30 +295,34 @@ internal class V3SubstrateMessageTest {
         """.trimIndent()
 
 
-    private fun createSignRequestJsonPair(
+    private fun createSignPayloadRequestJsonPair(
         version: String = "3",
         id: String = "id",
         senderId: String = "senderId",
         accountId: String = "accountId",
-        scope: SubstratePermission.Scope = SubstratePermission.Scope.SignRaw,
-        network: SubstrateNetwork = SubstrateNetwork("genesisHash"),
-        runtimeSpec: SubstrateRuntimeSpec = SubstrateRuntimeSpec("runtimeVersion", "transactionVersion"),
-        payload: String = "payload",
-        mode: SignV3SubstrateRequest.Mode = SignV3SubstrateRequest.Mode.BroadcastAndReturn,
-    ): Pair<V3BeaconMessage, String> =
-        V3BeaconMessage(
+        payload: SubstrateSignerPayload = SubstrateSignerPayload.Raw(
+            isMutable = false,
+            dataType = SubstrateSignerPayload.Raw.DataType.Bytes,
+            data = "data",
+        ),
+        mode: SignPayloadV3SubstrateRequest.Mode = SignPayloadV3SubstrateRequest.Mode.SubmitAndReturn,
+    ): Pair<V3BeaconMessage, String> {
+        val scope = when (payload) {
+            is SubstrateSignerPayload.Json -> SubstratePermission.Scope.SignPayloadJson
+            is SubstrateSignerPayload.Raw -> SubstratePermission.Scope.SignPayloadRaw
+        }
+
+        return V3BeaconMessage(
             id,
             version,
             senderId,
             BlockchainV3BeaconRequestContent(
                 Substrate.IDENTIFIER,
                 accountId,
-                SignV3SubstrateRequest(
+                SignPayloadV3SubstrateRequest(
                     scope,
-                    network,
-                    runtimeSpec,
-                    payload,
                     mode,
+                    payload,
                 ),
             ),
         ) to """
@@ -292,16 +335,15 @@ internal class V3SubstrateMessageTest {
                     "type": "blockchain_request",
                     "accountId": "$accountId",
                     "blockchainData": {
-                        "type": "sign_request",
+                        "type": "sign_payload_request",
                         "scope": ${Json.encodeToString(scope)},
-                        "network": ${Json.encodeToString(network)},
-                        "runtimeSpec": ${Json.encodeToString(runtimeSpec)},
-                        "payload": "$payload",
+                        "payload": ${Json.encodeToString(payload)},
                         "mode": ${Json.encodeToString(mode)}
                     }
                 }
             }
         """.trimIndent()
+    }
 
     // -- response to JSON --
 
@@ -309,12 +351,11 @@ internal class V3SubstrateMessageTest {
         version: String = "3",
         id: String = "id",
         senderId: String = "senderId",
-        accountIds: List<String> = listOf("accountId"),
         appMetadata: SubstrateAppMetadata = SubstrateAppMetadata(senderId, "v3App"),
         scopes: List<SubstratePermission.Scope> = emptyList(),
         accounts: List<SubstrateAccount> = listOf(
-            SubstrateAccount(SubstrateNetwork("genesisHash"), 42, "publicKey1"),
-            SubstrateAccount(SubstrateNetwork("genesisHash"), 42, "publicKey2"),
+            SubstrateAccount("accountId1", SubstrateNetwork("genesisHash"), "publicKey1", "address1"),
+            SubstrateAccount("accountId2", SubstrateNetwork("genesisHash"), "publicKey2", "address2"),
         ),
     ): Pair<V3BeaconMessage, String> =
         V3BeaconMessage(
@@ -323,7 +364,6 @@ internal class V3SubstrateMessageTest {
             senderId,
             PermissionV3BeaconResponseContent(
                 Substrate.IDENTIFIER,
-                accountIds,
                 PermissionV3SubstrateResponse(
                     appMetadata,
                     scopes,
@@ -338,7 +378,6 @@ internal class V3SubstrateMessageTest {
                 "message": {
                     "blockchainIdentifier": "${Substrate.IDENTIFIER}",
                     "type": "permission_response",
-                    "accountIds": ${Json.encodeToString(accountIds)},
                     "blockchainData": {
                         "appMetadata": ${Json.encodeToString(appMetadata)},
                         "scopes": ${Json.encodeToString(scopes)},
@@ -353,11 +392,13 @@ internal class V3SubstrateMessageTest {
         id: String = "id",
         senderId: String = "senderId",
         transactionHash: String? = "transactionHash",
+        signature: String? = "signature",
         payload: String? = "payload",
     ): Pair<V3BeaconMessage, String> {
         val data = mapOf(
             "type" to "transfer_response",
             "transactionHash" to transactionHash,
+            "signature" to signature,
             "payload" to payload,
         )
         
@@ -371,6 +412,7 @@ internal class V3SubstrateMessageTest {
                 Substrate.IDENTIFIER,
                 TransferV3SubstrateResponse(
                     transactionHash,
+                    signature,
                     payload,
                 ),
             ),
@@ -388,15 +430,17 @@ internal class V3SubstrateMessageTest {
         """.trimIndent()
     }
 
-    private fun createSignResponseJsonPair(
+    private fun createSignPayloadResponseJsonPair(
         version: String = "3",
         id: String = "id",
         senderId: String = "senderId",
+        transactionHash: String? = "transactionHash",
         signature: String? = "signature",
         payload: String? = "payload",
     ): Pair<V3BeaconMessage, String> {
         val data = mapOf(
-            "type" to "sign_response",
+            "type" to "sign_payload_response",
+            "transactionHash" to transactionHash,
             "signature" to signature,
             "payload" to payload,
         )
@@ -409,7 +453,8 @@ internal class V3SubstrateMessageTest {
             senderId,
             BlockchainV3BeaconResponseContent(
                 Substrate.IDENTIFIER,
-                SignV3SubstrateResponse(
+                SignPayloadV3SubstrateResponse(
+                    transactionHash,
                     signature,
                     payload,
                 ),
@@ -458,12 +503,11 @@ internal class V3SubstrateMessageTest {
         id: String = "id",
         senderId: String = "senderId",
         accountId: String = "accountId",
-        scope: SubstratePermission.Scope = SubstratePermission.Scope.Transfer,
         sourceAddress: String = "sourceAddress",
         amount: String = "amount",
         recipient: String = "recipient",
         network: SubstrateNetwork = SubstrateNetwork("genesisHash"),
-        mode: TransferV3SubstrateRequest.Mode = TransferV3SubstrateRequest.Mode.BroadcastAndReturn,
+        mode: TransferV3SubstrateRequest.Mode = TransferV3SubstrateRequest.Mode.SubmitAndReturn,
         appMetadata: SubstrateAppMetadata? = null,
         origin: Origin = Origin.P2P(senderId),
     ): Pair<V3BeaconMessage, BlockchainBeaconRequest> =
@@ -475,8 +519,7 @@ internal class V3SubstrateMessageTest {
                 Substrate.IDENTIFIER,
                 accountId,
                 TransferV3SubstrateRequest(
-                    scope,
-                    sourceAddress,
+                    SubstratePermission.Scope.Transfer,
                     amount,
                     recipient,
                     network,
@@ -484,7 +527,7 @@ internal class V3SubstrateMessageTest {
                 ),
             ),
         ) to when (mode) {
-            TransferV3SubstrateRequest.Mode.Broadcast -> TransferSubstrateRequest.Broadcast(
+            TransferV3SubstrateRequest.Mode.Submit -> TransferSubstrateRequest.Submit(
                 id,
                 version,
                 Substrate.IDENTIFIER,
@@ -492,13 +535,12 @@ internal class V3SubstrateMessageTest {
                 appMetadata,
                 origin,
                 accountId,
-                scope,
                 sourceAddress,
                 amount,
                 recipient,
                 network,
             )
-            TransferV3SubstrateRequest.Mode.BroadcastAndReturn -> TransferSubstrateRequest.BroadcastAndReturn(
+            TransferV3SubstrateRequest.Mode.SubmitAndReturn -> TransferSubstrateRequest.SubmitAndReturn(
                 id,
                 version,
                 Substrate.IDENTIFIER,
@@ -506,7 +548,6 @@ internal class V3SubstrateMessageTest {
                 appMetadata,
                 origin,
                 accountId,
-                scope,
                 sourceAddress,
                 amount,
                 recipient,
@@ -520,7 +561,6 @@ internal class V3SubstrateMessageTest {
                 appMetadata,
                 origin,
                 accountId,
-                scope,
                 sourceAddress,
                 amount,
                 recipient,
@@ -528,36 +568,41 @@ internal class V3SubstrateMessageTest {
             )
         }
 
-    private fun createSignRequestPair(
+    private fun createSignPayloadRequestPair(
         version: String = "3",
         id: String = "id",
         senderId: String = "senderId",
         accountId: String = "accountId",
-        scope: SubstratePermission.Scope = SubstratePermission.Scope.SignRaw,
-        network: SubstrateNetwork = SubstrateNetwork("genesisHash"),
-        runtimeSpec: SubstrateRuntimeSpec = SubstrateRuntimeSpec("runtimeVersion", "transactionVersion"),
-        payload: String = "payload",
-        mode: SignV3SubstrateRequest.Mode = SignV3SubstrateRequest.Mode.BroadcastAndReturn,
+        address: String = "address",
+        payload: SubstrateSignerPayload = SubstrateSignerPayload.Raw(
+            isMutable = false,
+            dataType = SubstrateSignerPayload.Raw.DataType.Bytes,
+            data = "data",
+        ),
+        mode: SignPayloadV3SubstrateRequest.Mode = SignPayloadV3SubstrateRequest.Mode.SubmitAndReturn,
         appMetadata: SubstrateAppMetadata? = null,
         origin: Origin = Origin.P2P(senderId),
-    ): Pair<V3BeaconMessage, BlockchainBeaconRequest> =
-        V3BeaconMessage(
+    ): Pair<V3BeaconMessage, BlockchainBeaconRequest> {
+        val scope = when (payload) {
+            is SubstrateSignerPayload.Json -> SubstratePermission.Scope.SignPayloadJson
+            is SubstrateSignerPayload.Raw -> SubstratePermission.Scope.SignPayloadRaw
+        }
+
+        return V3BeaconMessage(
             id,
             version,
             senderId,
             BlockchainV3BeaconRequestContent(
                 Substrate.IDENTIFIER,
                 accountId,
-                SignV3SubstrateRequest(
+                SignPayloadV3SubstrateRequest(
                     scope,
-                    network,
-                    runtimeSpec,
-                    payload,
                     mode,
+                    payload,
                 ),
             ),
         ) to when (mode) {
-            SignV3SubstrateRequest.Mode.Broadcast -> SignSubstrateRequest.Broadcast(
+            SignPayloadV3SubstrateRequest.Mode.Submit -> SignPayloadSubstrateRequest.Submit(
                 id,
                 version,
                 Substrate.IDENTIFIER,
@@ -565,12 +610,10 @@ internal class V3SubstrateMessageTest {
                 appMetadata,
                 origin,
                 accountId,
-                scope,
-                network,
-                runtimeSpec,
+                address,
                 payload,
             )
-            SignV3SubstrateRequest.Mode.BroadcastAndReturn -> SignSubstrateRequest.BroadcastAndReturn(
+            SignPayloadV3SubstrateRequest.Mode.SubmitAndReturn -> SignPayloadSubstrateRequest.SubmitAndReturn(
                 id,
                 version,
                 Substrate.IDENTIFIER,
@@ -578,12 +621,10 @@ internal class V3SubstrateMessageTest {
                 appMetadata,
                 origin,
                 accountId,
-                scope,
-                network,
-                runtimeSpec,
+                address,
                 payload,
             )
-            SignV3SubstrateRequest.Mode.Return -> SignSubstrateRequest.Return(
+            SignPayloadV3SubstrateRequest.Mode.Return -> SignPayloadSubstrateRequest.Return(
                 id,
                 version,
                 Substrate.IDENTIFIER,
@@ -591,24 +632,23 @@ internal class V3SubstrateMessageTest {
                 appMetadata,
                 origin,
                 accountId,
-                scope,
-                network,
-                runtimeSpec,
+                address,
                 payload,
             )
         }
+    }
+
     // -- response to BeaconMessage --
 
     private fun createPermissionResponsePair(
         version: String = "3",
         id: String = "id",
         senderId: String = "senderId",
-        accountIds: List<String> = listOf("accountId"),
         appMetadata: SubstrateAppMetadata = SubstrateAppMetadata(senderId, "v3App"),
         scopes: List<SubstratePermission.Scope> = emptyList(),
         accounts: List<SubstrateAccount> = listOf(
-            SubstrateAccount(SubstrateNetwork("genesisHash"), 42, "publicKey1"),
-            SubstrateAccount(SubstrateNetwork("genesisHash"), 42, "publicKey2"),
+            SubstrateAccount("accountId1", SubstrateNetwork("genesisHash"), "publicKey1", "address1"),
+            SubstrateAccount("accountId2", SubstrateNetwork("genesisHash"), "publicKey2", "address2"),
         ),
         origin: Origin = Origin.P2P(senderId),
     ): Pair<V3BeaconMessage, PermissionBeaconResponse> =
@@ -618,20 +658,20 @@ internal class V3SubstrateMessageTest {
             senderId,
             PermissionV3BeaconResponseContent(
                 Substrate.IDENTIFIER,
-                accountIds,
                 PermissionV3SubstrateResponse(
                     appMetadata,
                     scopes,
                     accounts,
                 ),
             ),
-        ) to PermissionSubstrateResponse(id, version, origin, Substrate.IDENTIFIER, accountIds, appMetadata, scopes, accounts)
+        ) to PermissionSubstrateResponse(id, version, origin, Substrate.IDENTIFIER, appMetadata, scopes, accounts)
 
     private fun createTransferResponsePair(
         version: String = "3",
         id: String = "id",
         senderId: String = "senderId",
         transactionHash: String? = "transactionHash",
+        signature: String? = "signature",
         payload: String? = "payload",
         origin: Origin = Origin.P2P(senderId),
     ): Pair<V3BeaconMessage, BlockchainBeaconResponse> =
@@ -643,20 +683,22 @@ internal class V3SubstrateMessageTest {
                 Substrate.IDENTIFIER,
                 TransferV3SubstrateResponse(
                     transactionHash,
+                    signature,
                     payload,
                 ),
             ),
         ) to when {
-            transactionHash != null && payload == null -> TransferSubstrateResponse.Broadcast(id, version, origin, Substrate.Companion.IDENTIFIER, transactionHash)
-            transactionHash != null && payload != null -> TransferSubstrateResponse.BroadcastAndReturn(id, version, origin, Substrate.Companion.IDENTIFIER, transactionHash, payload)
-            transactionHash == null && payload != null -> TransferSubstrateResponse.Return(id, version, origin, Substrate.Companion.IDENTIFIER, payload)
-            else -> failWithIllegalState("TransferSubstrateResponse cannot be created without `transactionHash` nor `payload`.")
+            transactionHash != null && signature == null && payload == null -> TransferSubstrateResponse.Submit(id, version, origin, Substrate.Companion.IDENTIFIER, transactionHash)
+            transactionHash != null && signature != null -> TransferSubstrateResponse.SubmitAndReturn(id, version, origin, Substrate.Companion.IDENTIFIER, transactionHash, signature, payload)
+            transactionHash == null && signature != null -> TransferSubstrateResponse.Return(id, version, origin, Substrate.Companion.IDENTIFIER, signature, payload)
+            else -> failWithIllegalState("TransferSubstrateResponse cannot be created without `transactionHash` nor `signature`.")
         }
 
-    private fun createSignResponsePair(
+    private fun createSignPayloadResponsePair(
         version: String = "3",
         id: String = "id",
         senderId: String = "senderId",
+        transactionHash: String? = "transactionHash",
         signature: String? = "signature",
         payload: String? = "payload",
         origin: Origin = Origin.P2P(senderId),
@@ -667,16 +709,17 @@ internal class V3SubstrateMessageTest {
             senderId,
             BlockchainV3BeaconResponseContent(
                 Substrate.IDENTIFIER,
-                SignV3SubstrateResponse(
+                SignPayloadV3SubstrateResponse(
+                    transactionHash,
                     signature,
                     payload,
                 ),
             ),
         ) to when {
-            signature != null && payload == null -> SignSubstrateResponse.Broadcast(id, version, origin, Substrate.Companion.IDENTIFIER, signature)
-            signature != null && payload != null -> SignSubstrateResponse.BroadcastAndReturn(id, version, origin, Substrate.Companion.IDENTIFIER, signature, payload)
-            signature == null && payload != null -> SignSubstrateResponse.Return(id, version, origin, Substrate.Companion.IDENTIFIER, payload)
-            else -> failWithIllegalState("SignSubstrateResponse cannot be created without `signature` nor `payload`.")
+            transactionHash != null && signature == null && payload == null -> SignPayloadSubstrateResponse.Submit(id, version, origin, Substrate.Companion.IDENTIFIER, transactionHash)
+            transactionHash != null && signature != null -> SignPayloadSubstrateResponse.SubmitAndReturn(id, version, origin, Substrate.Companion.IDENTIFIER, transactionHash, signature, payload)
+            transactionHash == null && signature != null -> SignPayloadSubstrateResponse.Return(id, version, origin, Substrate.Companion.IDENTIFIER, signature, payload)
+            else -> failWithIllegalState("SignSubstrateResponse cannot be created without `transactionHash` nor `signature`.")
         }
 
 }

@@ -74,7 +74,6 @@ internal data class V3MockPermissionBeaconResponseData(
         version: String,
         senderId: String,
         origin: Origin,
-        accountIds: List<String>,
         blockchainIdentifier: String,
     ): BeaconMessage =
         PermissionMockResponse(
@@ -83,7 +82,6 @@ internal data class V3MockPermissionBeaconResponseData(
             version,
             origin,
             blockchainIdentifier,
-            accountIds,
             rest,
         )
 

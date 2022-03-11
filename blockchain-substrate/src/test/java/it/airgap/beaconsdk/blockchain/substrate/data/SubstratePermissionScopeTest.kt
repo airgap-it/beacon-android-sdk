@@ -42,17 +42,17 @@ internal class SubstratePermissionScopeTest {
 
     private fun expectedWithJsonValues(): List<Pair<SubstratePermission.Scope, String>> = listOf(
         SubstratePermission.Scope.Transfer to "\"transfer\"",
-        SubstratePermission.Scope.SignRaw to "\"sign_raw\"",
-        SubstratePermission.Scope.SignString to "\"sign_string\"",
+        SubstratePermission.Scope.SignPayloadJson to "\"sign_payload_json\"",
+        SubstratePermission.Scope.SignPayloadRaw to "\"sign_payload_raw\"",
     )
 
     private fun expectedWithJsonArray(): List<Pair<List<SubstratePermission.Scope>, String>> = listOf(
-        listOf(SubstratePermission.Scope.Transfer, SubstratePermission.Scope.SignRaw, SubstratePermission.Scope.SignString) to
+        listOf(SubstratePermission.Scope.Transfer, SubstratePermission.Scope.SignPayloadJson, SubstratePermission.Scope.SignPayloadRaw) to
                 """
                     [
                         "transfer",
-                        "sign_raw",
-                        "sign_string"
+                        "sign_payload_json",
+                        "sign_payload_raw"
                     ]
                 """.trimIndent(),
     )

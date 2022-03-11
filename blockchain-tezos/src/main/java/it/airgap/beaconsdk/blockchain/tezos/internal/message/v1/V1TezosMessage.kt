@@ -1,6 +1,7 @@
 package it.airgap.beaconsdk.blockchain.tezos.internal.message.v1
 
 import it.airgap.beaconsdk.blockchain.tezos.Tezos
+import it.airgap.beaconsdk.blockchain.tezos.data.TezosAccount
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosAppMetadata
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosNetwork
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
@@ -23,6 +24,7 @@ import it.airgap.beaconsdk.core.internal.utils.dependencyRegistry
 import it.airgap.beaconsdk.core.internal.utils.failWithIllegalArgument
 import it.airgap.beaconsdk.core.internal.utils.getString
 import it.airgap.beaconsdk.core.message.BeaconMessage
+import it.airgap.beaconsdk.core.storage.findAppMetadata
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Required
 import kotlinx.serialization.SerialName
@@ -76,8 +78,8 @@ internal sealed class V1TezosMessage : V1BeaconMessage() {
                     message.version,
                     message.id,
                     senderId,
-                    message.publicKey,
-                    message.network,
+                    message.account.publicKey,
+                    message.account.network,
                     message.scopes,
                 )
                 is OperationTezosResponse -> OperationV1TezosResponse(
@@ -177,7 +179,7 @@ internal data class OperationV1TezosRequest(
     override val type: String = TYPE
 
     override suspend fun toBeaconMessage(origin: Origin): BeaconMessage {
-        val appMetadata = dependencyRegistry.storageManager.findInstanceAppMetadata<TezosAppMetadata> { it.senderId == beaconId }
+        val appMetadata = dependencyRegistry.storageManager.findAppMetadata<TezosAppMetadata> { it.senderId == beaconId }
         return OperationTezosRequest(
             id,
             version,
@@ -210,7 +212,7 @@ internal data class SignPayloadV1TezosRequest(
     override val type: String = TYPE
 
     override suspend fun toBeaconMessage(origin: Origin): BeaconMessage {
-        val appMetadata = dependencyRegistry.storageManager.findInstanceAppMetadata<TezosAppMetadata> { it.senderId == beaconId }
+        val appMetadata = dependencyRegistry.storageManager.findAppMetadata<TezosAppMetadata> { it.senderId == beaconId }
         return SignPayloadTezosRequest(
             id,
             version,
@@ -243,7 +245,7 @@ internal data class BroadcastV1TezosRequest(
     override val type: String = TYPE
 
     override suspend fun toBeaconMessage(origin: Origin): BeaconMessage {
-        val appMetadata = dependencyRegistry.storageManager.findInstanceAppMetadata<TezosAppMetadata> { it.senderId == beaconId }
+        val appMetadata = dependencyRegistry.storageManager.findAppMetadata<TezosAppMetadata> { it.senderId == beaconId }
         return BroadcastTezosRequest(
             id,
             version,
@@ -283,9 +285,7 @@ internal data class PermissionV1TezosResponse(
             version,
             origin,
             Tezos.IDENTIFIER,
-            listOf(accountId),
-            publicKey,
-            network,
+            TezosAccount(accountId, network, publicKey, address),
             scopes
         )
     }

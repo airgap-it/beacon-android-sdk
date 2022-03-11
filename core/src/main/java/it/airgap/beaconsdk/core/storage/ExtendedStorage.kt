@@ -41,6 +41,7 @@ public interface ExtendedStorage : Storage {
     )
 
     public suspend fun findPermission(predicate: (Permission) -> Boolean): Permission?
+    public suspend fun <T : Permission> findPermission(instanceClass: KClass<T>, predicate: (T) -> Boolean): T?
     public suspend fun removePermissions(predicate: ((Permission) -> Boolean)? = null)
 
     // -- SDK --
@@ -49,3 +50,7 @@ public interface ExtendedStorage : Storage {
 
     override fun extend(beaconConfiguration: BeaconConfiguration): ExtendedStorage = this
 }
+
+public suspend inline fun <reified T : Peer> ExtendedStorage.findPeer(noinline predicate: (T) -> Boolean): T? = findPeer(T::class, predicate)
+public suspend inline fun <reified T : AppMetadata> ExtendedStorage.findAppMetadata(noinline predicate: (T) -> Boolean): T? = findAppMetadata(T::class, predicate)
+public suspend inline fun <reified T : Permission> ExtendedStorage.findPermission(noinline predicate: (T) -> Boolean): T? = findPermission(T::class, predicate)

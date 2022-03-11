@@ -3,7 +3,6 @@ package it.airgap.beaconsdk.blockchain.tezos.internal.creator
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosAppMetadata
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
 import it.airgap.beaconsdk.blockchain.tezos.internal.utils.failWithUnknownMessage
-import it.airgap.beaconsdk.blockchain.tezos.internal.wallet.TezosWallet
 import it.airgap.beaconsdk.blockchain.tezos.message.request.PermissionTezosRequest
 import it.airgap.beaconsdk.blockchain.tezos.message.response.PermissionTezosResponse
 import it.airgap.beaconsdk.core.data.Permission
@@ -15,9 +14,9 @@ import it.airgap.beaconsdk.core.internal.utils.currentTimestamp
 import it.airgap.beaconsdk.core.internal.utils.failWithIllegalState
 import it.airgap.beaconsdk.core.message.PermissionBeaconRequest
 import it.airgap.beaconsdk.core.message.PermissionBeaconResponse
+import it.airgap.beaconsdk.core.storage.findAppMetadata
 
 internal class DataTezosCreator(
-    private val wallet: TezosWallet,
     private val storageManager: StorageManager,
     private val identifierCreator: IdentifierCreator,
 ) : DataBlockchainCreator {
@@ -29,19 +28,17 @@ internal class DataTezosCreator(
             if (request !is PermissionTezosRequest) failWithUnknownMessage(request)
             if (response !is PermissionTezosResponse) failWithUnknownMessage(response)
 
-            val address = wallet.address(response.publicKey).getOrThrow()
-            val accountId = identifierCreator.accountId(address, response.network).getOrThrow()
-            val appMetadata = storageManager.findInstanceAppMetadata<TezosAppMetadata> { it.senderId == request.senderId } ?: failWithAppMetadataNotFound()
+            val appMetadata = storageManager.findAppMetadata<TezosAppMetadata> { it.senderId == request.senderId } ?: failWithAppMetadataNotFound()
             val senderId = identifierCreator.senderId(request.origin.id.asHexString().toByteArray()).getOrThrow()
 
             listOf(
                 TezosPermission(
-                    accountId,
+                    response.account.accountId,
                     senderId,
                     connectedAt = currentTimestamp(),
-                    address,
-                    response.publicKey,
-                    response.network,
+                    response.account.address,
+                    response.account.publicKey,
+                    response.account.network,
                     appMetadata,
                     response.scopes,
                 ),

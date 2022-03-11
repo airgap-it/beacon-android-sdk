@@ -37,8 +37,8 @@ public data class SubstratePermission(
     @Serializable
     public enum class Scope {
         @SerialName("transfer") Transfer,
-        @SerialName("sign_raw") SignRaw,
-        @SerialName("sign_string") SignString;
+        @SerialName("sign_payload_json") SignPayloadJson,
+        @SerialName("sign_payload_raw") SignPayloadRaw;
 
         public companion object {}
     }

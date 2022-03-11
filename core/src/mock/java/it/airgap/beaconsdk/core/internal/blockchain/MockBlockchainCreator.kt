@@ -28,15 +28,15 @@ public class MockBlockchainCreator : Blockchain.Creator {
             request: PermissionBeaconRequest,
             response: PermissionBeaconResponse,
         ): Result<List<Permission>> = runCatching {
-            response.accountIds.map {
+            listOf(
                 MockPermission(
                     response.blockchainIdentifier,
-                    it,
+                    "accountId",
                     request.senderId,
                     currentTimestamp(),
                     if (response is PermissionMockResponse) response.rest else emptyMap(),
                 )
-            }
+            )
         }
     }
 

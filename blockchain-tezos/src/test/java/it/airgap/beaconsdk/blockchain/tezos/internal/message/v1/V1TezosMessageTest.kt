@@ -4,6 +4,7 @@ import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import it.airgap.beaconsdk.blockchain.tezos.Tezos
+import it.airgap.beaconsdk.blockchain.tezos.data.TezosAccount
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosAppMetadata
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosNetwork
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
@@ -59,7 +60,7 @@ internal class V1TezosMessageTest {
         val tezos = Tezos(
             tezosWallet,
             TezosCreator(
-                DataTezosCreator(tezosWallet, storageManager, identifierCreator),
+                DataTezosCreator(storageManager, identifierCreator),
                 V1BeaconMessageTezosCreator(),
                 V2BeaconMessageTezosCreator(),
                 V3BeaconMessageTezosCreator(),
@@ -383,7 +384,7 @@ internal class V1TezosMessageTest {
         origin: Origin = Origin.P2P(beaconId),
     ): Pair<PermissionV1TezosResponse, PermissionBeaconResponse> =
         PermissionV1TezosResponse(version, id, beaconId, publicKey, network, scopes) to
-            PermissionTezosResponse(id, version, origin, Tezos.IDENTIFIER, listOf(publicKey), publicKey, network, scopes)
+            PermissionTezosResponse(id, version, origin, Tezos.IDENTIFIER, TezosAccount(publicKey, network, publicKey, publicKey), scopes)
 
     private fun createOperationResponsePair(
         version: String = "1",

@@ -511,7 +511,7 @@ internal class V2BeaconMessageTest {
 
         return (
             V2MockPermissionBeaconResponse(type, version, id, senderId, rest)
-                to PermissionMockResponse(type, id, version, origin, MockBlockchain.IDENTIFIER, emptyList(), rest)
+                to PermissionMockResponse(type, id, version, origin, MockBlockchain.IDENTIFIER, rest)
         )
     }
 

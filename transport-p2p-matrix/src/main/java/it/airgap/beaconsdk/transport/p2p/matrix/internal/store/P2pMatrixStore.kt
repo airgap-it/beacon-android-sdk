@@ -7,6 +7,7 @@ import it.airgap.beaconsdk.core.internal.migration.Migration
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.transport.p2p.data.p2pIdentifierOrNull
 import it.airgap.beaconsdk.core.internal.utils.*
+import it.airgap.beaconsdk.core.storage.findPeer
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.P2pMatrixCommunicator
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.MatrixClient
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.migration.migrateMatrixRelayServer
@@ -93,7 +94,7 @@ internal class P2pMatrixStore(
     private suspend fun updatePeerRelayServer(sender: String) {
         val senderIdentifier = p2pIdentifierOrNull(sender) ?: return
 
-        val peer = storageManager.findInstancePeer<P2pPeer> {
+        val peer = storageManager.findPeer<P2pPeer> {
             runCatching {
                 val peerIdentifier = communicator.recipientIdentifier(
                     it.publicKey.asHexString().toByteArray(),
