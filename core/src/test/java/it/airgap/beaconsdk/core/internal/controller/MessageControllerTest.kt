@@ -133,14 +133,14 @@ internal class MessageControllerTest {
 
         val appMetadata = runBlocking { storageManager.getAppMetadata().first() }
         val permissions = runBlocking { storageManager.getPermissions() }
-        val expected = permissionResponse.accountIds.map {
+        val expected = listOf(
             MockPermission(
                 MockBlockchain.IDENTIFIER,
-                it,
+                "accountId",
                 appMetadata.senderId,
                 currentTimeMillis
             )
-        }
+        )
 
         assertEquals(expected, permissions)
     }

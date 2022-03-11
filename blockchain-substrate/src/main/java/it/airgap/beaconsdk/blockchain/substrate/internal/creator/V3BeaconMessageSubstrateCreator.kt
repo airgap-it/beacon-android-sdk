@@ -30,7 +30,6 @@ internal class V3BeaconMessageSubstrateCreator : V3BeaconMessageBlockchainCreato
                     )
                     is PermissionSubstrateResponse -> PermissionV3BeaconResponseContent(
                         blockchainIdentifier,
-                        accountIds,
                         PermissionV3SubstrateResponse.from(this),
                     )
                     is BlockchainSubstrateResponse -> BlockchainV3BeaconResponseContent(

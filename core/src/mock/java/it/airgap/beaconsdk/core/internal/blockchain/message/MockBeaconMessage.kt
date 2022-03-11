@@ -112,7 +112,6 @@ public data class PermissionMockResponse(
     override val version: String,
     override val requestOrigin: Origin,
     override val blockchainIdentifier: String,
-    override val accountIds: List<String>,
     val rest: Map<String, JsonElement> = emptyMap(),
 ) : PermissionBeaconResponse() {
     public fun toV1(senderId: String): V1BeaconMessage =
@@ -136,7 +135,6 @@ public data class PermissionMockResponse(
     public fun toV3(): V3BeaconMessage.Content =
         PermissionV3BeaconResponseContent(
             blockchainIdentifier,
-            accountIds,
             V3MockPermissionBeaconResponseData(rest),
         )
 }

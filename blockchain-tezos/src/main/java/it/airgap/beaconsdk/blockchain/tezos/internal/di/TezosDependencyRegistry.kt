@@ -16,7 +16,7 @@ internal class TezosDependencyRegistry(dependencyRegistry: DependencyRegistry) :
 
     override val tezosCreator: TezosCreator by lazyWeak {
         TezosCreator(
-            DataTezosCreator(tezosWallet, storageManager, identifierCreator),
+            DataTezosCreator(storageManager, identifierCreator),
             V1BeaconMessageTezosCreator(),
             V2BeaconMessageTezosCreator(),
             V3BeaconMessageTezosCreator(),

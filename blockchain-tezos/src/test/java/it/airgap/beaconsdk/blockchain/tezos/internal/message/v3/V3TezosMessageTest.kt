@@ -4,6 +4,7 @@ import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import it.airgap.beaconsdk.blockchain.tezos.Tezos
+import it.airgap.beaconsdk.blockchain.tezos.data.TezosAccount
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosAppMetadata
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosNetwork
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
@@ -56,7 +57,7 @@ internal class V3TezosMessageTest {
         val tezos = Tezos(
             wallet,
             TezosCreator(
-                DataTezosCreator(wallet, storageManager, identifierCreator),
+                DataTezosCreator(storageManager, identifierCreator),
                 V1BeaconMessageTezosCreator(),
                 V2BeaconMessageTezosCreator(),
                 V3BeaconMessageTezosCreator(),
@@ -337,6 +338,7 @@ internal class V3TezosMessageTest {
         senderId: String = "senderId",
         accountId: String = "accountId",
         publicKey: String = "publicKey",
+        address: String = "address",
         network: TezosNetwork = TezosNetwork.Custom(),
         scopes: List<TezosPermission.Scope> = emptyList(),
     ): Pair<V3BeaconMessage, String> =
@@ -346,9 +348,10 @@ internal class V3TezosMessageTest {
             senderId,
             PermissionV3BeaconResponseContent(
                 Tezos.IDENTIFIER,
-                listOf(accountId),
                 PermissionV3TezosResponse(
+                    accountId,
                     publicKey,
+                    address,
                     network,
                     scopes,
                 ),
@@ -361,9 +364,10 @@ internal class V3TezosMessageTest {
                 "message": {
                     "blockchainIdentifier": "${Tezos.IDENTIFIER}",
                     "type": "permission_response",
-                    "accountIds": ${Json.encodeToString(listOf(accountId))},
                     "blockchainData": {
+                        "accountId": "$accountId",
                         "publicKey": "$publicKey",
+                        "address": "$address",
                         "network": ${Json.encodeToString(network)},
                         "scopes": ${Json.encodeToString(scopes)}
                     }
@@ -573,9 +577,7 @@ internal class V3TezosMessageTest {
         version: String = "3",
         id: String = "id",
         senderId: String = "senderId",
-        accountId: String = "accountId",
-        publicKey: String = "publicKey",
-        network: TezosNetwork = TezosNetwork.Custom(),
+        account: TezosAccount = TezosAccount("accountId", TezosNetwork.Custom(), "publicKey", "address"),
         scopes: List<TezosPermission.Scope> = emptyList(),
         origin: Origin = Origin.P2P(senderId),
     ): Pair<V3BeaconMessage, PermissionBeaconResponse> =
@@ -585,14 +587,15 @@ internal class V3TezosMessageTest {
             senderId,
             PermissionV3BeaconResponseContent(
                 Tezos.IDENTIFIER,
-                listOf(accountId),
                 PermissionV3TezosResponse(
-                    publicKey,
-                    network,
+                    account.accountId,
+                    account.publicKey,
+                    account.address,
+                    account.network,
                     scopes,
                 ),
             ),
-        ) to PermissionTezosResponse(id, version, origin, Tezos.IDENTIFIER, listOf(accountId), publicKey, network, scopes)
+        ) to PermissionTezosResponse(id, version, origin, Tezos.IDENTIFIER, account, scopes)
 
     private fun createOperationResponsePair(
         version: String = "3",

@@ -26,7 +26,6 @@ internal class V3BeaconMessageTezosCreator : V3BeaconMessageBlockchainCreator {
                     )
                     is PermissionTezosResponse -> PermissionV3BeaconResponseContent(
                         blockchainIdentifier,
-                        accountIds,
                         PermissionV3TezosResponse.from(this),
                     )
                     is BlockchainTezosResponse -> BlockchainV3BeaconResponseContent(

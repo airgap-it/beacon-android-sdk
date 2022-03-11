@@ -1,6 +1,7 @@
 package it.airgap.beaconsdk.blockchain.tezos.internal.message.v3
 
 import it.airgap.beaconsdk.blockchain.tezos.Tezos
+import it.airgap.beaconsdk.blockchain.tezos.data.TezosAccount
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosAppMetadata
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosNetwork
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
@@ -18,6 +19,7 @@ import it.airgap.beaconsdk.core.internal.utils.dependencyRegistry
 import it.airgap.beaconsdk.core.internal.utils.failWithIllegalArgument
 import it.airgap.beaconsdk.core.internal.utils.getString
 import it.airgap.beaconsdk.core.message.BeaconMessage
+import it.airgap.beaconsdk.core.storage.findAppMetadata
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Required
 import kotlinx.serialization.SerialName
@@ -132,7 +134,7 @@ internal data class OperationV3TezosRequest(
         accountId: String,
         blockchainIdentifier: String,
     ): BeaconMessage {
-        val appMetadata = dependencyRegistry.storageManager.findInstanceAppMetadata<TezosAppMetadata> { it.senderId == senderId }
+        val appMetadata = dependencyRegistry.storageManager.findAppMetadata<TezosAppMetadata> { it.senderId == senderId }
         return OperationTezosRequest(
             id,
             version,
@@ -170,7 +172,7 @@ internal data class SignPayloadV3TezosRequest(
         accountId: String,
         blockchainIdentifier: String,
     ): BeaconMessage {
-        val appMetadata = dependencyRegistry.storageManager.findInstanceAppMetadata<TezosAppMetadata> { it.senderId == senderId }
+        val appMetadata = dependencyRegistry.storageManager.findAppMetadata<TezosAppMetadata> { it.senderId == senderId }
         return SignPayloadTezosRequest(
             id,
             version,
@@ -207,7 +209,7 @@ internal data class BroadcastV3TezosRequest(
         accountId: String,
         blockchainIdentifier: String,
     ): BeaconMessage {
-        val appMetadata = dependencyRegistry.storageManager.findInstanceAppMetadata<TezosAppMetadata> { it.senderId == senderId }
+        val appMetadata = dependencyRegistry.storageManager.findAppMetadata<TezosAppMetadata> { it.senderId == senderId }
         return BroadcastTezosRequest(
             id,
             version,
@@ -228,7 +230,9 @@ internal data class BroadcastV3TezosRequest(
 
 @Serializable
 internal data class PermissionV3TezosResponse(
+    val accountId: String,
     val publicKey: String,
+    val address: String,
     val network: TezosNetwork,
     val scopes: List<TezosPermission.Scope>,
 ) : PermissionV3BeaconResponseContent.BlockchainData() {
@@ -236,8 +240,10 @@ internal data class PermissionV3TezosResponse(
     companion object {
         fun from(permissionResponse: PermissionTezosResponse): PermissionV3TezosResponse = with(permissionResponse) {
             PermissionV3TezosResponse(
-                publicKey,
-                network,
+                account.accountId,
+                account.publicKey,
+                account.address,
+                account.network,
                 scopes,
             )
         }
@@ -248,9 +254,8 @@ internal data class PermissionV3TezosResponse(
         version: String,
         senderId: String,
         origin: Origin,
-        accountIds: List<String>,
         blockchainIdentifier: String,
-    ): BeaconMessage = PermissionTezosResponse(id, version, origin, blockchainIdentifier, accountIds, publicKey, network, scopes)
+    ): BeaconMessage = PermissionTezosResponse(id, version, origin, blockchainIdentifier, TezosAccount(accountId, network, publicKey, address), scopes)
 }
 
 @OptIn(ExperimentalSerializationApi::class)

@@ -1,16 +1,11 @@
 package it.airgap.beaconsdk.blockchain.substrate.internal.di
 
-import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
-import it.airgap.beaconsdk.core.internal.di.findExtended
 import it.airgap.beaconsdk.blockchain.substrate.internal.creator.SubstrateCreator
 import it.airgap.beaconsdk.blockchain.substrate.internal.serializer.SubstrateSerializer
-import it.airgap.beaconsdk.blockchain.substrate.internal.wallet.SubstrateWallet
+import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
+import it.airgap.beaconsdk.core.internal.di.findExtended
 
 internal interface ExtendedDependencyRegistry : DependencyRegistry {
-
-    // -- wallet --
-
-    val substrateWallet: SubstrateWallet
 
     // -- creator --
 

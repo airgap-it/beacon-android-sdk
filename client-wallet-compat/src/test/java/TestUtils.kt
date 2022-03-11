@@ -58,11 +58,10 @@ internal fun blockchainBeaconRequest(
 internal fun permissionBeaconResponse(
     type: String = "permission_response",
     id: String = "id",
-    accountIds: List<String> = listOf("accountId"),
     blockchainIdentifier: String = MockBlockchain.IDENTIFIER,
     version: String = "version",
     requestOrigin: Origin = Origin.P2P("senderId"),
-): PermissionBeaconResponse = PermissionMockResponse(type, id, version, requestOrigin, blockchainIdentifier, accountIds)
+): PermissionBeaconResponse = PermissionMockResponse(type, id, version, requestOrigin, blockchainIdentifier)
 
 internal fun blockchainBeaconResponse(
     type: String = "beacon_response",

@@ -1,5 +1,10 @@
 package it.airgap.beaconsdk.blockchain.substrate.internal.creator
 
+import it.airgap.beaconsdk.blockchain.substrate.data.SubstrateAppMetadata
+import it.airgap.beaconsdk.blockchain.substrate.data.SubstratePermission
+import it.airgap.beaconsdk.blockchain.substrate.internal.utils.failWithUnknownMessage
+import it.airgap.beaconsdk.blockchain.substrate.message.request.PermissionSubstrateRequest
+import it.airgap.beaconsdk.blockchain.substrate.message.response.PermissionSubstrateResponse
 import it.airgap.beaconsdk.core.data.Permission
 import it.airgap.beaconsdk.core.internal.blockchain.creator.DataBlockchainCreator
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
@@ -9,15 +14,9 @@ import it.airgap.beaconsdk.core.internal.utils.currentTimestamp
 import it.airgap.beaconsdk.core.internal.utils.failWithIllegalState
 import it.airgap.beaconsdk.core.message.PermissionBeaconRequest
 import it.airgap.beaconsdk.core.message.PermissionBeaconResponse
-import it.airgap.beaconsdk.blockchain.substrate.data.SubstrateAppMetadata
-import it.airgap.beaconsdk.blockchain.substrate.data.SubstratePermission
-import it.airgap.beaconsdk.blockchain.substrate.internal.utils.failWithUnknownMessage
-import it.airgap.beaconsdk.blockchain.substrate.internal.wallet.SubstrateWallet
-import it.airgap.beaconsdk.blockchain.substrate.message.request.PermissionSubstrateRequest
-import it.airgap.beaconsdk.blockchain.substrate.message.response.PermissionSubstrateResponse
+import it.airgap.beaconsdk.core.storage.findAppMetadata
 
 internal class DataSubstrateCreator(
-    private val wallet: SubstrateWallet,
     private val storageManager: StorageManager,
     private val identifierCreator: IdentifierCreator,
 ) : DataBlockchainCreator {
@@ -31,9 +30,8 @@ internal class DataSubstrateCreator(
             if (response !is PermissionSubstrateResponse) failWithUnknownMessage(response)
 
             response.accounts.map { account ->
-                val address = wallet.address(account.publicKey, account.addressPrefix).getOrThrow()
-                val accountId = identifierCreator.accountId(address, account.network).getOrThrow()
-                val appMetadata = storageManager.findInstanceAppMetadata<SubstrateAppMetadata> { it.senderId == request.senderId } ?: failWithAppMetadataNotFound()
+                val accountId = identifierCreator.accountId(account.address, account.network).getOrThrow()
+                val appMetadata = storageManager.findAppMetadata<SubstrateAppMetadata> { it.senderId == request.senderId } ?: failWithAppMetadataNotFound()
 
                 SubstratePermission(
                     accountId,

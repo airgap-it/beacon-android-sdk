@@ -87,7 +87,6 @@ internal data class V1MockPermissionBeaconResponse(
             version,
             origin,
             MockBlockchain.IDENTIFIER,
-            emptyList(),
             rest,
         )
 

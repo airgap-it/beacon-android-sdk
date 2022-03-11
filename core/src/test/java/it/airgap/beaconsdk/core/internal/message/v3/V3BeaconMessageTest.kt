@@ -222,7 +222,6 @@ internal class V3BeaconMessageTest {
         id: String = "id",
         senderId: String = "senderId",
         blockchainIdentifier: String = MockBlockchain.IDENTIFIER,
-        accountIds: List<String> = listOf("accountId"),
         publicKey: String = "publicKey",
         network: Network = MockNetwork(),
         scopes: List<String> = emptyList(),
@@ -233,7 +232,6 @@ internal class V3BeaconMessageTest {
             senderId,
             PermissionV3BeaconResponseContent(
                 blockchainIdentifier,
-                accountIds,
                 V3MockPermissionBeaconResponseData(
                     mapOf(
                         "publicKey" to JsonPrimitive(publicKey),
@@ -250,7 +248,6 @@ internal class V3BeaconMessageTest {
                 "message": {
                     "type": "permission_response",
                     "blockchainIdentifier": "$blockchainIdentifier",
-                    "accountIds": ${Json.encodeToString(accountIds)},
                     "blockchainData": {
                         "publicKey": "$publicKey",
                         "network": ${Json.encodeToString(network)},
@@ -407,7 +404,6 @@ internal class V3BeaconMessageTest {
         id: String = "id",
         senderId: String = "senderId",
         blockchainIdentifier: String = MockBlockchain.IDENTIFIER,
-        accountIds: List<String> = listOf("accountId"),
         publicKey: String = "publicKey",
         network: Network = MockNetwork(),
         scopes: List<String> = emptyList(),
@@ -425,10 +421,9 @@ internal class V3BeaconMessageTest {
             senderId,
             PermissionV3BeaconResponseContent(
                 blockchainIdentifier,
-                accountIds,
                 V3MockPermissionBeaconResponseData(rest),
             ),
-        ) to PermissionMockResponse("permission_response", id, version, origin, blockchainIdentifier, accountIds, rest)
+        ) to PermissionMockResponse("permission_response", id, version, origin, blockchainIdentifier, rest)
     }
 
     private fun createBlockchainResponsePair(

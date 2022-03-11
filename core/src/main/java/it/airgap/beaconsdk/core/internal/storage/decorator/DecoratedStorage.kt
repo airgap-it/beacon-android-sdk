@@ -105,6 +105,11 @@ internal class DecoratedStorage(
     override suspend fun findPermission(predicate: (Permission) -> Boolean): Permission? =
         selectFirst({ getPermissions(configuration) }, predicate)
 
+    override suspend fun <T : Permission> findPermission(
+        instanceClass: KClass<T>,
+        predicate: (T) -> Boolean,
+    ): T? = selectFirstInstance({ getPermissions(configuration) }, instanceClass, predicate)
+
     override suspend fun removePermissions(predicate: ((Permission) -> Boolean)?) {
         if (predicate != null) remove({ getPermissions(configuration) }, Storage::setPermissions, predicate)
         else removeAll(Storage::setPermissions)
