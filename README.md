@@ -3,6 +3,7 @@
 [![stable](https://img.shields.io/github/v/tag/airgap-it/beacon-android-sdk?label=stable&sort=semver)](https://github.com/airgap-it/beacon-android-sdk/releases)
 [![latest](https://img.shields.io/github/v/tag/airgap-it/beacon-android-sdk?color=orange&include_prereleases&label=latest)](https://github.com/airgap-it/beacon-android-sdk/releases)
 [![release](https://img.shields.io/jitpack/v/github/airgap-it/beacon-android-sdk)](https://jitpack.io/#airgap-it/beacon-android-sdk)
+[![documentation](https://img.shields.io/badge/documentation-online-brightgreen.svg)](https://docs.walletbeacon.io/wallet/getting-started/android/installation)
 [![license](https://img.shields.io/github/license/airgap-it/beacon-android-sdk)](https://github.com/airgap-it/beacon-android-sdk/blob/master/LICENSE)
 
 > Connect Wallets with dApps on Tezos
@@ -44,7 +45,7 @@ To add `Beacon Android SDK` into your project:
   #### Groovy
   ```groovy
   dependencies {
-    def beacon_version = "3.1.0-beta01"
+    def beacon_version = "3.1.0-beta02"
 
     // REQUIRED, core
     implementation "com.github.airgap-it.beacon-android-sdk:core:$beacon_version"
@@ -72,7 +73,7 @@ To add `Beacon Android SDK` into your project:
   #### Kotlin
   ```kotlin
   dependencies {
-    val beaconVersion = "3.1.0-beta01"
+    val beaconVersion = "3.1.0-beta02"
   
     // REQUIRED, core
     implementation("com.github.airgap-it.beacon-android-sdk:core:$beaconVersion")
@@ -139,7 +140,9 @@ See the list of known issues and how to fix them if you run into problems after 
     implementation("net.java.dev.jna:jna:$jnaVersion@aar")
     ```
 
-<!-- TODO: ## Documentation -->
+## Documentation
+
+The documentation can be found [here](https://docs.walletbeacon.io/).
 
 ## Project Overview
 
