@@ -46,8 +46,9 @@ internal class IdentifierCreatorTest {
         assertEquals(publicKey, senderId)
     }
 
-    private fun expectedIdentifiers(address: String = "address"): List<Pair<Pair<String, Network>, String>> =
+    private fun expectedIdentifiers(address: String = "address"): List<Pair<Pair<String, Network?>, String>> =
         listOf(
+            Pair(address, null) to address,
             Pair(address, MockNetwork()) to "$address-mock",
             Pair(address, MockNetwork(name = "name")) to "$address-mock-name:name",
             Pair(address, MockNetwork(rpcUrl = "rpcUrl")) to "$address-mock-rpc:rpcUrl",

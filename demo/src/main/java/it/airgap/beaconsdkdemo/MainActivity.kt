@@ -84,9 +84,9 @@ class MainActivity : AppCompatActivity() {
         set(value) { editText?.setText(value) }
 
     companion object {
-        const val examplePeerId = "b77ec852-1ad4-e241-09b5-6c692fd534ca"
+        const val examplePeerId = "4adc8994-897e-5595-cec2-8bb540468473"
         const val examplePeerName = "Beacon Example Dapp"
-        const val examplePeerPublicKey = "46fa3bc607eac0a656083f73a98c0e8b6b5559dc7a26721b12c3fd716f0e6cc4"
+        const val examplePeerPublicKey = "3f9e5b13a50fe06f8be0cd2061a51a5467ade7ef5fff1451949305271a634b39"
         const val examplePeerRelayServer = "beacon-node-1.sky.papers.tech"
         const val examplePeerVersion = "3"
     }
