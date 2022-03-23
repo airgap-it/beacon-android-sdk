@@ -114,15 +114,15 @@ class MainActivityViewModel : ViewModel() {
 
     companion object {
         fun exampleTezosAccount(network: TezosNetwork): TezosAccount = TezosAccount(
-            network,
             "edpktpzo8UZieYaJZgCHP6M6hKHPdWBSNqxvmEt6dwWRgxDh1EAFw9",
             "tz1Mg6uXUhJzuCh4dH2mdBdYBuaiVZCCZsak",
+            network,
         )
 
         fun exampleSubstrateAccount(network: SubstrateNetwork): SubstrateAccount = SubstrateAccount(
-            network,
             "724867a19e4a9422ac85f3b9a7c4bf5ccf12c2df60d858b216b81329df716535",
             "13aqy7vzMjuS2Nd6TYahHHetGt7dTgaqijT6Tpw3NS2MDFug",
+            network,
         )
     }
 }

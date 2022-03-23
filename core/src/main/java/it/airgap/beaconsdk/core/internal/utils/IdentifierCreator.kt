@@ -2,7 +2,6 @@ package it.airgap.beaconsdk.core.internal.utils
 
 import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.data.Network
-import it.airgap.beaconsdk.core.internal.blockchain.BlockchainRegistry
 import it.airgap.beaconsdk.core.internal.crypto.Crypto
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -10,8 +9,9 @@ public class IdentifierCreator internal constructor(
     private val crypto: Crypto,
     private val base58Check: Base58Check,
 ) {
-    public fun accountId(address: String, network: Network): Result<String> {
-        val hash = crypto.hash("$address-${network.identifier}", 10)
+    public fun accountId(address: String, network: Network?): Result<String> {
+        val input = network?.let { "$address-${it.identifier}" } ?: address
+        val hash = crypto.hash(input, 10)
 
         return hash.flatMap { base58Check.encode(it) }
     }
