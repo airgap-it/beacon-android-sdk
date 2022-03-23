@@ -2,6 +2,7 @@ package it.airgap.beaconsdk.transport.p2p.matrix
 
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
+import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.migration.Migration
 import it.airgap.beaconsdk.core.internal.storage.MockSecureStorage
 import it.airgap.beaconsdk.core.internal.storage.MockStorage
@@ -38,7 +39,7 @@ internal class P2pMatrixFactoryTest {
 
         mockApp()
 
-        storageManager = spyk(StorageManager(MockStorage(), MockSecureStorage(), identifierCreator))
+        storageManager = spyk(StorageManager(MockStorage(), MockSecureStorage(), identifierCreator, BeaconConfiguration(ignoreUnsupportedBlockchains = false)))
 
         every { dependencyRegistry.storageManager } returns storageManager
         every { dependencyRegistry.migration } returns migration
@@ -64,7 +65,7 @@ internal class P2pMatrixFactoryTest {
 
     @Test
     fun `creates P2pMatrix instance as builder function with defaults`() {
-        val factory = p2pMatrix()
+        val factory = P2pMatrix.Factory()
         val p2pMatrix = factory.create(dependencyRegistry)
 
         assertTrue(storageManager.hasPlugin<ExtendedP2pMatrixStoragePlugin>(), "Expected ExtendedP2pMatrixStoragePlugin to be registered.")
@@ -92,7 +93,7 @@ internal class P2pMatrixFactoryTest {
     @Test
     fun `creates P2pMatrix instance as builder function with custom storage plugin`() {
         val plugin = MockP2pMatrixStoragePlugin().extend()
-        val factory = p2pMatrix(storagePlugin = plugin)
+        val factory = P2pMatrix.Factory(storagePlugin = plugin)
         val p2pMatrix = factory.create(dependencyRegistry)
 
         assertTrue(storageManager.hasPlugin<ExtendedP2pMatrixStoragePlugin>(), "Expected ExtendedP2pMatrixStoragePlugin to be registered.")
@@ -118,7 +119,7 @@ internal class P2pMatrixFactoryTest {
     @Test
     fun `creates P2pMatrix instance as builder function with custom nodes`() {
         val nodes = listOf("node1", "node2")
-        val factory = p2pMatrix(matrixNodes = nodes)
+        val factory = P2pMatrix.Factory(matrixNodes = nodes)
         val p2pMatrix = factory.create(dependencyRegistry)
 
         assertTrue(storageManager.hasPlugin<ExtendedP2pMatrixStoragePlugin>(), "Expected ExtendedP2pMatrixStoragePlugin to be registered.")
@@ -142,7 +143,7 @@ internal class P2pMatrixFactoryTest {
     @Test
     fun `creates P2pMatrix instance as builder function with custom HttpProvider`() {
         val httpProvider = mockkClass(HttpProvider::class)
-        val factory = p2pMatrix(httpProvider = httpProvider)
+        val factory = P2pMatrix.Factory(httpProvider = httpProvider)
         val p2pMatrix = factory.create(dependencyRegistry)
 
         assertTrue(storageManager.hasPlugin<ExtendedP2pMatrixStoragePlugin>(), "Expected ExtendedP2pMatrixStoragePlugin to be registered.")

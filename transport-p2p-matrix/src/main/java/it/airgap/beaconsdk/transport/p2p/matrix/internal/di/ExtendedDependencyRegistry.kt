@@ -1,6 +1,7 @@
 package it.airgap.beaconsdk.transport.p2p.matrix.internal.di
 
 import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
+import it.airgap.beaconsdk.core.internal.di.findExtended
 import it.airgap.beaconsdk.core.network.provider.HttpProvider
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.P2pMatrixCommunicator
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.P2pMatrixSecurity
@@ -22,4 +23,4 @@ internal interface ExtendedDependencyRegistry : DependencyRegistry {
 
 internal fun DependencyRegistry.extend(): ExtendedDependencyRegistry =
     if (this is ExtendedDependencyRegistry) this
-    else P2pMatrixDependencyRegistry(this)
+    else findExtended<P2pMatrixDependencyRegistry>() ?: P2pMatrixDependencyRegistry(this).also { addExtended(it) }

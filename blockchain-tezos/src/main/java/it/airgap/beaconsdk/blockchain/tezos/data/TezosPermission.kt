@@ -1,39 +1,39 @@
 package it.airgap.beaconsdk.blockchain.tezos.data
 
 import it.airgap.beaconsdk.blockchain.tezos.Tezos
-import it.airgap.beaconsdk.blockchain.tezos.internal.compat.TezosCompat
-import it.airgap.beaconsdk.core.data.AppMetadata
 import it.airgap.beaconsdk.core.data.Permission
-import it.airgap.beaconsdk.core.data.Threshold
-import kotlinx.serialization.KSerializer
+import kotlinx.serialization.EncodeDefault
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonNames
 
 /**
  * Tezos permission data.
+ *
  * @property [blockchainIdentifier] The unique name of the blockchain on which the permission is valid.
- * @property [accountIdentifier] The value that identifies the account which granted the permissions.
- * @property [address] The address of the account derived from its public key.
+ * @property [accountId] The value that identifies the account which granted the permissions.
  * @property [senderId] The value that identifies the sender to whom the permissions were granted.
- * @property [appMetadata] The metadata describing the dApp to which the permissions were granted.
- * @property [publicKey] The public key of the account.
  * @property [connectedAt] The timestamp at which the permissions were granted.
+ * @property [address] The address of the account derived from its public key.
+ * @property [publicKey] The public key of the account.
  * @property [network] The network to which the permission apply.
+ * @property [appMetadata] The metadata describing the dApp to which the permissions were granted.
  * @property [scopes] The list of granted permission types.
- * @property [threshold] An optional threshold configuration.
  */
-@Serializable(with = TezosPermission.Serializer::class)
+@OptIn(ExperimentalSerializationApi::class)
+@Serializable
 public data class TezosPermission internal constructor(
-    override val accountIdentifier: String,
-    override val address: String,
+    @JsonNames("accountIdentifier") override val accountId: String,
     override val senderId: String,
-    override val appMetadata: AppMetadata,
-    override val publicKey: String,
     override val connectedAt: Long,
+    public val address: String,
+    public val publicKey: String,
     public val network: TezosNetwork,
+    public val appMetadata: TezosAppMetadata,
     public val scopes: List<Scope>,
-    override val threshold: Threshold? = null,
 ) : Permission() {
+    @EncodeDefault
     override val blockchainIdentifier: String = Tezos.IDENTIFIER
 
     /**
@@ -42,11 +42,10 @@ public data class TezosPermission internal constructor(
     @Serializable
     public enum class Scope {
         @SerialName("sign") Sign,
-        @SerialName("operation_request") OperationRequest,
-        @SerialName("threshold") Threshold;
+        @SerialName("operation_request") OperationRequest;
 
         public companion object {}
     }
 
-    internal object Serializer : KSerializer<TezosPermission> by TezosCompat.versioned.tezosPermissionSerializer
+    public companion object {}
 }

@@ -4,7 +4,6 @@ import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.data.AppMetadata
 import it.airgap.beaconsdk.core.data.BeaconError
 import it.airgap.beaconsdk.core.data.Origin
-import it.airgap.beaconsdk.core.data.Threshold
 
 /**
  * Base class for messages used in the Beacon communication.
@@ -63,8 +62,11 @@ public abstract class PermissionBeaconRequest : BeaconRequest() {
  * Base for class for blockchain specific messages.
  *
  * Expects [BlockchainBeaconResponse] as a response.
+ *
+ * @property [accountId] The account identifier of the account that is requested to handle this request.
  */
 public abstract class BlockchainBeaconRequest : BeaconRequest() {
+    public abstract val accountId: String?
 
     public companion object {}
 }
@@ -89,14 +91,10 @@ public sealed class BeaconResponse : BeaconMessage() {
  * Message responding to [PermissionBeaconRequest].
  *
  * @property [id] The value that identifies the request to which the message is responding.
- * @property [publicKey] The public key of the account that is granting the permissions.
  * @property [blockchainIdentifier] The unique name of the blockchain that specifies the request.
- * @property [threshold] An optional threshold configuration.
  */
 public abstract class PermissionBeaconResponse : BeaconResponse() {
     public abstract val blockchainIdentifier: String
-    public abstract val publicKey: String
-    public abstract val threshold: Threshold?
 
     public companion object {}
 }
@@ -140,15 +138,15 @@ public data class AcknowledgeBeaconResponse(
  * Message responding to every [BeaconRequest] and informing that the request could not be completed due to an error.
  *
  * @property [id] The value that identifies the request to which the message is responding.
- * @property [blockchainIdentifier] A unique name of the blockchain that specifies the request.
  * @property [errorType] The type of the error.
+ * @property [description] Additional and optional details.
  */
 public data class ErrorBeaconResponse @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) constructor(
     override val id: String,
     override val version: String,
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) override val requestOrigin: Origin,
-    public val blockchainIdentifier: String,
     public val errorType: BeaconError,
+    public val description: String? = null,
 ) : BeaconResponse() {
 
     public companion object {
@@ -157,10 +155,21 @@ public data class ErrorBeaconResponse @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP
          * Creates a new instance of [ErrorBeaconResponse] from the [request]
          * with the specified [errorType].
          *
-         * The response will have an id and blockchain identifier matching the ones of the [request].
+         * The response will have an id matching the one of the [request].
          */
-        public fun from(request: BeaconRequest, errorType: BeaconError): ErrorBeaconResponse =
-            ErrorBeaconResponse(request.id, request.version, request.origin, request.blockchainIdentifier, errorType)
+        public fun from(request: BeaconRequest, errorType: BeaconError.Aborted, description: String? = null): ErrorBeaconResponse {
+            return ErrorBeaconResponse(request.id, request.version, request.origin, errorType, description)
+        }
+
+        /**
+         * Creates a new instance of [ErrorBeaconResponse] from the [request]
+         * with the specified [errorType].
+         *
+         * The response will have an id matching the one of the [request].
+         */
+        public fun from(request: BeaconRequest, errorType: BeaconError.Unknown, description: String? = null): ErrorBeaconResponse {
+            return ErrorBeaconResponse(request.id, request.version, request.origin, errorType, description)
+        }
     }
 }
 

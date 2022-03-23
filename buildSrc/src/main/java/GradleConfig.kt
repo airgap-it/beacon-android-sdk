@@ -3,14 +3,14 @@ object Android {
     const val minSdk = 21
     const val targetSdk = 30
 
-    const val versionCode = 13
-    const val versionName = "3.0.0"
+    const val versionCode = 15
+    const val versionName = "3.1.0"
 }
 
 object Version {
     const val kotlin = "1.5.30"
 
-    const val kotlinSerialization = "1.2.2"
+    const val kotlinSerialization = "1.3.1"
 
     const val androidxCore = "1.6.0"
     const val androidxAppCompat = "1.3.1"
@@ -36,6 +36,8 @@ object Version {
     const val androidxEspresso = "3.4.0"
 
     const val mockk = "1.12.0"
+
+    const val bouncyCastle = "1.70"
 }
 
 object Dependencies {
@@ -80,4 +82,6 @@ object TestDependencies {
     const val androidxEspresso = "androidx.test.espresso:espresso-core:${Version.androidxEspresso}"
 
     const val mockk = "io.mockk:mockk:${Version.mockk}"
+
+    const val bouncyCastle = "org.bouncycastle:bcprov-jdk15on:${Version.bouncyCastle}"
 }

@@ -1,30 +1,25 @@
 package it.airgap.beaconsdk.client.wallet
 
 import androidx.annotation.RestrictTo
+import it.airgap.beaconsdk.core.blockchain.Blockchain
+import it.airgap.beaconsdk.core.builder.InitBuilder
 import it.airgap.beaconsdk.core.client.BeaconClient
 import it.airgap.beaconsdk.core.data.AppMetadata
-import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.data.Peer
 import it.airgap.beaconsdk.core.data.Permission
 import it.airgap.beaconsdk.core.exception.BeaconException
-import it.airgap.beaconsdk.core.blockchain.Blockchain
+import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.controller.ConnectionController
 import it.airgap.beaconsdk.core.internal.controller.MessageController
 import it.airgap.beaconsdk.core.internal.crypto.Crypto
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
-import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.SharedPreferencesSecureStorage
-import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.SharedPreferencesStorage
-import it.airgap.beaconsdk.core.internal.utils.applicationContext
 import it.airgap.beaconsdk.core.internal.utils.beaconSdk
-import it.airgap.beaconsdk.core.internal.utils.delegate.default
 import it.airgap.beaconsdk.core.internal.utils.dependencyRegistry
 import it.airgap.beaconsdk.core.internal.utils.mapException
 import it.airgap.beaconsdk.core.message.AcknowledgeBeaconResponse
 import it.airgap.beaconsdk.core.message.BeaconMessage
 import it.airgap.beaconsdk.core.message.BeaconRequest
 import it.airgap.beaconsdk.core.message.BeaconResponse
-import it.airgap.beaconsdk.core.storage.SecureStorage
-import it.airgap.beaconsdk.core.storage.Storage
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -89,7 +84,8 @@ public class BeaconWalletClient @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) cons
     messageController: MessageController,
     storageManager: StorageManager,
     crypto: Crypto,
-) : BeaconClient<BeaconRequest>(name, beaconId, connectionController, messageController, storageManager, crypto) {
+    configuration: BeaconConfiguration,
+) : BeaconClient<BeaconRequest>(name, beaconId, connectionController, messageController, storageManager, crypto, configuration) {
 
     /**
      * Sends the [response] in reply to a previously received request.
@@ -98,7 +94,10 @@ public class BeaconWalletClient @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) cons
      */
     @Throws(IllegalArgumentException::class, IllegalStateException::class, BeaconException::class)
     public suspend fun respond(response: BeaconResponse) {
-        send(response, isTerminal = true).mapException { BeaconException.from(it) }.getOrThrow()
+        send(response, isTerminal = true)
+            .takeIfNotIgnored()
+            ?.mapException { BeaconException.from(it) }
+            ?.getOrThrow()
     }
 
     /**
@@ -136,17 +135,17 @@ public class BeaconWalletClient @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) cons
     }
 
     /**
-     * Removes all app metadata.
-     */
-    public suspend fun removeAllAppMetadata() {
-        storageManager.removeAppMetadata()
-    }
-
-    /**
      * Removes the specified [appMetadata].
      */
     public suspend fun removeAppMetadata(appMetadata: List<AppMetadata>) {
         storageManager.removeAppMetadata(appMetadata)
+    }
+
+    /**
+     * Removes all app metadata.
+     */
+    public suspend fun removeAllAppMetadata() {
+        storageManager.removeAppMetadata()
     }
 
     /**
@@ -156,23 +155,24 @@ public class BeaconWalletClient @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) cons
         storageManager.getPermissions()
 
     /**
-     * Returns permissions granted for the specified [accountIdentifier].
+     * Returns the first permission granted for the specified [accountIdentifier]
+     * or `null` if no such permission was found.
      */
     public suspend fun getPermissionsFor(accountIdentifier: String): Permission? =
-        storageManager.findPermission { it.accountIdentifier == accountIdentifier }
+        storageManager.findPermission { it.accountId == accountIdentifier }
 
     /**
      * Removes permissions granted for the specified [accountIdentifiers].
      */
     public suspend fun removePermissionsFor(vararg accountIdentifiers: String) {
-        storageManager.removePermissions { accountIdentifiers.contains(it.accountIdentifier) }
+        storageManager.removePermissions { accountIdentifiers.contains(it.accountId) }
     }
 
     /**
      * Removes permissions granted for the specified [accountIdentifiers].
      */
     public suspend fun removePermissionsFor(accountIdentifiers: List<String>) {
-        storageManager.removePermissions { accountIdentifiers.contains(it.accountIdentifier) }
+        storageManager.removePermissions { accountIdentifiers.contains(it.accountId) }
     }
 
     /**
@@ -218,48 +218,14 @@ public class BeaconWalletClient @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) cons
     /**
      * Asynchronous builder for [BeaconWalletClient].
      *
-     * @constructor Creates a builder configured with the specified application [name] and [blockchains] that will be supported by the client.
+     * @constructor Creates a builder configured with the specified application [name].
      */
-    public class Builder(private val name: String, private val blockchains: List<Blockchain.Factory<*>>) {
+    public class Builder(name: String) : InitBuilder<BeaconWalletClient, Builder>(name) {
 
         /**
-         * A URL to the application's website.
+         * Creates a new instance of [BeaconWalletClient].
          */
-        public var appUrl: String? = null
-
-        /**
-         * A URL to the application's icon.
-         */
-        public var iconUrl: String? = null
-
-        /**
-         * Connection types that will be supported by the configured client.
-         */
-        private var connections: MutableList<Connection> = mutableListOf()
-
-        /**
-         * Registers connections that should be supported by the configured client.
-         */
-        public fun addConnections(vararg connections: Connection): Builder = apply {
-            this.connections.addAll(connections.toList())
-        }
-
-        /**
-         * An optional external implementation of [Storage]. If not provided, an internal implementation will be used.
-         */
-        public var storage: Storage by default { SharedPreferencesStorage.create(applicationContext) }
-
-        /**
-         * An optional external implementation of [SecureStorage]. If not provided, an internal implementation will be used.
-         */
-        public var secureStorage: SecureStorage by default { SharedPreferencesSecureStorage.create(applicationContext) }
-
-        /**
-         * Builds a new instance of [BeaconWalletClient].
-         */
-        public suspend fun build(): BeaconWalletClient {
-            beaconSdk.init(name, appUrl, iconUrl, blockchains, storage, secureStorage)
-
+        override suspend fun createInstance(configuration: BeaconConfiguration): BeaconWalletClient {
             with(dependencyRegistry) {
                 return BeaconWalletClient(
                     name,
@@ -268,6 +234,7 @@ public class BeaconWalletClient @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) cons
                     messageController,
                     storageManager,
                     crypto,
+                    configuration,
                 )
             }
         }
@@ -275,13 +242,12 @@ public class BeaconWalletClient @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) cons
 }
 
 /**
- * Creates a new instance of [BeaconWalletClient] with the specified application [name], supporting registered [blockchains] and configured with [builderAction].
+ * Creates a new instance of [BeaconWalletClient] with the specified application [name] and configured with [builderAction].
  *
  * @see [BeaconWalletClient.Builder]
  */
 public suspend fun BeaconWalletClient(
     name: String,
-    blockchains: List<Blockchain.Factory<*>>,
     builderAction: BeaconWalletClient.Builder.() -> Unit = {},
-): BeaconWalletClient = BeaconWalletClient.Builder(name, blockchains).apply(builderAction).build()
+): BeaconWalletClient = BeaconWalletClient.Builder(name).apply(builderAction).build()
 

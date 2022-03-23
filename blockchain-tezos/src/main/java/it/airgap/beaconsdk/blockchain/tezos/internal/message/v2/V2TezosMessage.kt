@@ -1,9 +1,12 @@
 package it.airgap.beaconsdk.blockchain.tezos.internal.message.v2
 
 import it.airgap.beaconsdk.blockchain.tezos.Tezos
+import it.airgap.beaconsdk.blockchain.tezos.data.TezosAccount
+import it.airgap.beaconsdk.blockchain.tezos.data.TezosAppMetadata
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosNetwork
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
 import it.airgap.beaconsdk.blockchain.tezos.data.operation.TezosOperation
+import it.airgap.beaconsdk.blockchain.tezos.internal.di.extend
 import it.airgap.beaconsdk.blockchain.tezos.internal.utils.failWithUnknownMessage
 import it.airgap.beaconsdk.blockchain.tezos.message.request.BroadcastTezosRequest
 import it.airgap.beaconsdk.blockchain.tezos.message.request.OperationTezosRequest
@@ -15,98 +18,98 @@ import it.airgap.beaconsdk.blockchain.tezos.message.response.PermissionTezosResp
 import it.airgap.beaconsdk.blockchain.tezos.message.response.SignPayloadTezosResponse
 import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.data.SigningType
-import it.airgap.beaconsdk.core.data.Threshold
-import it.airgap.beaconsdk.core.internal.message.v2.V2AppMetadata
 import it.airgap.beaconsdk.core.internal.message.v2.V2BeaconMessage
-import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
+import it.airgap.beaconsdk.core.internal.utils.dependencyRegistry
 import it.airgap.beaconsdk.core.internal.utils.failWithIllegalArgument
 import it.airgap.beaconsdk.core.internal.utils.getString
 import it.airgap.beaconsdk.core.message.BeaconMessage
+import it.airgap.beaconsdk.core.storage.findAppMetadata
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Required
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.element
-import kotlinx.serialization.json.JsonDecoder
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonEncoder
-import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.*
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable(with = V2TezosMessage.Serializer::class)
+@JsonClassDiscriminator(V2TezosMessage.CLASS_DISCRIMINATOR)
 internal sealed class V2TezosMessage : V2BeaconMessage() {
 
     companion object {
-        fun from(senderId: String, content: BeaconMessage): V2TezosMessage =
-            when (content) {
+        const val CLASS_DISCRIMINATOR = "type"
+        
+        fun from(senderId: String, message: BeaconMessage): V2TezosMessage =
+            when (message) {
                 is PermissionTezosRequest -> PermissionV2TezosRequest(
-                    content.version,
-                    content.id,
-                    content.senderId,
-                    V2AppMetadata.fromAppMetadata(content.appMetadata),
-                    content.network,
-                    content.scopes,
+                    message.version,
+                    message.id,
+                    message.senderId,
+                    V2TezosAppMetadata.fromAppMetadata(message.appMetadata),
+                    message.network,
+                    message.scopes,
                 )
                 is OperationTezosRequest -> OperationV2TezosRequest(
-                    content.version,
-                    content.id,
-                    content.senderId,
-                    content.network,
-                    content.operationDetails,
-                    content.sourceAddress,
+                    message.version,
+                    message.id,
+                    message.senderId,
+                    message.network,
+                    message.operationDetails,
+                    message.sourceAddress,
                 )
                 is SignPayloadTezosRequest -> SignPayloadV2TezosRequest(
-                    content.version,
-                    content.id,
-                    content.senderId,
-                    content.signingType,
-                    content.payload,
-                    content.sourceAddress,
+                    message.version,
+                    message.id,
+                    message.senderId,
+                    message.signingType,
+                    message.payload,
+                    message.sourceAddress,
                 )
                 is BroadcastTezosRequest -> BroadcastV2TezosRequest(
-                    content.version,
-                    content.id,
-                    content.senderId,
-                    content.network,
-                    content.signedTransaction,
+                    message.version,
+                    message.id,
+                    message.senderId,
+                    message.network,
+                    message.signedTransaction,
                 )
                 is PermissionTezosResponse -> PermissionV2TezosResponse(
-                    content.version,
-                    content.id,
+                    message.version,
+                    message.id,
                     senderId,
-                    content.publicKey,
-                    content.network,
-                    content.scopes,
-                    content.threshold,
+                    message.account.publicKey,
+                    message.account.network,
+                    message.scopes,
                 )
                 is OperationTezosResponse -> OperationV2TezosResponse(
-                    content.version,
-                    content.id,
+                    message.version,
+                    message.id,
                     senderId,
-                    content.transactionHash,
+                    message.transactionHash,
                 )
                 is SignPayloadTezosResponse -> SignPayloadV2TezosResponse(
-                    content.version,
-                    content.id,
+                    message.version,
+                    message.id,
                     senderId,
-                    content.signingType,
-                    content.signature,
+                    message.signingType,
+                    message.signature,
                 )
                 is BroadcastTezosResponse -> BroadcastV2TezosResponse(
-                    content.version,
-                    content.id,
+                    message.version,
+                    message.id,
                     senderId,
-                    content.transactionHash,
+                    message.transactionHash,
                 )
-                else -> failWithUnknownMessage(content)
+                else -> failWithUnknownMessage(message)
             }
     }
 
     @OptIn(ExperimentalSerializationApi::class)
     object Serializer : KJsonSerializer<V2TezosMessage> {
         override val descriptor: SerialDescriptor = buildClassSerialDescriptor("V2TezosMessage") {
-            element<String>("type")
+            element<String>(CLASS_DISCRIMINATOR)
         }
 
         override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): V2TezosMessage {
@@ -140,21 +143,23 @@ internal sealed class V2TezosMessage : V2BeaconMessage() {
 
         private fun failWithUnknownType(type: String): Nothing = failWithIllegalArgument("Unknown Tezos message type $type")
     }
+
 }
 
 @Serializable
+@SerialName(PermissionV2TezosRequest.TYPE)
 internal data class PermissionV2TezosRequest(
     override val version: String,
     override val id: String,
     override val senderId: String,
-    val appMetadata: V2AppMetadata,
+    val appMetadata: V2TezosAppMetadata,
     val network: TezosNetwork,
     val scopes: List<TezosPermission.Scope>,
 ) : V2TezosMessage() {
     @Required
     override val type: String = TYPE
 
-    override suspend fun toBeaconMessage(origin: Origin, storageManager: StorageManager): BeaconMessage =
+    override suspend fun toBeaconMessage(origin: Origin): BeaconMessage =
         PermissionTezosRequest(id, version, Tezos.IDENTIFIER, senderId, appMetadata.toAppMetadata(), origin, network, scopes)
 
     companion object {
@@ -163,6 +168,7 @@ internal data class PermissionV2TezosRequest(
 }
 
 @Serializable
+@SerialName(OperationV2TezosRequest.TYPE)
 internal data class OperationV2TezosRequest(
     override val version: String,
     override val id: String,
@@ -174,8 +180,8 @@ internal data class OperationV2TezosRequest(
     @Required
     override val type: String = TYPE
 
-    override suspend fun toBeaconMessage(origin: Origin, storageManager: StorageManager): BeaconMessage {
-        val appMetadata = storageManager.findAppMetadata { it.senderId == senderId }
+    override suspend fun toBeaconMessage(origin: Origin): BeaconMessage {
+        val appMetadata = dependencyRegistry.storageManager.findAppMetadata<TezosAppMetadata> { it.senderId == senderId }
         return OperationTezosRequest(
             id,
             version,
@@ -183,6 +189,7 @@ internal data class OperationV2TezosRequest(
             senderId,
             appMetadata,
             origin,
+            null,
             network,
             operationDetails,
             sourceAddress,
@@ -195,6 +202,7 @@ internal data class OperationV2TezosRequest(
 }
 
 @Serializable
+@SerialName(SignPayloadV2TezosRequest.TYPE)
 internal data class SignPayloadV2TezosRequest(
     override val version: String,
     override val id: String,
@@ -206,8 +214,8 @@ internal data class SignPayloadV2TezosRequest(
     @Required
     override val type: String = TYPE
 
-    override suspend fun toBeaconMessage(origin: Origin, storageManager: StorageManager): BeaconMessage {
-        val appMetadata = storageManager.findAppMetadata { it.senderId == senderId }
+    override suspend fun toBeaconMessage(origin: Origin): BeaconMessage {
+        val appMetadata = dependencyRegistry.storageManager.findAppMetadata<TezosAppMetadata> { it.senderId == senderId }
         return SignPayloadTezosRequest(
             id,
             version,
@@ -215,6 +223,7 @@ internal data class SignPayloadV2TezosRequest(
             senderId,
             appMetadata,
             origin,
+            null,
             signingType,
             payload,
             sourceAddress,
@@ -227,6 +236,7 @@ internal data class SignPayloadV2TezosRequest(
 }
 
 @Serializable
+@SerialName(BroadcastV2TezosRequest.TYPE)
 internal data class BroadcastV2TezosRequest(
     override val version: String,
     override val id: String,
@@ -237,8 +247,8 @@ internal data class BroadcastV2TezosRequest(
     @Required
     override val type: String = TYPE
 
-    override suspend fun toBeaconMessage(origin: Origin, storageManager: StorageManager): BeaconMessage {
-        val appMetadata = storageManager.findAppMetadata { it.senderId == senderId }
+    override suspend fun toBeaconMessage(origin: Origin): BeaconMessage {
+        val appMetadata = dependencyRegistry.storageManager.findAppMetadata<TezosAppMetadata> { it.senderId == senderId }
         return BroadcastTezosRequest(
             id,
             version,
@@ -246,6 +256,7 @@ internal data class BroadcastV2TezosRequest(
             senderId,
             appMetadata,
             origin,
+            null,
             network,
             signedTransaction,
         )
@@ -257,6 +268,7 @@ internal data class BroadcastV2TezosRequest(
 }
 
 @Serializable
+@SerialName(PermissionV2TezosResponse.TYPE)
 internal data class PermissionV2TezosResponse(
     override val version: String,
     override val id: String,
@@ -264,13 +276,22 @@ internal data class PermissionV2TezosResponse(
     val publicKey: String,
     val network: TezosNetwork,
     val scopes: List<TezosPermission.Scope>,
-    val threshold: Threshold? = null,
 ) : V2TezosMessage() {
     @Required
     override val type: String = TYPE
 
-    override suspend fun toBeaconMessage(origin: Origin, storageManager: StorageManager): BeaconMessage =
-        PermissionTezosResponse(id, version, origin, Tezos.IDENTIFIER, publicKey, network, scopes, threshold)
+    override suspend fun toBeaconMessage(origin: Origin): BeaconMessage {
+        val address = dependencyRegistry.extend().tezosWallet.address(publicKey).getOrThrow()
+        val accountId = dependencyRegistry.identifierCreator.accountId(address, network).getOrThrow()
+        return PermissionTezosResponse(
+            id,
+            version,
+            origin,
+            Tezos.IDENTIFIER,
+            TezosAccount(accountId, network, publicKey, address),
+            scopes,
+        )
+    }
 
     companion object {
         const val TYPE = "permission_response"
@@ -278,6 +299,7 @@ internal data class PermissionV2TezosResponse(
 }
 
 @Serializable
+@SerialName(OperationV2TezosResponse.TYPE)
 internal data class OperationV2TezosResponse(
     override val version: String,
     override val id: String,
@@ -287,7 +309,7 @@ internal data class OperationV2TezosResponse(
     @Required
     override val type: String = TYPE
 
-    override suspend fun toBeaconMessage(origin: Origin, storageManager: StorageManager): BeaconMessage =
+    override suspend fun toBeaconMessage(origin: Origin): BeaconMessage =
         OperationTezosResponse(
             id,
             version,
@@ -302,6 +324,7 @@ internal data class OperationV2TezosResponse(
 }
 
 @Serializable
+@SerialName(SignPayloadV2TezosResponse.TYPE)
 internal data class SignPayloadV2TezosResponse(
     override val version: String,
     override val id: String,
@@ -312,7 +335,7 @@ internal data class SignPayloadV2TezosResponse(
     @Required
     override val type: String = TYPE
 
-    override suspend fun toBeaconMessage(origin: Origin, storageManager: StorageManager): BeaconMessage =
+    override suspend fun toBeaconMessage(origin: Origin): BeaconMessage =
         SignPayloadTezosResponse(
             id,
             version,
@@ -328,6 +351,7 @@ internal data class SignPayloadV2TezosResponse(
 }
 
 @Serializable
+@SerialName(BroadcastV2TezosResponse.TYPE)
 internal data class BroadcastV2TezosResponse(
     override val version: String,
     override val id: String,
@@ -337,7 +361,7 @@ internal data class BroadcastV2TezosResponse(
     @Required
     override val type: String = TYPE
 
-    override suspend fun toBeaconMessage(origin: Origin, storageManager: StorageManager): BeaconMessage =
+    override suspend fun toBeaconMessage(origin: Origin): BeaconMessage =
         BroadcastTezosResponse(
             id,
             version,

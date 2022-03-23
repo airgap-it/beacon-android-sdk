@@ -12,6 +12,7 @@ import it.airgap.beaconsdk.core.internal.transport.Transport
 import it.airgap.beaconsdk.core.internal.transport.p2p.data.P2pMessage
 import it.airgap.beaconsdk.core.internal.utils.runCatchingFlat
 import it.airgap.beaconsdk.core.internal.utils.success
+import it.airgap.beaconsdk.core.storage.findPeer
 import it.airgap.beaconsdk.core.transport.p2p.P2pClient
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
@@ -36,7 +37,7 @@ internal class P2pTransport(
     override suspend fun sendMessage(message: ConnectionTransportMessage): Result<Unit> =
         runCatchingFlat {
             val peerPublicKey = message.origin.id
-            val peer = storageManager.findInstancePeer<P2pPeer> { it.publicKey == peerPublicKey } ?: failWithUnknownPeer(peerPublicKey)
+            val peer = storageManager.findPeer<P2pPeer> { it.publicKey == peerPublicKey } ?: failWithUnknownPeer(peerPublicKey)
 
             return when (message) {
                 is SerializedConnectionMessage -> sendSerializedMessage(message.content, peer)

@@ -37,6 +37,11 @@ public fun List<Byte>.toHexString(): HexString =
 public fun Int.toHexString(): HexString =
     toUInt().toString(16).padStartEven('0').asHexString()
 
+public fun Int.toByteArray(trim: Boolean = true): ByteArray =
+    ByteArray(4) { (toLong() shr (it * 8)).toByte() }
+        .reversedArray()
+        .let { if (trim) it.trimLeadingZeros() else it }
+
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun BigInteger.toHexString(): HexString =
     asHexStringOrNull() ?: failWithNegativeNumber(this)

@@ -56,7 +56,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-
     private fun onBeaconRequest(beaconRequest: BeaconRequest) {
         messageTextView.text = json.encodeToString(beaconRequest.toJson(json))
     }
@@ -85,11 +84,11 @@ class MainActivity : AppCompatActivity() {
         set(value) { editText?.setText(value) }
 
     companion object {
-        const val examplePeerId = "1a162fa5-77c3-4074-a47a-3f8bc9b940d6"
+        const val examplePeerId = "4adc8994-897e-5595-cec2-8bb540468473"
         const val examplePeerName = "Beacon Example Dapp"
-        const val examplePeerPublicKey = "580b592ada51238b20fa0e6762d517e530e077dd32903d22521a058cb78222f7"
-        const val examplePeerRelayServer = "beacon-node-0.papers.tech:8448"
-        const val examplePeerVersion = "2"
+        const val examplePeerPublicKey = "3f9e5b13a50fe06f8be0cd2061a51a5467ade7ef5fff1451949305271a634b39"
+        const val examplePeerRelayServer = "beacon-node-1.sky.papers.tech"
+        const val examplePeerVersion = "3"
     }
 
     data class State(

@@ -24,7 +24,7 @@ internal fun mockBeaconSdk(
 
         val contextMock = mockk<Context>(relaxed = true)
 
-        coEvery { it.init(any(), any(), any(), any(), any(), any()) } returns Unit
+        coEvery { it.init(any(), any(), any(), any(), any()) } returns Unit
 
         every { it.applicationContext } returns contextMock
         every { it.app } returns app
@@ -34,11 +34,25 @@ internal fun mockBeaconSdk(
 
 // -- static --
 
+internal fun mockDependencyRegistry(): DependencyRegistry =
+    mockkClass(DependencyRegistry::class).also {
+        val blockchainRegistry = mockkClass(BlockchainRegistry::class)
+        val mockBlockchain = MockBlockchain()
+
+        every { blockchainRegistry.get(any()) } returns mockBlockchain
+        every { blockchainRegistry.getOrNull(any()) } returns mockBlockchain
+        every { it.blockchainRegistry } returns blockchainRegistry
+
+        mockBeaconSdk(dependencyRegistry = it)
+    }
+
 internal fun mockBlockchainRegistry(): BlockchainRegistry =
     mockkClass(BlockchainRegistry::class).also {
         val dependencyRegistry = mockkClass(DependencyRegistry::class)
+        val mockBlockchain = MockBlockchain()
 
-        every { it.get(any()) } returns MockBlockchain()
+        every { it.get(any()) } returns mockBlockchain
+        every { it.getOrNull(any()) } returns mockBlockchain
         every { dependencyRegistry.blockchainRegistry } returns it
 
         mockBeaconSdk(dependencyRegistry = dependencyRegistry)

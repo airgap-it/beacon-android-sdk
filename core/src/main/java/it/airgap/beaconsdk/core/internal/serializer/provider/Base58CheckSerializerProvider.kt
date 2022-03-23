@@ -11,6 +11,7 @@ internal class Base58CheckSerializerProvider(private val base58Check: Base58Chec
 
     override fun <T : Any> serialize(message: T, sourceClass: KClass<T>): String {
         val jsonEncoded = json.encodeToString(message, sourceClass)
+
         return base58Check.encode(jsonEncoded.encodeToByteArray()).getOrThrow()
     }
 

@@ -1,7 +1,15 @@
 package it.airgap.beaconsdkdemo
 
 import androidx.lifecycle.*
+import it.airgap.beaconsdk.blockchain.substrate.data.SubstrateAccount
+import it.airgap.beaconsdk.blockchain.substrate.data.SubstrateNetwork
+import it.airgap.beaconsdk.blockchain.substrate.message.request.PermissionSubstrateRequest
+import it.airgap.beaconsdk.blockchain.substrate.message.response.PermissionSubstrateResponse
+import it.airgap.beaconsdk.blockchain.substrate.substrate
+import it.airgap.beaconsdk.blockchain.tezos.data.TezosAccount
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosError
+import it.airgap.beaconsdk.blockchain.tezos.data.TezosNetwork
+import it.airgap.beaconsdk.blockchain.tezos.extension.from
 import it.airgap.beaconsdk.blockchain.tezos.message.request.BroadcastTezosRequest
 import it.airgap.beaconsdk.blockchain.tezos.message.request.OperationTezosRequest
 import it.airgap.beaconsdk.blockchain.tezos.message.request.PermissionTezosRequest
@@ -10,7 +18,6 @@ import it.airgap.beaconsdk.blockchain.tezos.message.response.PermissionTezosResp
 import it.airgap.beaconsdk.blockchain.tezos.tezos
 import it.airgap.beaconsdk.client.wallet.BeaconWalletClient
 import it.airgap.beaconsdk.core.data.BeaconError
-import it.airgap.beaconsdk.core.data.P2P
 import it.airgap.beaconsdk.core.data.P2pPeer
 import it.airgap.beaconsdk.core.message.BeaconMessage
 import it.airgap.beaconsdk.core.message.BeaconRequest
@@ -29,15 +36,11 @@ class MainActivityViewModel : ViewModel() {
     private var awaitingRequest: BeaconRequest? = null
 
     fun startBeacon(): LiveData<Result<BeaconRequest>> = liveData {
-        beaconClient = BeaconWalletClient(
-            "Beacon SDK Demo",
-            listOf(
-                tezos(),
-            ),
-        ) {
-            addConnections(
-                P2P(p2pMatrix()),
-            )
+        beaconClient = BeaconWalletClient("Beacon SDK Demo") {
+            support(tezos(), substrate())
+            use(p2pMatrix())
+
+            ignoreUnsupportedBlockchains = true
         }
 
         checkForPeers()
@@ -52,10 +55,19 @@ class MainActivityViewModel : ViewModel() {
 
         viewModelScope.launch {
             val response = when (request) {
-                is PermissionTezosRequest -> PermissionTezosResponse.from(request, exampleTezosPublicKey)
+
+                /* Tezos */
+
+                is PermissionTezosRequest -> PermissionTezosResponse.from(request, exampleTezosAccount(request.network))
                 is OperationTezosRequest -> ErrorBeaconResponse.from(request, BeaconError.Aborted)
                 is SignPayloadTezosRequest -> ErrorBeaconResponse.from(request, TezosError.SignatureTypeNotSupported)
                 is BroadcastTezosRequest -> ErrorBeaconResponse.from(request, TezosError.BroadcastError)
+
+                /* Substrate*/
+
+                is PermissionSubstrateRequest -> PermissionSubstrateResponse.from(request, listOf(exampleSubstrateAccount(request.networks.first())))
+
+                /* Others */
                 else -> ErrorBeaconResponse.from(request, BeaconError.Unknown)
             }
             beaconClient?.respond(response)
@@ -101,6 +113,16 @@ class MainActivityViewModel : ViewModel() {
     }
 
     companion object {
-        const val exampleTezosPublicKey = "edpktpzo8UZieYaJZgCHP6M6hKHPdWBSNqxvmEt6dwWRgxDh1EAFw9"
+        fun exampleTezosAccount(network: TezosNetwork): TezosAccount = TezosAccount(
+            "edpktpzo8UZieYaJZgCHP6M6hKHPdWBSNqxvmEt6dwWRgxDh1EAFw9",
+            "tz1Mg6uXUhJzuCh4dH2mdBdYBuaiVZCCZsak",
+            network,
+        )
+
+        fun exampleSubstrateAccount(network: SubstrateNetwork): SubstrateAccount = SubstrateAccount(
+            "724867a19e4a9422ac85f3b9a7c4bf5ccf12c2df60d858b216b81329df716535",
+            "13aqy7vzMjuS2Nd6TYahHHetGt7dTgaqijT6Tpw3NS2MDFug",
+            network,
+        )
     }
 }

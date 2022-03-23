@@ -1,5 +1,6 @@
 package it.airgap.beaconsdk.blockchain.tezos.message.request
 
+import it.airgap.beaconsdk.blockchain.tezos.data.TezosAppMetadata
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosNetwork
 import it.airgap.beaconsdk.blockchain.tezos.data.operation.TezosOperation
 import it.airgap.beaconsdk.blockchain.tezos.message.response.BroadcastTezosResponse
@@ -29,6 +30,7 @@ public sealed class BlockchainTezosRequest : BlockchainBeaconRequest() {
  * @property [senderId] The value that identifies the sender of this request.
  * @property [appMetadata] The metadata describing the dApp asking for the broadcast. May be `null` if the [senderId] is unknown.
  * @property [origin] The origination data of this request.
+ * @property [accountId] The account identifier of the account that is requested to handle this request. May be `null`.
  * @property [network] The network on which the operations should be broadcast.
  * @property [operationDetails] Tezos operations which should be broadcast.
  * @property [sourceAddress] The address of the Tezos account that is requested to broadcast the operations.
@@ -38,8 +40,9 @@ public data class OperationTezosRequest internal constructor(
     override val version: String,
     override val blockchainIdentifier: String,
     override val senderId: String,
-    override val appMetadata: AppMetadata?,
+    override val appMetadata: TezosAppMetadata?,
     override val origin: Origin,
+    override val accountId: String?,
     public val network: TezosNetwork,
     public val operationDetails: List<TezosOperation>,
     public val sourceAddress: String,
@@ -57,18 +60,20 @@ public data class OperationTezosRequest internal constructor(
  * @property [blockchainIdentifier] The unique name of the blockchain that specifies this request.
  * @property [senderId] The value that identifies the sender of this request.
  * @property [appMetadata] The metadata describing the dApp asking for the signature. May be `null` if the [senderId] is unknown.
+ * @property [origin] The origination data of this request.
+ * @property [accountId] The account identifier of the account that is requested to handle this request. May be `null`.
  * @property [signingType] The requested type of signature. The client MUST fail if cannot provide the specified signature.
  * @property [payload] The payload to be signed.
  * @property [sourceAddress] The address of the account with which the payload should be signed.
- * @property [origin] The origination data of this request.
  */
 public data class SignPayloadTezosRequest internal constructor(
     override val id: String,
     override val version: String,
     override val blockchainIdentifier: String,
     override val senderId: String,
-    override val appMetadata: AppMetadata?,
+    override val appMetadata: TezosAppMetadata?,
     override val origin: Origin,
+    override val accountId: String?,
     public val signingType: SigningType,
     public val payload: String,
     public val sourceAddress: String,
@@ -86,17 +91,19 @@ public data class SignPayloadTezosRequest internal constructor(
  * @property [blockchainIdentifier] The unique name of the blockchain that specifies this request.
  * @property [senderId] The value that identifies the sender of this request.
  * @property [appMetadata] The metadata describing the dApp asking for the broadcast. May be `null` if the [senderId] is unknown.
+ * @property [origin] The origination data of this request.
+ * @property [accountId] The account identifier of the account that is requested to handle this request. May be `null`.
  * @property [network] The network on which the transaction should be broadcast.
  * @property [signedTransaction] The transaction to be broadcast.
- * @property [origin] The origination data of this request.
  */
 public data class BroadcastTezosRequest internal constructor(
     override val id: String,
     override val version: String,
     override val blockchainIdentifier: String,
     override val senderId: String,
-    override val appMetadata: AppMetadata?,
+    override val appMetadata: TezosAppMetadata?,
     override val origin: Origin,
+    override val accountId: String?,
     public val network: TezosNetwork,
     public val signedTransaction: String,
 ) : BlockchainTezosRequest() {

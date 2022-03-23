@@ -3,6 +3,7 @@ package it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.store
 import io.mockk.MockKAnnotations
 import io.mockk.impl.annotations.MockK
 import io.mockk.spyk
+import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.storage.MockSecureStorage
 import it.airgap.beaconsdk.core.internal.storage.MockStorage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
@@ -33,7 +34,7 @@ internal class MatrixStoreTest {
     @Before
     fun setup() {
         MockKAnnotations.init(this)
-        storageManager = spyk(StorageManager(MockStorage(), MockSecureStorage(), identifierCreator).apply { addPlugins(MockP2pMatrixStoragePlugin()) })
+        storageManager = spyk(StorageManager(MockStorage(), MockSecureStorage(), identifierCreator, BeaconConfiguration(ignoreUnsupportedBlockchains = false)).apply { addPlugins(MockP2pMatrixStoragePlugin()) })
         matrixStore = MatrixStore(storageManager)
     }
 
