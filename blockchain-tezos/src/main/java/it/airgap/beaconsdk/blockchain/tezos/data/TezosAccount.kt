@@ -22,9 +22,9 @@ public data class TezosAccount internal constructor(
 }
 
 /**
- * Creates a new instance of [TezosAccount] with the specified [network], [publicKey] and [address].
+ * Creates a new instance of [TezosAccount] with the specified [publicKey], [address] and [network].
  */
-public fun TezosAccount(network: TezosNetwork, publicKey: String, address: String): TezosAccount {
+public fun TezosAccount(publicKey: String, address: String, network: TezosNetwork): TezosAccount {
     val accountId = dependencyRegistry.identifierCreator.accountId(address, network).getOrThrow()
     return TezosAccount(accountId, network, publicKey, address)
 }
