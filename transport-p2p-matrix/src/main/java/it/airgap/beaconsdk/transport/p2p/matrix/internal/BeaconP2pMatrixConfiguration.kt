@@ -12,7 +12,13 @@ internal object BeaconP2pMatrixConfiguration {
     const val MAX_JOIN_RETRIES: Int = 10
 
     val defaultNodes: List<String> = listOf(
+        "beacon-node-1.diamond.papers.tech",
         "beacon-node-1.sky.papers.tech",
-        "beacon-node-1.hope-5.papers.tech",
+        "beacon-node-2.sky.papers.tech",
+        "beacon-node-1.hope.papers.tech",
+        "beacon-node-1.hope-2.papers.tech",
+        "beacon-node-1.hope-3.papers.tech",
+        "beacon-node-1.hope-4.papers.tech",
+        "beacon-node-1.hope-5.papers.tech"
     )
 }
