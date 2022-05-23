@@ -261,7 +261,10 @@ internal class TezosOperationTest {
         storageLimit: String? = null,
         balance: String = "balance",
         delegate: String? = null,
-        script: String = "script",
+        script: TezosOriginationOperation.Script = TezosOriginationOperation.Script(
+            code = MichelinePrimitiveInt(0),
+            storage = MichelinePrimitiveInt(1),
+        ),
         includeNulls: Boolean = false,
     ) : Pair<TezosOriginationOperation, String> {
         val values = mapOf(
@@ -273,7 +276,7 @@ internal class TezosOperationTest {
             "storage_limit" to storageLimit,
             "balance" to balance,
             "delegate" to delegate,
-            "script" to script,
+            "script" to  Json.encodeToJsonElement(script),
         )
 
         val json = JsonObject.fromValues(values, includeNulls).toString()
