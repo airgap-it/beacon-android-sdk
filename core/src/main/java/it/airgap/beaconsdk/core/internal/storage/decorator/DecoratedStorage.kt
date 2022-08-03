@@ -151,6 +151,7 @@ internal class DecoratedStorage(
             !entities.any { compare(toInsert, it) }
         }
 
+        // TODO: check if it really overwrites
         if (overwrite) {
             existingElements
                 .map { toInsert -> entities.indexOfFirst { compare(toInsert, it) } to toInsert }

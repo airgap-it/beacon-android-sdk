@@ -79,6 +79,7 @@ public class StorageManager(
             val peers = storage.getPeers(configuration)
             val toRemove = predicate?.let { peers.filter(it) } ?: peers
 
+            // TODO: remove appMetadata too
             storage.removePeers(predicate)
             removePermissions { permission ->
                 toRemove.any {

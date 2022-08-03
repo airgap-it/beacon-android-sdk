@@ -75,7 +75,7 @@ public class MessageController internal constructor(
         val blockchain = blockchainRegistry.get(response.blockchainIdentifier)
         val permissions = blockchain.creator.data.extractPermission(request, response).getOrThrow()
 
-        storageManager.addPermissions(permissions)
+        storageManager.addPermissions(permissions) // TODO: replace if accountId & senderId are the same
     }
 
     private fun failWithNoPendingRequest(): Nothing = failWithIllegalArgument("No matching request found")
