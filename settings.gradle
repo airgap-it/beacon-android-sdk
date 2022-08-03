@@ -9,3 +9,4 @@ include ':client-wallet-compat'
 
 include ':transport-p2p-matrix'
 include ':blockchain-substrate'
+include ':client-dapp'
