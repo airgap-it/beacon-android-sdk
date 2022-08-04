@@ -1,11 +1,16 @@
 package it.airgap.beaconsdk.blockchain.substrate.internal.di
 
+import it.airgap.beaconsdk.blockchain.substrate.Substrate
 import it.airgap.beaconsdk.blockchain.substrate.internal.creator.SubstrateCreator
 import it.airgap.beaconsdk.blockchain.substrate.internal.serializer.SubstrateSerializer
 import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.core.internal.di.findExtended
 
 internal interface ExtendedDependencyRegistry : DependencyRegistry {
+
+    // -- blockchain --
+
+    val substrate: Substrate
 
     // -- creator --
 

@@ -8,10 +8,13 @@ import io.mockk.impl.annotations.MockK
 import it.airgap.beaconsdk.core.internal.network.HttpClient
 import it.airgap.beaconsdk.core.internal.network.data.ApplicationJson
 import it.airgap.beaconsdk.core.internal.network.data.BearerHeader
+import it.airgap.beaconsdk.core.network.provider.HttpClientProvider
 import it.airgap.beaconsdk.core.network.provider.HttpProvider
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.MatrixError
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.room.*
 import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import nodeApiUrl
 import org.junit.Before
 import org.junit.Test
@@ -21,16 +24,21 @@ import kotlin.test.assertEquals
 internal class MatrixRoomServiceTest {
 
     @MockK
-    private lateinit var httpClientProvider: HttpProvider
-    private lateinit var httpClient: HttpClient
+    private lateinit var httpClientProvider: HttpClientProvider
 
+    private lateinit var httpClient: HttpClient
     private lateinit var matrixRoomService: MatrixRoomService
+    private lateinit var json: Json
 
     @Before
     fun setup() {
         MockKAnnotations.init(this)
 
-        httpClient = HttpClient(httpClientProvider)
+        json = Json(from = Json) {
+            prettyPrint = true
+        }
+
+        httpClient = HttpClient(httpClientProvider, json)
         matrixRoomService = MatrixRoomService(httpClient)
     }
 
@@ -38,17 +46,14 @@ internal class MatrixRoomServiceTest {
     fun `creates room and returns response`() {
         val expectedResponse = MatrixCreateRoomResponse("roomId")
 
-        coEvery { httpClientProvider.post<MatrixCreateRoomRequest, MatrixCreateRoomResponse, MatrixError>(
+        coEvery { httpClientProvider.post(
             any(),
             any(),
             any(),
             any(),
             any(),
             any(),
-            any(),
-            any(),
-            any()
-        ) } returns expectedResponse
+        ) } returns json.encodeToString(expectedResponse)
 
         runBlockingTest {
             val node = "node"
@@ -63,10 +68,7 @@ internal class MatrixRoomServiceTest {
                 "/createRoom",
                 listOf(BearerHeader(accessToken), ApplicationJson()),
                 emptyList(),
-                request,
-                MatrixCreateRoomRequest::class,
-                MatrixCreateRoomResponse::class,
-                MatrixError::class,
+                json.encodeToString(request),
                 null,
             ) }
 
@@ -77,10 +79,7 @@ internal class MatrixRoomServiceTest {
     @Test
     fun `returns error if creating room failed`() {
         val error = IOException()
-        coEvery { httpClientProvider.post<MatrixCreateRoomRequest, MatrixCreateRoomResponse, MatrixError>(
-            any(),
-            any(),
-            any(),
+        coEvery { httpClientProvider.post(
             any(),
             any(),
             any(),
@@ -100,17 +99,14 @@ internal class MatrixRoomServiceTest {
     fun `invites to room and returns response`() {
         val expectedResponse = MatrixInviteRoomResponse()
 
-        coEvery { httpClientProvider.post<MatrixInviteRoomRequest, MatrixInviteRoomResponse, MatrixError>(
+        coEvery { httpClientProvider.post(
             any(),
             any(),
             any(),
             any(),
             any(),
             any(),
-            any(),
-            any(),
-            any(),
-        ) } returns expectedResponse
+        ) } returns json.encodeToString(expectedResponse)
 
         runBlockingTest {
             val node = "node"
@@ -127,10 +123,7 @@ internal class MatrixRoomServiceTest {
                 "/rooms/$roomId/invite",
                 listOf(BearerHeader(accessToken), ApplicationJson()),
                 emptyList(),
-                request,
-                MatrixInviteRoomRequest::class,
-                MatrixInviteRoomResponse::class,
-                MatrixError::class,
+                json.encodeToString(request),
                 null,
             ) }
 
@@ -141,10 +134,7 @@ internal class MatrixRoomServiceTest {
     @Test
     fun `returns error if inviting to room failed`() {
         val error = IOException()
-        coEvery { httpClientProvider.post<MatrixInviteRoomRequest, MatrixInviteRoomResponse, MatrixError>(
-            any(),
-            any(),
-            any(),
+        coEvery { httpClientProvider.post(
             any(),
             any(),
             any(),
@@ -164,17 +154,14 @@ internal class MatrixRoomServiceTest {
     fun `joins room and returns response`() {
         val expectedResponse = MatrixJoinRoomResponse("userId")
 
-        coEvery { httpClientProvider.post<MatrixJoinRoomRequest, MatrixJoinRoomResponse, MatrixError>(
+        coEvery { httpClientProvider.post(
             any(),
             any(),
             any(),
             any(),
             any(),
             any(),
-            any(),
-            any(),
-            any(),
-        ) } returns expectedResponse
+        ) } returns json.encodeToString(expectedResponse)
 
         runBlockingTest {
             val node = "node"
@@ -190,9 +177,6 @@ internal class MatrixRoomServiceTest {
                 listOf(BearerHeader(accessToken), ApplicationJson()),
                 emptyList(),
                 any(),
-                MatrixJoinRoomRequest::class,
-                MatrixJoinRoomResponse::class,
-                MatrixError::class,
                 null,
             ) }
 
@@ -203,10 +187,7 @@ internal class MatrixRoomServiceTest {
     @Test
     fun `returns error if joining room failed`() {
         val error = IOException()
-        coEvery { httpClientProvider.post<MatrixJoinRoomRequest, MatrixJoinRoomResponse, MatrixError>(
-            any(),
-            any(),
-            any(),
+        coEvery { httpClientProvider.post(
             any(),
             any(),
             any(),

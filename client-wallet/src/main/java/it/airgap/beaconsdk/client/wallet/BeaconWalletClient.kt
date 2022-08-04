@@ -1,7 +1,8 @@
 package it.airgap.beaconsdk.client.wallet
 
 import androidx.annotation.RestrictTo
-import it.airgap.beaconsdk.core.blockchain.Blockchain
+import it.airgap.beaconsdk.client.wallet.internal.di.ExtendedDependencyRegistry
+import it.airgap.beaconsdk.client.wallet.internal.di.extend
 import it.airgap.beaconsdk.core.builder.InitBuilder
 import it.airgap.beaconsdk.core.client.BeaconClient
 import it.airgap.beaconsdk.core.data.AppMetadata
@@ -13,13 +14,14 @@ import it.airgap.beaconsdk.core.internal.controller.ConnectionController
 import it.airgap.beaconsdk.core.internal.controller.MessageController
 import it.airgap.beaconsdk.core.internal.crypto.Crypto
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
-import it.airgap.beaconsdk.core.internal.utils.beaconSdk
 import it.airgap.beaconsdk.core.internal.utils.dependencyRegistry
 import it.airgap.beaconsdk.core.internal.utils.mapException
 import it.airgap.beaconsdk.core.message.AcknowledgeBeaconResponse
 import it.airgap.beaconsdk.core.message.BeaconMessage
 import it.airgap.beaconsdk.core.message.BeaconRequest
 import it.airgap.beaconsdk.core.message.BeaconResponse
+import it.airgap.beaconsdk.core.scope.Scope
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -80,12 +82,13 @@ import kotlinx.coroutines.flow.Flow
 public class BeaconWalletClient @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) constructor(
     name: String,
     beaconId: String,
+    beaconScope: BeaconScope,
     connectionController: ConnectionController,
     messageController: MessageController,
     storageManager: StorageManager,
     crypto: Crypto,
     configuration: BeaconConfiguration,
-) : BeaconClient<BeaconRequest>(name, beaconId, connectionController, messageController, storageManager, crypto, configuration) {
+) : BeaconClient<BeaconRequest>(name, beaconId, beaconScope, connectionController, messageController, storageManager, crypto, configuration) {
 
     /**
      * Sends the [response] in reply to a previously received request.
@@ -213,31 +216,26 @@ public class BeaconWalletClient @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) cons
         return send(acknowledgeResponse, isTerminal = false)
     }
 
-    public companion object {}
+    public companion object {
+        private const val SCOPE_PREFIX = "wallet_client"
+    }
 
     /**
      * Asynchronous builder for [BeaconWalletClient].
      *
      * @constructor Creates a builder configured with the specified application [name].
      */
-    public class Builder(name: String) : InitBuilder<BeaconWalletClient, Builder>(name) {
+    public class Builder(name: String, clientId: String? = null) : InitBuilder<BeaconWalletClient, Builder>(name, Scope(clientId, SCOPE_PREFIX)) {
+
+        private var _extendedDependencyRegistry: ExtendedDependencyRegistry? = null
+        private val extendedDependencyRegistry: ExtendedDependencyRegistry
+            get() = _extendedDependencyRegistry ?: dependencyRegistry(beaconScope).extend().also { _extendedDependencyRegistry = it }
 
         /**
          * Creates a new instance of [BeaconWalletClient].
          */
-        override suspend fun createInstance(configuration: BeaconConfiguration): BeaconWalletClient {
-            with(dependencyRegistry) {
-                return BeaconWalletClient(
-                    name,
-                    beaconSdk.beaconId,
-                    connectionController(connections),
-                    messageController,
-                    storageManager,
-                    crypto,
-                    configuration,
-                )
-            }
-        }
+        override suspend fun createInstance(configuration: BeaconConfiguration): BeaconWalletClient =
+            extendedDependencyRegistry.walletClient(name, connections, configuration)
     }
 }
 
@@ -248,6 +246,7 @@ public class BeaconWalletClient @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) cons
  */
 public suspend fun BeaconWalletClient(
     name: String,
+    clientId: String? = null,
     builderAction: BeaconWalletClient.Builder.() -> Unit = {},
-): BeaconWalletClient = BeaconWalletClient.Builder(name).apply(builderAction).build()
+): BeaconWalletClient = BeaconWalletClient.Builder(name, clientId).apply(builderAction).build()
 

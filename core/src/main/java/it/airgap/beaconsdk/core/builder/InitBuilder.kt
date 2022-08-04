@@ -9,6 +9,7 @@ import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.SharedPrefere
 import it.airgap.beaconsdk.core.internal.utils.applicationContext
 import it.airgap.beaconsdk.core.internal.utils.beaconSdk
 import it.airgap.beaconsdk.core.internal.utils.delegate.default
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import it.airgap.beaconsdk.core.storage.SecureStorage
 import it.airgap.beaconsdk.core.storage.Storage
 
@@ -17,7 +18,7 @@ import it.airgap.beaconsdk.core.storage.Storage
  *
  * @constructor Creates a builder configured with the specified application [name].
  */
-public abstract class InitBuilder<T, Self : InitBuilder<T, Self>>(protected val name: String) {
+public abstract class InitBuilder<T, Self : InitBuilder<T, Self>>(protected val name: String, protected val beaconScope: BeaconScope) {
     // -- app --
 
     /**
@@ -63,12 +64,13 @@ public abstract class InitBuilder<T, Self : InitBuilder<T, Self>>(protected val 
     /**
      * An optional external implementation of [Storage]. If not provided, an internal implementation will be used.
      */
-    public var storage: Storage by default { SharedPreferencesStorage.create(applicationContext) }
+
+    public var storage: Storage by default { SharedPreferencesStorage(applicationContext) }
 
     /**
      * An optional external implementation of [SecureStorage]. If not provided, an internal implementation will be used.
      */
-    public var secureStorage: SecureStorage by default { SharedPreferencesSecureStorage.create(applicationContext) }
+    public var secureStorage: SecureStorage by default { SharedPreferencesSecureStorage(applicationContext) }
 
     // -- configuration --
 
@@ -84,7 +86,7 @@ public abstract class InitBuilder<T, Self : InitBuilder<T, Self>>(protected val 
         val configuration = BeaconConfiguration(ignoreUnsupportedBlockchains)
         val partialApp = BeaconApplication.Partial(name, iconUrl, appUrl)
 
-        beaconSdk.init(partialApp, configuration, blockchains, storage, secureStorage)
+        beaconSdk.add(beaconScope, partialApp, configuration, blockchains, storage, secureStorage)
 
         return createInstance(configuration)
     }

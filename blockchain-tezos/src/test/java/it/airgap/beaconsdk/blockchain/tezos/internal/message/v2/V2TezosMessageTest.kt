@@ -10,7 +10,10 @@ import it.airgap.beaconsdk.blockchain.tezos.data.TezosNetwork
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
 import it.airgap.beaconsdk.blockchain.tezos.data.operation.TezosEndorsementOperation
 import it.airgap.beaconsdk.blockchain.tezos.data.operation.TezosOperation
+import it.airgap.beaconsdk.blockchain.tezos.internal.creator.*
 import it.airgap.beaconsdk.blockchain.tezos.internal.di.extend
+import it.airgap.beaconsdk.blockchain.tezos.internal.serializer.*
+import it.airgap.beaconsdk.blockchain.tezos.internal.wallet.TezosWallet
 import it.airgap.beaconsdk.blockchain.tezos.message.request.BroadcastTezosRequest
 import it.airgap.beaconsdk.blockchain.tezos.message.request.OperationTezosRequest
 import it.airgap.beaconsdk.blockchain.tezos.message.request.PermissionTezosRequest
@@ -22,12 +25,15 @@ import it.airgap.beaconsdk.blockchain.tezos.message.response.SignPayloadTezosRes
 import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.data.SigningType
 import it.airgap.beaconsdk.core.internal.BeaconConfiguration
+import it.airgap.beaconsdk.core.internal.compat.CoreCompat
 import it.airgap.beaconsdk.core.internal.message.v2.V2BeaconMessage
+import it.airgap.beaconsdk.core.internal.serializer.contextualJson
 import it.airgap.beaconsdk.core.internal.storage.MockSecureStorage
 import it.airgap.beaconsdk.core.internal.storage.MockStorage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
 import it.airgap.beaconsdk.core.message.*
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -40,9 +46,15 @@ import kotlin.test.assertEquals
 
 internal class V2TezosMessageTest {
     @MockK
+    private lateinit var tezosWallet: TezosWallet
+
+    @MockK
     private lateinit var identifierCreator: IdentifierCreator
 
     private lateinit var storageManager: StorageManager
+    private lateinit var json: Json
+
+    private val beaconScope: BeaconScope = BeaconScope.Global
 
     @Before
     fun setup() {
@@ -50,18 +62,36 @@ internal class V2TezosMessageTest {
 
         every { identifierCreator.accountId(any(), any()) } answers { Result.success(firstArg()) }
 
-        storageManager = StorageManager(MockStorage(), MockSecureStorage(), identifierCreator, BeaconConfiguration(ignoreUnsupportedBlockchains = false))
+        storageManager = StorageManager(beaconScope, MockStorage(), MockSecureStorage(), identifierCreator, BeaconConfiguration(ignoreUnsupportedBlockchains = false))
 
-        val dependencyRegistry = mockDependencyRegistry()
+        val tezos = Tezos(
+            tezosWallet,
+            TezosCreator(
+                DataTezosCreator(storageManager, identifierCreator),
+                V1BeaconMessageTezosCreator(),
+                V2BeaconMessageTezosCreator(),
+                V3BeaconMessageTezosCreator(),
+            ),
+            TezosSerializer(
+                DataTezosSerializer(),
+                V1BeaconMessageTezosSerializer(),
+                V2BeaconMessageTezosSerializer(),
+                V3BeaconMessageTezosSerializer(),
+            ),
+        )
+
+        val dependencyRegistry = mockDependencyRegistry(tezos)
         every { dependencyRegistry.storageManager } returns storageManager
         every { dependencyRegistry.identifierCreator } returns identifierCreator
         every { dependencyRegistry.extend().tezosWallet.address(any()) } answers { Result.success(firstArg()) }
+
+        json = contextualJson(dependencyRegistry.blockchainRegistry, CoreCompat(beaconScope))
     }
 
     @Test
     fun `is deserialized from JSON`() {
         messagesWithJsonStrings()
-            .map { Json.decodeFromString<V2TezosMessage>(it.second) to it.first }
+            .map { json.decodeFromString<V2TezosMessage>(it.second) to it.first }
             .forEach {
                 assertEquals(it.second, it.first)
             }
@@ -70,8 +100,8 @@ internal class V2TezosMessageTest {
     @Test
     fun `serializes to JSON`() {
         messagesWithJsonStrings()
-            .map { Json.decodeFromString(JsonObject.serializer(), Json.encodeToString(it.first)) to
-                    Json.decodeFromString(JsonObject.serializer(), it.second) }
+            .map { json.decodeFromString(JsonObject.serializer(), json.encodeToString(it.first)) to
+                    json.decodeFromString(JsonObject.serializer(), it.second) }
             .forEach {
                 assertEquals(it.second, it.first)
             }
@@ -102,7 +132,7 @@ internal class V2TezosMessageTest {
 
         runBlocking {
             versionedWithBeacon(senderId = senderId, appMetadata = matchingAppMetadata, origin = origin)
-                .map { it.first.toBeaconMessage(origin) to it.second }
+                .map { it.first.toBeaconMessage(origin, beaconScope) to it.second }
                 .forEach {
                     assertEquals(it.second, it.first)
                 }
@@ -169,9 +199,9 @@ internal class V2TezosMessageTest {
                 "version": "$version",
                 "id": "$id",
                 "senderId": "$senderId",
-                "appMetadata": ${Json.encodeToString(appMetadata)},
-                "network": ${Json.encodeToString(network)},
-                "scopes": ${Json.encodeToString(scopes)}
+                "appMetadata": ${json.encodeToString(appMetadata)},
+                "network": ${json.encodeToString(network)},
+                "scopes": ${json.encodeToString(scopes)}
             }
         """.trimIndent()
 
@@ -189,8 +219,8 @@ internal class V2TezosMessageTest {
                 "version": "$version",
                 "id": "$id",
                 "senderId": "$senderId",
-                "network": ${Json.encodeToString(network)},
-                "operationDetails": ${Json.encodeToString(tezosOperations)},
+                "network": ${json.encodeToString(network)},
+                "operationDetails": ${json.encodeToString(tezosOperations)},
                 "sourceAddress": "$sourceAddress"
             }
         """.trimIndent()
@@ -209,7 +239,7 @@ internal class V2TezosMessageTest {
                 "version": "$version",
                 "id": "$id",
                 "senderId": "$senderId",
-                "signingType": ${Json.encodeToString(signingType)},
+                "signingType": ${json.encodeToString(signingType)},
                 "payload": "$payload",
                 "sourceAddress": "$sourceAddress"
             }
@@ -228,7 +258,7 @@ internal class V2TezosMessageTest {
                 "version": "$version",
                 "id": "$id",
                 "senderId": "$senderId",
-                "network": ${Json.encodeToString(network)},
+                "network": ${json.encodeToString(network)},
                 "signedTransaction": "$signedTransaction"
             }
         """.trimIndent()
@@ -250,8 +280,8 @@ internal class V2TezosMessageTest {
                 "id": "$id",
                 "senderId": "$senderId",
                 "publicKey": "$publicKey",
-                "network": ${Json.encodeToString(network)},
-                "scopes": ${Json.encodeToString(scopes)}
+                "network": ${json.encodeToString(network)},
+                "scopes": ${json.encodeToString(scopes)}
             }
         """.trimIndent()
 
@@ -284,7 +314,7 @@ internal class V2TezosMessageTest {
                 "version": "$version",
                 "id": "$id",
                 "senderId": "$senderId",
-                "signingType": ${Json.encodeToString(signingType)},
+                "signingType": ${json.encodeToString(signingType)},
                 "signature": "$signature"
             }
         """.trimIndent()

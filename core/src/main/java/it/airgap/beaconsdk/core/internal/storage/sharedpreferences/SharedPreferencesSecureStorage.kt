@@ -9,6 +9,7 @@ import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.encryptedfile
 import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.encryptedfile.EncryptedFileManager
 import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.encryptedfile.TargetEncryptedFileManager
 import it.airgap.beaconsdk.core.internal.utils.sdkAtLeast
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import it.airgap.beaconsdk.core.storage.SecureStorage
 import java.security.KeyStore
 import java.util.*
@@ -17,12 +18,13 @@ import java.util.*
 public class SharedPreferencesSecureStorage(
     private val sharedPreferences: SharedPreferences,
     private val encryptedFileManager: EncryptedFileManager,
-) : SecureStorage {
+    beaconScope: BeaconScope = BeaconScope.Global,
+) : SecureStorage, SharedPreferencesBaseStorage(beaconScope) {
 
     private var masterKeyAlias: String?
-        get() = sharedPreferences.getString(KEY_MASTER_KEY_ALIAS, null)
+        get() = sharedPreferences.getString(Key.MasterKeyAlias.scoped(), null)
         set(value) {
-            value?.let { sharedPreferences.putString(KEY_MASTER_KEY_ALIAS, it) }
+            value?.let { sharedPreferences.putString(Key.MasterKeyAlias.scoped(), it) }
         }
 
     override suspend fun getSdkSecretSeed(): String? {
@@ -37,20 +39,28 @@ public class SharedPreferencesSecureStorage(
         encryptedFileManager.write(FILE_SDK_SECRET_KEY, keyAlias, sdkSecretSeed.encodeToByteArray())
     }
 
-    public companion object {
-        private const val ANDROID_KEY_STORE = "AndroidKeyStore"
-
-        private const val KEY_MASTER_KEY_ALIAS = "masterKeyAlias"
-        private const val FILE_SDK_SECRET_KEY = "sdk_seed"
-
-        public fun create(context: Context): SharedPreferencesSecureStorage {
-            val keyStore = KeyStore.getInstance(ANDROID_KEY_STORE).apply { load(null) }
-            val sharedPreferences = context.getSharedPreferences(BeaconConfiguration.STORAGE_NAME, Context.MODE_PRIVATE)
-            val encryptedFileManager =
-                if (sdkAtLeast(Build.VERSION_CODES.M)) TargetEncryptedFileManager(context, keyStore)
-                else CompatEncryptedFileManager(context, keyStore)
-
-            return SharedPreferencesSecureStorage(sharedPreferences, encryptedFileManager)
-        }
+    private enum class Key(override val value: String): SharedPreferencesBaseStorage.Key {
+        MasterKeyAlias("masterKeyAlias"),
     }
+
+    override fun scoped(beaconScope: BeaconScope): SecureStorage =
+        if (beaconScope == this.beaconScope) this
+        else SharedPreferencesSecureStorage(sharedPreferences, encryptedFileManager, beaconScope)
+
+    public companion object {
+        internal const val ANDROID_KEY_STORE = "AndroidKeyStore"
+
+        private const val FILE_SDK_SECRET_KEY = "sdk_seed"
+    }
+}
+
+@Suppress("FunctionName")
+internal fun SharedPreferencesSecureStorage(context: Context): SharedPreferencesSecureStorage {
+    val keyStore = KeyStore.getInstance(SharedPreferencesSecureStorage.ANDROID_KEY_STORE).apply { load(null) }
+    val sharedPreferences = context.getSharedPreferences(BeaconConfiguration.STORAGE_NAME, Context.MODE_PRIVATE)
+    val encryptedFileManager =
+        if (sdkAtLeast(Build.VERSION_CODES.M)) TargetEncryptedFileManager(context, keyStore)
+        else CompatEncryptedFileManager(context, keyStore)
+
+    return SharedPreferencesSecureStorage(sharedPreferences, encryptedFileManager)
 }

@@ -4,7 +4,9 @@ import io.mockk.*
 import it.airgap.beaconsdk.core.internal.BeaconSdk
 import it.airgap.beaconsdk.core.internal.blockchain.BlockchainRegistry
 import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchain
+import it.airgap.beaconsdk.core.internal.compat.CoreCompat
 import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
+import it.airgap.beaconsdk.core.scope.BeaconScope
 
 // -- class --
 
@@ -18,16 +20,16 @@ internal fun mockBeaconSdk(
 
         val contextMock = mockk<Context>(relaxed = true)
 
-        coEvery { it.init(any(), any(), any(), any(), any()) } returns Unit
+        coEvery { it.add(any(), any(), any(), any(), any(), any()) } returns Unit
 
         every { it.applicationContext } returns contextMock
-        every { it.beaconId } returns beaconId
-        every { it.dependencyRegistry } returns dependencyRegistry
+        every { it.beaconId(any()) } returns beaconId
+        every { it.dependencyRegistry(any()) } returns dependencyRegistry
     }
 
 // -- static --
 
-internal fun mockDependencyRegistry(): DependencyRegistry =
+internal fun mockDependencyRegistry(beaconScope: BeaconScope? = null): DependencyRegistry =
     mockkClass(DependencyRegistry::class).also {
         val blockchainRegistry = mockkClass(BlockchainRegistry::class)
         val mockBlockchain = MockBlockchain()
@@ -35,6 +37,8 @@ internal fun mockDependencyRegistry(): DependencyRegistry =
         every { blockchainRegistry.get(any()) } returns mockBlockchain
         every { blockchainRegistry.getOrNull(any()) } returns mockBlockchain
         every { it.blockchainRegistry } returns blockchainRegistry
+
+        every { it.compat } returns CoreCompat(beaconScope)
 
         mockBeaconSdk(dependencyRegistry = it)
     }

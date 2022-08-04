@@ -13,6 +13,7 @@ import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.controller.ConnectionController
 import it.airgap.beaconsdk.core.internal.controller.MessageController
 import it.airgap.beaconsdk.core.internal.crypto.Crypto
+import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.core.internal.message.BeaconConnectionMessage
 import it.airgap.beaconsdk.core.internal.message.VersionedBeaconMessage
 import it.airgap.beaconsdk.core.internal.storage.MockSecureStorage
@@ -23,6 +24,7 @@ import it.airgap.beaconsdk.core.internal.utils.splitAt
 import it.airgap.beaconsdk.core.internal.utils.success
 import it.airgap.beaconsdk.core.message.AcknowledgeBeaconResponse
 import it.airgap.beaconsdk.core.message.BeaconMessage
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runBlockingTest
@@ -32,6 +34,7 @@ import org.junit.Before
 import org.junit.Test
 import tryEmitValues
 import versionedBeaconMessage
+import versionedBeaconMessageContext
 import java.io.IOException
 import kotlin.test.assertEquals
 
@@ -49,6 +52,7 @@ internal class BeaconWalletClientTest {
     @MockK
     private lateinit var crypto: Crypto
 
+    private lateinit var dependencyRegistry: DependencyRegistry
     private lateinit var storageManager: StorageManager
     private lateinit var beaconWalletClient: BeaconWalletClient
 
@@ -63,6 +67,8 @@ internal class BeaconWalletClientTest {
 
     private val origin: Origin = Origin.P2P(dAppId)
 
+    private val beaconScope: BeaconScope = BeaconScope.Global
+
     @Before
     fun setup() {
         MockKAnnotations.init(this)
@@ -70,20 +76,20 @@ internal class BeaconWalletClientTest {
         mockkObject(BeaconCompat)
 
         coEvery { messageController.onIncomingMessage(any(), any()) } coAnswers  {
-            Result.success(secondArg<VersionedBeaconMessage>().toBeaconMessage(origin))
+            Result.success(secondArg<VersionedBeaconMessage>().toBeaconMessage(origin, beaconScope))
         }
 
         coEvery { messageController.onOutgoingMessage(any(), any(), any()) } coAnswers {
-            Result.success(Pair(secondArg<BeaconMessage>().associatedOrigin, versionedBeaconMessage(secondArg(), beaconId)))
+            Result.success(Pair(secondArg<BeaconMessage>().associatedOrigin, versionedBeaconMessage(secondArg(), beaconId, dependencyRegistry.versionedBeaconMessageContext)))
         }
 
         coEvery { connectionController.send(any()) } coAnswers { Result.success() }
 
         val configuration = BeaconConfiguration(ignoreUnsupportedBlockchains = false)
-        storageManager = StorageManager(MockStorage(), MockSecureStorage(), identifierCreator, configuration)
-        beaconWalletClient = BeaconWalletClient(appName, beaconId, connectionController, messageController, storageManager, crypto, configuration)
+        storageManager = StorageManager(beaconScope, MockStorage(), MockSecureStorage(), identifierCreator, configuration)
+        beaconWalletClient = BeaconWalletClient(appName, beaconId, beaconScope, connectionController, messageController, storageManager, crypto, configuration)
 
-        val dependencyRegistry = mockDependencyRegistry()
+        dependencyRegistry = mockDependencyRegistry(beaconScope)
         every { dependencyRegistry.storageManager } returns storageManager
         every { dependencyRegistry.identifierCreator } returns identifierCreator
         every { dependencyRegistry.messageController } returns messageController
@@ -99,7 +105,7 @@ internal class BeaconWalletClientTest {
     @Test
     fun `connects for messages with callback`() {
         runBlockingTest {
-            val requests = beaconVersionedRequests().shuffled()
+            val requests = beaconVersionedRequests(context = dependencyRegistry.versionedBeaconMessageContext).shuffled()
             val beaconMessageFlow = beaconConnectionMessageFlow(requests.size + 1)
 
             every { connectionController.subscribe() } answers { beaconMessageFlow }
@@ -126,7 +132,7 @@ internal class BeaconWalletClientTest {
 
                 testDeferred.await()
 
-                val expected = requests.map { it.toBeaconMessage(origin) }
+                val expected = requests.map { it.toBeaconMessage(origin, beaconScope) }
 
                 assertEquals(expected.sortedBy { it.toString() }, messages.sortedBy { it.toString() })
 
@@ -164,7 +170,7 @@ internal class BeaconWalletClientTest {
         responses.forEach {
             testDeferred = CompletableDeferred()
 
-            val versioned = versionedBeaconMessage(it, beaconId)
+            val versioned = versionedBeaconMessage(it, beaconId, dependencyRegistry.versionedBeaconMessageContext)
             val expected = BeaconConnectionMessage(origin, versioned)
 
             beaconWalletClient.respond(it, callback)
@@ -184,7 +190,7 @@ internal class BeaconWalletClientTest {
     @Test
     fun `returns internal BeaconException when internal error occurred`() {
         runBlockingTest {
-            val requests = beaconVersionedRequests().shuffled()
+            val requests = beaconVersionedRequests(context = dependencyRegistry.versionedBeaconMessageContext).shuffled()
             val beaconMessageFlow = beaconConnectionMessageFlow(requests.size + 1)
 
             val exception = Exception()
@@ -270,7 +276,7 @@ internal class BeaconWalletClientTest {
     @Test
     fun `removes message callback`() {
         runBlockingTest {
-            val requests = beaconVersionedRequests().shuffled()
+            val requests = beaconVersionedRequests(context = dependencyRegistry.versionedBeaconMessageContext).shuffled()
             val (requestsForAll, requestsFor2) = requests.splitAt { it.size / 2 }
             val beaconMessageFlow = beaconConnectionMessageFlow(requests.size + 1)
 
@@ -322,8 +328,8 @@ internal class BeaconWalletClientTest {
 
                 testDeferred2.await()
 
-                val expected1 = requestsForAll.map { it.toBeaconMessage(origin) }
-                val expected2 = requests.map { it.toBeaconMessage(origin) }
+                val expected1 = requestsForAll.map { it.toBeaconMessage(origin, beaconScope) }
+                val expected2 = requests.map { it.toBeaconMessage(origin, beaconScope) }
 
                 assertEquals(expected1.sortedBy { it.toString() }, messages1.sortedBy { it.toString() })
                 assertEquals(expected2.sortedBy { it.toString() }, messages2.sortedBy { it.toString() })
@@ -346,7 +352,7 @@ internal class BeaconWalletClientTest {
     @Test
     fun `stops and removes all callbacks`() {
         runBlockingTest {
-            val requests = beaconVersionedRequests().shuffled()
+            val requests = beaconVersionedRequests(context = dependencyRegistry.versionedBeaconMessageContext).shuffled()
             val beaconMessageFlow = beaconConnectionMessageFlow(requests.size + 1)
 
             every { connectionController.subscribe() } answers { beaconMessageFlow }
@@ -396,8 +402,8 @@ internal class BeaconWalletClientTest {
 
                 beaconWalletClient.stop()
 
-                val expected1 = requests.map { it.toBeaconMessage(origin) }
-                val expected2 = requests.map { it.toBeaconMessage(origin) }
+                val expected1 = requests.map { it.toBeaconMessage(origin, beaconScope) }
+                val expected2 = requests.map { it.toBeaconMessage(origin, beaconScope) }
 
                 assertEquals(expected1.sortedBy { it.toString() }, messages1.sortedBy { it.toString() })
                 assertEquals(expected2.sortedBy { it.toString() }, messages2.sortedBy { it.toString() })

@@ -9,11 +9,15 @@ import it.airgap.beaconsdk.core.data.*
 import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchain
 import it.airgap.beaconsdk.core.internal.blockchain.message.*
+import it.airgap.beaconsdk.core.internal.compat.CoreCompat
+import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
+import it.airgap.beaconsdk.core.internal.serializer.contextualJson
 import it.airgap.beaconsdk.core.internal.storage.MockSecureStorage
 import it.airgap.beaconsdk.core.internal.storage.MockStorage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
 import it.airgap.beaconsdk.core.message.*
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -25,6 +29,7 @@ import mockDependencyRegistry
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import v3BeaconMessageContext
 import kotlin.test.assertEquals
 
 internal class V3BeaconMessageTest {
@@ -32,17 +37,23 @@ internal class V3BeaconMessageTest {
     @MockK
     private lateinit var identifierCreator: IdentifierCreator
 
+    private lateinit var dependencyRegistry: DependencyRegistry
     private lateinit var storageManager: StorageManager
+    private lateinit var json: Json
+
+    private val beaconScope: BeaconScope = BeaconScope.Global
 
     @Before
     fun setup() {
         MockKAnnotations.init(this)
 
-        storageManager = StorageManager(MockStorage(), MockSecureStorage(), identifierCreator, BeaconConfiguration(ignoreUnsupportedBlockchains = false))
+        storageManager = StorageManager(beaconScope, MockStorage(), MockSecureStorage(), identifierCreator, BeaconConfiguration(ignoreUnsupportedBlockchains = false))
 
-        val dependencyRegistry = mockDependencyRegistry()
+        dependencyRegistry = mockDependencyRegistry()
         every { dependencyRegistry.storageManager } returns storageManager
         every { dependencyRegistry.identifierCreator } returns identifierCreator
+
+        json = contextualJson(dependencyRegistry.blockchainRegistry, CoreCompat(beaconScope))
     }
 
     @After
@@ -53,7 +64,7 @@ internal class V3BeaconMessageTest {
     @Test
     fun `is deserialized from JSON`() {
         messagesWithJsonStrings()
-            .map { Json.decodeFromString<V3BeaconMessage>(it.second) to it.first }
+            .map { json.decodeFromString<V3BeaconMessage>(it.second) to it.first }
             .forEach {
                 assertEquals(it.second, it.first)
             }
@@ -62,8 +73,8 @@ internal class V3BeaconMessageTest {
     @Test
     fun `serializes to JSON`() {
         messagesWithJsonStrings()
-            .map { Json.decodeFromString(JsonObject.serializer(), Json.encodeToString(it.first)) to
-                    Json.decodeFromString(JsonObject.serializer(), it.second) }
+            .map { json.decodeFromString(JsonObject.serializer(), json.encodeToString(it.first)) to
+                    json.decodeFromString(JsonObject.serializer(), it.second) }
             .forEach {
                 assertEquals(it.second, it.first)
             }
@@ -75,7 +86,7 @@ internal class V3BeaconMessageTest {
         val senderId = "senderId"
 
         versionedWithBeacon(version, senderId)
-            .map { V3BeaconMessage.from(senderId, it.second) to it.first }
+            .map { V3BeaconMessage.from(senderId, it.second, dependencyRegistry.v3BeaconMessageContext) to it.first }
             .forEach {
                 assertEquals(it.second, it.first)
             }
@@ -94,7 +105,7 @@ internal class V3BeaconMessageTest {
 
         runBlocking {
             versionedWithBeacon(senderId = senderId, appMetadata = matchingAppMetadata, origin = origin)
-                .map { it.first.toBeaconMessage(origin) to it.second }
+                .map { it.first.toBeaconMessage(origin, beaconScope) to it.second }
                 .forEach {
                     assertEquals(it.second, it.first)
                 }
@@ -156,8 +167,8 @@ internal class V3BeaconMessageTest {
                 V3MockPermissionBeaconRequestData(
                     appMetadata,
                     mapOf(
-                        "network" to Json.encodeToJsonElement(network),
-                        "scopes" to Json.encodeToJsonElement(scopes),
+                        "network" to json.encodeToJsonElement(network),
+                        "scopes" to json.encodeToJsonElement(scopes),
                     ),
                 ),
             ),
@@ -170,9 +181,9 @@ internal class V3BeaconMessageTest {
                     "type": "permission_request",
                     "blockchainIdentifier": "$blockchainIdentifier",
                     "blockchainData": {
-                        "appMetadata": ${Json.encodeToString(appMetadata)},
-                        "network": ${Json.encodeToString(network)},
-                        "scopes": ${Json.encodeToString(scopes)}
+                        "appMetadata": ${json.encodeToString(appMetadata)},
+                        "network": ${json.encodeToString(network)},
+                        "scopes": ${json.encodeToString(scopes)}
                     }
                 }
             }
@@ -235,8 +246,8 @@ internal class V3BeaconMessageTest {
                 V3MockPermissionBeaconResponseData(
                     mapOf(
                         "publicKey" to JsonPrimitive(publicKey),
-                        "network" to Json.encodeToJsonElement(network),
-                        "scopes" to Json.encodeToJsonElement(scopes),
+                        "network" to json.encodeToJsonElement(network),
+                        "scopes" to json.encodeToJsonElement(scopes),
                     ),
                 ),
             ),
@@ -250,8 +261,8 @@ internal class V3BeaconMessageTest {
                     "blockchainIdentifier": "$blockchainIdentifier",
                     "blockchainData": {
                         "publicKey": "$publicKey",
-                        "network": ${Json.encodeToString(network)},
-                        "scopes": ${Json.encodeToString(scopes)}
+                        "network": ${json.encodeToString(network)},
+                        "scopes": ${json.encodeToString(scopes)}
                     }
                 }
             }
@@ -334,7 +345,7 @@ internal class V3BeaconMessageTest {
                 "message": ${JsonObject.fromValues(mapOf(
                     "type" to "error",
                     "blockchainIdentifier" to errorType.blockchainIdentifier,
-                    "errorType" to Json.encodeToJsonElement(errorType),
+                    "errorType" to json.encodeToJsonElement(errorType),
                     "description" to description,
                 ), includeNulls = false)}
             }
@@ -353,8 +364,8 @@ internal class V3BeaconMessageTest {
         origin: Origin = Origin.P2P(senderId),
     ): Pair<V3BeaconMessage, PermissionBeaconRequest> {
         val rest = mapOf(
-            "network" to Json.encodeToJsonElement(network),
-            "scopes" to Json.encodeToJsonElement(scopes),
+            "network" to json.encodeToJsonElement(network),
+            "scopes" to json.encodeToJsonElement(scopes),
         )
 
         return V3BeaconMessage(
@@ -410,9 +421,9 @@ internal class V3BeaconMessageTest {
         origin: Origin = Origin.P2P(senderId),
     ): Pair<V3BeaconMessage, PermissionBeaconResponse> {
         val rest = mapOf(
-            "publicKey" to Json.encodeToJsonElement(publicKey),
-            "network" to Json.encodeToJsonElement(network),
-            "scopes" to Json.encodeToJsonElement(scopes),
+            "publicKey" to json.encodeToJsonElement(publicKey),
+            "network" to json.encodeToJsonElement(network),
+            "scopes" to json.encodeToJsonElement(scopes),
         )
 
         return V3BeaconMessage(

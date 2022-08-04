@@ -1,12 +1,13 @@
 package it.airgap.beaconsdk.core.data
 
 import androidx.annotation.RestrictTo
+import it.airgap.beaconsdk.core.internal.blockchain.BlockchainRegistry
 import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
 import it.airgap.beaconsdk.core.internal.utils.blockchainRegistry
 import it.airgap.beaconsdk.core.internal.utils.failWithIllegalArgument
 import it.airgap.beaconsdk.core.internal.utils.failWithUnexpectedJsonType
 import it.airgap.beaconsdk.core.message.BeaconRequest
-import it.airgap.beaconsdk.core.message.PermissionBeaconRequest
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -17,7 +18,6 @@ import kotlinx.serialization.json.*
 /**
  * Base for errors supported in Beacon.
  */
-@Serializable(with = BeaconError.Serializer::class)
 public abstract class BeaconError {
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public abstract val blockchainIdentifier: String?
@@ -45,10 +45,16 @@ public abstract class BeaconError {
     }
 
     public companion object {
-        public fun serializer(blockchainIdentifier: String? = null): KSerializer<BeaconError> = Serializer(blockchainIdentifier)
+        public fun serializer(blockchainRegistry: BlockchainRegistry, blockchainIdentifier: String? = null): KSerializer<BeaconError> =
+            Serializer(blockchainRegistry, blockchainIdentifier)
+
+        public fun serializer(blockchainIdentifier: String? = null, beaconScope: BeaconScope? = null): KSerializer<BeaconError> =
+            Serializer(blockchainIdentifier, beaconScope)
     }
 
-    internal class Serializer(private val blockchainIdentifier: String? = null) : KJsonSerializer<BeaconError> {
+    internal class Serializer(private val blockchainRegistry: BlockchainRegistry, private val blockchainIdentifier: String? = null) : KJsonSerializer<BeaconError> {
+        constructor(blockchainIdentifier: String? = null, beaconScope: BeaconScope? = null) : this(blockchainRegistry(beaconScope), blockchainIdentifier)
+
         override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("BeaconError", PrimitiveKind.STRING)
 
         override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): BeaconError {

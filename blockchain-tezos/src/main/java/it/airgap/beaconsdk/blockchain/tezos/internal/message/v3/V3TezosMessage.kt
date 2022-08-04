@@ -19,6 +19,7 @@ import it.airgap.beaconsdk.core.internal.utils.dependencyRegistry
 import it.airgap.beaconsdk.core.internal.utils.failWithIllegalArgument
 import it.airgap.beaconsdk.core.internal.utils.getString
 import it.airgap.beaconsdk.core.message.BeaconMessage
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import it.airgap.beaconsdk.core.storage.findAppMetadata
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Required
@@ -37,6 +38,7 @@ internal data class PermissionV3TezosRequest(
 ) : PermissionV3BeaconRequestContent.BlockchainData() {
 
     override suspend fun toBeaconMessage(
+        beaconScope: BeaconScope,
         id: String,
         version: String,
         senderId: String,
@@ -127,6 +129,7 @@ internal data class OperationV3TezosRequest(
     override val type: String = TYPE
 
     override suspend fun toBeaconMessage(
+        beaconScope: BeaconScope,
         id: String,
         version: String,
         senderId: String,
@@ -134,7 +137,7 @@ internal data class OperationV3TezosRequest(
         accountId: String,
         blockchainIdentifier: String,
     ): BeaconMessage {
-        val appMetadata = dependencyRegistry.storageManager.findAppMetadata<TezosAppMetadata> { it.senderId == senderId }
+        val appMetadata = dependencyRegistry(beaconScope).storageManager.findAppMetadata<TezosAppMetadata> { it.senderId == senderId }
         return OperationTezosRequest(
             id,
             version,
@@ -165,6 +168,7 @@ internal data class SignPayloadV3TezosRequest(
     override val type: String = TYPE
 
     override suspend fun toBeaconMessage(
+        beaconScope: BeaconScope,
         id: String,
         version: String,
         senderId: String,
@@ -172,7 +176,7 @@ internal data class SignPayloadV3TezosRequest(
         accountId: String,
         blockchainIdentifier: String,
     ): BeaconMessage {
-        val appMetadata = dependencyRegistry.storageManager.findAppMetadata<TezosAppMetadata> { it.senderId == senderId }
+        val appMetadata = dependencyRegistry(beaconScope).storageManager.findAppMetadata<TezosAppMetadata> { it.senderId == senderId }
         return SignPayloadTezosRequest(
             id,
             version,
@@ -202,6 +206,7 @@ internal data class BroadcastV3TezosRequest(
     override val type: String = TYPE
 
     override suspend fun toBeaconMessage(
+        beaconScope: BeaconScope,
         id: String,
         version: String,
         senderId: String,
@@ -209,7 +214,7 @@ internal data class BroadcastV3TezosRequest(
         accountId: String,
         blockchainIdentifier: String,
     ): BeaconMessage {
-        val appMetadata = dependencyRegistry.storageManager.findAppMetadata<TezosAppMetadata> { it.senderId == senderId }
+        val appMetadata = dependencyRegistry(beaconScope).storageManager.findAppMetadata<TezosAppMetadata> { it.senderId == senderId }
         return BroadcastTezosRequest(
             id,
             version,
@@ -250,6 +255,7 @@ internal data class PermissionV3TezosResponse(
     }
 
     override suspend fun toBeaconMessage(
+        beaconScope: BeaconScope,
         id: String,
         version: String,
         senderId: String,
@@ -314,6 +320,7 @@ internal data class OperationV3TezosResponse(
     override val type: String = TYPE
 
     override suspend fun toBeaconMessage(
+        beaconScope: BeaconScope,
         id: String,
         version: String,
         senderId: String,
@@ -336,6 +343,7 @@ internal data class SignPayloadV3TezosResponse(
     override val type: String = TYPE
 
     override suspend fun toBeaconMessage(
+        beaconScope: BeaconScope,
         id: String,
         version: String,
         senderId: String,
@@ -357,6 +365,7 @@ internal data class BroadcastV3TezosResponse(
     override val type: String = TYPE
 
     override suspend fun toBeaconMessage(
+        beaconScope: BeaconScope,
         id: String,
         version: String,
         senderId: String,

@@ -6,6 +6,7 @@ import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.*
 import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
 import it.airgap.beaconsdk.core.internal.utils.asHexString
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import it.airgap.beaconsdk.core.storage.ExtendedStorage
 import it.airgap.beaconsdk.core.storage.SecureStorage
 import it.airgap.beaconsdk.core.storage.Storage
@@ -22,25 +23,27 @@ import kotlin.reflect.KProperty1
 @OptIn(ExperimentalCoroutinesApi::class)
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class StorageManager(
+    private val beaconScope: BeaconScope,
     @PublishedApi internal val storage: ExtendedStorage,
     @PublishedApi internal val secureStorage: SecureStorage,
     private val identifierCreator: IdentifierCreator,
     private val configuration: BeaconConfiguration,
-) : ExtendedStorage by storage, SecureStorage by secureStorage {
+) : ExtendedStorage by storage.scoped(beaconScope), SecureStorage by secureStorage.scoped(beaconScope) {
 
     private val _plugins: MutableList<StoragePlugin> = mutableListOf()
     @PublishedApi
     internal val plugins: List<StoragePlugin> get() = _plugins
 
     public constructor(
+        beaconScope: BeaconScope,
         storage: Storage,
         secureStorage: SecureStorage,
         identifierCreator: IdentifierCreator,
-        beaconConfiguration: BeaconConfiguration,
-    ) : this(storage.extend(beaconConfiguration), secureStorage, identifierCreator, beaconConfiguration)
+        configuration: BeaconConfiguration,
+    ) : this(beaconScope, storage.extend(configuration), secureStorage, identifierCreator, configuration)
 
     public fun addPlugins(plugins: List<StoragePlugin>) {
-        _plugins.addAll(plugins)
+        _plugins.addAll(plugins.map { it.scoped(beaconScope) })
     }
 
     public fun addPlugins(vararg plugins: StoragePlugin) {
@@ -109,4 +112,8 @@ public class StorageManager(
     public suspend fun removePermissions(permissions: List<Permission>) {
         removePermissions { permission -> permissions.any { it == permission } }
     }
+
+    override fun scoped(beaconScope: BeaconScope): StorageManager =
+        if (beaconScope == this.beaconScope) this
+        else StorageManager(beaconScope, storage, secureStorage, identifierCreator, configuration)
 }

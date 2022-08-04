@@ -1,6 +1,8 @@
 package it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.network.event
 
 import it.airgap.beaconsdk.core.internal.network.HttpClient
+import it.airgap.beaconsdk.core.internal.network.HttpClient.Companion.get
+import it.airgap.beaconsdk.core.internal.network.HttpClient.Companion.put
 import it.airgap.beaconsdk.core.internal.network.data.ApplicationJson
 import it.airgap.beaconsdk.core.internal.network.data.BearerHeader
 import it.airgap.beaconsdk.core.network.data.HttpParameter

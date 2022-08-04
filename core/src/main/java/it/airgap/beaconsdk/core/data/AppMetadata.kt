@@ -1,11 +1,15 @@
 package it.airgap.beaconsdk.core.data
 
-import it.airgap.beaconsdk.core.internal.compat.CoreCompat
+import it.airgap.beaconsdk.core.internal.blockchain.BlockchainRegistry
+import it.airgap.beaconsdk.core.internal.compat.Compat
+import it.airgap.beaconsdk.core.internal.compat.VersionedCompat
 import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
 import it.airgap.beaconsdk.core.internal.utils.blockchainRegistry
+import it.airgap.beaconsdk.core.internal.utils.compat
 import it.airgap.beaconsdk.core.internal.utils.getStringOrNull
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.Serializable
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.element
@@ -22,17 +26,23 @@ import kotlinx.serialization.json.jsonObject
  * @property [name] The name of the dApp.
  * @property [icon] An optional URL for the dApp icon.
  */
-@Serializable(with = AppMetadata.Serializer::class)
 public abstract class AppMetadata {
     public abstract val blockchainIdentifier: String
     public abstract val senderId: String
     public abstract val name: String
     public abstract val icon: String?
 
-    public companion object {}
+    public companion object {
+        public fun serializer(blockchainRegistry: BlockchainRegistry, compat: Compat<VersionedCompat>): KSerializer<AppMetadata> =
+            Serializer(blockchainRegistry, compat)
+
+        public fun serializer(beaconScope: BeaconScope? = null): KSerializer<AppMetadata> = Serializer(beaconScope)
+    }
 
     @OptIn(ExperimentalSerializationApi::class)
-    internal object Serializer : KJsonSerializer<AppMetadata> {
+    internal class Serializer(private val blockchainRegistry: BlockchainRegistry, private val compat: Compat<VersionedCompat>) : KJsonSerializer<AppMetadata> {
+        constructor(beaconScope: BeaconScope? = null) : this(blockchainRegistry(beaconScope), compat(beaconScope))
+
         override val descriptor: SerialDescriptor = buildClassSerialDescriptor("AppMetadata") {
             element<String>("blockchainIdentifier")
         }
@@ -41,7 +51,7 @@ public abstract class AppMetadata {
             val blockchainIdentifier = jsonElement.jsonObject.getStringOrNull(descriptor.getElementName(0))
             val blockchain = blockchainIdentifier?.let {
                 blockchainRegistry.get(blockchainIdentifier)
-            } ?: CoreCompat.versioned.blockchain
+            } ?: compat.versioned.blockchain
 
             return jsonDecoder.json.decodeFromJsonElement(blockchain.serializer.data.appMetadata, jsonElement)
         }

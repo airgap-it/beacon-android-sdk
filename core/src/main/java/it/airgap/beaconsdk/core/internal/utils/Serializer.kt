@@ -6,9 +6,11 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonEncoder
+import kotlinx.serialization.modules.serializersModuleOf
 import kotlinx.serialization.serializer
 import kotlin.reflect.KClass
 import kotlin.reflect.full.createType
@@ -50,7 +52,7 @@ public inline fun <T : Any, reified S : T> SuperClassSerializer(subClassSerializ
     SuperClassSerializer(S::class, subClassSerializer)
 
 @Suppress("UNCHECKED_CAST")
-internal fun <T : Any> serializerFor(target: KClass<out T>): KSerializer<T> {
+internal fun <T : Any> Json.serializerFor(target: KClass<out T>): KSerializer<T> {
     val type = target.createType()
-    return serializer(type) as KSerializer<T>
+    return serializersModule.serializer(type) as KSerializer<T>
 }

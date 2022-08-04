@@ -11,6 +11,7 @@ import it.airgap.beaconsdk.core.internal.storage.MockStorage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
 import it.airgap.beaconsdk.core.internal.utils.toHexString
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import kotlinx.coroutines.runBlocking
 import mockTime
 import org.junit.Before
@@ -31,6 +32,8 @@ internal class SubstrateCreatorTest {
 
     private val currentTimeMillis: Long = 1
 
+    private val beaconScope: BeaconScope = BeaconScope.Global
+
     private val version: String = "2"
     private val senderId: String = "00"
 
@@ -43,7 +46,7 @@ internal class SubstrateCreatorTest {
         every { identifierCreator.accountId(any(), any()) } answers { Result.success(firstArg()) }
         every { identifierCreator.senderId(any()) } answers { Result.success(firstArg<ByteArray>().toHexString().asString()) }
 
-        storageManager = StorageManager(MockStorage(), MockSecureStorage(), identifierCreator, BeaconConfiguration(ignoreUnsupportedBlockchains = false))
+        storageManager = StorageManager(beaconScope, MockStorage(), MockSecureStorage(), identifierCreator, BeaconConfiguration(ignoreUnsupportedBlockchains = false))
         creator = SubstrateCreator(
             DataSubstrateCreator(storageManager, identifierCreator),
             V1BeaconMessageSubstrateCreator(),

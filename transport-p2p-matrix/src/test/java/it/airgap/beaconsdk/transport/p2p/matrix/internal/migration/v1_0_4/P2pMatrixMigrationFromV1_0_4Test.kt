@@ -7,6 +7,7 @@ import it.airgap.beaconsdk.core.internal.storage.MockSecureStorage
 import it.airgap.beaconsdk.core.internal.storage.MockStorage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.BeaconP2pMatrixConfiguration
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.migration.MatrixMigrationTarget
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.storage.*
@@ -27,12 +28,14 @@ internal class P2pMatrixMigrationFromV1_0_4Test {
     private lateinit var storageManager: StorageManager
     private lateinit var migration: P2pMatrixMigrationFromV1_0_4
 
+    private val beaconScope: BeaconScope = BeaconScope.Global
+
     @Before
     fun setup() {
         MockKAnnotations.init(this)
         mockLog()
 
-        storageManager = StorageManager(MockStorage(), MockSecureStorage(), identifierCreator, BeaconConfiguration(ignoreUnsupportedBlockchains = false)).apply { addPlugins(MockP2pMatrixStoragePlugin()) }
+        storageManager = StorageManager(beaconScope, MockStorage(), MockSecureStorage(), identifierCreator, BeaconConfiguration(ignoreUnsupportedBlockchains = false)).apply { addPlugins(MockP2pMatrixStoragePlugin()) }
         migration = P2pMatrixMigrationFromV1_0_4(storageManager)
     }
 

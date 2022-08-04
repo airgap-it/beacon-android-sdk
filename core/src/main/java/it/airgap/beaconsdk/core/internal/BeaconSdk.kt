@@ -11,51 +11,46 @@ import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.utils.failWithUninitialized
 import it.airgap.beaconsdk.core.internal.utils.toHexString
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import it.airgap.beaconsdk.core.storage.SecureStorage
 import it.airgap.beaconsdk.core.storage.Storage
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class BeaconSdk(context: Context) {
-    private var isInitialized: Boolean = false
-
     public val applicationContext: Context = context.applicationContext
+    private val beaconContext: MutableMap<BeaconScope, BeaconContext> = mutableMapOf()
 
-    private var _dependencyRegistry: DependencyRegistry? = null
-    public var dependencyRegistry: DependencyRegistry
-        get() = _dependencyRegistry ?: failWithUninitialized(TAG)
-        private set(value) {
-            _dependencyRegistry = value
-        }
+    public val beaconScopes: Set<BeaconScope>
+        get() = beaconContext.keys
 
-    private var _app: BeaconApplication? = null
-    public var app: BeaconApplication
-        get() = _app ?: failWithUninitialized(TAG)
-        private set(value) {
-            _app = value
-        }
+    public fun dependencyRegistry(beaconScope: BeaconScope): DependencyRegistry =
+        beaconContext[beaconScope]?.dependencyRegistry ?: failWithUninitialized(beaconScope)
 
-    public val beaconId: String
-        get() = app.keyPair.publicKey.toHexString().asString()
+    public fun app(beaconScope: BeaconScope): BeaconApplication =
+        beaconContext[beaconScope]?.app ?: failWithUninitialized(beaconScope)
 
-    public suspend fun init(
+    public fun beaconId(beaconScope: BeaconScope): String = app(beaconScope).keyPair.publicKey.toHexString().asString()
+
+    public suspend fun add(
+        beaconScope: BeaconScope,
         partialApp: BeaconApplication.Partial,
         configuration: BeaconConfiguration,
         blockchainFactories: List<Blockchain.Factory<*>>,
         storage: Storage,
         secureStorage: SecureStorage,
     ) {
-        if (isInitialized) return
+        if (beaconContext.containsKey(beaconScope)) return
 
-        dependencyRegistry = CoreDependencyRegistry(blockchainFactories, storage, secureStorage, configuration)
+        val dependencyRegistry = CoreDependencyRegistry(beaconScope, blockchainFactories, storage, secureStorage, configuration)
 
         val storageManager = dependencyRegistry.storageManager
         val crypto = dependencyRegistry.crypto
 
         setSdkVersion(storageManager)
 
-        app = partialApp.toFinal(loadOrGenerateKeyPair(storageManager, crypto))
+        val app = partialApp.toFinal(loadOrGenerateKeyPair(storageManager, crypto))
 
-        isInitialized = true
+        beaconContext[beaconScope] = BeaconContext(app, dependencyRegistry)
     }
 
     private suspend fun setSdkVersion(storageManager: StorageManager) {

@@ -13,6 +13,7 @@ import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.transport.Transport
 import it.airgap.beaconsdk.core.internal.transport.p2p.data.P2pMessage
 import it.airgap.beaconsdk.core.internal.utils.*
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import it.airgap.beaconsdk.core.transport.p2p.P2pClient
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.*
@@ -35,6 +36,8 @@ internal class P2pTransportTest {
     private lateinit var storageManager: StorageManager
     private lateinit var p2pTransport: Transport
 
+    private val beaconScope: BeaconScope = BeaconScope.Global
+
     @Before
     fun setup() {
         MockKAnnotations.init(this)
@@ -43,7 +46,7 @@ internal class P2pTransportTest {
 
         coEvery { p2pClient.sendPairingResponse(any()) } returns Result.success()
 
-        storageManager = StorageManager(MockStorage(), MockSecureStorage(), identifierCreator, BeaconConfiguration(ignoreUnsupportedBlockchains = false))
+        storageManager = StorageManager(beaconScope, MockStorage(), MockSecureStorage(), identifierCreator, BeaconConfiguration(ignoreUnsupportedBlockchains = false))
         p2pTransport = P2pTransport(storageManager, p2pClient)
     }
 

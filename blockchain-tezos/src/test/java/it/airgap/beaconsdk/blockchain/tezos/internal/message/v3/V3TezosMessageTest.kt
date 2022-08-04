@@ -24,12 +24,16 @@ import it.airgap.beaconsdk.blockchain.tezos.message.response.SignPayloadTezosRes
 import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.data.SigningType
 import it.airgap.beaconsdk.core.internal.BeaconConfiguration
+import it.airgap.beaconsdk.core.internal.compat.CoreCompat
+import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.core.internal.message.v3.*
+import it.airgap.beaconsdk.core.internal.serializer.contextualJson
 import it.airgap.beaconsdk.core.internal.storage.MockSecureStorage
 import it.airgap.beaconsdk.core.internal.storage.MockStorage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
 import it.airgap.beaconsdk.core.message.*
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -47,13 +51,18 @@ internal class V3TezosMessageTest {
     @MockK
     private lateinit var identifierCreator: IdentifierCreator
 
+    private lateinit var dependencyRegistry: DependencyRegistry
     private lateinit var storageManager: StorageManager
+
+    private lateinit var json: Json
+
+    private val beaconScope: BeaconScope = BeaconScope.Global
 
     @Before
     fun setup() {
         MockKAnnotations.init(this)
 
-        storageManager = StorageManager(MockStorage(), MockSecureStorage(), identifierCreator, BeaconConfiguration(ignoreUnsupportedBlockchains = false))
+        storageManager = StorageManager(beaconScope, MockStorage(), MockSecureStorage(), identifierCreator, BeaconConfiguration(ignoreUnsupportedBlockchains = false))
         val tezos = Tezos(
             wallet,
             TezosCreator(
@@ -70,15 +79,17 @@ internal class V3TezosMessageTest {
             ),
         )
 
-        val dependencyRegistry = mockDependencyRegistry(tezos)
+        dependencyRegistry = mockDependencyRegistry(tezos)
         every { dependencyRegistry.storageManager } returns storageManager
         every { dependencyRegistry.identifierCreator } returns identifierCreator
+
+        json = contextualJson(dependencyRegistry.blockchainRegistry, CoreCompat(beaconScope))
     }
 
     @Test
     fun `is deserialized from JSON`() {
         messagesWithJsonStrings()
-            .map { Json.decodeFromString<V3BeaconMessage>(it.second) to it.first }
+            .map { json.decodeFromString<V3BeaconMessage>(it.second) to it.first }
             .forEach {
                 assertEquals(it.second, it.first)
             }
@@ -87,8 +98,8 @@ internal class V3TezosMessageTest {
     @Test
     fun `serializes to JSON`() {
         messagesWithJsonStrings()
-            .map { Json.decodeFromString(JsonObject.serializer(), Json.encodeToString(it.first)) to
-                    Json.decodeFromString(JsonObject.serializer(), it.second) }
+            .map { json.decodeFromString(JsonObject.serializer(), json.encodeToString(it.first)) to
+                    json.decodeFromString(JsonObject.serializer(), it.second) }
             .forEach {
                 assertEquals(it.second, it.first)
             }
@@ -100,7 +111,7 @@ internal class V3TezosMessageTest {
         val senderId = "senderId"
 
         versionedWithBeacon(version, senderId)
-            .map { V3BeaconMessage.from(senderId, it.second) to it.first }
+            .map { V3BeaconMessage.from(senderId, it.second, V3BeaconMessage.Context(dependencyRegistry.blockchainRegistry)) to it.first }
             .forEach {
                 assertEquals(it.second, it.first)
             }
@@ -119,7 +130,7 @@ internal class V3TezosMessageTest {
 
         runBlocking {
             versionedWithBeacon(senderId = senderId, appMetadata = matchingAppMetadata, origin = origin)
-                .map { it.first.toBeaconMessage(origin) to it.second }
+                .map { it.first.toBeaconMessage(origin, beaconScope) to it.second }
                 .forEach {
                     assertEquals(it.second, it.first)
                 }
@@ -201,9 +212,9 @@ internal class V3TezosMessageTest {
                     "blockchainIdentifier": "${Tezos.IDENTIFIER}",
                     "type": "permission_request",
                     "blockchainData": {
-                        "appMetadata": ${Json.encodeToString(appMetadata)},
-                        "network": ${Json.encodeToString(network)},
-                        "scopes": ${Json.encodeToString(scopes)}
+                        "appMetadata": ${json.encodeToString(appMetadata)},
+                        "network": ${json.encodeToString(network)},
+                        "scopes": ${json.encodeToString(scopes)}
                     }
                 }
             }
@@ -242,8 +253,8 @@ internal class V3TezosMessageTest {
                     "accountId": "$accountId",
                     "blockchainData": {
                         "type": "operation_request",
-                        "network": ${Json.encodeToString(network)},
-                        "operationDetails": ${Json.encodeToString(tezosOperations)},
+                        "network": ${json.encodeToString(network)},
+                        "operationDetails": ${json.encodeToString(tezosOperations)},
                         "sourceAddress": "$sourceAddress"
                     }
                 }
@@ -283,7 +294,7 @@ internal class V3TezosMessageTest {
                     "accountId": "$accountId",
                     "blockchainData": {
                         "type": "sign_payload_request",
-                        "signingType": ${Json.encodeToString(signingType)},
+                        "signingType": ${json.encodeToString(signingType)},
                         "payload": "$payload",
                         "sourceAddress": "$sourceAddress"
                     }
@@ -323,7 +334,7 @@ internal class V3TezosMessageTest {
                     "accountId": "$accountId",
                     "blockchainData": {
                         "type": "broadcast_request",
-                        "network": ${Json.encodeToString(network)},
+                        "network": ${json.encodeToString(network)},
                         "signedTransaction": "$signedTransaction"
                     }
                 }
@@ -368,8 +379,8 @@ internal class V3TezosMessageTest {
                         "accountId": "$accountId",
                         "publicKey": "$publicKey",
                         "address": "$address",
-                        "network": ${Json.encodeToString(network)},
-                        "scopes": ${Json.encodeToString(scopes)}
+                        "network": ${json.encodeToString(network)},
+                        "scopes": ${json.encodeToString(scopes)}
                     }
                 }
             }
@@ -433,7 +444,7 @@ internal class V3TezosMessageTest {
                     "type": "blockchain_response",
                     "blockchainData": {
                         "type": "sign_payload_response",
-                        "signingType": ${Json.encodeToString(signingType)},
+                        "signingType": ${json.encodeToString(signingType)},
                         "signature": "$signature"
                     }
                 }

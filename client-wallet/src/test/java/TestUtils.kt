@@ -6,6 +6,7 @@ import it.airgap.beaconsdk.core.internal.blockchain.message.BlockchainMockReques
 import it.airgap.beaconsdk.core.internal.blockchain.message.BlockchainMockResponse
 import it.airgap.beaconsdk.core.internal.blockchain.message.PermissionMockRequest
 import it.airgap.beaconsdk.core.internal.blockchain.message.PermissionMockResponse
+import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.core.internal.message.BeaconConnectionMessage
 import it.airgap.beaconsdk.core.internal.message.VersionedBeaconMessage
 import it.airgap.beaconsdk.core.message.*
@@ -17,13 +18,17 @@ internal fun <T> MutableSharedFlow<Result<T>>.tryEmitValues(values: List<T>) {
     values.forEach { tryEmit(Result.success(it)) }
 }
 
+internal val DependencyRegistry.versionedBeaconMessageContext: VersionedBeaconMessage.Context
+    get() = VersionedBeaconMessage.Context(blockchainRegistry, compat)
+
 // -- converters --
 
 internal fun versionedBeaconMessage(
     message: BeaconMessage,
     senderId: String = "senderId",
+    context: VersionedBeaconMessage.Context,
 ): VersionedBeaconMessage =
-    VersionedBeaconMessage.from(senderId, message)
+    VersionedBeaconMessage.from(senderId, message, context)
 
 // -- flows --
 
@@ -110,10 +115,10 @@ internal fun beaconResponses(version: String = "version", requestOrigin: Origin 
         acknowledgeBeaconResponse(version = version, requestOrigin = requestOrigin),
     ) + errorBeaconResponses(version = version, requestOrigin = requestOrigin)
 
-internal fun beaconVersionedRequests(version: String = "version", senderId: String = "senderId"): List<VersionedBeaconMessage> =
+internal fun beaconVersionedRequests(version: String = "version", senderId: String = "senderId", context: VersionedBeaconMessage.Context): List<VersionedBeaconMessage> =
     listOf(
-        VersionedBeaconMessage.from(senderId, permissionBeaconRequest(senderId = senderId, version = version)),
-        VersionedBeaconMessage.from(senderId, blockchainBeaconRequest(senderId = senderId, version = version)),
+        VersionedBeaconMessage.from(senderId, permissionBeaconRequest(senderId = senderId, version = version), context),
+        VersionedBeaconMessage.from(senderId, blockchainBeaconRequest(senderId = senderId, version = version), context),
     )
 
 internal fun p2pPeers(

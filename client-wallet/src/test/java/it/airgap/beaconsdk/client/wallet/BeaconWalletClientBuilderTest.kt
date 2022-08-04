@@ -2,6 +2,8 @@ package it.airgap.beaconsdk.client.wallet
 
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
+import it.airgap.beaconsdk.client.wallet.internal.di.ExtendedDependencyRegistry
+import it.airgap.beaconsdk.client.wallet.internal.di.WalletDependencyRegistry
 import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.data.P2P
 import it.airgap.beaconsdk.core.internal.BeaconSdk
@@ -12,19 +14,19 @@ import it.airgap.beaconsdk.core.internal.data.BeaconApplication
 import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.SharedPreferencesSecureStorage
 import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.SharedPreferencesStorage
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import it.airgap.beaconsdk.core.transport.p2p.P2pClient
 import kotlinx.coroutines.runBlocking
 import mockBeaconSdk
 import org.junit.Before
 import org.junit.Test
 import java.security.KeyStore
+import kotlin.reflect.KClass
 import kotlin.test.assertEquals
 
 internal class BeaconWalletClientBuilderTest {
 
     private lateinit var beaconSdk: BeaconSdk
-
-    @MockK(relaxed = true)
     private lateinit var dependencyRegistry: DependencyRegistry
 
     private val appName: String = "mockApp"
@@ -38,12 +40,16 @@ internal class BeaconWalletClientBuilderTest {
         mockkStatic(KeyStore::class)
         every { KeyStore.getInstance(any()) } returns mockk(relaxed = true)
 
+        dependencyRegistry = spyk(MockDependencyRegistry())
         beaconSdk = mockBeaconSdk(beaconId = beaconId, dependencyRegistry = dependencyRegistry)
     }
 
     @Test
     fun `builds BeaconWalletClient with default settings`() {
         runBlocking {
+            val beaconScope = BeaconScope.Global
+            every { dependencyRegistry.beaconScope } returns beaconScope
+
             val beaconWalletClient = BeaconWalletClient.Builder(appName).apply {
                 support(*blockchains.toTypedArray())
             }.build()
@@ -51,9 +57,11 @@ internal class BeaconWalletClientBuilderTest {
 
             assertEquals(appName, beaconWalletClient.name)
             assertEquals(beaconId, beaconWalletClient.beaconId)
+            assertEquals(beaconScope, beaconWalletClient.beaconScope)
 
             coVerify(exactly = 1) {
-                beaconSdk.init(
+                beaconSdk.add(
+                    beaconScope,
                     BeaconApplication.Partial(appName, null, null),
                     BeaconConfiguration(ignoreUnsupportedBlockchains = false),
                     blockchains,
@@ -68,6 +76,9 @@ internal class BeaconWalletClientBuilderTest {
     @Test
     fun `builds BeaconWalletClient with custom connections`() {
         runBlocking {
+            val beaconScope = BeaconScope.Global
+            every { dependencyRegistry.beaconScope } returns beaconScope
+
             val mockP2pFactory = mockkClass(P2pClient.Factory::class)
             val customConnections = listOf(P2P(mockP2pFactory))
 
@@ -78,9 +89,11 @@ internal class BeaconWalletClientBuilderTest {
 
             assertEquals(appName, beaconWalletClient.name)
             assertEquals(beaconId, beaconWalletClient.beaconId)
+            assertEquals(beaconScope, beaconWalletClient.beaconScope)
 
             coVerify(exactly = 1) {
-                beaconSdk.init(
+                beaconSdk.add(
+                    beaconScope,
                     BeaconApplication.Partial(appName, null, null),
                     BeaconConfiguration(ignoreUnsupportedBlockchains = false),
                     blockchains,
@@ -95,6 +108,9 @@ internal class BeaconWalletClientBuilderTest {
     @Test
     fun `builds BeaconWalletClient with default settings when used as builder function`() {
         runBlocking {
+            val beaconScope = BeaconScope.Global
+            every { dependencyRegistry.beaconScope } returns beaconScope
+
             val beaconWalletClient = BeaconWalletClient(appName) {
                 support(*blockchains.toTypedArray())
             }
@@ -102,9 +118,11 @@ internal class BeaconWalletClientBuilderTest {
 
             assertEquals(appName, beaconWalletClient.name)
             assertEquals(beaconId, beaconWalletClient.beaconId)
+            assertEquals(beaconScope, beaconWalletClient.beaconScope)
 
             coVerify(exactly = 1) {
-                beaconSdk.init(
+                beaconSdk.add(
+                    beaconScope,
                     BeaconApplication.Partial(appName, null, null),
                     BeaconConfiguration(ignoreUnsupportedBlockchains = false),
                     blockchains,
@@ -119,6 +137,9 @@ internal class BeaconWalletClientBuilderTest {
     @Test
     fun `builds BeaconWalletClient with custom connections as builder function`() {
         runBlocking {
+            val beaconScope = BeaconScope.Global
+            every { dependencyRegistry.beaconScope } returns beaconScope
+
             val mockP2pFactory = mockkClass(P2pClient.Factory::class)
             val customConnections = listOf(P2P(mockP2pFactory))
 
@@ -129,9 +150,11 @@ internal class BeaconWalletClientBuilderTest {
 
             assertEquals(appName, beaconWalletClient.name)
             assertEquals(beaconId, beaconWalletClient.beaconId)
+            assertEquals(beaconScope, beaconWalletClient.beaconScope)
 
             coVerify(exactly = 1) {
-                beaconSdk.init(
+                beaconSdk.add(
+                    beaconScope,
                     BeaconApplication.Partial(appName, null, null),
                     BeaconConfiguration(ignoreUnsupportedBlockchains = false),
                     blockchains,
@@ -140,6 +163,21 @@ internal class BeaconWalletClientBuilderTest {
                 )
             }
             verify(exactly = 1) { dependencyRegistry.connectionController(customConnections) }
+        }
+    }
+
+    private class MockDependencyRegistry : DependencyRegistry by mockk(relaxed = true) {
+        override val extended: MutableMap<String, DependencyRegistry> = mutableMapOf()
+
+        override fun addExtended(extended: DependencyRegistry) {
+            val key = extended::class.simpleName ?: return
+            this.extended[key] = extended
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        override fun <T : DependencyRegistry> findExtended(targetClass: KClass<T>): T? {
+            val key = targetClass.simpleName ?: return null
+            return this.extended[key] as T?
         }
     }
 }

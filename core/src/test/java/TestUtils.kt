@@ -6,17 +6,21 @@ import it.airgap.beaconsdk.core.internal.blockchain.message.BlockchainMockReques
 import it.airgap.beaconsdk.core.internal.blockchain.message.BlockchainMockResponse
 import it.airgap.beaconsdk.core.internal.blockchain.message.PermissionMockRequest
 import it.airgap.beaconsdk.core.internal.blockchain.message.PermissionMockResponse
+import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.core.internal.message.ConnectionTransportMessage
 import it.airgap.beaconsdk.core.internal.message.VersionedBeaconMessage
+import it.airgap.beaconsdk.core.internal.message.v1.V1BeaconMessage
+import it.airgap.beaconsdk.core.internal.message.v2.V2BeaconMessage
+import it.airgap.beaconsdk.core.internal.message.v3.V3BeaconMessage
+import it.airgap.beaconsdk.core.internal.utils.encodeToString
 import it.airgap.beaconsdk.core.internal.utils.failWith
 import it.airgap.beaconsdk.core.message.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.onEach
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonNull
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.*
 
 // -- extensions --
 
@@ -52,6 +56,18 @@ internal fun JsonObject.Companion.fromValues(values: Map<String, Any?>, includeN
 
     return JsonObject(content)
 }
+
+internal val DependencyRegistry.versionedBeaconMessageContext: VersionedBeaconMessage.Context
+    get() = VersionedBeaconMessage.Context(blockchainRegistry, compat)
+
+internal val DependencyRegistry.v1BeaconMessageContext: V1BeaconMessage.Context
+    get() = V1BeaconMessage.Context(compat)
+
+internal val DependencyRegistry.v2BeaconMessageContext: V2BeaconMessage.Context
+    get() = V2BeaconMessage.Context(compat)
+
+internal val DependencyRegistry.v3BeaconMessageContext: V3BeaconMessage.Context
+    get() = V3BeaconMessage.Context(blockchainRegistry)
 
 // -- flows --
 
@@ -158,30 +174,31 @@ internal fun beaconMessages(
     if (includeError) add(errorBeaconResponse(version = version, requestOrigin = origin))
 }
 
-internal fun beaconVersionedRequests(version: String = "version", senderId: String = "senderId"): List<VersionedBeaconMessage> =
+internal fun beaconVersionedRequests(version: String = "version", senderId: String = "senderId", context: VersionedBeaconMessage.Context): List<VersionedBeaconMessage> =
     listOf(
-        VersionedBeaconMessage.from(senderId, permissionBeaconRequest(senderId = senderId, version = version)),
-        VersionedBeaconMessage.from(senderId, blockchainBeaconRequest(senderId = senderId, version = version)),
+        VersionedBeaconMessage.from(senderId, permissionBeaconRequest(senderId = senderId, version = version), context),
+        VersionedBeaconMessage.from(senderId, blockchainBeaconRequest(senderId = senderId, version = version), context),
     )
 
-internal fun beaconVersionedResponses(version: String = "version", senderId: String = "senderId"): List<VersionedBeaconMessage> =
+internal fun beaconVersionedResponses(version: String = "version", senderId: String = "senderId", context: VersionedBeaconMessage.Context): List<VersionedBeaconMessage> =
     listOf(
-        VersionedBeaconMessage.from(senderId, permissionBeaconResponse(version = version)),
-        VersionedBeaconMessage.from(senderId, blockchainBeaconResponse(version = version)),
+        VersionedBeaconMessage.from(senderId, permissionBeaconResponse(version = version), context),
+        VersionedBeaconMessage.from(senderId, blockchainBeaconResponse(version = version), context),
     )
 
 internal fun beaconVersionedMessages(
     version: String = "version",
     senderId: String = "senderId",
+    context: VersionedBeaconMessage.Context,
     includeRequests: Boolean = true,
     includeResponses: Boolean = true,
     includeDisconnect: Boolean = true,
     includeError: Boolean = true,
 ): List<VersionedBeaconMessage> = mutableListOf<VersionedBeaconMessage>().apply {
-    if (includeRequests) addAll(beaconVersionedRequests(version, senderId))
-    if (includeResponses) addAll(beaconVersionedResponses(version, senderId))
-    if (includeDisconnect) add(VersionedBeaconMessage.from(senderId, disconnectBeaconMessage(senderId = senderId, version = version)))
-    if (includeError) add(VersionedBeaconMessage.from(senderId, errorBeaconResponse(version = version)))
+    if (includeRequests) addAll(beaconVersionedRequests(version, senderId, context))
+    if (includeResponses) addAll(beaconVersionedResponses(version, senderId, context))
+    if (includeDisconnect) add(VersionedBeaconMessage.from(senderId, disconnectBeaconMessage(senderId = senderId, version = version), context))
+    if (includeError) add(VersionedBeaconMessage.from(senderId, errorBeaconResponse(version = version), context))
 }
 
 internal fun p2pPeers(

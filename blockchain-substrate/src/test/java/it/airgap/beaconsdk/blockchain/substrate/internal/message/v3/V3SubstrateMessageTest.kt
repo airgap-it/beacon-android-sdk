@@ -4,6 +4,7 @@ import fromValues
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
+import io.mockk.mockk
 import it.airgap.beaconsdk.blockchain.substrate.Substrate
 import it.airgap.beaconsdk.blockchain.substrate.data.*
 import it.airgap.beaconsdk.blockchain.substrate.internal.creator.*
@@ -16,13 +17,17 @@ import it.airgap.beaconsdk.blockchain.substrate.message.response.SignPayloadSubs
 import it.airgap.beaconsdk.blockchain.substrate.message.response.TransferSubstrateResponse
 import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.internal.BeaconConfiguration
+import it.airgap.beaconsdk.core.internal.compat.CoreCompat
+import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.core.internal.message.v3.*
+import it.airgap.beaconsdk.core.internal.serializer.contextualJson
 import it.airgap.beaconsdk.core.internal.storage.MockSecureStorage
 import it.airgap.beaconsdk.core.internal.storage.MockStorage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
 import it.airgap.beaconsdk.core.internal.utils.failWithIllegalState
 import it.airgap.beaconsdk.core.message.*
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -37,13 +42,18 @@ internal class V3SubstrateMessageTest {
     @MockK
     private lateinit var identifierCreator: IdentifierCreator
 
+    private lateinit var dependencyRegistry: DependencyRegistry
     private lateinit var storageManager: StorageManager
+
+    private lateinit var json: Json
+
+    private val beaconScope: BeaconScope = BeaconScope.Global
 
     @Before
     fun setup() {
         MockKAnnotations.init(this)
 
-        storageManager = StorageManager(MockStorage(), MockSecureStorage(), identifierCreator, BeaconConfiguration(ignoreUnsupportedBlockchains = false))
+        storageManager = StorageManager(beaconScope, MockStorage(), MockSecureStorage(), identifierCreator, BeaconConfiguration(ignoreUnsupportedBlockchains = false))
         val substrate = Substrate(
             SubstrateCreator(
                 DataSubstrateCreator(storageManager, identifierCreator),
@@ -59,15 +69,17 @@ internal class V3SubstrateMessageTest {
             ),
         )
 
-        val dependencyRegistry = mockDependencyRegistry(substrate)
+        dependencyRegistry = mockDependencyRegistry(substrate)
         every { dependencyRegistry.storageManager } returns storageManager
         every { dependencyRegistry.identifierCreator } returns identifierCreator
+
+        json = contextualJson(dependencyRegistry.blockchainRegistry, CoreCompat(beaconScope))
     }
 
     @Test
     fun `is deserialized from JSON`() {
         messagesWithJsonStrings()
-            .map { Json.decodeFromString<V3BeaconMessage>(it.second) to it.first }
+            .map { json.decodeFromString<V3BeaconMessage>(it.second) to it.first }
             .forEach {
                 assertEquals(it.second, it.first)
             }
@@ -76,8 +88,8 @@ internal class V3SubstrateMessageTest {
     @Test
     fun `serializes to JSON`() {
         messagesWithJsonStrings()
-            .map { Json.decodeFromString(JsonObject.serializer(), Json.encodeToString(it.first)) to
-                    Json.decodeFromString(JsonObject.serializer(), it.second) }
+            .map { json.decodeFromString(JsonObject.serializer(), json.encodeToString(it.first)) to
+                    json.decodeFromString(JsonObject.serializer(), it.second) }
             .forEach {
                 assertEquals(it.second, it.first)
             }
@@ -89,7 +101,7 @@ internal class V3SubstrateMessageTest {
         val senderId = "senderId"
 
         versionedWithBeacon(version, senderId)
-            .map { V3BeaconMessage.from(senderId, it.second) to it.first }
+            .map { V3BeaconMessage.from(senderId, it.second, V3BeaconMessage.Context(dependencyRegistry.blockchainRegistry)) to it.first }
             .forEach {
                 assertEquals(it.second, it.first)
             }
@@ -141,7 +153,7 @@ internal class V3SubstrateMessageTest {
                 accountId = accountId,
                 account = account,
             )
-                .map { it.first.toBeaconMessage(origin) to it.second }
+                .map { it.first.toBeaconMessage(origin, beaconScope) to it.second }
                 .forEach {
                     assertEquals(it.second, it.first)
                 }
@@ -240,9 +252,9 @@ internal class V3SubstrateMessageTest {
                     "blockchainIdentifier": "${Substrate.IDENTIFIER}",
                     "type": "permission_request",
                     "blockchainData": {
-                        "appMetadata": ${Json.encodeToString(appMetadata)},
-                        "scopes": ${Json.encodeToString(scopes)},
-                        "networks": ${Json.encodeToString(networks)}
+                        "appMetadata": ${json.encodeToString(appMetadata)},
+                        "scopes": ${json.encodeToString(scopes)},
+                        "networks": ${json.encodeToString(networks)}
                     }
                 }
             }
@@ -287,8 +299,8 @@ internal class V3SubstrateMessageTest {
                         "scope": "transfer",
                         "amount": "$amount",
                         "recipient": "$recipient",
-                        "network": ${Json.encodeToString(network)},
-                        "mode": ${Json.encodeToString(mode)}
+                        "network": ${json.encodeToString(network)},
+                        "mode": ${json.encodeToString(mode)}
                     }
                 }
             }
@@ -336,9 +348,9 @@ internal class V3SubstrateMessageTest {
                     "accountId": "$accountId",
                     "blockchainData": {
                         "type": "sign_payload_request",
-                        "scope": ${Json.encodeToString(scope)},
-                        "payload": ${Json.encodeToString(payload)},
-                        "mode": ${Json.encodeToString(mode)}
+                        "scope": ${json.encodeToString(scope)},
+                        "payload": ${json.encodeToString(payload)},
+                        "mode": ${json.encodeToString(mode)}
                     }
                 }
             }
@@ -379,9 +391,9 @@ internal class V3SubstrateMessageTest {
                     "blockchainIdentifier": "${Substrate.IDENTIFIER}",
                     "type": "permission_response",
                     "blockchainData": {
-                        "appMetadata": ${Json.encodeToString(appMetadata)},
-                        "scopes": ${Json.encodeToString(scopes)},
-                        "accounts": ${Json.encodeToString(accounts)}
+                        "appMetadata": ${json.encodeToString(appMetadata)},
+                        "scopes": ${json.encodeToString(scopes)},
+                        "accounts": ${json.encodeToString(accounts)}
                     }
                 }
             }
@@ -424,7 +436,7 @@ internal class V3SubstrateMessageTest {
                 "message": {
                     "blockchainIdentifier": "${Substrate.IDENTIFIER}",
                     "type": "blockchain_response",
-                    "blockchainData": ${Json.encodeToString(dataJson)}
+                    "blockchainData": ${json.encodeToString(dataJson)}
                 }
             }
         """.trimIndent()
@@ -467,7 +479,7 @@ internal class V3SubstrateMessageTest {
                 "message": {
                     "blockchainIdentifier": "${Substrate.IDENTIFIER}",
                     "type": "blockchain_response",
-                    "blockchainData": ${Json.encodeToString(dataJson)}
+                    "blockchainData": ${json.encodeToString(dataJson)}
                 }
             }
         """.trimIndent()

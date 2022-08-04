@@ -17,15 +17,19 @@ import it.airgap.beaconsdk.blockchain.tezos.message.request.SignPayloadTezosRequ
 import it.airgap.beaconsdk.blockchain.tezos.message.response.PermissionTezosResponse
 import it.airgap.beaconsdk.blockchain.tezos.tezos
 import it.airgap.beaconsdk.client.wallet.BeaconWalletClient
+import it.airgap.beaconsdk.core.client.BeaconClient
 import it.airgap.beaconsdk.core.data.BeaconError
 import it.airgap.beaconsdk.core.data.P2pPeer
 import it.airgap.beaconsdk.core.message.BeaconMessage
 import it.airgap.beaconsdk.core.message.BeaconRequest
 import it.airgap.beaconsdk.core.message.ErrorBeaconResponse
 import it.airgap.beaconsdk.transport.p2p.matrix.p2pMatrix
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 class MainActivityViewModel : ViewModel() {
     private val _state: MutableLiveData<MainActivity.State> = MutableLiveData(MainActivity.State())
@@ -52,20 +56,21 @@ class MainActivityViewModel : ViewModel() {
 
     fun respondExample() {
         val request = awaitingRequest ?: return
+        val beaconClient = beaconClient ?: return
 
         viewModelScope.launch {
             val response = when (request) {
 
                 /* Tezos */
 
-                is PermissionTezosRequest -> PermissionTezosResponse.from(request, exampleTezosAccount(request.network))
+                is PermissionTezosRequest -> PermissionTezosResponse.from(request, exampleTezosAccount(request.network, beaconClient))
                 is OperationTezosRequest -> ErrorBeaconResponse.from(request, BeaconError.Aborted)
                 is SignPayloadTezosRequest -> ErrorBeaconResponse.from(request, TezosError.SignatureTypeNotSupported)
                 is BroadcastTezosRequest -> ErrorBeaconResponse.from(request, TezosError.BroadcastError)
 
                 /* Substrate*/
 
-                is PermissionSubstrateRequest -> PermissionSubstrateResponse.from(request, listOf(exampleSubstrateAccount(request.networks.first())))
+                is PermissionSubstrateRequest -> PermissionSubstrateResponse.from(request, listOf(exampleSubstrateAccount(request.networks.first(), beaconClient)))
 
                 /* Others */
                 else -> ErrorBeaconResponse.from(request, BeaconError.Unknown)
@@ -113,16 +118,18 @@ class MainActivityViewModel : ViewModel() {
     }
 
     companion object {
-        fun exampleTezosAccount(network: TezosNetwork): TezosAccount = TezosAccount(
+        fun exampleTezosAccount(network: TezosNetwork, client: BeaconClient<*>): TezosAccount = TezosAccount(
             "edpktpzo8UZieYaJZgCHP6M6hKHPdWBSNqxvmEt6dwWRgxDh1EAFw9",
             "tz1Mg6uXUhJzuCh4dH2mdBdYBuaiVZCCZsak",
             network,
+            client,
         )
 
-        fun exampleSubstrateAccount(network: SubstrateNetwork): SubstrateAccount = SubstrateAccount(
+        fun exampleSubstrateAccount(network: SubstrateNetwork, client: BeaconClient<*>): SubstrateAccount = SubstrateAccount(
             "724867a19e4a9422ac85f3b9a7c4bf5ccf12c2df60d858b216b81329df716535",
             "13aqy7vzMjuS2Nd6TYahHHetGt7dTgaqijT6Tpw3NS2MDFug",
             network,
+            client,
         )
     }
 }

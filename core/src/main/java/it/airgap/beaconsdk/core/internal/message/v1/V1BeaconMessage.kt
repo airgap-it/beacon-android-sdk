@@ -3,15 +3,16 @@ package it.airgap.beaconsdk.core.internal.message.v1
 import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.data.BeaconError
 import it.airgap.beaconsdk.core.data.Origin
-import it.airgap.beaconsdk.core.internal.compat.CoreCompat
+import it.airgap.beaconsdk.core.internal.blockchain.BlockchainRegistry
+import it.airgap.beaconsdk.core.internal.compat.Compat
+import it.airgap.beaconsdk.core.internal.compat.VersionedCompat
 import it.airgap.beaconsdk.core.internal.message.VersionedBeaconMessage
-import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
-import it.airgap.beaconsdk.core.internal.utils.failWithUnsupportedMessage
-import it.airgap.beaconsdk.core.internal.utils.getString
+import it.airgap.beaconsdk.core.internal.utils.*
 import it.airgap.beaconsdk.core.message.AcknowledgeBeaconResponse
 import it.airgap.beaconsdk.core.message.BeaconMessage
 import it.airgap.beaconsdk.core.message.DisconnectBeaconMessage
 import it.airgap.beaconsdk.core.message.ErrorBeaconResponse
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Required
@@ -27,28 +28,37 @@ import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.jsonObject
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@Serializable(with = V1BeaconMessage.Serializer::class)
 public abstract class V1BeaconMessage : VersionedBeaconMessage() {
     public abstract val id: String
     public abstract val type: String
     public abstract val beaconId: String
 
     public companion object {
-        public fun from(senderId: String, message: BeaconMessage): V1BeaconMessage =
+        public fun from(senderId: String, message: BeaconMessage, context: Context): V1BeaconMessage =
             with(message) {
                 when (this) {
                     is AcknowledgeBeaconResponse -> failWithUnsupportedMessage(message, version)
                     is ErrorBeaconResponse -> ErrorV1BeaconResponse(version, id, senderId, errorType)
                     is DisconnectBeaconMessage -> DisconnectV1BeaconMessage(version, id, senderId)
-                    else -> CoreCompat.versioned.blockchain.creator.v1.from(senderId, message).getOrThrow()
+                    else -> context.compat.versioned.blockchain.creator.v1.from(senderId, message).getOrThrow()
                 }
             }
 
-        public fun compatSerializer(): KSerializer<V1BeaconMessage> = CoreCompat.versioned.blockchain.serializer.v1.message
+        public fun serializer(blockchainRegistry: BlockchainRegistry, compat: Compat<VersionedCompat>): KSerializer<V1BeaconMessage> =
+            Serializer(blockchainRegistry, compat)
+
+        public fun serializer(beaconScope: BeaconScope? = null): KSerializer<V1BeaconMessage> =
+            Serializer(beaconScope)
+
+        public fun compatSerializer(compat: Compat<VersionedCompat>): KSerializer<V1BeaconMessage> = compat.versioned.blockchain.serializer.v1.message
     }
 
+    public class Context(public val compat: Compat<VersionedCompat>)
+
     @OptIn(ExperimentalSerializationApi::class)
-    internal object Serializer : KJsonSerializer<V1BeaconMessage> {
+    internal class Serializer(private val blockchainRegistry: BlockchainRegistry, private val compat: Compat<VersionedCompat>) : KJsonSerializer<V1BeaconMessage> {
+        constructor(beaconScope: BeaconScope? = null) : this(blockchainRegistry(beaconScope), compat(beaconScope))
+
         override val descriptor: SerialDescriptor = buildClassSerialDescriptor("V1BeaconMessage") {
             element<String>("type")
         }
@@ -57,24 +67,23 @@ public abstract class V1BeaconMessage : VersionedBeaconMessage() {
             val type = jsonElement.jsonObject.getString(descriptor.getElementName(0))
 
             return when (type) {
-                ErrorV1BeaconResponse.TYPE -> jsonDecoder.json.decodeFromJsonElement(ErrorV1BeaconResponse.serializer(), jsonElement)
+                ErrorV1BeaconResponse.TYPE -> jsonDecoder.json.decodeFromJsonElement(ErrorV1BeaconResponse.serializer(blockchainRegistry, compat), jsonElement)
                 DisconnectV1BeaconMessage.TYPE -> jsonDecoder.json.decodeFromJsonElement(DisconnectV1BeaconMessage.serializer(), jsonElement)
-                else -> jsonDecoder.json.decodeFromJsonElement(compatSerializer(), jsonElement)
+                else -> jsonDecoder.json.decodeFromJsonElement(compatSerializer(compat), jsonElement)
             }
         }
 
         override fun serialize(jsonEncoder: JsonEncoder, value: V1BeaconMessage) {
             when (value) {
-                is ErrorV1BeaconResponse -> jsonEncoder.encodeSerializableValue(ErrorV1BeaconResponse.serializer(), value)
+                is ErrorV1BeaconResponse -> jsonEncoder.encodeSerializableValue(ErrorV1BeaconResponse.serializer(blockchainRegistry, compat), value)
                 is DisconnectV1BeaconMessage -> jsonEncoder.encodeSerializableValue(DisconnectV1BeaconMessage.serializer(), value)
-                else -> jsonEncoder.encodeSerializableValue(compatSerializer(), value)
+                else -> jsonEncoder.encodeSerializableValue(compatSerializer(compat), value)
             }
         }
     }
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@Serializable(with = ErrorV1BeaconResponse.Serializer::class)
 public data class ErrorV1BeaconResponse(
     override val version: String,
     override val id: String,
@@ -84,20 +93,29 @@ public data class ErrorV1BeaconResponse(
     @Required
     override val type: String = TYPE
 
-    override suspend fun toBeaconMessage(origin: Origin): BeaconMessage =
+    override suspend fun toBeaconMessage(origin: Origin, beaconScope: BeaconScope): BeaconMessage =
         ErrorBeaconResponse(id, version, origin, errorType, null)
 
     public companion object {
         internal const val TYPE: String = "error"
+
+        public fun serializer(blockchainRegistry: BlockchainRegistry, compat: Compat<VersionedCompat>): KSerializer<ErrorV1BeaconResponse> =
+            Serializer(blockchainRegistry, compat)
+
+        public fun serializer(beaconScope: BeaconScope? = null): KSerializer<ErrorV1BeaconResponse> = Serializer(beaconScope)
     }
 
-    internal class Serializer : KJsonSerializer<ErrorV1BeaconResponse> {
+    internal class Serializer(blockchainRegistry: BlockchainRegistry, compat: Compat<VersionedCompat>) : KJsonSerializer<ErrorV1BeaconResponse> {
+        constructor(beaconScope: BeaconScope? = null) : this(blockchainRegistry(beaconScope), compat(beaconScope))
+
+        private val beaconErrorSerializer: KSerializer<BeaconError> = BeaconError.serializer(blockchainRegistry, compat.versioned.blockchain.identifier)
+
         override val descriptor: SerialDescriptor = buildClassSerialDescriptor("ErrorV1BeaconResponse") {
             element<String>("type")
             element<String>("version")
             element<String>("id")
             element<String>("beaconId")
-            element<BeaconError>("errorType")
+            element("errorType", beaconErrorSerializer.descriptor)
         }
 
         override fun deserialize(
@@ -107,7 +125,7 @@ public data class ErrorV1BeaconResponse(
             val version = decodeStringElement(descriptor, 1)
             val id = decodeStringElement(descriptor, 2)
             val beaconId = decodeStringElement(descriptor, 3)
-            val errorType = decodeSerializableElement(descriptor, 4, BeaconError.serializer(CoreCompat.versioned.blockchain.identifier))
+            val errorType = decodeSerializableElement(descriptor, 4, beaconErrorSerializer)
 
             return ErrorV1BeaconResponse(version, id, beaconId, errorType)
         }
@@ -119,7 +137,7 @@ public data class ErrorV1BeaconResponse(
                     encodeStringElement(descriptor, 1, version)
                     encodeStringElement(descriptor, 2, id)
                     encodeStringElement(descriptor, 3, beaconId)
-                    encodeSerializableElement(descriptor, 4, BeaconError.serializer(CoreCompat.versioned.blockchain.identifier), errorType)
+                    encodeSerializableElement(descriptor, 4, beaconErrorSerializer, errorType)
                 }
             }
         }
@@ -136,7 +154,7 @@ public data class DisconnectV1BeaconMessage(
     @Required
     override val type: String = TYPE
 
-    override suspend fun toBeaconMessage(origin: Origin): BeaconMessage =
+    override suspend fun toBeaconMessage(origin: Origin, beaconScope: BeaconScope): BeaconMessage =
         DisconnectBeaconMessage(id, beaconId, version, origin)
 
     public companion object {

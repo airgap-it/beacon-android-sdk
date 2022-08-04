@@ -7,9 +7,9 @@ import it.airgap.beaconsdk.core.internal.utils.getAndDispose
 import it.airgap.beaconsdk.core.internal.utils.getOrPutIfNotNull
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class BlockchainRegistry internal constructor(factories: Map<String, () -> Blockchain>) {
-    private val factories: MutableMap<String, () -> Blockchain> = factories.toMutableMap()
-    private val blockchains: MutableMap<String, Blockchain> = mutableMapOf()
+public class BlockchainRegistry internal constructor(factories: Map<String, () -> Blockchain>, blockchains: Map<String, Blockchain> = emptyMap()) {
+    internal val factories: MutableMap<String, () -> Blockchain> = factories.toMutableMap()
+    internal val blockchains: MutableMap<String, Blockchain> = blockchains.toMutableMap()
 
     public fun get(type: String): Blockchain = getOrNull(type) ?: failWithBlockchainNotFound(type)
 

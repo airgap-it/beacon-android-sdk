@@ -10,6 +10,7 @@ import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
 import it.airgap.beaconsdk.core.internal.utils.dependencyRegistry
 import it.airgap.beaconsdk.core.internal.utils.getSerializable
 import it.airgap.beaconsdk.core.message.BeaconMessage
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -24,6 +25,7 @@ internal data class V3MockPermissionBeaconRequestData(
     val rest: Map<String, JsonElement>,
 ) : PermissionV3BeaconRequestContent.BlockchainData() {
     override suspend fun toBeaconMessage(
+        beaconScope: BeaconScope,
         id: String,
         version: String,
         senderId: String,
@@ -70,6 +72,7 @@ internal data class V3MockPermissionBeaconResponseData(
     val rest: Map<String, JsonElement>,
 ) : PermissionV3BeaconResponseContent.BlockchainData() {
     override suspend fun toBeaconMessage(
+        beaconScope: BeaconScope,
         id: String,
         version: String,
         senderId: String,
@@ -110,6 +113,7 @@ internal data class V3MockBlockchainBeaconRequestData(
     val rest: Map<String, JsonElement>
 ) : BlockchainV3BeaconRequestContent.BlockchainData() {
     override suspend fun toBeaconMessage(
+        beaconScope: BeaconScope,
         id: String,
         version: String,
         senderId: String,
@@ -117,7 +121,7 @@ internal data class V3MockBlockchainBeaconRequestData(
         accountId: String,
         blockchainIdentifier: String,
     ): BeaconMessage {
-        val appMetadata = dependencyRegistry.storageManager.findAppMetadata { it.senderId == senderId }
+        val appMetadata = dependencyRegistry(beaconScope).storageManager.findAppMetadata { it.senderId == senderId }
         return BlockchainMockRequest(
             "blockchain_request",
             id,
@@ -156,6 +160,7 @@ internal data class V3MockBlockchainBeaconResponseData(
     val rest: Map<String, JsonElement>
 ) : BlockchainV3BeaconResponseContent.BlockchainData() {
     override suspend fun toBeaconMessage(
+        beaconScope: BeaconScope,
         id: String,
         version: String,
         senderId: String,

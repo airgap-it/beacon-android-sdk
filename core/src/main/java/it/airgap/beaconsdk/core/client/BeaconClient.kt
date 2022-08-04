@@ -16,6 +16,7 @@ import it.airgap.beaconsdk.core.internal.utils.runCatchingFlat
 import it.airgap.beaconsdk.core.internal.utils.success
 import it.airgap.beaconsdk.core.message.BeaconMessage
 import it.airgap.beaconsdk.core.message.DisconnectBeaconMessage
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import kotlinx.coroutines.flow.*
 
 /**
@@ -24,6 +25,7 @@ import kotlinx.coroutines.flow.*
 public abstract class BeaconClient<BM : BeaconMessage>(
     public val name: String,
     public val beaconId: String,
+    public val beaconScope: BeaconScope,
     protected val connectionController: ConnectionController,
     protected val messageController: MessageController,
     protected val storageManager: StorageManager,

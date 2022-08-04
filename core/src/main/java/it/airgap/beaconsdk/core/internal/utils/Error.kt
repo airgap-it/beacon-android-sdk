@@ -4,6 +4,7 @@ import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.exception.BlockchainNotFoundException
 import it.airgap.beaconsdk.core.exception.InternalException
 import it.airgap.beaconsdk.core.message.BeaconMessage
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
@@ -18,6 +19,16 @@ public fun failWith(message: String? = null, cause: Throwable? = null): Nothing 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun failWithUninitialized(name: String): Nothing =
     throw IllegalStateException("$name uninitialized")
+
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun failWithUninitialized(beaconScope: BeaconScope): Nothing {
+    val name = when (beaconScope) {
+        is BeaconScope.Global -> "global"
+        is BeaconScope.Instance -> beaconScope.id
+    }
+
+    failWithUninitialized("Scope $name")
+}
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun failWithIllegalState(message: String? = null): Nothing =

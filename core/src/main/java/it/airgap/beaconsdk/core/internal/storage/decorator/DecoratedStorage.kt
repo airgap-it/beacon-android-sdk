@@ -7,6 +7,7 @@ import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.getAppMetadata
 import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.getPeers
 import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.getPermissions
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import it.airgap.beaconsdk.core.storage.ExtendedStorage
 import it.airgap.beaconsdk.core.storage.Storage
 import kotlinx.coroutines.CoroutineScope
@@ -123,6 +124,7 @@ internal class DecoratedStorage(
         setMigrations(storageMigrations)
     }
 
+    override fun scoped(beaconScope: BeaconScope): ExtendedStorage = DecoratedStorage(storage.scoped(beaconScope), configuration)
     override fun extend(beaconConfiguration: BeaconConfiguration): ExtendedStorage = this
 
     private suspend fun <T> selectFirst(

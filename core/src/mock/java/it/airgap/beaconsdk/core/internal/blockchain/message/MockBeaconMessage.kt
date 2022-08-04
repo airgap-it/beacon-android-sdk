@@ -12,6 +12,7 @@ import it.airgap.beaconsdk.core.message.BlockchainBeaconRequest
 import it.airgap.beaconsdk.core.message.BlockchainBeaconResponse
 import it.airgap.beaconsdk.core.message.PermissionBeaconRequest
 import it.airgap.beaconsdk.core.message.PermissionBeaconResponse
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
@@ -72,7 +73,7 @@ public data class BlockchainMockRequest(
     override val version: String,
     override val blockchainIdentifier: String,
     override val senderId: String,
-    override val appMetadata: AppMetadata?,
+    override val appMetadata: @Contextual AppMetadata?,
     override val origin: Origin,
     override val accountId: String?,
     val rest: Map<String, JsonElement> = emptyMap(),

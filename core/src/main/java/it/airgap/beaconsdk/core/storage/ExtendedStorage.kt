@@ -4,6 +4,7 @@ import it.airgap.beaconsdk.core.data.AppMetadata
 import it.airgap.beaconsdk.core.data.Peer
 import it.airgap.beaconsdk.core.data.Permission
 import it.airgap.beaconsdk.core.internal.BeaconConfiguration
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import kotlinx.coroutines.flow.Flow
 import kotlin.reflect.KClass
 
@@ -48,6 +49,7 @@ public interface ExtendedStorage : Storage {
 
     public suspend fun addMigrations(migrations: Set<String>)
 
+    override fun scoped(beaconScope: BeaconScope): ExtendedStorage
     override fun extend(beaconConfiguration: BeaconConfiguration): ExtendedStorage = this
 }
 
