@@ -17,6 +17,7 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.jsonObject
 
+@Serializable(with = PairingMessage.Serializer::class)
 public sealed interface PairingMessage {
     public val id: String
     public val type: String
@@ -52,11 +53,10 @@ public sealed interface PairingMessage {
         private fun failWithUnknownType(type: String): Nothing = failWithIllegalArgument("Unknown pairing data type $type")
     }
 
-    public companion object {
-        public fun serializer(): KSerializer<PairingMessage> = Serializer()
-    }
+    public companion object {}
 }
 
+@Serializable(with = PairingRequest.Serializer::class)
 public sealed interface PairingRequest : PairingMessage {
 
     @OptIn(ExperimentalSerializationApi::class)
@@ -85,11 +85,10 @@ public sealed interface PairingRequest : PairingMessage {
 
     public companion object {
         internal const val TYPE_SUFFIX = "request"
-
-        public fun serializer(): KSerializer<PairingRequest> = Serializer()
     }
 }
 
+@Serializable(with = PairingResponse.Serializer::class)
 public sealed interface PairingResponse : PairingMessage {
 
     @OptIn(ExperimentalSerializationApi::class)
@@ -118,9 +117,6 @@ public sealed interface PairingResponse : PairingMessage {
 
     public companion object {
         internal const val TYPE_SUFFIX = "response"
-
-        public fun serializer(): KSerializer<PairingResponse> = Serializer()
-
     }
 }
 

@@ -139,7 +139,7 @@ internal class CoreDependencyRegistry(
 
     private val httpClientProvider: HttpClientProvider by lazyWeak {
         when (BeaconConfiguration.httpClientProvider) {
-            BeaconConfiguration.HttpClientProvider.Ktor -> KtorHttpClientProvider(json)
+            BeaconConfiguration.HttpClientProvider.Ktor -> KtorHttpClientProvider(json, beaconScope)
         }
     }
 

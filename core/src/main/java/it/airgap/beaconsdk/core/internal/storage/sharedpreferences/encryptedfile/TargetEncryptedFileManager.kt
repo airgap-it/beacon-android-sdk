@@ -66,7 +66,8 @@ internal class TargetEncryptedFileManager(private val context: Context, private 
     
     private fun getOrCreateKey(alias: String): String {
         keyStore.load(null)
-        
+
+        // TODO: fix for backwards compatibility
         val parameterSpec = KeyGenParameterSpec.Builder(alias, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT).apply {
             setKeySize(SIZE_KEY)
             setDigests(KeyProperties.DIGEST_SHA512)
@@ -76,7 +77,7 @@ internal class TargetEncryptedFileManager(private val context: Context, private 
             setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
         }.build()
 
-        return MasterKeys.getOrCreate(parameterSpec)
+        return MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
     }
 
     private fun File.deleteIfNoKey(alias: String): Boolean {

@@ -16,12 +16,13 @@ import it.airgap.beaconsdk.core.network.data.HttpParameter
 import it.airgap.beaconsdk.core.network.exception.HttpException
 import it.airgap.beaconsdk.core.network.provider.HttpClientProvider
 import it.airgap.beaconsdk.core.network.provider.HttpProvider
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlin.reflect.KClass
 
-internal class KtorHttpClientProvider(private val json: Json) : HttpClientProvider {
+internal class KtorHttpClientProvider(private val json: Json, private val beaconScope: BeaconScope) : HttpClientProvider {
     private val ktorClient by lazy {
         HttpClient(OkHttp) {
             install(JsonFeature) {
@@ -33,7 +34,7 @@ internal class KtorHttpClientProvider(private val json: Json) : HttpClientProvid
             install(Logging) {
                 logger = object : Logger {
                     override fun log(message: String) {
-                        logDebug(TAG, message)
+                        logDebug("$TAG\$$beaconScope", message)
                     }
                 }
                 level = LogLevel.ALL

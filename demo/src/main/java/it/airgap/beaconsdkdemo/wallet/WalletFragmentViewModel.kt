@@ -1,4 +1,4 @@
-package it.airgap.beaconsdkdemo
+package it.airgap.beaconsdkdemo.wallet
 
 import androidx.lifecycle.*
 import it.airgap.beaconsdk.blockchain.substrate.data.SubstrateAccount
@@ -24,23 +24,20 @@ import it.airgap.beaconsdk.core.message.BeaconMessage
 import it.airgap.beaconsdk.core.message.BeaconRequest
 import it.airgap.beaconsdk.core.message.ErrorBeaconResponse
 import it.airgap.beaconsdk.transport.p2p.matrix.p2pMatrix
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 
-class MainActivityViewModel : ViewModel() {
-    private val _state: MutableLiveData<MainActivity.State> = MutableLiveData(MainActivity.State())
-    val state: LiveData<MainActivity.State>
+class WalletFragmentViewModel : ViewModel() {
+    private val _state: MutableLiveData<WalletFragment.State> = MutableLiveData(WalletFragment.State())
+    val state: LiveData<WalletFragment.State>
         get() = _state
 
     private var beaconClient: BeaconWalletClient? = null
     private var awaitingRequest: BeaconRequest? = null
 
     fun startBeacon(): LiveData<Result<BeaconRequest>> = liveData {
-        beaconClient = BeaconWalletClient("Beacon SDK Demo") {
+        beaconClient = BeaconWalletClient("Beacon SDK Demo (Wallet)") {
             support(tezos(), substrate())
             use(p2pMatrix())
 
@@ -80,10 +77,9 @@ class MainActivityViewModel : ViewModel() {
         }
     }
 
-    fun addPeer(id: String, name: String, publicKey: String, relayServer: String, version: String) {
-        val peer = P2pPeer(id = id, name = name, publicKey = publicKey, relayServer = relayServer, version = version)
+    fun pair(pairingRequest: String) {
         viewModelScope.launch {
-            beaconClient?.addPeers(peer)
+            beaconClient?.pair(pairingRequest)
             checkForPeers()
         }
     }
@@ -98,12 +94,12 @@ class MainActivityViewModel : ViewModel() {
     private suspend fun checkForPeers() {
         val peers = beaconClient?.getPeers()
 
-        val state = _state.value ?: MainActivity.State()
+        val state = _state.value ?: WalletFragment.State()
         _state.postValue(state.copy(hasPeers = peers?.isNotEmpty() ?: false))
     }
 
     private fun checkForAwaitingRequest() {
-        val state = _state.value ?: MainActivity.State()
+        val state = _state.value ?: WalletFragment.State()
         _state.postValue(state.copy(hasAwaitingRequest = awaitingRequest != null))
     }
 

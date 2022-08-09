@@ -13,7 +13,7 @@ public interface BeaconProducer {
     public val senderId: String
 
     public suspend fun request(request: BeaconRequest)
-    public suspend fun pair(connectionType: Connection.Type = Connection.Type.P2P): Result<PairingRequest>
+    public suspend fun pair(connectionType: Connection.Type = Connection.Type.P2P): PairingRequest
 
     public suspend fun prepareRequest(connectionType: Connection.Type): RequestMetadata
 

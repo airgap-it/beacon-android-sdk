@@ -6,9 +6,11 @@ import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.internal.blockchain.BlockchainRegistry
 import it.airgap.beaconsdk.core.message.PermissionBeaconResponse
 import it.airgap.beaconsdk.core.transport.data.PairingResponse
-import it.airgap.client.dapp.internal.controller.account.store.AccountControllerStore
+import it.airgap.client.dapp.internal.controller.account.store.*
+import it.airgap.client.dapp.internal.controller.account.store.HardReset
 import it.airgap.client.dapp.internal.controller.account.store.OnNewActiveAccount
 import it.airgap.client.dapp.internal.controller.account.store.OnPeerPaired
+import it.airgap.client.dapp.internal.controller.account.store.ResetActiveAccount
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class AccountController(private val store: AccountControllerStore, private val blockchainRegistry: BlockchainRegistry) {
@@ -18,6 +20,14 @@ public class AccountController(private val store: AccountControllerStore, privat
 
     public suspend fun getActiveAccountId(): String? =
         store.state().getOrThrow().activeAccount?.accountId
+
+    public suspend fun clearActiveAccountId() {
+        store.intent(ResetActiveAccount)
+    }
+
+    public suspend fun clearAll() {
+        store.intent(HardReset)
+    }
 
     public suspend fun onPairingResponse(pairingResponse: PairingResponse): Result<Unit> =
         runCatching {

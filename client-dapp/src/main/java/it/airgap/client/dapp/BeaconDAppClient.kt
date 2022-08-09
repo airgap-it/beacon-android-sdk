@@ -56,13 +56,23 @@ public class BeaconDAppClient @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) constr
             ?.getOrThrow()
     }
 
-    override suspend fun pair(connectionType: Connection.Type): Result<PairingRequest> {
+    public suspend fun getActiveAccount(): String? =
+        accountController.getActiveAccountId()
+
+    public suspend fun clearActiveAccount() {
+        accountController.clearActiveAccountId()
+    }
+
+    public suspend fun reset() {
+        accountController.clearAll()
+    }
+
+    override suspend fun pair(connectionType: Connection.Type): PairingRequest {
         val pairingRequestDeferred = CompletableDeferred<Result<PairingRequest>>()
 
         CoroutineScope(CoroutineName("collectPairingMessages")).launch {
             connectionController.pair(connectionType)
-                .takeWhile { it.isFailure || it.getOrNull() is PairingResponse }
-                .take(5 /* pairing request + pairing response + 3 errors */)
+                .takeWhile { it.isFailure || it.getOrNull() !is PairingResponse }
                 .collect { result ->
                     try {
                         when (val message = result.getOrThrow()) {
@@ -76,7 +86,7 @@ public class BeaconDAppClient @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) constr
                 }
         }
 
-        return pairingRequestDeferred.await()
+        return pairingRequestDeferred.await().getOrThrow()
     }
 
     override suspend fun prepareRequest(connectionType: Connection.Type): BeaconProducer.RequestMetadata =

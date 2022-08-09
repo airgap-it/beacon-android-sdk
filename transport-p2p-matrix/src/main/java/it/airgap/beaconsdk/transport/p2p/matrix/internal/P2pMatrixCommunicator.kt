@@ -86,7 +86,7 @@ internal class P2pMatrixCommunicator(private val app: BeaconApplication, private
 
 
     fun createChannelOpeningMessage(recipient: String, payload: String): String =
-        "${MESSAGE_HEADER_CHANNEL_OPEN}:$recipient:$payload"
+        "${MESSAGE_HEADER_CHANNEL_OPEN}${MESSAGE_SEPARATOR_CHANNEL_OPEN}$recipient${MESSAGE_SEPARATOR_CHANNEL_OPEN}$payload"
 
     fun recognizeChannelOpeningMessage(message: String): Boolean = message.startsWith(MESSAGE_HEADER_CHANNEL_OPEN)
 
@@ -94,10 +94,11 @@ internal class P2pMatrixCommunicator(private val app: BeaconApplication, private
         runCatching {
             if (!recognizeChannelOpeningMessage(message)) failWithInvalidChannelOpeningMessage(message)
 
-            val components = message.split(':', limit = 3)
-            if (components.size != 3) failWithInvalidChannelOpeningMessage(message)
+            val components = message.split(MESSAGE_SEPARATOR_CHANNEL_OPEN)
+            if (components.size < 3) failWithInvalidChannelOpeningMessage(message)
 
-            val (_, recipient, payload) = components
+            val recipient = components.subList(1, components.lastIndex - 1).joinToString(MESSAGE_SEPARATOR_CHANNEL_OPEN)
+            val payload = components[components.lastIndex]
 
             Pair(recipient, payload)
         }
@@ -136,5 +137,6 @@ internal class P2pMatrixCommunicator(private val app: BeaconApplication, private
 
     companion object {
         private const val MESSAGE_HEADER_CHANNEL_OPEN = "@channel-open"
+        private const val MESSAGE_SEPARATOR_CHANNEL_OPEN = ":"
     }
 }
