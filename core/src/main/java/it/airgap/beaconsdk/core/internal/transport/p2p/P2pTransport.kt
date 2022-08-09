@@ -10,9 +10,14 @@ import it.airgap.beaconsdk.core.internal.message.SerializedConnectionMessage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.transport.Transport
 import it.airgap.beaconsdk.core.internal.transport.p2p.data.P2pMessage
+import it.airgap.beaconsdk.core.internal.transport.p2p.store.DiscardPairingData
+import it.airgap.beaconsdk.core.internal.transport.p2p.store.OnPairingCompleted
+import it.airgap.beaconsdk.core.internal.transport.p2p.store.OnPairingRequested
+import it.airgap.beaconsdk.core.internal.transport.p2p.store.P2pTransportStore
 import it.airgap.beaconsdk.core.internal.utils.runCatchingFlat
 import it.airgap.beaconsdk.core.internal.utils.success
 import it.airgap.beaconsdk.core.storage.findPeer
+import it.airgap.beaconsdk.core.transport.data.*
 import it.airgap.beaconsdk.core.transport.p2p.P2pClient
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
@@ -21,6 +26,7 @@ import kotlinx.coroutines.flow.*
 internal class P2pTransport(
     private val storageManager: StorageManager,
     private val client: P2pClient,
+    private val store: P2pTransportStore,
 ) : Transport() {
     override val type: Connection.Type = Connection.Type.P2P
 
@@ -34,10 +40,36 @@ internal class P2pTransport(
             .map { ConnectionMessage.fromResult(it) }
     }
 
+    override suspend fun pair(): Flow<Result<PairingMessage>> = flow {
+        val pairingRequest = client.createPairingRequest().also {
+            emit(it)
+        }.getOrNull() ?: return@flow
+
+        store.intent(OnPairingRequested)
+
+        client.pairingResponses
+            .filter { it.isFailure || it.getOrNull()?.id == pairingRequest.id }
+            .onEach { result -> result.getOrNull()?.let { addPeer(it) } }
+            .collect { emit(it) }
+    }
+
+    override suspend fun pair(request: PairingRequest): Result<PairingResponse> =
+        runCatchingFlat {
+            when (request) {
+                is P2pPairingRequest -> client.createPairingResponse(request).also { addPeer(request) }
+            }
+        }
+
+    override fun supportsPairing(request: PairingRequest): Boolean = request is P2pPairingRequest
+
     override suspend fun sendMessage(message: ConnectionTransportMessage): Result<Unit> =
         runCatchingFlat {
             val peerPublicKey = message.origin.id
-            val peer = storageManager.findPeer<P2pPeer> { it.publicKey == peerPublicKey } ?: failWithUnknownPeer(peerPublicKey)
+            val peer = storageManager.findPeer<P2pPeer> { it.publicKey == peerPublicKey }
+                ?: store.state().getOrThrow().pairingPeerDeferred?.await()
+                    ?.takeIf { it.publicKey == peerPublicKey }
+                    ?.also { store.intent(DiscardPairingData) }
+                ?: failWithUnknownPeer(peerPublicKey)
 
             return when (message) {
                 is SerializedConnectionMessage -> sendSerializedMessage(message.content, peer)
@@ -49,6 +81,15 @@ internal class P2pTransport(
         message: String,
         recipient: P2pPeer,
     ): Result<Unit> = client.sendTo(recipient, message)
+
+    private suspend fun addPeer(pairingData: P2PPairingMessage) {
+        when (val peer = pairingData.toPeer()) {
+            is P2pPeer -> {
+                storageManager.addPeers(listOf(peer), overwrite = true) { lhs, rhs -> lhs.id == rhs.id }
+                store.intent(OnPairingCompleted(peer))
+            }
+        }
+    }
 
     private suspend fun onUpdatedP2pPeer(peer: P2pPeer) {
         if (!peer.isPaired && !peer.isRemoved) pairP2pPeer(peer)
@@ -79,5 +120,5 @@ internal class P2pTransport(
     private fun ConnectionMessage.Companion.fromResult(
         p2pMessage: Result<P2pMessage>,
     ): Result<ConnectionTransportMessage> =
-        p2pMessage.map { SerializedConnectionMessage(Origin.P2P(it.id), it.content) }
+        p2pMessage.map { SerializedConnectionMessage(Origin.P2P(it.publicKey), it.content) }
 }

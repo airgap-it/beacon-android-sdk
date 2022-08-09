@@ -8,7 +8,9 @@ import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.controller.ConnectionController
 import it.airgap.beaconsdk.core.internal.controller.MessageController
 import it.airgap.beaconsdk.core.internal.crypto.Crypto
+import it.airgap.beaconsdk.core.internal.data.BeaconApplication
 import it.airgap.beaconsdk.core.internal.message.BeaconConnectionMessage
+import it.airgap.beaconsdk.core.internal.serializer.Serializer
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.utils.flatMap
 import it.airgap.beaconsdk.core.internal.utils.launchForEach
@@ -17,21 +19,26 @@ import it.airgap.beaconsdk.core.internal.utils.success
 import it.airgap.beaconsdk.core.message.BeaconMessage
 import it.airgap.beaconsdk.core.message.DisconnectBeaconMessage
 import it.airgap.beaconsdk.core.scope.BeaconScope
+import it.airgap.beaconsdk.core.transport.data.PairingMessage
 import kotlinx.coroutines.flow.*
 
 /**
  * An abstract base for different client types provided in Beacon.
  */
 public abstract class BeaconClient<BM : BeaconMessage>(
-    public val name: String,
+    public val app: BeaconApplication,
     public val beaconId: String,
     public val beaconScope: BeaconScope,
     protected val connectionController: ConnectionController,
     protected val messageController: MessageController,
     protected val storageManager: StorageManager,
     protected val crypto: Crypto,
+    protected val serializer: Serializer,
     protected val configuration: BeaconConfiguration,
 ) {
+
+    public val name: String
+        get() = app.name
 
     /**
      * Connects with known peers and subscribes to incoming messages
@@ -104,6 +111,16 @@ public abstract class BeaconClient<BM : BeaconMessage>(
         peers.launchForEach { disconnect(it) }
     }
 
+    public fun serializePairingData(pairingMessage: PairingMessage): String =
+        serializer.serialize(pairingMessage).getOrThrow()
+
+    @JvmName("deserializePairingDataInlined")
+    public inline fun <reified T : PairingMessage> deserializePairingData(serialized: String): T =
+        `serializer$inline`.deserialize<T>(serialized).getOrThrow()
+
+    public fun deserializePairingData(serialized: String): PairingMessage =
+        serializer.deserialize<PairingMessage>(serialized).getOrThrow()
+
     protected open suspend fun processMessage(message: BeaconMessage): Result<Unit> =
         when (message) {
             is DisconnectBeaconMessage -> {
@@ -145,5 +162,11 @@ public abstract class BeaconClient<BM : BeaconMessage>(
     }
 
     public companion object {}
+
+    // -- PublishedApi --
+
+    @PublishedApi
+    internal val `serializer$inline`: Serializer
+        get() = serializer
 }
 

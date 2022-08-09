@@ -1,9 +1,6 @@
 package it.airgap.beaconsdk.client.wallet
 
 import io.mockk.*
-import io.mockk.impl.annotations.MockK
-import it.airgap.beaconsdk.client.wallet.internal.di.ExtendedDependencyRegistry
-import it.airgap.beaconsdk.client.wallet.internal.di.WalletDependencyRegistry
 import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.data.P2P
 import it.airgap.beaconsdk.core.internal.BeaconSdk

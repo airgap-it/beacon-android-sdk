@@ -1,6 +1,6 @@
 package it.airgap.beaconsdk.transport.p2p.matrix.internal.data
 
-import it.airgap.beaconsdk.core.internal.transport.p2p.data.P2pPairingResponse
+import it.airgap.beaconsdk.core.transport.data.P2pPairingResponse
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json

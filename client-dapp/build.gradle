@@ -1,6 +1,7 @@
 plugins {
     id 'com.android.library'
     id 'kotlin-android'
+    id 'kotlinx-serialization'
     id 'org.jetbrains.dokka'
     id 'maven-publish'
 }
@@ -76,6 +77,9 @@ dependencies {
 
     implementation(Dependencies.androidxCore)
     implementation(Dependencies.androidxAppCompat)
+
+    // Serialization
+    implementation(Dependencies.kotlinxSerializationJson)
 
     // Coroutines
     implementation(Dependencies.kotlinxCoroutines)

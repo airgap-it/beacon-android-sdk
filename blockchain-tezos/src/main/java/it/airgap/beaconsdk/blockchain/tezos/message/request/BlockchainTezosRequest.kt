@@ -1,12 +1,16 @@
 package it.airgap.beaconsdk.blockchain.tezos.message.request
 
+import it.airgap.beaconsdk.blockchain.tezos.Tezos
+import it.airgap.beaconsdk.blockchain.tezos.client.ownAppMetadata
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosAppMetadata
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosNetwork
 import it.airgap.beaconsdk.blockchain.tezos.data.operation.TezosOperation
 import it.airgap.beaconsdk.blockchain.tezos.message.response.BroadcastTezosResponse
 import it.airgap.beaconsdk.blockchain.tezos.message.response.OperationTezosResponse
 import it.airgap.beaconsdk.blockchain.tezos.message.response.SignPayloadTezosResponse
-import it.airgap.beaconsdk.core.data.AppMetadata
+import it.airgap.beaconsdk.core.client.BeaconClient
+import it.airgap.beaconsdk.core.client.BeaconProducer
+import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.data.SigningType
 import it.airgap.beaconsdk.core.message.BlockchainBeaconRequest
@@ -50,6 +54,30 @@ public data class OperationTezosRequest internal constructor(
     public companion object {}
 }
 
+public suspend fun <T> OperationTezosRequest(
+    sourceAddress: String,
+    operationDetails: List<TezosOperation> = emptyList(),
+    network: TezosNetwork = TezosNetwork.Mainnet(),
+    producer: T,
+    transportType: Connection.Type = Connection.Type.P2P,
+    accountId: String? = null,
+) : OperationTezosRequest where T : BeaconClient<*>, T : BeaconProducer {
+    val requestMetadata = producer.prepareRequest(transportType)
+
+    return OperationTezosRequest(
+        id = requestMetadata.id,
+        version = requestMetadata.version,
+        blockchainIdentifier = Tezos.IDENTIFIER,
+        senderId = requestMetadata.senderId,
+        appMetadata = producer.ownAppMetadata(),
+        origin = requestMetadata.origin,
+        accountId = accountId ?: producer.getActiveAccount(),
+        network = network,
+        operationDetails = operationDetails,
+        sourceAddress = sourceAddress,
+    )
+}
+
 /**
  * Message requesting the signature of the given [payload].
  *
@@ -81,6 +109,30 @@ public data class SignPayloadTezosRequest internal constructor(
     public companion object {}
 }
 
+public suspend fun <T> SignPayloadTezosRequest(
+    signingType: SigningType,
+    payload: String,
+    sourceAddress: String,
+    producer: T,
+    transportType: Connection.Type = Connection.Type.P2P,
+    accountId: String? = null,
+) : SignPayloadTezosRequest where T : BeaconClient<*>, T : BeaconProducer {
+    val requestMetadata = producer.prepareRequest(transportType)
+
+    return SignPayloadTezosRequest(
+        id = requestMetadata.id,
+        version = requestMetadata.version,
+        blockchainIdentifier = Tezos.IDENTIFIER,
+        senderId = requestMetadata.senderId,
+        appMetadata = producer.ownAppMetadata(),
+        origin = requestMetadata.origin,
+        accountId = accountId ?: producer.getActiveAccount(),
+        signingType = signingType,
+        payload = payload,
+        sourceAddress = sourceAddress,
+    )
+}
+
 /**
  * Message requesting the broadcast of the given [transaction][signedTransaction].
  *
@@ -108,4 +160,26 @@ public data class BroadcastTezosRequest internal constructor(
     public val signedTransaction: String,
 ) : BlockchainTezosRequest() {
     public companion object {}
+}
+
+public suspend fun <T> BroadcastTezosRequest(
+    signedTransaction: String,
+    network: TezosNetwork = TezosNetwork.Mainnet(),
+    producer: T,
+    transportType: Connection.Type = Connection.Type.P2P,
+    accountId: String? = null,
+) : BroadcastTezosRequest where T : BeaconClient<*>, T : BeaconProducer {
+    val requestMetadata = producer.prepareRequest(transportType)
+
+    return BroadcastTezosRequest(
+        id = requestMetadata.id,
+        version = requestMetadata.version,
+        blockchainIdentifier = Tezos.IDENTIFIER,
+        senderId = requestMetadata.senderId,
+        appMetadata = producer.ownAppMetadata(),
+        origin = requestMetadata.origin,
+        accountId = accountId ?: producer.getActiveAccount(),
+        network = network,
+        signedTransaction = signedTransaction,
+    )
 }

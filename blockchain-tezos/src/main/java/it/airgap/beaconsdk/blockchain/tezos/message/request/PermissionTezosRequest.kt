@@ -1,11 +1,17 @@
 package it.airgap.beaconsdk.blockchain.tezos.message.request
 
+import it.airgap.beaconsdk.blockchain.tezos.Tezos
+import it.airgap.beaconsdk.blockchain.tezos.client.ownAppMetadata
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosAppMetadata
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosNetwork
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
 import it.airgap.beaconsdk.blockchain.tezos.message.response.PermissionTezosResponse
-import it.airgap.beaconsdk.core.data.AppMetadata
+import it.airgap.beaconsdk.core.client.BeaconClient
+import it.airgap.beaconsdk.core.client.BeaconProducer
+import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.data.Origin
+import it.airgap.beaconsdk.core.internal.BeaconConfiguration
+import it.airgap.beaconsdk.core.message.BeaconResponse
 import it.airgap.beaconsdk.core.message.PermissionBeaconRequest
 
 /**
@@ -33,4 +39,24 @@ public data class PermissionTezosRequest internal constructor(
     public val scopes: List<TezosPermission.Scope>,
 ) : PermissionBeaconRequest() {
     public companion object {}
+}
+
+public fun <T> PermissionTezosRequest(
+    network: TezosNetwork = TezosNetwork.Mainnet(),
+    scopes: List<TezosPermission.Scope> = listOf(TezosPermission.Scope.OperationRequest, TezosPermission.Scope.Sign),
+    producer: T,
+    transportType: Connection.Type = Connection.Type.P2P,
+) : PermissionTezosRequest where T : BeaconClient<*>, T : BeaconProducer {
+    val requestMetadata = producer.prepareRequest(transportType)
+
+    return PermissionTezosRequest(
+        id = requestMetadata.id,
+        version = requestMetadata.version,
+        blockchainIdentifier = Tezos.IDENTIFIER,
+        senderId = requestMetadata.senderId,
+        appMetadata = producer.ownAppMetadata(),
+        origin = requestMetadata.origin,
+        network = network,
+        scopes = scopes,
+    )
 }

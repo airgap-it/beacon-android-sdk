@@ -80,10 +80,10 @@ internal class CoreDependencyRegistry(
     override val messageController: MessageController by lazyWeak { MessageController(beaconScope, blockchainRegistry, storageManager, identifierCreator, compat) }
 
     override fun connectionController(connections: List<Connection>): ConnectionController {
-            val transports = connections.map { transport(it) }
+        val transports = connections.distinctBy { it.type }.map { transport(it) }
 
-            return ConnectionController(transports, serializer)
-        }
+        return ConnectionController(transports, serializer)
+    }
 
     // -- transport --
 

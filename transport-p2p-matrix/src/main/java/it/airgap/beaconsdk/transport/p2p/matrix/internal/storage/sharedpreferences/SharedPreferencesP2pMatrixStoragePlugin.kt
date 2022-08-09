@@ -4,17 +4,14 @@ import android.content.Context
 import android.content.SharedPreferences
 import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.SharedPreferencesBaseStorage
-import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.getSerializable
-import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.putSerializable
-import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.putString
 import it.airgap.beaconsdk.core.scope.BeaconScope
 import it.airgap.beaconsdk.transport.p2p.matrix.data.MatrixRoom
 import it.airgap.beaconsdk.transport.p2p.matrix.storage.P2pMatrixStoragePlugin
 
 internal class SharedPreferencesP2pMatrixStoragePlugin(
-    private val sharedPreferences: SharedPreferences,
+    sharedPreferences: SharedPreferences,
     beaconScope: BeaconScope = BeaconScope.Global,
-) : P2pMatrixStoragePlugin, SharedPreferencesBaseStorage(beaconScope) {
+) : P2pMatrixStoragePlugin, SharedPreferencesBaseStorage(beaconScope, sharedPreferences) {
 
     override suspend fun getMatrixRelayServer(): String? =
         sharedPreferences.getString(Key.MatrixRelayServer.scoped(), null)
@@ -54,12 +51,10 @@ internal class SharedPreferencesP2pMatrixStoragePlugin(
         MatrixSyncToken("matrixSyncToken"),
         MatrixRoomIds("matrixRoomIds"),
     }
+}
 
-    companion object {
-        fun create(context: Context): SharedPreferencesP2pMatrixStoragePlugin {
-            val sharedPreferences = context.getSharedPreferences(BeaconConfiguration.STORAGE_NAME, Context.MODE_PRIVATE)
+internal fun SharedPreferencesP2pMatrixStoragePlugin(context: Context): SharedPreferencesP2pMatrixStoragePlugin {
+    val sharedPreferences = context.getSharedPreferences(BeaconConfiguration.STORAGE_NAME, Context.MODE_PRIVATE)
 
-            return SharedPreferencesP2pMatrixStoragePlugin(sharedPreferences)
-        }
-    }
+    return SharedPreferencesP2pMatrixStoragePlugin(sharedPreferences)
 }

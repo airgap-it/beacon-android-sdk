@@ -8,7 +8,7 @@ import it.airgap.beaconsdk.core.data.P2pPeer
 import it.airgap.beaconsdk.core.internal.crypto.Crypto
 import it.airgap.beaconsdk.core.internal.crypto.data.KeyPair
 import it.airgap.beaconsdk.core.internal.data.BeaconApplication
-import it.airgap.beaconsdk.core.internal.transport.p2p.data.P2pPairingResponse
+import it.airgap.beaconsdk.core.transport.data.P2pPairingResponse
 import it.airgap.beaconsdk.core.internal.utils.asHexString
 import it.airgap.beaconsdk.core.internal.utils.toHexString
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.MatrixEvent
@@ -104,7 +104,7 @@ internal class P2pMatrixCommunicatorTest {
 
         versionsWithPairingPayloads(id, type, app.name, app.icon, app.url, app.keyPair.publicKey.toHexString().asString(), relayServer)
             .map { P2pPeer(id = id, name = "name", publicKey = "01", relayServer = "peerServer", version = it.first) to it.second }
-            .map { p2pMatrixCommunicator.pairingPayload(it.first, relayServer) to it.second }
+            .map { p2pMatrixCommunicator.pairingResponsePayload(it.first, relayServer) to it.second }
             .forEach { assertEquals(it.second, it.first.getOrThrow()) }
     }
 
@@ -113,7 +113,7 @@ internal class P2pMatrixCommunicatorTest {
         val recipient = "recipient"
         val payload = "payload"
 
-        val message = p2pMatrixCommunicator.channelOpeningMessage(recipient, payload)
+        val message = p2pMatrixCommunicator.createChannelOpeningMessage(recipient, payload)
 
         assertEquals("@channel-open:$recipient:$payload", message)
     }

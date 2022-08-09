@@ -24,8 +24,8 @@ import kotlin.reflect.KProperty1
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class StorageManager(
     private val beaconScope: BeaconScope,
-    @PublishedApi internal val storage: ExtendedStorage,
-    @PublishedApi internal val secureStorage: SecureStorage,
+    private val storage: ExtendedStorage,
+    private val secureStorage: SecureStorage,
     private val identifierCreator: IdentifierCreator,
     private val configuration: BeaconConfiguration,
 ) : ExtendedStorage by storage.scoped(beaconScope), SecureStorage by secureStorage.scoped(beaconScope) {

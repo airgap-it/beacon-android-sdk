@@ -2,6 +2,7 @@ package it.airgap.beaconsdk.core.internal.message
 
 import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.data.Origin
+import it.airgap.beaconsdk.core.transport.data.PairingMessage
 
 internal typealias ConnectionTransportMessage = ConnectionMessage<*>
 

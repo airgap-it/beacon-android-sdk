@@ -1,6 +1,7 @@
 package it.airgap.beaconsdk.core.internal.utils
 
 import androidx.annotation.RestrictTo
+import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.exception.BlockchainNotFoundException
 import it.airgap.beaconsdk.core.exception.InternalException
 import it.airgap.beaconsdk.core.message.BeaconMessage
@@ -41,6 +42,13 @@ public fun failWithIllegalArgument(message: String? = null): Nothing =
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun failWithBlockchainNotFound(identifier: String): Nothing =
     throw BlockchainNotFoundException(identifier)
+
+public fun failWithTransportNotSupported(type: Connection.Type? = null): Nothing =
+    failWithIllegalState("Transport ($type) is not supported.")
+
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun failWithActiveAccountNotSet(): Nothing =
+    failWithIllegalState("Active Account has not been set.")
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun failWithExpectedJsonDecoder(actual: KClass<out Decoder>): Nothing =

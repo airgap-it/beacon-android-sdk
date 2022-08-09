@@ -13,9 +13,9 @@ import it.airgap.beaconsdk.core.storage.Storage
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class SharedPreferencesStorage internal constructor(
-    private val sharedPreferences: SharedPreferences,
+    sharedPreferences: SharedPreferences,
     beaconScope: BeaconScope = BeaconScope.Global,
-) : Storage, SharedPreferencesBaseStorage(beaconScope) {
+) : Storage, SharedPreferencesBaseStorage(beaconScope, sharedPreferences) {
     override suspend fun getMaybePeers(): List<Maybe<Peer>> =
         sharedPreferences.getSerializable(Key.Peers.scoped(), emptyList(), beaconScope)
 
@@ -66,8 +66,8 @@ public class SharedPreferencesStorage internal constructor(
     public companion object {}
 }
 
-@Suppress("FunctionName")
-internal fun SharedPreferencesStorage(context: Context): SharedPreferencesStorage {
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun SharedPreferencesStorage(context: Context): SharedPreferencesStorage {
     val sharedPreferences = context.getSharedPreferences(BeaconConfiguration.STORAGE_NAME, Context.MODE_PRIVATE)
 
     return SharedPreferencesStorage(sharedPreferences)

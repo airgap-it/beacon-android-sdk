@@ -16,10 +16,10 @@ import java.util.*
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class SharedPreferencesSecureStorage(
-    private val sharedPreferences: SharedPreferences,
+    sharedPreferences: SharedPreferences,
     private val encryptedFileManager: EncryptedFileManager,
     beaconScope: BeaconScope = BeaconScope.Global,
-) : SecureStorage, SharedPreferencesBaseStorage(beaconScope) {
+) : SecureStorage, SharedPreferencesBaseStorage(beaconScope, sharedPreferences) {
 
     private var masterKeyAlias: String?
         get() = sharedPreferences.getString(Key.MasterKeyAlias.scoped(), null)
@@ -54,8 +54,8 @@ public class SharedPreferencesSecureStorage(
     }
 }
 
-@Suppress("FunctionName")
-internal fun SharedPreferencesSecureStorage(context: Context): SharedPreferencesSecureStorage {
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun SharedPreferencesSecureStorage(context: Context): SharedPreferencesSecureStorage {
     val keyStore = KeyStore.getInstance(SharedPreferencesSecureStorage.ANDROID_KEY_STORE).apply { load(null) }
     val sharedPreferences = context.getSharedPreferences(BeaconConfiguration.STORAGE_NAME, Context.MODE_PRIVATE)
     val encryptedFileManager =

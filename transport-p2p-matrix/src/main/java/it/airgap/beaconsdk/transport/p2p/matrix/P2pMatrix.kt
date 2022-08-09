@@ -10,6 +10,8 @@ import it.airgap.beaconsdk.core.internal.utils.*
 import it.airgap.beaconsdk.core.internal.utils.delegate.default
 import it.airgap.beaconsdk.core.network.provider.HttpClientProvider
 import it.airgap.beaconsdk.core.network.provider.HttpProvider
+import it.airgap.beaconsdk.core.transport.data.P2pPairingRequest
+import it.airgap.beaconsdk.core.transport.data.P2pPairingResponse
 import it.airgap.beaconsdk.core.transport.p2p.P2pClient
 import it.airgap.beaconsdk.transport.p2p.matrix.data.MatrixRoom
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.BeaconP2pMatrixConfiguration
@@ -44,9 +46,9 @@ public class P2pMatrix internal constructor(
             .onStart { tryLog(TAG) { matrix.start() } }
     }
 
-    private val matrixMessageEvents: Flow<MatrixEvent.TextMessage> get() = matrixEvents.filterIsInstance()
-    private val matrixInviteEvents: Flow<MatrixEvent.Invite> get() = matrixEvents.filterIsInstance()
-    private val matrixJoinEvents: Flow<MatrixEvent.Join> get() = matrixEvents.filterIsInstance()
+    private val matrixMessageEvents: Flow<MatrixEvent.TextMessage> by lazy { matrixEvents.filterIsInstance() }
+    private val matrixInviteEvents: Flow<MatrixEvent.Invite> by lazy { matrixEvents.filterIsInstance() }
+    private val matrixJoinEvents: Flow<MatrixEvent.Join> by lazy { matrixEvents.filterIsInstance() }
 
     private val subscribedFlows: MutableMap<HexString, MutableSet<String>> = mutableMapOf()
 
@@ -110,6 +112,25 @@ public class P2pMatrix internal constructor(
             matrix.sendTextMessageTo(recipient.asString(), encrypted).getOrThrow()
         }
 
+    override suspend fun createPairingRequest(): Result<P2pPairingRequest> =
+        runCatchingFlat {
+            val relayServer = store.state().getOrThrow().relayServer
+            communicator.pairingRequest(relayServer)
+        }
+
+    override suspend fun createPairingResponse(request: P2pPairingRequest): Result<P2pPairingResponse> =
+        runCatching {
+            val relayServer = store.state().getOrThrow().relayServer
+            communicator.pairingResponse(request, relayServer)
+        }
+
+    override val pairingResponses: Flow<Result<P2pPairingResponse>> by lazy {
+        matrixMessageEvents
+            .filter { communicator.recognizeChannelOpeningMessage(it.message) }
+            .map { communicator.destructChannelOpeningMessage(it.message) }
+            .map { communicator.pairingResponseFromPayload(it) }
+    }
+
     /**
      * Sends a pairing message to the specified [peer].
      */
@@ -120,9 +141,9 @@ public class P2pMatrix internal constructor(
             val relayServer = store.state().getOrThrow().relayServer
             val payload = security.encryptPairingPayload(
                 publicKey,
-                communicator.pairingPayload(peer, relayServer).getOrThrow(),
+                communicator.pairingResponsePayload(peer, relayServer).getOrThrow(),
             ).getOrThrow()
-            val message = communicator.channelOpeningMessage(recipient.asString(), payload.toHexString().asString())
+            val message = communicator.createChannelOpeningMessage(recipient.asString(), payload.toHexString().asString())
 
             matrix.sendTextMessageTo(recipient.asString(), message, newRoom = true).getOrThrow()
         }
@@ -263,6 +284,9 @@ public class P2pMatrix internal constructor(
         logDebug(TAG, "$member joined room $id")
     }
 
+    private fun P2pMatrixCommunicator.pairingResponseFromPayload(recipientAndPayload: Result<Pair<String, String>>): Result<P2pPairingResponse> =
+        recipientAndPayload.map { pairingResponseFromPayload(it.second) }
+
     private fun <V> MutableMap<HexString, MutableSet<V>>.addTo(key: ByteArray, value: V) {
         getOrPut(key.toHexString()) { mutableSetOf() }.add(value)
     }
@@ -314,7 +338,7 @@ public class P2pMatrix internal constructor(
         private fun extendedDependencyRegistry(dependencyRegistry: DependencyRegistry): ExtendedDependencyRegistry =
             _extendedDependencyRegistry ?: dependencyRegistry.extend().also { _extendedDependencyRegistry = it }
 
-        private var storagePlugin: P2pMatrixStoragePlugin by default(storagePlugin) { SharedPreferencesP2pMatrixStoragePlugin.create(applicationContext) }
+        private var storagePlugin: P2pMatrixStoragePlugin by default(storagePlugin) { SharedPreferencesP2pMatrixStoragePlugin(applicationContext) }
 
         override fun create(dependencyRegistry: DependencyRegistry): P2pMatrix =
             extendedDependencyRegistry(dependencyRegistry).p2pMatrix(storagePlugin, matrixNodes, httpClientProvider)

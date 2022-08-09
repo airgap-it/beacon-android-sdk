@@ -10,10 +10,14 @@ import it.airgap.beaconsdk.core.internal.message.SerializedConnectionMessage
 import it.airgap.beaconsdk.core.internal.serializer.Serializer
 import it.airgap.beaconsdk.core.internal.transport.Transport
 import it.airgap.beaconsdk.core.internal.utils.*
+import it.airgap.beaconsdk.core.transport.data.PairingMessage
+import it.airgap.beaconsdk.core.transport.data.PairingRequest
+import it.airgap.beaconsdk.core.transport.data.PairingResponse
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
+import kotlin.reflect.KClass
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -37,12 +41,31 @@ public class ConnectionController internal constructor(private val transports: L
                 }
         }
 
+    public suspend fun pair(connectionType: Connection.Type): Flow<Result<PairingMessage>> {
+        val transport = transports.firstOrNull { it.type == connectionType } ?: failWithTransportNotSupported(connectionType)
+        return transport.pair()
+    }
+
+    public suspend fun pair(request: PairingRequest): Result<PairingResponse> =
+        runCatchingFlat {
+            val transport = transports.firstOrNull { it.supportsPairing(request) } ?: failWithTransportNotSupported()
+            return transport.pair(request)
+        }
+
+    public suspend fun pair(request: String): Result<PairingResponse> =
+        runCatchingFlat {
+            val pairingRequest = serializer.deserialize<PairingRequest>(request).getOrThrow()
+            pair(pairingRequest)
+        }
+
     private fun BeaconConnectionMessage.Companion.fromResult(
         connectionMessage: Result<ConnectionTransportMessage>
     ): Result<BeaconConnectionMessage> = connectionMessage.flatMap { message ->
-        val content = when (message) {
-            is SerializedConnectionMessage -> serializer.deserialize(message.content)
-            is BeaconConnectionMessage -> Result.success(message.content)
+        val content = runCatchingFlat {
+            when (message) {
+                is SerializedConnectionMessage -> serializer.deserialize(message.content)
+                is BeaconConnectionMessage -> Result.success(message.content)
+            }
         }
 
         content.map { BeaconConnectionMessage(message.origin, it) }
@@ -80,4 +103,7 @@ public class ConnectionController internal constructor(private val transports: L
 
             else -> null
         }
+
+    private fun failWithUnexpectedConnectionTransportMessage(type: KClass<out ConnectionTransportMessage>): Nothing =
+        failWithIllegalArgument("Unexpected ConnectionTransportMessageType $type")
 }

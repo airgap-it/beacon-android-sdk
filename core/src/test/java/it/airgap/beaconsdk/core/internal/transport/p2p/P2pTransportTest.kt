@@ -67,7 +67,7 @@ internal class P2pTransportTest {
 
         runBlocking { storageManager.setPeers(peers) }
 
-        val expected = transportMessages.map { SerializedConnectionMessage(Origin.P2P(it.id), it.content) }
+        val expected = transportMessages.map { SerializedConnectionMessage(Origin.P2P(it.publicKey), it.content) }
         val messages = runBlocking {
             p2pTransport.subscribe()
                 .onStart { transportMessageFlows.tryEmit(transportMessages) }
@@ -134,7 +134,7 @@ internal class P2pTransportTest {
         every { p2pClient.isSubscribed(any()) } returns false
         every { p2pClient.subscribeTo(any()) } answers { transportMessageFlows.getValue(firstArg<P2pPeer>().publicKey.asHexString().asString()) }
 
-        val expected = transportMessages.map { SerializedConnectionMessage(Origin.P2P(it.id), it.content) }
+        val expected = transportMessages.map { SerializedConnectionMessage(Origin.P2P(it.publicKey), it.content) }
 
         runBlocking {
             val messages = async {
@@ -318,6 +318,6 @@ internal class P2pTransportTest {
     }
 
     private fun Map<String, MutableSharedFlow<Result<P2pMessage>>>.tryEmit(messages: List<P2pMessage>) {
-        messages.forEach { getValue(it.id).tryEmit(Result.success(it)) }
+        messages.forEach { getValue(it.publicKey).tryEmit(Result.success(it)) }
     }
 }

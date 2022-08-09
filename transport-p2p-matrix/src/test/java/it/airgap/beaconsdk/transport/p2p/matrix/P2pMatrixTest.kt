@@ -646,8 +646,8 @@ internal class P2pMatrixTest {
     @Test
     fun `sends pairing request to matrix clients`() {
         val pairingPayload = "pairingPayload"
-        every { p2pMatrixCommunicator.pairingPayload(any(), any()) } returns Result.success(pairingPayload)
-        every { p2pMatrixCommunicator.channelOpeningMessage(any(), any()) } answers {
+        every { p2pMatrixCommunicator.pairingResponsePayload(any(), any()) } returns Result.success(pairingPayload)
+        every { p2pMatrixCommunicator.createChannelOpeningMessage(any(), any()) } answers {
             "@channel-open:${firstArg<String>()}:${secondArg<String>()}"
         }
 

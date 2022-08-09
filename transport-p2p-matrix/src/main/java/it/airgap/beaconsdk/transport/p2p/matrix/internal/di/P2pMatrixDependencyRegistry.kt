@@ -46,7 +46,7 @@ internal class P2pMatrixDependencyRegistry(dependencyRegistry: DependencyRegistr
 
     // -- P2P --
 
-    override val p2pMatrixCommunicator: P2pMatrixCommunicator by lazyWeak { P2pMatrixCommunicator(app(beaconScope), crypto) }
+    override val p2pMatrixCommunicator: P2pMatrixCommunicator by lazyWeak { P2pMatrixCommunicator(app(beaconScope), crypto, json) }
     override val p2pMatrixSecurity: P2pMatrixSecurity by lazyWeak { P2pMatrixSecurity(app(beaconScope), crypto) }
 
     override fun p2pMatrixStore(httpClient: HttpClient, matrixNodes: List<String>): P2pMatrixStore =

@@ -10,9 +10,9 @@ internal interface ExtendedDependencyRegistry : DependencyRegistry {
 
     // -- client --
 
-    fun walletClient(name: String, connections: List<Connection>, configuration: BeaconConfiguration): BeaconWalletClient
+    fun walletClient(connections: List<Connection>, configuration: BeaconConfiguration): BeaconWalletClient
 }
 
 internal fun DependencyRegistry.extend(): ExtendedDependencyRegistry =
     if (this is ExtendedDependencyRegistry) this
-    else findExtended<WalletDependencyRegistry>() ?: WalletDependencyRegistry(this).also { addExtended(it) }
+    else findExtended<WalletClientDependencyRegistry>() ?: WalletClientDependencyRegistry(this).also { addExtended(it) }

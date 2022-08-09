@@ -22,12 +22,12 @@ internal class P2pMatrixStore(
     private val matrixNodes: List<String>,
     private val storageManager: StorageManager,
     private val migration: Migration,
-) : Store<P2pMatrixStoreState, P2pStoreAction>() {
+) : Store<P2pMatrixStoreState, P2pMatrixStoreAction>() {
 
     private var state: P2pMatrixStoreState? = null
     override suspend fun stateLocked(): Result<P2pMatrixStoreState> = withState { it }
 
-    override suspend fun intentLocked(action: P2pStoreAction): Result<Unit> =
+    override suspend fun intentLocked(action: P2pMatrixStoreAction): Result<Unit> =
         runCatching {
             state = when (action) {
                 is OnChannelCreated -> stateOnChannelCreated(action).getOrThrow()
