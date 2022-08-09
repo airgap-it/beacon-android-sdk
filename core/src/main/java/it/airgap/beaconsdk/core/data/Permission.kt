@@ -1,6 +1,5 @@
 package it.airgap.beaconsdk.core.data
 
-import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.internal.blockchain.BlockchainRegistry
 import it.airgap.beaconsdk.core.internal.compat.Compat
 import it.airgap.beaconsdk.core.internal.compat.VersionedCompat
@@ -8,7 +7,6 @@ import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
 import it.airgap.beaconsdk.core.internal.utils.blockchainRegistry
 import it.airgap.beaconsdk.core.internal.utils.compat
 import it.airgap.beaconsdk.core.internal.utils.getStringOrNull
-import it.airgap.beaconsdk.core.message.PermissionBeaconResponse
 import it.airgap.beaconsdk.core.scope.BeaconScope
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
@@ -62,10 +60,5 @@ public abstract class Permission {
             val blockchain = blockchainRegistry.get(value.blockchainIdentifier)
             jsonEncoder.encodeSerializableValue(blockchain.serializer.data.permission, value)
         }
-    }
-
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public interface Creator {
-        public fun fromPermissionResponse(response: PermissionBeaconResponse): Permission
     }
 }

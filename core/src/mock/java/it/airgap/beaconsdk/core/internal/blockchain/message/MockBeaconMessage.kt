@@ -33,6 +33,7 @@ public data class PermissionMockRequest(
     override val blockchainIdentifier: String,
     override val senderId: String,
     override val origin: Origin,
+    override val destination: Origin?,
     override val appMetadata: MockAppMetadata,
     val rest: Map<String, JsonElement> = emptyMap(),
 ) : PermissionBeaconRequest() {
@@ -75,6 +76,7 @@ public data class BlockchainMockRequest(
     override val senderId: String,
     override val appMetadata: @Contextual AppMetadata?,
     override val origin: Origin,
+    override val destination: Origin?,
     override val accountId: String?,
     val rest: Map<String, JsonElement> = emptyMap(),
 ) : BlockchainBeaconRequest() {
@@ -111,7 +113,7 @@ public data class PermissionMockResponse(
     val type: String,
     override val id: String,
     override val version: String,
-    override val requestOrigin: Origin,
+    override val destination: Origin,
     override val blockchainIdentifier: String,
     val rest: Map<String, JsonElement> = emptyMap(),
 ) : PermissionBeaconResponse() {
@@ -145,7 +147,7 @@ public data class BlockchainMockResponse(
     val type: String,
     override val id: String,
     override val version: String,
-    override val requestOrigin: Origin,
+    override val destination: Origin,
     override val blockchainIdentifier: String,
     val rest: Map<String, JsonElement> = emptyMap(),
 ) : BlockchainBeaconResponse() {

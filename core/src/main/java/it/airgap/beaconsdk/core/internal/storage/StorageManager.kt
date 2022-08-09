@@ -27,7 +27,7 @@ public class StorageManager(
     private val storage: ExtendedStorage,
     private val secureStorage: SecureStorage,
     private val identifierCreator: IdentifierCreator,
-    private val configuration: BeaconConfiguration,
+    public val beaconConfiguration: BeaconConfiguration,
 ) : ExtendedStorage by storage.scoped(beaconScope), SecureStorage by secureStorage.scoped(beaconScope) {
 
     private val _plugins: MutableList<StoragePlugin> = mutableListOf()
@@ -59,7 +59,7 @@ public class StorageManager(
         get() = merge(storage.peers, removedPeers)
 
     public suspend fun getPeers(): List<Peer> =
-        storage.getPeers(configuration)
+        storage.getPeers(beaconConfiguration)
 
     public suspend inline fun <reified T: Peer> updatePeers(
         peers: List<T>,
@@ -79,7 +79,7 @@ public class StorageManager(
 
     override suspend fun removePeers(predicate: ((Peer) -> Boolean)?) {
         runCatching {
-            val peers = storage.getPeers(configuration)
+            val peers = storage.getPeers(beaconConfiguration)
             val toRemove = predicate?.let { peers.filter(it) } ?: peers
 
             // TODO: remove appMetadata too
@@ -100,14 +100,14 @@ public class StorageManager(
     }
 
     public suspend fun getAppMetadata(): List<AppMetadata> =
-        storage.getAppMetadata(configuration)
+        storage.getAppMetadata(beaconConfiguration)
 
     public suspend fun removeAppMetadata(appsMetadata: List<AppMetadata>) {
         removeAppMetadata { metadata -> appsMetadata.any { it.senderId == metadata.senderId } }
     }
 
     public suspend fun getPermissions(): List<Permission> =
-        storage.getPermissions(configuration)
+        storage.getPermissions(beaconConfiguration)
 
     public suspend fun removePermissions(permissions: List<Permission>) {
         removePermissions { permission -> permissions.any { it == permission } }
@@ -115,5 +115,5 @@ public class StorageManager(
 
     override fun scoped(beaconScope: BeaconScope): StorageManager =
         if (beaconScope == this.beaconScope) this
-        else StorageManager(beaconScope, storage, secureStorage, identifierCreator, configuration)
+        else StorageManager(beaconScope, storage, secureStorage, identifierCreator, beaconConfiguration)
 }

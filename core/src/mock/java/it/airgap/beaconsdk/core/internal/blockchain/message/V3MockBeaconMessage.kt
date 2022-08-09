@@ -30,6 +30,7 @@ internal data class V3MockPermissionBeaconRequestData(
         version: String,
         senderId: String,
         origin: Origin,
+        destination: Origin,
         blockchainIdentifier: String,
     ): BeaconMessage = PermissionMockRequest(
         "permission_request",
@@ -38,6 +39,7 @@ internal data class V3MockPermissionBeaconRequestData(
         blockchainIdentifier,
         senderId,
         origin,
+        destination,
         appMetadata,
         rest,
     )
@@ -77,13 +79,14 @@ internal data class V3MockPermissionBeaconResponseData(
         version: String,
         senderId: String,
         origin: Origin,
+        destination: Origin,
         blockchainIdentifier: String,
     ): BeaconMessage =
         PermissionMockResponse(
             "permission_response",
             id,
             version,
-            origin,
+            destination,
             blockchainIdentifier,
             rest,
         )
@@ -118,6 +121,7 @@ internal data class V3MockBlockchainBeaconRequestData(
         version: String,
         senderId: String,
         origin: Origin,
+        destination: Origin,
         accountId: String,
         blockchainIdentifier: String,
     ): BeaconMessage {
@@ -130,6 +134,7 @@ internal data class V3MockBlockchainBeaconRequestData(
             senderId,
             appMetadata,
             origin,
+            destination,
             accountId,
             rest,
         )
@@ -165,13 +170,14 @@ internal data class V3MockBlockchainBeaconResponseData(
         version: String,
         senderId: String,
         origin: Origin,
+        destination: Origin,
         blockchainIdentifier: String,
     ): BeaconMessage =
         BlockchainMockResponse(
             "blockchain_response",
             id,
             version,
-            origin,
+            destination,
             blockchainIdentifier,
             rest,
         )

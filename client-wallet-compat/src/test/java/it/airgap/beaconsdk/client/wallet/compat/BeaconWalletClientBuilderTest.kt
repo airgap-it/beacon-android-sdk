@@ -8,6 +8,7 @@ import it.airgap.beaconsdk.core.internal.BeaconSdk
 import it.airgap.beaconsdk.core.blockchain.Blockchain
 import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchain
+import it.airgap.beaconsdk.core.internal.crypto.data.KeyPair
 import it.airgap.beaconsdk.core.internal.data.BeaconApplication
 import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.SharedPreferencesSecureStorage
@@ -30,7 +31,11 @@ internal class BeaconWalletClientBuilderTest {
     private lateinit var beaconSdk: BeaconSdk
     private lateinit var dependencyRegistry: DependencyRegistry
 
-    private val appName: String = "mockApp"
+    private val app: BeaconApplication = BeaconApplication(
+        keyPair = KeyPair(byteArrayOf(0), byteArrayOf(0)),
+        name = "mockApp"
+    )
+
     private val blockchains: List<Blockchain.Factory<*>> = listOf(MockBlockchain.Factory())
     private val beaconId: String = "beaconId"
 
@@ -42,7 +47,7 @@ internal class BeaconWalletClientBuilderTest {
         every { KeyStore.getInstance(any()) } returns mockk(relaxed = true)
 
         dependencyRegistry = spyk(MockDependencyRegistry())
-        beaconSdk = mockBeaconSdk(beaconId = beaconId, dependencyRegistry = dependencyRegistry)
+        beaconSdk = mockBeaconSdk(app = app, beaconId = beaconId, dependencyRegistry = dependencyRegistry)
 
         testDeferred = CompletableDeferred()
     }
@@ -64,20 +69,20 @@ internal class BeaconWalletClientBuilderTest {
             override fun onError(error: Throwable) = Unit
         })
 
-        BeaconWalletClient.Builder(appName).apply {
+        BeaconWalletClient.Builder(app.name).apply {
             support(*blockchains.toTypedArray())
         }.build(callback)
 
         runBlocking { testDeferred.await() }
 
-        assertEquals(appName, client?.name)
+        assertEquals(app, client?.app)
         assertEquals(beaconId, client?.beaconId)
         assertEquals(beaconScope, client?.beaconScope)
 
         coVerify(exactly = 1) {
             beaconSdk.add(
                 beaconScope,
-                BeaconApplication.Partial(appName, null, null),
+                BeaconApplication.Partial(app.name, null, null),
                 BeaconConfiguration(ignoreUnsupportedBlockchains = false),
                 blockchains,
                 ofType(SharedPreferencesStorage::class),
@@ -110,21 +115,21 @@ internal class BeaconWalletClientBuilderTest {
             override fun onError(error: Throwable) = Unit
         })
 
-        BeaconWalletClient.Builder(appName).apply {
+        BeaconWalletClient.Builder(app.name).apply {
             support(*blockchains.toTypedArray())
             use(*customConnections.toTypedArray())
         }.build(callback)
 
         runBlocking { testDeferred.await() }
 
-        assertEquals(appName, client!!.name)
-        assertEquals(beaconId, client!!.beaconId)
+        assertEquals(app, client?.app)
+        assertEquals(beaconId, client?.beaconId)
         assertEquals(beaconScope, client?.beaconScope)
 
         coVerify(exactly = 1) {
             beaconSdk.add(
                 beaconScope,
-                BeaconApplication.Partial(appName, null, null),
+                BeaconApplication.Partial(app.name, null, null),
                 BeaconConfiguration(ignoreUnsupportedBlockchains = false),
                 blockchains,
                 ofType(SharedPreferencesStorage::class),

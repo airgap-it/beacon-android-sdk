@@ -24,7 +24,7 @@ internal data class V2MockPermissionBeaconRequest(
     val appMetadata: MockAppMetadata,
     val rest: Map<String, JsonElement>,
 ) : V2BeaconMessage() {
-    override suspend fun toBeaconMessage(origin: Origin, beaconScope: BeaconScope): BeaconMessage =
+    override suspend fun toBeaconMessage(origin: Origin, destination: Origin, beaconScope: BeaconScope): BeaconMessage =
         PermissionMockRequest(
             type,
             id,
@@ -32,6 +32,7 @@ internal data class V2MockPermissionBeaconRequest(
             MockBlockchain.IDENTIFIER,
             senderId,
             origin,
+            destination,
             appMetadata,
             rest,
         )
@@ -81,12 +82,12 @@ internal data class V2MockPermissionBeaconResponse(
     override val senderId: String,
     val rest: Map<String, JsonElement>,
 ) : V2BeaconMessage() {
-    override suspend fun toBeaconMessage(origin: Origin, beaconScope: BeaconScope): BeaconMessage =
+    override suspend fun toBeaconMessage(origin: Origin, destination: Origin, beaconScope: BeaconScope): BeaconMessage =
         PermissionMockResponse(
             type,
             id,
             version,
-            origin,
+            destination,
             MockBlockchain.IDENTIFIER,
             rest,
         )
@@ -135,7 +136,7 @@ internal data class V2MockBlockchainBeaconMessage(
     val mockType: MockBeaconMessageType
 ) : V2BeaconMessage() {
 
-    override suspend fun toBeaconMessage(origin: Origin, beaconScope: BeaconScope): BeaconMessage =
+    override suspend fun toBeaconMessage(origin: Origin, destination: Origin, beaconScope: BeaconScope): BeaconMessage =
         when (mockType) {
             MockBeaconMessageType.Request -> {
                 val appMetadata = dependencyRegistry(beaconScope).storageManager.findAppMetadata { it.senderId == senderId }
@@ -147,6 +148,7 @@ internal data class V2MockBlockchainBeaconMessage(
                     senderId,
                     appMetadata,
                     origin,
+                    destination,
                     null,
                     rest,
                 )
@@ -154,7 +156,7 @@ internal data class V2MockBlockchainBeaconMessage(
             MockBeaconMessageType.Response -> BlockchainMockResponse(type,
                 id,
                 version,
-                origin,
+                destination,
                 MockBlockchain.IDENTIFIER,
                 rest)
         }

@@ -8,6 +8,7 @@ import it.airgap.beaconsdk.core.builder.InitBuilderWithBaseStorage
 import it.airgap.beaconsdk.core.client.BeaconClient
 import it.airgap.beaconsdk.core.client.BeaconConsumer
 import it.airgap.beaconsdk.core.data.AppMetadata
+import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.data.Peer
 import it.airgap.beaconsdk.core.data.Permission
 import it.airgap.beaconsdk.core.exception.BeaconException
@@ -213,10 +214,10 @@ public class BeaconWalletClient @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) cons
         storageManager.removePermissions()
     }
 
-    protected override suspend fun processMessage(message: BeaconMessage): Result<Unit> =
+    protected override suspend fun processMessage(origin: Origin, message: BeaconMessage): Result<Unit> =
         when (message) {
             is BeaconRequest -> acknowledge(message)
-            else -> super.processMessage(message)
+            else -> super.processMessage(origin, message)
         }
 
     protected override suspend fun transformMessage(message: BeaconMessage): BeaconRequest? =

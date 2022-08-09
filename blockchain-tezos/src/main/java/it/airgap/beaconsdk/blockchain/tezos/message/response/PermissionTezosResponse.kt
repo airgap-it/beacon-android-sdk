@@ -13,7 +13,7 @@ import it.airgap.beaconsdk.core.message.PermissionBeaconResponse
  *
  * @property [id] The value that identifies the request to which the message is responding.
  * @property [version] The message version.
- * @property [requestOrigin] The origination data of the request.
+ * @property [destination] The origination data of the request.
  * @property [blockchainIdentifier] The unique name of the blockchain that specifies the request.
  * @property [account] The account that is granting the permissions.
  * @property [scopes] The list of granted permissions.
@@ -21,7 +21,7 @@ import it.airgap.beaconsdk.core.message.PermissionBeaconResponse
 public data class PermissionTezosResponse internal constructor(
     override val id: String,
     override val version: String,
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) override val requestOrigin: Origin,
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) override val destination: Origin,
     override val blockchainIdentifier: String,
     public val account: TezosAccount,
     public val scopes: List<TezosPermission.Scope>,

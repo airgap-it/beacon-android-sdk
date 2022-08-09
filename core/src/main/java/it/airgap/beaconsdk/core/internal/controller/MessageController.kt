@@ -27,15 +27,17 @@ public class MessageController internal constructor(
 
     // -- on incoming --
 
-    public suspend fun onIncomingMessage(origin: Origin, message: VersionedBeaconMessage): Result<BeaconMessage> =
+    public suspend fun onIncomingMessage(origin: Origin, destination: Origin, message: VersionedBeaconMessage): Result<Pair<Origin, BeaconMessage>> =
         runCatching {
-            message.toBeaconMessage(origin, beaconScope).also {
+            val message = message.toBeaconMessage(origin, destination, beaconScope).also {
                 when (it) {
                     is BeaconRequest -> onIncomingRequest(it)
                     is BeaconResponse -> onIncomingResponse(it)
                     else -> { /* no action */ }
                 }
             }
+
+            Pair(origin, message)
         }
 
     private suspend fun onIncomingRequest(request: BeaconRequest) {
@@ -54,13 +56,18 @@ public class MessageController internal constructor(
     private suspend fun onIncomingResponse(response: BeaconResponse) {
         val request = outgoingRequests.get(response.id, remove = true) ?: failWithNoPendingRequest()
         when (response) {
-            is PermissionBeaconResponse -> onIncomingPermissionResponse(response)
+            is PermissionBeaconResponse -> onIncomingPermissionResponse(response, request)
             else -> { /* no action */ }
         }
     }
 
-    private suspend fun onIncomingPermissionResponse(response: PermissionBeaconResponse) {
+    private suspend fun onIncomingPermissionResponse(response: PermissionBeaconResponse, request: BeaconRequest) {
+        if (request !is PermissionBeaconRequest) /* unknown state, no action */ return
 
+        val blockchain = blockchainRegistry.get(response.blockchainIdentifier)
+        val permissions = blockchain.creator.data.extractIncomingPermission(request, response).getOrThrow()
+
+        storageManager.addPermissions(permissions) // TODO: replace if accountId & senderId are the same
     }
 
     // -- on outgoing --
@@ -69,7 +76,7 @@ public class MessageController internal constructor(
         beaconId: String,
         message: BeaconMessage,
         isTerminal: Boolean,
-    ): Result<Pair<Origin, VersionedBeaconMessage>> =
+    ): Result<Pair<Origin?, VersionedBeaconMessage>> =
         runCatching {
             when (message) {
                 is BeaconRequest -> onOutgoingRequest(message, isTerminal)
@@ -79,7 +86,7 @@ public class MessageController internal constructor(
 
             val senderId = identifierCreator.senderId(beaconId.asHexString().toByteArray()).getOrThrow()
             Pair(
-                message.associatedOrigin,
+                message.destination,
                 VersionedBeaconMessage.from(
                     senderId,
                     message,
@@ -104,7 +111,7 @@ public class MessageController internal constructor(
         if (request !is PermissionBeaconRequest) /* unknown state, no action */ return
 
         val blockchain = blockchainRegistry.get(response.blockchainIdentifier)
-        val permissions = blockchain.creator.data.extractPermission(request, response).getOrThrow()
+        val permissions = blockchain.creator.data.extractOutgoingPermission(request, response).getOrThrow()
 
         storageManager.addPermissions(permissions) // TODO: replace if accountId & senderId are the same
     }

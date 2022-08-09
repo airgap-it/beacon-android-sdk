@@ -15,7 +15,7 @@ public sealed class BeaconMessage {
     public abstract val version: String
 
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public abstract val associatedOrigin: Origin
+    public abstract val destination: Origin?
 
     public companion object {}
 }
@@ -36,10 +36,6 @@ public sealed class BeaconRequest : BeaconMessage() {
     public abstract val appMetadata: AppMetadata?
 
     public abstract val origin: Origin
-
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    override val associatedOrigin: Origin
-        get() = origin
 
     public companion object {}
 }
@@ -77,12 +73,7 @@ public abstract class BlockchainBeaconRequest : BeaconRequest() {
  * Base class for response messages used in the Beacon communication.
  */
 public sealed class BeaconResponse : BeaconMessage() {
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public abstract val requestOrigin: Origin
-
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    override val associatedOrigin: Origin
-        get() = requestOrigin
+    abstract override val destination: Origin
 
     public companion object {}
 }
@@ -117,7 +108,7 @@ public abstract class BlockchainBeaconResponse : BeaconResponse() {
 public data class AcknowledgeBeaconResponse(
     override val id: String,
     override val version: String,
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) override val requestOrigin: Origin,
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) override val destination: Origin,
     val senderId: String,
 ) : BeaconResponse() {
 
@@ -144,7 +135,7 @@ public data class AcknowledgeBeaconResponse(
 public data class ErrorBeaconResponse @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) constructor(
     override val id: String,
     override val version: String,
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) override val requestOrigin: Origin,
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) override val destination: Origin,
     public val errorType: BeaconError,
     public val description: String? = null,
 ) : BeaconResponse() {
@@ -186,10 +177,8 @@ public data class DisconnectBeaconMessage(
     override val id: String,
     val senderId: String,
     override val version: String,
-    val origin: Origin,
+    public val origin: Origin,
+    override val destination: Origin,
 ) : BeaconMessage() {
-    override val associatedOrigin: Origin
-        get() = origin
-
     public companion object {}
 }

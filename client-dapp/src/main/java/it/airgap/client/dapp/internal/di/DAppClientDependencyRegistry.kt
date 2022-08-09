@@ -7,7 +7,8 @@ import it.airgap.beaconsdk.core.internal.utils.app
 import it.airgap.beaconsdk.core.internal.utils.beaconSdk
 import it.airgap.beaconsdk.core.internal.utils.delegate.lazyWeak
 import it.airgap.client.dapp.BeaconDAppClient
-import it.airgap.client.dapp.internal.controller.AccountController
+import it.airgap.client.dapp.internal.controller.account.AccountController
+import it.airgap.client.dapp.internal.controller.account.store.AccountControllerStore
 import it.airgap.client.dapp.storage.DAppClientStorage
 
 internal class DAppClientDependencyRegistry(dependencyRegistry: DependencyRegistry) : ExtendedDependencyRegistry, DependencyRegistry by dependencyRegistry {
@@ -17,7 +18,7 @@ internal class DAppClientDependencyRegistry(dependencyRegistry: DependencyRegist
     private var dAppClient: BeaconDAppClient? = null
     override fun dAppClient(storage: DAppClientStorage, connections: List<Connection>, configuration: BeaconConfiguration): BeaconDAppClient {
         with(storageManager) {
-            if (!hasPlugin<DAppClientStorage>()) addPlugins(storage.extend())
+            if (!hasPlugin<DAppClientStorage>()) addPlugins(storage.extend(configuration))
         }
 
         return dAppClient ?: BeaconDAppClient(
@@ -37,5 +38,6 @@ internal class DAppClientDependencyRegistry(dependencyRegistry: DependencyRegist
 
     // -- account --
 
-    override val accountController: AccountController by lazyWeak { AccountController(storageManager) }
+    override val accountController: AccountController by lazyWeak { AccountController(accountControllerStore, blockchainRegistry) }
+    override val accountControllerStore: AccountControllerStore by lazyWeak { AccountControllerStore(storageManager) }
 }

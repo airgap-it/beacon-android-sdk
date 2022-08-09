@@ -25,6 +25,7 @@ import it.airgap.beaconsdk.core.internal.serializer.provider.SerializerProvider
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.transport.Transport
 import it.airgap.beaconsdk.core.internal.transport.p2p.P2pTransport
+import it.airgap.beaconsdk.core.internal.transport.p2p.store.P2pTransportStore
 import it.airgap.beaconsdk.core.internal.utils.Base58
 import it.airgap.beaconsdk.core.internal.utils.Base58Check
 import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
@@ -89,8 +90,11 @@ internal class CoreDependencyRegistry(
 
     override fun transport(connection: Connection): Transport =
         when (connection) {
-            is P2P -> P2pTransport(storageManager, connection.client.create(this))
+            is P2P -> P2pTransport(storageManager, connection.client.create(this), p2pTransportStore)
         }
+
+    private val p2pTransportStore: P2pTransportStore
+        get() = P2pTransportStore()
 
     // -- utils --
 

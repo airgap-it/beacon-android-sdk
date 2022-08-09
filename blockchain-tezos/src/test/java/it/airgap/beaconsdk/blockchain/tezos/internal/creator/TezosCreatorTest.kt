@@ -5,6 +5,7 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosAppMetadata
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
+import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.storage.MockSecureStorage
 import it.airgap.beaconsdk.core.internal.storage.MockStorage
@@ -61,11 +62,11 @@ internal class TezosCreatorTest {
 
         val appMetadata = TezosAppMetadata(senderId, "mockApp")
         val permissionRequest = permissionTezosRequest(id = id, version = version, senderId = senderId)
-        val permissionResponse = permissionTezosResponse(id = id, version = version)
+        val permissionResponse = permissionTezosResponse(id = id, version = version, destination = Origin.P2P("00"))
 
         runBlocking {
             storageManager.setAppMetadata(listOf(appMetadata))
-            val permission = creator.data.extractPermission(permissionRequest, permissionResponse).getOrThrow()
+            val permission = creator.data.extractOutgoingPermission(permissionRequest, permissionResponse).getOrThrow()
 
             val expected = listOf(TezosPermission(
                 permissionResponse.account.accountId,
@@ -95,7 +96,7 @@ internal class TezosCreatorTest {
         }
 
         assertFailsWith<IllegalStateException> {
-            runBlocking { creator.data.extractPermission(permissionRequest, permissionResponse).getOrThrow() }
+            runBlocking { creator.data.extractOutgoingPermission(permissionRequest, permissionResponse).getOrThrow() }
         }
     }
 }

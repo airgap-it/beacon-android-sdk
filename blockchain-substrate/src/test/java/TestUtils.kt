@@ -39,15 +39,16 @@ internal fun permissionSubstrateRequest(
     blockchainIdentifier: String = MockBlockchain.IDENTIFIER,
     senderId: String = "senderId",
     origin: Origin = Origin.P2P(senderId),
+    destination: Origin? = Origin.P2P("destination"),
     appMetadata: SubstrateAppMetadata = SubstrateAppMetadata(senderId, "mockApp"),
     scopes: List<SubstratePermission.Scope> = emptyList(),
     networks: List<SubstrateNetwork> = listOf(SubstrateNetwork("genesisHash")),
-): PermissionSubstrateRequest = PermissionSubstrateRequest(id, version, blockchainIdentifier, senderId, origin, appMetadata, scopes, networks)
+): PermissionSubstrateRequest = PermissionSubstrateRequest(id, version, blockchainIdentifier, senderId, origin, destination, appMetadata, scopes, networks)
 
 internal fun permissionSubstrateResponse(
     id: String = "id",
     version: String = "version",
-    requestOrigin: Origin = Origin.P2P("senderId"),
+    destination: Origin = Origin.P2P("destination"),
     blockchainIdentifier: String = MockBlockchain.IDENTIFIER,
     appMetadata: SubstrateAppMetadata = SubstrateAppMetadata("senderId", "mockApp"),
     scopes: List<SubstratePermission.Scope> = emptyList(),
@@ -55,4 +56,4 @@ internal fun permissionSubstrateResponse(
       SubstrateAccount("accountId1", SubstrateNetwork("genesisHash"), "publicKey1", "address1"),
       SubstrateAccount("accountId2", SubstrateNetwork("genesisHash"), "publicKey2", "address2"),
     ),
-): PermissionSubstrateResponse = PermissionSubstrateResponse(id, version, requestOrigin, blockchainIdentifier, appMetadata, scopes, accounts)
+): PermissionSubstrateResponse = PermissionSubstrateResponse(id, version, destination, blockchainIdentifier, appMetadata, scopes, accounts)

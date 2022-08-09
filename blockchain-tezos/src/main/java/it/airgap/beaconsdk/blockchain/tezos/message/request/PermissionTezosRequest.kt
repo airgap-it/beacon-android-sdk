@@ -1,5 +1,6 @@
 package it.airgap.beaconsdk.blockchain.tezos.message.request
 
+import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.blockchain.tezos.Tezos
 import it.airgap.beaconsdk.blockchain.tezos.client.ownAppMetadata
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosAppMetadata
@@ -35,13 +36,14 @@ public data class PermissionTezosRequest internal constructor(
     override val senderId: String,
     override val appMetadata: TezosAppMetadata,
     override val origin: Origin,
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) override val destination: Origin?,
     public val network: TezosNetwork,
     public val scopes: List<TezosPermission.Scope>,
 ) : PermissionBeaconRequest() {
     public companion object {}
 }
 
-public fun <T> PermissionTezosRequest(
+public suspend fun <T> PermissionTezosRequest(
     network: TezosNetwork = TezosNetwork.Mainnet(),
     scopes: List<TezosPermission.Scope> = listOf(TezosPermission.Scope.OperationRequest, TezosPermission.Scope.Sign),
     producer: T,
@@ -56,6 +58,7 @@ public fun <T> PermissionTezosRequest(
         senderId = requestMetadata.senderId,
         appMetadata = producer.ownAppMetadata(),
         origin = requestMetadata.origin,
+        destination = requestMetadata.destination,
         network = network,
         scopes = scopes,
     )

@@ -45,9 +45,12 @@ internal class MessageControllerTest {
     private val currentTimeMillis: Long = 1
 
     private val version: String = "2"
+
     private val senderId: String = "00"
+    private val receiverId: String = "01"
 
     private val origin = Origin.P2P(senderId)
+    private val destination = Origin.P2P(receiverId)
 
     private val beaconScope: BeaconScope = BeaconScope.Global
 
@@ -81,12 +84,13 @@ internal class MessageControllerTest {
         val versionedMessages = beaconVersionedMessages(version, senderId, dependencyRegistry.versionedBeaconMessageContext, includeError = false)
 
         versionedMessages.forEach {
-            val pendingRequest = permissionBeaconRequest(id = runBlocking { it.toBeaconMessage(origin, beaconScope).id }, senderId = senderId)
+            val pendingRequest = permissionBeaconRequest(id = runBlocking { it.toBeaconMessage(origin, destination, beaconScope).id }, senderId = senderId)
             runBlocking { messageController.onOutgoingMessage(senderId, pendingRequest, false) }
 
-            val beaconMessage = runBlocking { messageController.onIncomingMessage(origin, it).getOrThrow() }
-            val expected = runBlocking { it.toBeaconMessage(origin, beaconScope) }
+            val (incomingOrigin, beaconMessage) = runBlocking { messageController.onIncomingMessage(origin, destination, it).getOrThrow() }
+            val expected = runBlocking { it.toBeaconMessage(origin, destination, beaconScope) }
 
+            assertEquals(origin, incomingOrigin)
             assertEquals(expected, beaconMessage)
         }
     }
@@ -94,15 +98,16 @@ internal class MessageControllerTest {
     @Test
     fun `transforms outgoing BeaconMessages to VersionedBeaconMessage`() {
         val origin = Origin.P2P(senderId)
-        val beaconMessage = beaconMessages(version = version, origin = origin)
+        val destination = Origin.P2P(receiverId)
+        val beaconMessage = beaconMessages(version = version, origin = origin, destination = destination)
 
         beaconMessage.forEach {
             val pendingRequest = VersionedBeaconMessage.from(senderId, permissionBeaconRequest(id = it.id, senderId = senderId), dependencyRegistry.versionedBeaconMessageContext)
-            runBlocking { messageController.onIncomingMessage(origin, pendingRequest) }
+            runBlocking { messageController.onIncomingMessage(origin, destination, pendingRequest) }
 
             runBlocking { println(storageManager.getAppMetadata()) }
             val versioned = runBlocking { messageController.onOutgoingMessage(senderId, it, true).getOrThrow() }
-            val expected = runBlocking { Pair(origin, VersionedBeaconMessage.from(senderId, it, dependencyRegistry.versionedBeaconMessageContext)) }
+            val expected = runBlocking { Pair(destination, VersionedBeaconMessage.from(senderId, it, dependencyRegistry.versionedBeaconMessageContext)) }
 
             assertEquals(expected, versioned)
         }
@@ -113,7 +118,7 @@ internal class MessageControllerTest {
         val permissionRequest = permissionBeaconRequest(version = version)
         val versionedRequest = VersionedBeaconMessage.from(senderId, permissionRequest, dependencyRegistry.versionedBeaconMessageContext)
 
-        val result = runBlocking { messageController.onIncomingMessage(origin, versionedRequest) }
+        val result = runBlocking { messageController.onIncomingMessage(origin, destination, versionedRequest) }
         val appsMetadata = runBlocking { storageManager.getAppMetadata() }
 
         assertTrue(result.isSuccess, "Expected result to be a success")
@@ -139,7 +144,7 @@ internal class MessageControllerTest {
         val versionedRequest = VersionedBeaconMessage.from(senderId, permissionRequest, dependencyRegistry.versionedBeaconMessageContext)
 
         runBlocking {
-            messageController.onIncomingMessage(origin, versionedRequest)
+            messageController.onIncomingMessage(origin, destination, versionedRequest)
             messageController.onOutgoingMessage(senderId, permissionResponse, true)
         }
 

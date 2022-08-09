@@ -4,9 +4,9 @@ import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.data.P2pPeer
 import it.airgap.beaconsdk.core.data.selfPaired
-import it.airgap.beaconsdk.core.internal.message.ConnectionMessage
-import it.airgap.beaconsdk.core.internal.message.ConnectionTransportMessage
-import it.airgap.beaconsdk.core.internal.message.SerializedConnectionMessage
+import it.airgap.beaconsdk.core.internal.message.*
+import it.airgap.beaconsdk.core.internal.message.IncomingConnectionTransportMessage
+import it.airgap.beaconsdk.core.internal.message.OutgoingConnectionTransportMessage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.transport.Transport
 import it.airgap.beaconsdk.core.internal.transport.p2p.data.P2pMessage
@@ -30,14 +30,14 @@ internal class P2pTransport(
 ) : Transport() {
     override val type: Connection.Type = Connection.Type.P2P
 
-    override val connectionMessages: Flow<Result<ConnectionTransportMessage>> by lazy {
+    override val incomingConnectionMessages: Flow<Result<IncomingConnectionTransportMessage>> by lazy {
         storageManager.updatedPeers
             .filterIsInstance<P2pPeer>()
             .onEach { onUpdatedP2pPeer(it) }
             .filterNot { it.isRemoved || client.isSubscribed(it) }
             .mapNotNull { client.subscribeTo(it) }
             .flattenMerge()
-            .map { ConnectionMessage.fromResult(it) }
+            .map { IncomingConnectionMessage.fromResult(it) }
     }
 
     override suspend fun pair(): Flow<Result<PairingMessage>> = flow {
@@ -62,17 +62,15 @@ internal class P2pTransport(
 
     override fun supportsPairing(request: PairingRequest): Boolean = request is P2pPairingRequest
 
-    override suspend fun sendMessage(message: ConnectionTransportMessage): Result<Unit> =
+    override suspend fun sendMessage(message: OutgoingConnectionTransportMessage): Result<Unit> =
         runCatchingFlat {
-            val peerPublicKey = message.origin.id
+            val peerPublicKey = message.destination?.id
             val peer = storageManager.findPeer<P2pPeer> { it.publicKey == peerPublicKey }
-                ?: store.state().getOrThrow().pairingPeerDeferred?.await()
-                    ?.takeIf { it.publicKey == peerPublicKey }
-                    ?.also { store.intent(DiscardPairingData) }
+                ?: store.state().getOrThrow().pairingPeerDeferred?.await()?.also { store.intent(DiscardPairingData) }
                 ?: failWithUnknownPeer(peerPublicKey)
 
             return when (message) {
-                is SerializedConnectionMessage -> sendSerializedMessage(message.content, peer)
+                is SerializedOutgoingConnectionMessage -> sendSerializedMessage(message.content, peer)
                 else -> Result.success()
             }
         }
@@ -82,7 +80,7 @@ internal class P2pTransport(
         recipient: P2pPeer,
     ): Result<Unit> = client.sendTo(recipient, message)
 
-    private suspend fun addPeer(pairingData: P2PPairingMessage) {
+    private suspend fun addPeer(pairingData: P2pPairingMessage) {
         when (val peer = pairingData.toPeer()) {
             is P2pPeer -> {
                 storageManager.addPeers(listOf(peer), overwrite = true) { lhs, rhs -> lhs.id == rhs.id }
@@ -114,11 +112,11 @@ internal class P2pTransport(
         }
     }
 
-    private fun failWithUnknownPeer(publicKey: String): Nothing =
+    private fun failWithUnknownPeer(publicKey: String?): Nothing =
         throw IllegalStateException("P2P peer with public key $publicKey is not recognized.")
 
-    private fun ConnectionMessage.Companion.fromResult(
+    private fun IncomingConnectionMessage.Companion.fromResult(
         p2pMessage: Result<P2pMessage>,
-    ): Result<ConnectionTransportMessage> =
-        p2pMessage.map { SerializedConnectionMessage(Origin.P2P(it.publicKey), it.content) }
+    ): Result<IncomingConnectionTransportMessage> =
+        p2pMessage.map { SerializedIncomingConnectionMessage(Origin.P2P(it.publicKey), it.content) }
 }

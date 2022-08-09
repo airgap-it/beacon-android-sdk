@@ -9,13 +9,11 @@ import it.airgap.beaconsdk.core.internal.controller.ConnectionController
 import it.airgap.beaconsdk.core.internal.controller.MessageController
 import it.airgap.beaconsdk.core.internal.crypto.Crypto
 import it.airgap.beaconsdk.core.internal.data.BeaconApplication
-import it.airgap.beaconsdk.core.internal.message.BeaconConnectionMessage
+import it.airgap.beaconsdk.core.internal.message.BeaconIncomingConnectionMessage
+import it.airgap.beaconsdk.core.internal.message.BeaconOutgoingConnectionMessage
 import it.airgap.beaconsdk.core.internal.serializer.Serializer
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
-import it.airgap.beaconsdk.core.internal.utils.flatMap
-import it.airgap.beaconsdk.core.internal.utils.launchForEach
-import it.airgap.beaconsdk.core.internal.utils.runCatchingFlat
-import it.airgap.beaconsdk.core.internal.utils.success
+import it.airgap.beaconsdk.core.internal.utils.*
 import it.airgap.beaconsdk.core.message.BeaconMessage
 import it.airgap.beaconsdk.core.message.DisconnectBeaconMessage
 import it.airgap.beaconsdk.core.scope.BeaconScope
@@ -47,12 +45,12 @@ public abstract class BeaconClient<BM : BeaconMessage>(
      */
     public fun connect(): Flow<Result<BM>> =
         connectionController.subscribe()
-            .map { result -> result.flatMap { messageController.onIncomingMessage(it.origin, it.content) } }
-            .onEach { result -> result.getOrNull()?.let { processMessage(it) } }
+            .map { result -> result.flatMap { messageController.onIncomingMessage(it.origin, ownOrigin(it.origin), it.content) } }
+            .onEach { result -> result.getOrNull()?.let { processMessage(it.first, it.second) } }
             .filterWithConfiguration()
             .mapNotNull { result ->
                 result.fold(
-                    onSuccess = { transformMessage(it)?.let(Result.Companion::success) },
+                    onSuccess = { transformMessage(it.second)?.let(Result.Companion::success) },
                     onFailure = { Result.failure(BeaconException.from(it)) },
                 )
             }
@@ -121,7 +119,7 @@ public abstract class BeaconClient<BM : BeaconMessage>(
     public fun deserializePairingData(serialized: String): PairingMessage =
         serializer.deserialize<PairingMessage>(serialized).getOrThrow()
 
-    protected open suspend fun processMessage(message: BeaconMessage): Result<Unit> =
+    protected open suspend fun processMessage(origin: Origin, message: BeaconMessage): Result<Unit> =
         when (message) {
             is DisconnectBeaconMessage -> {
                 removePeer(message.origin.id)
@@ -141,13 +139,21 @@ public abstract class BeaconClient<BM : BeaconMessage>(
 
     private suspend fun disconnect(peer: Peer): Result<Unit> =
         runCatchingFlat {
-            val message = DisconnectBeaconMessage(crypto.guid().getOrThrow(), beaconId, peer.version, Origin.forPeer(peer))
+            val peerOrigin = Origin.forPeer(peer)
+
+            val message = DisconnectBeaconMessage(
+                id = crypto.guid().getOrThrow(),
+                senderId = beaconId,
+                version = peer.version,
+                origin = ownOrigin(peerOrigin),
+                destination = peerOrigin,
+            )
             send(message, isTerminal = true)
         }
 
     protected suspend fun send(message: BeaconMessage, isTerminal: Boolean): Result<Unit> =
         messageController.onOutgoingMessage(beaconId, message, isTerminal)
-            .flatMap { connectionController.send(BeaconConnectionMessage(it)) }
+            .flatMap { connectionController.send(BeaconOutgoingConnectionMessage(it)) }
 
     protected fun <T> Flow<Result<T>>.filterWithConfiguration(): Flow<Result<T>> =
         filterNot { it.shouldBeIgnored() }
@@ -160,6 +166,13 @@ public abstract class BeaconClient<BM : BeaconMessage>(
             else -> false
         }
     }
+
+    private fun ownOrigin(origin: Origin): Origin =
+        when (origin) {
+            is Origin.Website -> origin.copy(id = app.keyPair.publicKey.toHexString().asString())
+            is Origin.Extension -> origin.copy(id = app.keyPair.publicKey.toHexString().asString())
+            is Origin.P2P -> origin.copy(id = app.keyPair.publicKey.toHexString().asString())
+        }
 
     public companion object {}
 

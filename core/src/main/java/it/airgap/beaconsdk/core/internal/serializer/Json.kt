@@ -14,6 +14,7 @@ import it.airgap.beaconsdk.core.internal.message.v1.V1BeaconMessage
 import it.airgap.beaconsdk.core.internal.message.v2.ErrorV2BeaconResponse
 import it.airgap.beaconsdk.core.internal.message.v2.V2BeaconMessage
 import it.airgap.beaconsdk.core.internal.message.v3.*
+import it.airgap.beaconsdk.core.transport.data.*
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.contextual
@@ -66,6 +67,12 @@ private fun serializersModule(
     contextual(BlockchainV3BeaconResponseContent.Serializer(blockchainRegistry))
 
     contextual(ErrorV3BeaconResponseContent.Serializer(blockchainRegistry))
+
+    // -- pairing --
+
+    contextual(PairingMessage.serializer())
+    contextual(PairingRequest.serializer())
+    contextual(PairingResponse.serializer())
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)

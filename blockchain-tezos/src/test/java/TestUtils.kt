@@ -41,8 +41,9 @@ internal fun permissionTezosRequest(
     scopes: List<TezosPermission.Scope> = emptyList(),
     blockchainIdentifier: String = MockBlockchain.IDENTIFIER,
     origin: Origin = Origin.P2P(senderId),
+    destination: Origin = Origin.P2P("destination"),
     version: String = "version",
-): PermissionTezosRequest = PermissionTezosRequest(id, version, blockchainIdentifier, senderId, appMetadata, origin, network, scopes)
+): PermissionTezosRequest = PermissionTezosRequest(id, version, blockchainIdentifier, senderId, appMetadata, origin, destination, network, scopes)
 
 internal fun permissionTezosResponse(
     id: String = "id",
@@ -50,5 +51,5 @@ internal fun permissionTezosResponse(
     blockchainIdentifier: String = MockBlockchain.IDENTIFIER,
     scopes: List<TezosPermission.Scope> = emptyList(),
     version: String = "version",
-    requestOrigin: Origin = Origin.P2P("senderId"),
-): PermissionTezosResponse = PermissionTezosResponse(id, version, requestOrigin, blockchainIdentifier, account, scopes)
+    destination: Origin = Origin.P2P("destination"),
+): PermissionTezosResponse = PermissionTezosResponse(id, version, destination, blockchainIdentifier, account, scopes)

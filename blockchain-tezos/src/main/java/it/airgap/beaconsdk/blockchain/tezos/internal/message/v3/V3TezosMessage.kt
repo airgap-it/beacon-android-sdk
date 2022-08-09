@@ -43,8 +43,9 @@ internal data class PermissionV3TezosRequest(
         version: String,
         senderId: String,
         origin: Origin,
+        destination: Origin,
         blockchainIdentifier: String,
-    ): BeaconMessage = PermissionTezosRequest(id, version, blockchainIdentifier, senderId, appMetadata.toAppMetadata(), origin, network, scopes)
+    ): BeaconMessage = PermissionTezosRequest(id, version, blockchainIdentifier, senderId, appMetadata.toAppMetadata(), origin, destination, network, scopes)
 
     companion object {
         fun from(permissionRequest: PermissionTezosRequest): PermissionV3TezosRequest = with(permissionRequest) {
@@ -134,6 +135,7 @@ internal data class OperationV3TezosRequest(
         version: String,
         senderId: String,
         origin: Origin,
+        destination: Origin,
         accountId: String,
         blockchainIdentifier: String,
     ): BeaconMessage {
@@ -145,6 +147,7 @@ internal data class OperationV3TezosRequest(
             senderId,
             appMetadata,
             origin,
+            destination,
             accountId,
             network,
             operationDetails,
@@ -173,6 +176,7 @@ internal data class SignPayloadV3TezosRequest(
         version: String,
         senderId: String,
         origin: Origin,
+        destination: Origin,
         accountId: String,
         blockchainIdentifier: String,
     ): BeaconMessage {
@@ -184,6 +188,7 @@ internal data class SignPayloadV3TezosRequest(
             senderId,
             appMetadata,
             origin,
+            destination,
             accountId,
             signingType,
             payload,
@@ -211,6 +216,7 @@ internal data class BroadcastV3TezosRequest(
         version: String,
         senderId: String,
         origin: Origin,
+        destination: Origin,
         accountId: String,
         blockchainIdentifier: String,
     ): BeaconMessage {
@@ -222,6 +228,7 @@ internal data class BroadcastV3TezosRequest(
             senderId,
             appMetadata,
             origin,
+            destination,
             accountId,
             network,
             signedTransaction,
@@ -260,8 +267,9 @@ internal data class PermissionV3TezosResponse(
         version: String,
         senderId: String,
         origin: Origin,
+        destination: Origin,
         blockchainIdentifier: String,
-    ): BeaconMessage = PermissionTezosResponse(id, version, origin, blockchainIdentifier, TezosAccount(accountId, network, publicKey, address), scopes)
+    ): BeaconMessage = PermissionTezosResponse(id, version, destination, blockchainIdentifier, TezosAccount(accountId, network, publicKey, address), scopes)
 }
 
 @OptIn(ExperimentalSerializationApi::class)
@@ -325,8 +333,9 @@ internal data class OperationV3TezosResponse(
         version: String,
         senderId: String,
         origin: Origin,
+        destination: Origin,
         blockchainIdentifier: String,
-    ): BeaconMessage = OperationTezosResponse(id, version, origin, blockchainIdentifier, transactionHash)
+    ): BeaconMessage = OperationTezosResponse(id, version, destination, blockchainIdentifier, transactionHash)
 
     companion object {
         const val TYPE = "operation_response"
@@ -348,8 +357,9 @@ internal data class SignPayloadV3TezosResponse(
         version: String,
         senderId: String,
         origin: Origin,
+        destination: Origin,
         blockchainIdentifier: String,
-    ): BeaconMessage = SignPayloadTezosResponse(id, version, origin, blockchainIdentifier, signingType, signature)
+    ): BeaconMessage = SignPayloadTezosResponse(id, version, destination, blockchainIdentifier, signingType, signature)
 
     companion object {
         const val TYPE = "sign_payload_response"
@@ -370,8 +380,9 @@ internal data class BroadcastV3TezosResponse(
         version: String,
         senderId: String,
         origin: Origin,
+        destination: Origin,
         blockchainIdentifier: String,
-    ): BeaconMessage = BroadcastTezosResponse(id, version, origin, Tezos.IDENTIFIER, transactionHash)
+    ): BeaconMessage = BroadcastTezosResponse(id, version, destination, Tezos.IDENTIFIER, transactionHash)
 
     companion object {
         const val TYPE = "broadcast_response"

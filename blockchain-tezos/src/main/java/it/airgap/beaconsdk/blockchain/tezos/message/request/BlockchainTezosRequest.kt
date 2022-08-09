@@ -1,5 +1,6 @@
 package it.airgap.beaconsdk.blockchain.tezos.message.request
 
+import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.blockchain.tezos.Tezos
 import it.airgap.beaconsdk.blockchain.tezos.client.ownAppMetadata
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosAppMetadata
@@ -46,6 +47,7 @@ public data class OperationTezosRequest internal constructor(
     override val senderId: String,
     override val appMetadata: TezosAppMetadata?,
     override val origin: Origin,
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) override val destination: Origin?,
     override val accountId: String?,
     public val network: TezosNetwork,
     public val operationDetails: List<TezosOperation>,
@@ -71,7 +73,8 @@ public suspend fun <T> OperationTezosRequest(
         senderId = requestMetadata.senderId,
         appMetadata = producer.ownAppMetadata(),
         origin = requestMetadata.origin,
-        accountId = accountId ?: producer.getActiveAccount(),
+        destination = requestMetadata.destination,
+        accountId = accountId ?: requestMetadata.accountId,
         network = network,
         operationDetails = operationDetails,
         sourceAddress = sourceAddress,
@@ -101,6 +104,7 @@ public data class SignPayloadTezosRequest internal constructor(
     override val senderId: String,
     override val appMetadata: TezosAppMetadata?,
     override val origin: Origin,
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) override val destination: Origin?,
     override val accountId: String?,
     public val signingType: SigningType,
     public val payload: String,
@@ -126,7 +130,8 @@ public suspend fun <T> SignPayloadTezosRequest(
         senderId = requestMetadata.senderId,
         appMetadata = producer.ownAppMetadata(),
         origin = requestMetadata.origin,
-        accountId = accountId ?: producer.getActiveAccount(),
+        destination = requestMetadata.destination,
+        accountId = accountId ?: requestMetadata.accountId,
         signingType = signingType,
         payload = payload,
         sourceAddress = sourceAddress,
@@ -155,6 +160,7 @@ public data class BroadcastTezosRequest internal constructor(
     override val senderId: String,
     override val appMetadata: TezosAppMetadata?,
     override val origin: Origin,
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) override val destination: Origin?,
     override val accountId: String?,
     public val network: TezosNetwork,
     public val signedTransaction: String,
@@ -178,7 +184,8 @@ public suspend fun <T> BroadcastTezosRequest(
         senderId = requestMetadata.senderId,
         appMetadata = producer.ownAppMetadata(),
         origin = requestMetadata.origin,
-        accountId = accountId ?: producer.getActiveAccount(),
+        destination = requestMetadata.destination,
+        accountId = accountId ?: requestMetadata.accountId,
         network = network,
         signedTransaction = signedTransaction,
     )

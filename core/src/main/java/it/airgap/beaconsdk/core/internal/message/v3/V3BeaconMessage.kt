@@ -32,7 +32,11 @@ public data class V3BeaconMessage(
     public val message: Content,
 ) : VersionedBeaconMessage() {
 
-    override suspend fun toBeaconMessage(origin: Origin, beaconScope: BeaconScope): BeaconMessage = message.toBeaconMessage(beaconScope, id, version, senderId, origin)
+    override suspend fun toBeaconMessage(
+        origin: Origin,
+        destination: Origin,
+        beaconScope: BeaconScope,
+    ): BeaconMessage = message.toBeaconMessage(beaconScope, id, version, senderId, origin, destination)
 
     @OptIn(ExperimentalSerializationApi::class)
     @Serializable
@@ -44,6 +48,7 @@ public data class V3BeaconMessage(
             version: String,
             senderId: String,
             origin: Origin,
+            destination: Origin,
         ): BeaconMessage
 
         public companion object {
@@ -82,7 +87,8 @@ public data class PermissionV3BeaconRequestContent(
         version: String,
         senderId: String,
         origin: Origin,
-    ): BeaconMessage = blockchainData.toBeaconMessage(beaconScope, id, version, senderId, origin, blockchainIdentifier)
+        destination: Origin,
+    ): BeaconMessage = blockchainData.toBeaconMessage(beaconScope, id, version, senderId, origin, destination, blockchainIdentifier)
 
     @Serializable
     public abstract class BlockchainData {
@@ -92,6 +98,7 @@ public data class PermissionV3BeaconRequestContent(
             version: String,
             senderId: String,
             origin: Origin,
+            destination: Origin,
             blockchainIdentifier: String,
         ): BeaconMessage
 
@@ -160,7 +167,8 @@ public data class BlockchainV3BeaconRequestContent(
         version: String,
         senderId: String,
         origin: Origin,
-    ): BeaconMessage = blockchainData.toBeaconMessage(beaconScope, id, version, senderId, origin, accountId, blockchainIdentifier)
+        destination: Origin,
+    ): BeaconMessage = blockchainData.toBeaconMessage(beaconScope, id, version, senderId, origin, destination, accountId, blockchainIdentifier)
 
     @Serializable
     public abstract class BlockchainData {
@@ -170,6 +178,7 @@ public data class BlockchainV3BeaconRequestContent(
             version: String,
             senderId: String,
             origin: Origin,
+            destination: Origin,
             accountId: String,
             blockchainIdentifier: String,
         ): BeaconMessage
@@ -241,7 +250,8 @@ public data class PermissionV3BeaconResponseContent(
         version: String,
         senderId: String,
         origin: Origin,
-    ): BeaconMessage = blockchainData.toBeaconMessage(beaconScope, id, version, senderId, origin, blockchainIdentifier)
+        destination: Origin,
+    ): BeaconMessage = blockchainData.toBeaconMessage(beaconScope, id, version, senderId, origin, destination, blockchainIdentifier)
 
     @Serializable
     public abstract class BlockchainData {
@@ -251,6 +261,7 @@ public data class PermissionV3BeaconResponseContent(
             version: String,
             senderId: String,
             origin: Origin,
+            destination: Origin,
             blockchainIdentifier: String,
         ): BeaconMessage
 
@@ -318,7 +329,8 @@ public data class BlockchainV3BeaconResponseContent(
         version: String,
         senderId: String,
         origin: Origin,
-    ): BeaconMessage = blockchainData.toBeaconMessage(beaconScope, id, version, senderId, origin, blockchainIdentifier)
+        destination: Origin,
+    ): BeaconMessage = blockchainData.toBeaconMessage(beaconScope, id, version, senderId, origin, destination, blockchainIdentifier)
 
     @Serializable
     public abstract class BlockchainData {
@@ -328,6 +340,7 @@ public data class BlockchainV3BeaconResponseContent(
             version: String,
             senderId: String,
             origin: Origin,
+            destination: Origin,
             blockchainIdentifier: String,
         ): BeaconMessage
 
@@ -389,7 +402,8 @@ public object AcknowledgeV3BeaconResponseContent : V3BeaconMessage.Content() {
         version: String,
         senderId: String,
         origin: Origin,
-    ): BeaconMessage = AcknowledgeBeaconResponse(id, version, origin, senderId)
+        destination: Origin,
+    ): BeaconMessage = AcknowledgeBeaconResponse(id, version, destination, senderId)
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -405,7 +419,8 @@ public data class ErrorV3BeaconResponseContent(
         version: String,
         senderId: String,
         origin: Origin,
-    ): BeaconMessage = ErrorBeaconResponse(id, version, origin, errorType, description)
+        destination: Origin,
+    ): BeaconMessage = ErrorBeaconResponse(id, version, destination, errorType, description)
 
     public companion object {
         internal const val TYPE: String = "error"
@@ -464,5 +479,6 @@ public object DisconnectV3BeaconMessageContent : V3BeaconMessage.Content() {
         version: String,
         senderId: String,
         origin: Origin,
-    ): BeaconMessage = DisconnectBeaconMessage(id, senderId, version, origin)
+        destination: Origin,
+    ): BeaconMessage = DisconnectBeaconMessage(id, senderId, version, origin, destination)
 }

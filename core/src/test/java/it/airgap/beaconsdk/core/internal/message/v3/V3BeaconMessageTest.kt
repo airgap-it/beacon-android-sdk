@@ -97,6 +97,7 @@ internal class V3BeaconMessageTest {
         val senderId = "senderId"
         val otherId = "otherId"
         val origin = Origin.P2P(senderId)
+        val destination = Origin.P2P(otherId)
 
         val matchingAppMetadata = MockAppMetadata(senderId, "v3App")
         val otherAppMetadata = MockAppMetadata(otherId, "v3OtherApp")
@@ -104,8 +105,8 @@ internal class V3BeaconMessageTest {
         runBlocking { storageManager.setAppMetadata(listOf(otherAppMetadata, matchingAppMetadata)) }
 
         runBlocking {
-            versionedWithBeacon(senderId = senderId, appMetadata = matchingAppMetadata, origin = origin)
-                .map { it.first.toBeaconMessage(origin, beaconScope) to it.second }
+            versionedWithBeacon(senderId = senderId, appMetadata = matchingAppMetadata, origin = origin, destination = destination)
+                .map { it.first.toBeaconMessage(origin, destination, beaconScope) to it.second }
                 .forEach {
                     assertEquals(it.second, it.first)
                 }
@@ -134,17 +135,18 @@ internal class V3BeaconMessageTest {
         version: String = "3",
         senderId: String = "senderId",
         origin: Origin = Origin.P2P(senderId),
+        destination: Origin = Origin.P2P("destination"),
         appMetadata: AppMetadata? = null,
     ): List<Pair<V3BeaconMessage, BeaconMessage>> =
         listOf(
-            createPermissionRequestPair(version = version, senderId = senderId, origin = origin),
-            createBlockchainRequestPair(version = version, senderId = senderId, appMetadata = appMetadata, origin = origin),
+            createPermissionRequestPair(version = version, senderId = senderId, origin = origin, destination = destination),
+            createBlockchainRequestPair(version = version, senderId = senderId, appMetadata = appMetadata, origin = origin, destination = destination),
 
-            createPermissionResponsePair(version = version, senderId = senderId, origin = origin),
-            createBlockchainResponsePair(version = version, senderId = senderId, origin = origin),
+            createPermissionResponsePair(version = version, senderId = senderId, destination = destination),
+            createBlockchainResponsePair(version = version, senderId = senderId, destination = destination),
 
-            createDisconnectPair(version = version, senderId = senderId, origin = origin),
-            createErrorResponsePair(version = version, senderId = senderId, origin = origin),
+            createDisconnectPair(version = version, senderId = senderId, origin = origin, destination = destination),
+            createErrorResponsePair(version = version, senderId = senderId, destination = destination),
         )
 
     // -- request to JSON --
@@ -362,6 +364,7 @@ internal class V3BeaconMessageTest {
         network: Network = MockNetwork(),
         scopes: List<String> = emptyList(),
         origin: Origin = Origin.P2P(senderId),
+        destination: Origin = Origin.P2P("destination"),
     ): Pair<V3BeaconMessage, PermissionBeaconRequest> {
         val rest = mapOf(
             "network" to json.encodeToJsonElement(network),
@@ -379,7 +382,7 @@ internal class V3BeaconMessageTest {
                     rest,
                 ),
             ),
-        ) to PermissionMockRequest("permission_request", id, version, blockchainIdentifier, senderId, origin, appMetadata, rest)
+        ) to PermissionMockRequest("permission_request", id, version, blockchainIdentifier, senderId, origin, destination, appMetadata, rest)
     }
 
     private fun createBlockchainRequestPair(
@@ -390,6 +393,7 @@ internal class V3BeaconMessageTest {
         accountId: String = "accountId",
         appMetadata: AppMetadata? = null,
         origin: Origin = Origin.P2P(senderId),
+        destination: Origin = Origin.P2P("destination"),
         message: String = "message",
     ): Pair<V3BeaconMessage, BlockchainMockRequest> {
         val rest = mapOf(
@@ -405,7 +409,7 @@ internal class V3BeaconMessageTest {
                 accountId,
                 V3MockBlockchainBeaconRequestData(rest),
             ),
-        ) to BlockchainMockRequest("blockchain_request", id, version, blockchainIdentifier, senderId, appMetadata, origin, accountId, rest)
+        ) to BlockchainMockRequest("blockchain_request", id, version, blockchainIdentifier, senderId, appMetadata, origin, destination, accountId, rest)
     }
 
     // -- response to BeaconMessage --
@@ -418,7 +422,7 @@ internal class V3BeaconMessageTest {
         publicKey: String = "publicKey",
         network: Network = MockNetwork(),
         scopes: List<String> = emptyList(),
-        origin: Origin = Origin.P2P(senderId),
+        destination: Origin = Origin.P2P("destination"),
     ): Pair<V3BeaconMessage, PermissionBeaconResponse> {
         val rest = mapOf(
             "publicKey" to json.encodeToJsonElement(publicKey),
@@ -434,7 +438,7 @@ internal class V3BeaconMessageTest {
                 blockchainIdentifier,
                 V3MockPermissionBeaconResponseData(rest),
             ),
-        ) to PermissionMockResponse("permission_response", id, version, origin, blockchainIdentifier, rest)
+        ) to PermissionMockResponse("permission_response", id, version, destination, blockchainIdentifier, rest)
     }
 
     private fun createBlockchainResponsePair(
@@ -442,7 +446,7 @@ internal class V3BeaconMessageTest {
         id: String = "id",
         senderId: String = "senderId",
         blockchainIdentifier: String = MockBlockchain.IDENTIFIER,
-        origin: Origin = Origin.P2P(senderId),
+        destination: Origin = Origin.P2P("destination"),
         signature: String = "signature",
     ): Pair<V3BeaconMessage, BlockchainBeaconResponse> {
         val rest = mapOf(
@@ -457,7 +461,7 @@ internal class V3BeaconMessageTest {
                 blockchainIdentifier,
                 V3MockBlockchainBeaconResponseData(rest),
             ),
-        ) to BlockchainMockResponse("blockchain_response", id, version, origin, blockchainIdentifier, rest)
+        ) to BlockchainMockResponse("blockchain_response", id, version, destination, blockchainIdentifier, rest)
     }
 
     private fun createErrorResponsePair(
@@ -466,7 +470,7 @@ internal class V3BeaconMessageTest {
         senderId: String = "senderId",
         errorType: BeaconError = BeaconError.Unknown,
         description: String? = "description",
-        origin: Origin = Origin.P2P(senderId),
+        destination: Origin = Origin.P2P("destination"),
     ): Pair<V3BeaconMessage, ErrorBeaconResponse> =
         V3BeaconMessage(
             id,
@@ -476,7 +480,7 @@ internal class V3BeaconMessageTest {
                 errorType,
                 description,
             ),
-        ) to ErrorBeaconResponse(id, version, origin, errorType, description)
+        ) to ErrorBeaconResponse(id, version, destination, errorType, description)
 
     // -- other to BeaconMessage --
 
@@ -485,6 +489,7 @@ internal class V3BeaconMessageTest {
         id: String = "id",
         senderId: String = "senderId",
         origin: Origin = Origin.P2P(senderId),
+        destination: Origin = Origin.P2P("destination"),
     ): Pair<V3BeaconMessage, DisconnectBeaconMessage> =
-        V3BeaconMessage(id, version, senderId, DisconnectV3BeaconMessageContent) to DisconnectBeaconMessage(id, senderId, version, origin)
+        V3BeaconMessage(id, version, senderId, DisconnectV3BeaconMessageContent) to DisconnectBeaconMessage(id, senderId, version, origin, destination)
 }

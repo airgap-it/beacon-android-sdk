@@ -93,8 +93,8 @@ public data class ErrorV1BeaconResponse(
     @Required
     override val type: String = TYPE
 
-    override suspend fun toBeaconMessage(origin: Origin, beaconScope: BeaconScope): BeaconMessage =
-        ErrorBeaconResponse(id, version, origin, errorType, null)
+    override suspend fun toBeaconMessage(origin: Origin, destination: Origin, beaconScope: BeaconScope): BeaconMessage =
+        ErrorBeaconResponse(id, version, destination, errorType, null)
 
     public companion object {
         internal const val TYPE: String = "error"
@@ -154,8 +154,8 @@ public data class DisconnectV1BeaconMessage(
     @Required
     override val type: String = TYPE
 
-    override suspend fun toBeaconMessage(origin: Origin, beaconScope: BeaconScope): BeaconMessage =
-        DisconnectBeaconMessage(id, beaconId, version, origin)
+    override suspend fun toBeaconMessage(origin: Origin, destination: Origin, beaconScope: BeaconScope): BeaconMessage =
+        DisconnectBeaconMessage(id, beaconId, version, origin, destination)
 
     public companion object {
         internal const val TYPE: String = "disconnect"

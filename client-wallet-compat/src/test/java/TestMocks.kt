@@ -5,12 +5,15 @@ import it.airgap.beaconsdk.core.internal.BeaconSdk
 import it.airgap.beaconsdk.core.internal.blockchain.BlockchainRegistry
 import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchain
 import it.airgap.beaconsdk.core.internal.compat.CoreCompat
+import it.airgap.beaconsdk.core.internal.crypto.data.KeyPair
+import it.airgap.beaconsdk.core.internal.data.BeaconApplication
 import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.core.scope.BeaconScope
 
 // -- class --
 
 internal fun mockBeaconSdk(
+    app: BeaconApplication = BeaconApplication(KeyPair(byteArrayOf(0), byteArrayOf(0)), "mockApp"),
     beaconId: String = "beaconId",
     dependencyRegistry: DependencyRegistry = mockk(relaxed = true),
 ): BeaconSdk =
@@ -23,6 +26,7 @@ internal fun mockBeaconSdk(
         coEvery { it.add(any(), any(), any(), any(), any(), any()) } returns Unit
 
         every { it.applicationContext } returns contextMock
+        every { it.app(any()) } returns app
         every { it.beaconId(any()) } returns beaconId
         every { it.dependencyRegistry(any()) } returns dependencyRegistry
     }

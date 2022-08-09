@@ -102,7 +102,7 @@ internal class P2pMatrixCommunicator(private val app: BeaconApplication, private
             Pair(recipient, payload)
         }
 
-    private fun PairingResponse.payload(): String =
+    private fun P2pPairingResponse.payload(): String =
         when (version.substringBefore('.')) {
             "1" -> v1Payload()
             "2" -> v2Payload()
@@ -112,9 +112,9 @@ internal class P2pMatrixCommunicator(private val app: BeaconApplication, private
             else -> v3Payload()
         }
 
-    private fun PairingResponse.v1Payload(): String = publicKey
-    private fun PairingResponse.v2Payload(): String = json.encodeToString(this)
-    private fun PairingResponse.v3Payload(): String = v2Payload()
+    private fun P2pPairingResponse.v1Payload(): String = publicKey
+    private fun P2pPairingResponse.v2Payload(): String = json.encodeToString(this)
+    private fun P2pPairingResponse.v3Payload(): String = v2Payload()
 
     private fun P2pPairingRequest.Companion.from(peer: P2pPeer): P2pPairingRequest = with(peer) {
         P2pPairingRequest(

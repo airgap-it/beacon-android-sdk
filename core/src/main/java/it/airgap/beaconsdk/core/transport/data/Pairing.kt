@@ -5,7 +5,9 @@ import it.airgap.beaconsdk.core.data.Peer
 import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
 import it.airgap.beaconsdk.core.internal.utils.failWithIllegalArgument
 import it.airgap.beaconsdk.core.internal.utils.getString
+import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
@@ -15,7 +17,6 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.jsonObject
 
-@Serializable(with = PairingMessage.Serializer::class)
 public sealed interface PairingMessage {
     public val id: String
     public val type: String
@@ -50,9 +51,12 @@ public sealed interface PairingMessage {
 
         private fun failWithUnknownType(type: String): Nothing = failWithIllegalArgument("Unknown pairing data type $type")
     }
+
+    public companion object {
+        public fun serializer(): KSerializer<PairingMessage> = Serializer()
+    }
 }
 
-@Serializable(with = PairingRequest.Serializer::class)
 public sealed interface PairingRequest : PairingMessage {
 
     @OptIn(ExperimentalSerializationApi::class)
@@ -81,10 +85,11 @@ public sealed interface PairingRequest : PairingMessage {
 
     public companion object {
         internal const val TYPE_SUFFIX = "request"
+
+        public fun serializer(): KSerializer<PairingRequest> = Serializer()
     }
 }
 
-@Serializable(with = PairingResponse.Serializer::class)
 public sealed interface PairingResponse : PairingMessage {
 
     @OptIn(ExperimentalSerializationApi::class)
@@ -113,18 +118,21 @@ public sealed interface PairingResponse : PairingMessage {
 
     public companion object {
         internal const val TYPE_SUFFIX = "response"
+
+        public fun serializer(): KSerializer<PairingResponse> = Serializer()
+
     }
 }
 
 // -- P2P -- (TODO: Move to a separate file, currently this is the only way to keep the `when` expressions exhaustive)
 
-@Serializable
-public sealed interface P2PPairingMessage : PairingMessage {
+public sealed interface P2pPairingMessage : PairingMessage {
     public val relayServer: String
     public val icon: String?
     public val appUrl: String?
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
 public data class P2pPairingRequest(
     override val id: String,
@@ -134,16 +142,19 @@ public data class P2pPairingRequest(
     override val relayServer: String,
     override val icon: String? = null,
     override val appUrl: String? = null,
-) : P2PPairingMessage, PairingRequest {
+) : P2pPairingMessage, PairingRequest {
+
+    @EncodeDefault
     override val type: String = TYPE
 
     override fun toPeer(): Peer = P2pPeer(id, name, publicKey, relayServer, version, icon, appUrl)
 
     public companion object {
-        internal const val TYPE = "p2p-pairing-${PairingRequest.TYPE_SUFFIX}"
+        public const val TYPE: String = "p2p-pairing-${PairingRequest.TYPE_SUFFIX}"
     }
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
 public data class P2pPairingResponse(
     override val id: String,
@@ -153,12 +164,14 @@ public data class P2pPairingResponse(
     override val relayServer: String,
     override val icon: String? = null,
     override val appUrl: String? = null,
-) : P2PPairingMessage, PairingResponse {
+) : P2pPairingMessage, PairingResponse {
+
+    @EncodeDefault
     override val type: String = TYPE
 
     override fun toPeer(): Peer = P2pPeer(id, name, version, publicKey, relayServer, icon, appUrl, isPaired = true)
 
     public companion object {
-        internal const val TYPE = "p2p-pairing-${PairingResponse.TYPE_SUFFIX}"
+        public const val TYPE: String = "p2p-pairing-${PairingResponse.TYPE_SUFFIX}"
     }
 }

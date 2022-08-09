@@ -65,7 +65,7 @@ internal class SubstrateCreatorTest {
 
         runBlocking {
             storageManager.setAppMetadata(listOf(appMetadata))
-            val permission = creator.data.extractPermission(permissionRequest, permissionResponse).getOrThrow()
+            val permission = creator.data.extractOutgoingPermission(permissionRequest, permissionResponse).getOrThrow()
 
             val expected = permissionResponse.accounts.map {
                 SubstratePermission(
@@ -95,7 +95,7 @@ internal class SubstrateCreatorTest {
         }
 
         assertFailsWith<IllegalStateException> {
-            runBlocking { creator.data.extractPermission(permissionRequest, permissionResponse).getOrThrow() }
+            runBlocking { creator.data.extractOutgoingPermission(permissionRequest, permissionResponse).getOrThrow() }
         }
     }
 }

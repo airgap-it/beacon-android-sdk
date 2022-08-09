@@ -12,6 +12,7 @@ public data class PermissionSubstrateRequest internal constructor(
     override val blockchainIdentifier: String,
     override val senderId: String,
     override val origin: Origin,
+    override val destination: Origin?,
     override val appMetadata: SubstrateAppMetadata,
     public val scopes: List<SubstratePermission.Scope>,
     public val networks: List<SubstrateNetwork>,

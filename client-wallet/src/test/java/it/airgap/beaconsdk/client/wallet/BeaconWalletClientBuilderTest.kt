@@ -7,6 +7,7 @@ import it.airgap.beaconsdk.core.internal.BeaconSdk
 import it.airgap.beaconsdk.core.blockchain.Blockchain
 import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchain
+import it.airgap.beaconsdk.core.internal.crypto.data.KeyPair
 import it.airgap.beaconsdk.core.internal.data.BeaconApplication
 import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.SharedPreferencesSecureStorage
@@ -26,7 +27,11 @@ internal class BeaconWalletClientBuilderTest {
     private lateinit var beaconSdk: BeaconSdk
     private lateinit var dependencyRegistry: DependencyRegistry
 
-    private val appName: String = "mockApp"
+    private val app: BeaconApplication = BeaconApplication(
+        keyPair = KeyPair(byteArrayOf(0), byteArrayOf(0)),
+        name = "mockApp"
+    )
+
     private val blockchains: List<Blockchain.Factory<*>> = listOf(MockBlockchain.Factory())
     private val beaconId: String = "beaconId"
 
@@ -38,7 +43,7 @@ internal class BeaconWalletClientBuilderTest {
         every { KeyStore.getInstance(any()) } returns mockk(relaxed = true)
 
         dependencyRegistry = spyk(MockDependencyRegistry())
-        beaconSdk = mockBeaconSdk(beaconId = beaconId, dependencyRegistry = dependencyRegistry)
+        beaconSdk = mockBeaconSdk(app = app, beaconId = beaconId, dependencyRegistry = dependencyRegistry)
     }
 
     @Test
@@ -47,19 +52,19 @@ internal class BeaconWalletClientBuilderTest {
             val beaconScope = BeaconScope.Global
             every { dependencyRegistry.beaconScope } returns beaconScope
 
-            val beaconWalletClient = BeaconWalletClient.Builder(appName).apply {
+            val beaconWalletClient = BeaconWalletClient.Builder(app.name).apply {
                 support(*blockchains.toTypedArray())
             }.build()
             val defaultConnections = emptyList<Connection>()
 
-            assertEquals(appName, beaconWalletClient.name)
+            assertEquals(app, beaconWalletClient.app)
             assertEquals(beaconId, beaconWalletClient.beaconId)
             assertEquals(beaconScope, beaconWalletClient.beaconScope)
 
             coVerify(exactly = 1) {
                 beaconSdk.add(
                     beaconScope,
-                    BeaconApplication.Partial(appName, null, null),
+                    BeaconApplication.Partial(app.name, null, null),
                     BeaconConfiguration(ignoreUnsupportedBlockchains = false),
                     blockchains,
                     ofType(SharedPreferencesStorage::class),
@@ -79,19 +84,19 @@ internal class BeaconWalletClientBuilderTest {
             val mockP2pFactory = mockkClass(P2pClient.Factory::class)
             val customConnections = listOf(P2P(mockP2pFactory))
 
-            val beaconWalletClient = BeaconWalletClient.Builder(appName).apply {
+            val beaconWalletClient = BeaconWalletClient.Builder(app.name).apply {
                 support(*blockchains.toTypedArray())
                 use(*customConnections.toTypedArray())
             }.build()
 
-            assertEquals(appName, beaconWalletClient.name)
+            assertEquals(app, beaconWalletClient.app)
             assertEquals(beaconId, beaconWalletClient.beaconId)
             assertEquals(beaconScope, beaconWalletClient.beaconScope)
 
             coVerify(exactly = 1) {
                 beaconSdk.add(
                     beaconScope,
-                    BeaconApplication.Partial(appName, null, null),
+                    BeaconApplication.Partial(app.name, null, null),
                     BeaconConfiguration(ignoreUnsupportedBlockchains = false),
                     blockchains,
                     ofType(SharedPreferencesStorage::class),
@@ -108,19 +113,19 @@ internal class BeaconWalletClientBuilderTest {
             val beaconScope = BeaconScope.Global
             every { dependencyRegistry.beaconScope } returns beaconScope
 
-            val beaconWalletClient = BeaconWalletClient(appName) {
+            val beaconWalletClient = BeaconWalletClient(app.name) {
                 support(*blockchains.toTypedArray())
             }
             val defaultConnections = emptyList<Connection>()
 
-            assertEquals(appName, beaconWalletClient.name)
+            assertEquals(app, beaconWalletClient.app)
             assertEquals(beaconId, beaconWalletClient.beaconId)
             assertEquals(beaconScope, beaconWalletClient.beaconScope)
 
             coVerify(exactly = 1) {
                 beaconSdk.add(
                     beaconScope,
-                    BeaconApplication.Partial(appName, null, null),
+                    BeaconApplication.Partial(app.name, null, null),
                     BeaconConfiguration(ignoreUnsupportedBlockchains = false),
                     blockchains,
                     ofType(SharedPreferencesStorage::class),
@@ -140,19 +145,19 @@ internal class BeaconWalletClientBuilderTest {
             val mockP2pFactory = mockkClass(P2pClient.Factory::class)
             val customConnections = listOf(P2P(mockP2pFactory))
 
-            val beaconWalletClient = BeaconWalletClient(appName) {
+            val beaconWalletClient = BeaconWalletClient(app.name) {
                 support(*blockchains.toTypedArray())
                 use(*customConnections.toTypedArray())
             }
 
-            assertEquals(appName, beaconWalletClient.name)
+            assertEquals(app, beaconWalletClient.app)
             assertEquals(beaconId, beaconWalletClient.beaconId)
             assertEquals(beaconScope, beaconWalletClient.beaconScope)
 
             coVerify(exactly = 1) {
                 beaconSdk.add(
                     beaconScope,
-                    BeaconApplication.Partial(appName, null, null),
+                    BeaconApplication.Partial(app.name, null, null),
                     BeaconConfiguration(ignoreUnsupportedBlockchains = false),
                     blockchains,
                     ofType(SharedPreferencesStorage::class),

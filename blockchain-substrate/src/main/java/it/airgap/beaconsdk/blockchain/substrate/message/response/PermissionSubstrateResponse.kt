@@ -10,7 +10,7 @@ import it.airgap.beaconsdk.core.message.PermissionBeaconResponse
 public data class PermissionSubstrateResponse internal constructor(
     override val id: String,
     override val version: String,
-    override val requestOrigin: Origin,
+    override val destination: Origin,
     override val blockchainIdentifier: String,
     public val appMetadata: SubstrateAppMetadata,
     public val scopes: List<SubstratePermission.Scope>,

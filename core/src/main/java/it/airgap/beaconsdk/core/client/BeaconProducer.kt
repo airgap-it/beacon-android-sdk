@@ -15,7 +15,7 @@ public interface BeaconProducer {
     public suspend fun request(request: BeaconRequest)
     public suspend fun pair(connectionType: Connection.Type = Connection.Type.P2P): Result<PairingRequest>
 
-    public fun prepareRequest(connectionType: Connection.Type): RequestMetadata
+    public suspend fun prepareRequest(connectionType: Connection.Type): RequestMetadata
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public data class RequestMetadata(
@@ -23,5 +23,7 @@ public interface BeaconProducer {
         public val version: String,
         public val senderId: String,
         public val origin: Origin,
+        public val destination: Origin?,
+        public val accountId: String?,
     )
 }

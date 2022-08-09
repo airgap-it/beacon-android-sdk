@@ -1,5 +1,6 @@
 package it.airgap.beaconsdk.core.internal.storage.decorator
 
+import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.data.AppMetadata
 import it.airgap.beaconsdk.core.data.Peer
 import it.airgap.beaconsdk.core.data.Permission
@@ -19,18 +20,19 @@ import kotlin.reflect.KClass
 private typealias StorageSelectCollection<T> = suspend Storage.() -> List<T>
 private typealias StorageInsertCollection<T> = suspend Storage.(List<T>) -> Unit
 
-internal class DecoratedStorage(
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public class DecoratedStorage(
     private val storage: Storage,
-    private val configuration: BeaconConfiguration,
+    private val beaconConfiguration: BeaconConfiguration,
 ) : ExtendedStorage, Storage by storage {
     private val _appMetadata: MutableSharedFlow<AppMetadata> by lazy { resourceFlow() }
-    override val appMetadata: Flow<AppMetadata> get() = _appMetadata.onSubscription { emitAll(getAppMetadata(configuration).asFlow()) }
+    override val appMetadata: Flow<AppMetadata> get() = _appMetadata.onSubscription { emitAll(getAppMetadata(beaconConfiguration).asFlow()) }
 
     private val _permissions: MutableSharedFlow<Permission> by lazy { resourceFlow() }
-    override val permissions: Flow<Permission> get() = _permissions.onSubscription { emitAll(getPermissions(configuration).asFlow()) }
+    override val permissions: Flow<Permission> get() = _permissions.onSubscription { emitAll(getPermissions(beaconConfiguration).asFlow()) }
 
     private val _peers: MutableSharedFlow<Peer> by lazy { resourceFlow() }
-    override val peers: Flow<Peer> get() = _peers.onSubscription { emitAll(getPeers(configuration).asFlow()) }
+    override val peers: Flow<Peer> get() = _peers.onSubscription { emitAll(getPeers(beaconConfiguration).asFlow()) }
 
     override suspend fun addPeers(
         peers: List<Peer>,
@@ -38,7 +40,7 @@ internal class DecoratedStorage(
         compare: (Peer, Peer) -> Boolean,
     ) {
         add(
-            { getPeers(configuration) },
+            { getPeers(beaconConfiguration) },
             Storage::setPeers,
             _peers,
             peers,
@@ -48,15 +50,15 @@ internal class DecoratedStorage(
     }
 
     override suspend fun findPeer(predicate: (Peer) -> Boolean): Peer? =
-        selectFirst({ getPeers(configuration) }, predicate)
+        selectFirst({ getPeers(beaconConfiguration) }, predicate)
 
     override suspend fun <T : Peer> findPeer(
         instanceClass: KClass<T>,
         predicate: (T) -> Boolean,
-    ): T? = selectFirstInstance({ getPeers(configuration) }, instanceClass, predicate)
+    ): T? = selectFirstInstance({ getPeers(beaconConfiguration) }, instanceClass, predicate)
 
     override suspend fun removePeers(predicate: ((Peer) -> Boolean)?) {
-        if (predicate != null) remove({ getPeers(configuration) }, Storage::setPeers, predicate)
+        if (predicate != null) remove({ getPeers(beaconConfiguration) }, Storage::setPeers, predicate)
         else removeAll(Storage::setPeers)
     }
 
@@ -66,7 +68,7 @@ internal class DecoratedStorage(
         compare: (AppMetadata, AppMetadata) -> Boolean,
     ) {
         add(
-            { getAppMetadata(configuration) },
+            { getAppMetadata(beaconConfiguration) },
             Storage::setAppMetadata,
             _appMetadata,
             appsMetadata,
@@ -76,15 +78,15 @@ internal class DecoratedStorage(
     }
 
     override suspend fun findAppMetadata(predicate: (AppMetadata) -> Boolean): AppMetadata? =
-        selectFirst({ getAppMetadata(configuration) }, predicate)
+        selectFirst({ getAppMetadata(beaconConfiguration) }, predicate)
 
     override suspend fun <T : AppMetadata> findAppMetadata(
         instanceClass: KClass<T>,
         predicate: (T) -> Boolean,
-    ): T? = selectFirstInstance({ getAppMetadata(configuration) }, instanceClass, predicate)
+    ): T? = selectFirstInstance({ getAppMetadata(beaconConfiguration) }, instanceClass, predicate)
 
     override suspend fun removeAppMetadata(predicate: ((AppMetadata) -> Boolean)?) {
-        if (predicate != null) remove({ getAppMetadata(configuration) }, Storage::setAppMetadata, predicate)
+        if (predicate != null) remove({ getAppMetadata(beaconConfiguration) }, Storage::setAppMetadata, predicate)
         else removeAll(Storage::setAppMetadata)
     }
 
@@ -94,7 +96,7 @@ internal class DecoratedStorage(
         compare: (Permission, Permission) -> Boolean,
     ) {
         add(
-            { getPermissions(configuration) },
+            { getPermissions(beaconConfiguration) },
             Storage::setPermissions,
             _permissions,
             permissions,
@@ -104,15 +106,15 @@ internal class DecoratedStorage(
     }
 
     override suspend fun findPermission(predicate: (Permission) -> Boolean): Permission? =
-        selectFirst({ getPermissions(configuration) }, predicate)
+        selectFirst({ getPermissions(beaconConfiguration) }, predicate)
 
     override suspend fun <T : Permission> findPermission(
         instanceClass: KClass<T>,
         predicate: (T) -> Boolean,
-    ): T? = selectFirstInstance({ getPermissions(configuration) }, instanceClass, predicate)
+    ): T? = selectFirstInstance({ getPermissions(beaconConfiguration) }, instanceClass, predicate)
 
     override suspend fun removePermissions(predicate: ((Permission) -> Boolean)?) {
-        if (predicate != null) remove({ getPermissions(configuration) }, Storage::setPermissions, predicate)
+        if (predicate != null) remove({ getPermissions(beaconConfiguration) }, Storage::setPermissions, predicate)
         else removeAll(Storage::setPermissions)
     }
 
@@ -124,7 +126,7 @@ internal class DecoratedStorage(
         setMigrations(storageMigrations)
     }
 
-    override fun scoped(beaconScope: BeaconScope): ExtendedStorage = DecoratedStorage(storage.scoped(beaconScope), configuration)
+    override fun scoped(beaconScope: BeaconScope): ExtendedStorage = DecoratedStorage(storage.scoped(beaconScope), beaconConfiguration)
     override fun extend(beaconConfiguration: BeaconConfiguration): ExtendedStorage = this
 
     private suspend fun <T> selectFirst(

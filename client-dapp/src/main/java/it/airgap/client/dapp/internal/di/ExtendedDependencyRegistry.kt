@@ -5,7 +5,8 @@ import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.core.internal.di.findExtended
 import it.airgap.client.dapp.BeaconDAppClient
-import it.airgap.client.dapp.internal.controller.AccountController
+import it.airgap.client.dapp.internal.controller.account.AccountController
+import it.airgap.client.dapp.internal.controller.account.store.AccountControllerStore
 import it.airgap.client.dapp.storage.DAppClientStorage
 
 internal interface ExtendedDependencyRegistry : DependencyRegistry {
@@ -17,6 +18,7 @@ internal interface ExtendedDependencyRegistry : DependencyRegistry {
     // -- controller --
 
     val accountController: AccountController
+    val accountControllerStore: AccountControllerStore
 }
 
 internal fun DependencyRegistry.extend(): ExtendedDependencyRegistry =

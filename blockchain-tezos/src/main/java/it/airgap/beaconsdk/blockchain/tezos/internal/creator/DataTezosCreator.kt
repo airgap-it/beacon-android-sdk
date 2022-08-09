@@ -5,6 +5,8 @@ import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
 import it.airgap.beaconsdk.blockchain.tezos.internal.utils.failWithUnknownMessage
 import it.airgap.beaconsdk.blockchain.tezos.message.request.PermissionTezosRequest
 import it.airgap.beaconsdk.blockchain.tezos.message.response.PermissionTezosResponse
+import it.airgap.beaconsdk.core.data.Account
+import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.data.Permission
 import it.airgap.beaconsdk.core.internal.blockchain.creator.DataBlockchainCreator
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
@@ -20,16 +22,14 @@ internal class DataTezosCreator(
     private val storageManager: StorageManager,
     private val identifierCreator: IdentifierCreator,
 ) : DataBlockchainCreator {
-    override suspend fun extractPermission(
-        request: PermissionBeaconRequest,
-        response: PermissionBeaconResponse,
-    ): Result<List<Permission>> =
+    override suspend fun extractIncomingPermission(request: PermissionBeaconRequest, response: PermissionBeaconResponse): Result<List<Permission>> =
         runCatching {
             if (request !is PermissionTezosRequest) failWithUnknownMessage(request)
             if (response !is PermissionTezosResponse) failWithUnknownMessage(response)
 
-            val appMetadata = storageManager.findAppMetadata<TezosAppMetadata> { it.senderId == request.senderId } ?: failWithAppMetadataNotFound()
+            val peer = storageManager.findPeer { it.publicKey == request.origin.id } ?: failWithAppMetadataNotFound()
             val senderId = identifierCreator.senderId(request.origin.id.asHexString().toByteArray()).getOrThrow()
+            val appMetadata = TezosAppMetadata(senderId, peer.name, peer.icon)
 
             listOf(
                 TezosPermission(
@@ -43,6 +43,35 @@ internal class DataTezosCreator(
                     response.scopes,
                 ),
             )
+        }
+
+    override suspend fun extractOutgoingPermission(request: PermissionBeaconRequest, response: PermissionBeaconResponse): Result<List<Permission>> =
+        runCatching {
+            if (request !is PermissionTezosRequest) failWithUnknownMessage(request)
+            if (response !is PermissionTezosResponse) failWithUnknownMessage(response)
+
+            val appMetadata = storageManager.findAppMetadata<TezosAppMetadata> { it.senderId == request.senderId } ?: failWithAppMetadataNotFound()
+            val senderId = identifierCreator.senderId(response.destination.id.asHexString().toByteArray()).getOrThrow()
+
+            listOf(
+                TezosPermission(
+                    response.account.accountId,
+                    senderId,
+                    connectedAt = currentTimestamp(),
+                    response.account.address,
+                    response.account.publicKey,
+                    response.account.network,
+                    appMetadata,
+                    response.scopes,
+                ),
+            )
+        }
+
+    override fun extractAccounts(response: PermissionBeaconResponse): Result<List<String>> =
+        runCatching {
+            if (response !is PermissionTezosResponse) failWithUnknownMessage(response)
+
+            listOf(response.account.accountId)
         }
 
     private fun failWithAppMetadataNotFound(): Nothing = failWithIllegalState("Permission could not be extracted, matching appMetadata not found.")

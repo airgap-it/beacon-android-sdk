@@ -2,6 +2,7 @@ package it.airgap.client.dapp.internal.storage.sharedpreferences
 
 import android.content.Context
 import android.content.SharedPreferences
+import it.airgap.beaconsdk.core.data.Account
 import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.SharedPreferencesBaseStorage
 import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.SharedPreferencesStorage
@@ -14,10 +15,17 @@ internal class SharedPreferencesDAppClientStorage(
     sharedPreferences: SharedPreferences,
     beaconScope: BeaconScope = BeaconScope.Global,
 ) : DAppClientStorage, SharedPreferencesBaseStorage(beaconScope, sharedPreferences), Storage by storage {
-    override suspend fun getActivePeerId(): String? =
+    override suspend fun getActiveAccount(): Account? =
+        sharedPreferences.getSerializable(Key.ActiveAccount.scoped(), null, beaconScope)
+
+    override suspend fun setActiveAccount(account: Account?) {
+        sharedPreferences.putSerializable(Key.ActiveAccount.scoped(), account, beaconScope)
+    }
+
+    override suspend fun getActivePeer(): String? =
         sharedPreferences.getString(Key.ActivePeerId.scoped(), null)
 
-    override suspend fun setActivePeerId(peerId: String?) {
+    override suspend fun setActivePeer(peerId: String?) {
         sharedPreferences.putString(Key.ActivePeerId.scoped(), peerId)
     }
 
@@ -26,7 +34,8 @@ internal class SharedPreferencesDAppClientStorage(
         else SharedPreferencesDAppClientStorage(storage, sharedPreferences, beaconScope)
 
     private enum class Key(override val value: String) : SharedPreferencesBaseStorage.Key {
-        ActivePeerId("dappActivePeerId")
+        ActiveAccount("dappActiveAccount"),
+        ActivePeerId("dappActivePeerId"),
     }
 }
 

@@ -13,6 +13,8 @@ public sealed class Peer {
     public abstract val name: String
     public abstract val publicKey: String
     public abstract val version: String
+    public abstract val icon: String?
+    public abstract val appUrl: String?
 
     public abstract val isPaired: Boolean
     public abstract val isRemoved: Boolean
@@ -41,8 +43,8 @@ public data class P2pPeer(
     override val publicKey: String,
     public val relayServer: String,
     override val version: String = "1",
-    public val icon: String? = null,
-    public val appUrl: String? = null,
+    override val icon: String? = null,
+    override val appUrl: String? = null,
     override val isPaired: Boolean = false,
     @Transient override val isRemoved: Boolean = false,
 ) : Peer() {
