@@ -56,10 +56,13 @@ internal class TargetEncryptedFileManager(private val context: Context, private 
         }
     }
 
-    private fun file(name: String, keyAlias: String): File =
-        File(context.filesDir, name).apply {
+    private fun file(name: String, keyAlias: String): File {
+        val name = name.replace("_", "")
+
+        return File(context.filesDir, name).apply {
             deleteIfNoKey(keyAlias)
         }
+    }
     
     private fun getOrCreateKey(alias: String): String {
         keyStore.load(null)

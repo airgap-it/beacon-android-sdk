@@ -8,7 +8,9 @@ import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.SharedPrefere
 import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.SharedPreferencesStorage
 import it.airgap.beaconsdk.core.scope.BeaconScope
 import it.airgap.beaconsdk.core.storage.Storage
+import it.airgap.client.dapp.internal.storage.decorator.DecoratedDAppClientStorage
 import it.airgap.client.dapp.storage.DAppClientStorage
+import it.airgap.client.dapp.storage.ExtendedDAppClientStorage
 
 internal class SharedPreferencesDAppClientStorage(
     private val storage: Storage,
@@ -37,6 +39,9 @@ internal class SharedPreferencesDAppClientStorage(
         ActiveAccount("dappActiveAccount"),
         ActivePeerId("dappActivePeerId"),
     }
+
+    override fun extend(beaconConfiguration: BeaconConfiguration): ExtendedDAppClientStorage =
+        DecoratedDAppClientStorage(this, beaconConfiguration)
 }
 
 internal fun SharedPreferencesDAppClientStorage(context: Context): SharedPreferencesDAppClientStorage {

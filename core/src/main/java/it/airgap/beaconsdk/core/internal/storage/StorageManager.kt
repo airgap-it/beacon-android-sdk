@@ -28,7 +28,7 @@ public class StorageManager(
     private val secureStorage: SecureStorage,
     private val identifierCreator: IdentifierCreator,
     public val beaconConfiguration: BeaconConfiguration,
-) : ExtendedStorage by storage.scoped(beaconScope), SecureStorage by secureStorage.scoped(beaconScope) {
+) : ExtendedStorage by storage, SecureStorage by secureStorage {
 
     private val _plugins: MutableList<StoragePlugin> = mutableListOf()
     @PublishedApi
@@ -115,5 +115,5 @@ public class StorageManager(
 
     override fun scoped(beaconScope: BeaconScope): StorageManager =
         if (beaconScope == this.beaconScope) this
-        else StorageManager(beaconScope, storage, secureStorage, identifierCreator, beaconConfiguration)
+        else StorageManager(beaconScope, storage.scoped(beaconScope), secureStorage.scoped(beaconScope), identifierCreator, beaconConfiguration)
 }

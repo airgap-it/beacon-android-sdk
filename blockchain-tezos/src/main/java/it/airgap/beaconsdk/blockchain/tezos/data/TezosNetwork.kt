@@ -3,9 +3,11 @@ package it.airgap.beaconsdk.blockchain.tezos.data
 import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.blockchain.tezos.Tezos
 import it.airgap.beaconsdk.core.data.Network
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import kotlinx.serialization.json.JsonClassDiscriminator
 
 /**
  * Type of Tezos networks supported in Beacon.
@@ -15,7 +17,9 @@ import kotlinx.serialization.Transient
  * @property [name] An optional name of the network.
  * @property [rpcUrl] An optional URL for the network RPC interface.
  */
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
+@JsonClassDiscriminator(TezosNetwork.CLASS_DISCRIMINATOR)
 public sealed class TezosNetwork : Network() {
     @Transient
     override val blockchainIdentifier: String = Tezos.IDENTIFIER
@@ -145,5 +149,7 @@ public sealed class TezosNetwork : Network() {
         }
     }
 
-    public companion object {}
+    public companion object {
+        internal const val CLASS_DISCRIMINATOR = "type"
+    }
 }

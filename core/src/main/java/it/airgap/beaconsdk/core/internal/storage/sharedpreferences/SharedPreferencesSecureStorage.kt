@@ -29,18 +29,22 @@ public class SharedPreferencesSecureStorage(
 
     override suspend fun getSdkSecretSeed(): String? {
         val keyAlias = masterKeyAlias ?: return null
-        val secretSeed = encryptedFileManager.read(FILE_SDK_SECRET_KEY, keyAlias)
+        val secretSeed = encryptedFileManager.read(FileKey.SdkSecretKey.scoped(), keyAlias)
 
         return if (secretSeed?.isEmpty() == true) null else secretSeed?.decodeToString()
     }
 
     override suspend fun setSdkSecretSeed(sdkSecretSeed: String) {
         val keyAlias = masterKeyAlias ?: UUID.randomUUID().toString().also { masterKeyAlias = it }
-        encryptedFileManager.write(FILE_SDK_SECRET_KEY, keyAlias, sdkSecretSeed.encodeToByteArray())
+        encryptedFileManager.write(FileKey.SdkSecretKey.scoped(), keyAlias, sdkSecretSeed.encodeToByteArray())
     }
 
-    private enum class Key(override val value: String): SharedPreferencesBaseStorage.Key {
+    private enum class Key(override val value: String) : SharedPreferencesBaseStorage.Key {
         MasterKeyAlias("masterKeyAlias"),
+    }
+
+    private enum class FileKey(override val value: String) : SharedPreferencesBaseStorage.Key {
+        SdkSecretKey("sdk_seed"),
     }
 
     override fun scoped(beaconScope: BeaconScope): SecureStorage =
@@ -49,8 +53,6 @@ public class SharedPreferencesSecureStorage(
 
     public companion object {
         internal const val ANDROID_KEY_STORE = "AndroidKeyStore"
-
-        private const val FILE_SDK_SECRET_KEY = "sdk_seed"
     }
 }
 

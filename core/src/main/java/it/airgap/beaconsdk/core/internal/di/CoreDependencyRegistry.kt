@@ -66,7 +66,7 @@ internal class CoreDependencyRegistry(
 
     // -- storage --
 
-    override val storageManager: StorageManager by lazyWeak { StorageManager(beaconScope, storage, secureStorage, identifierCreator, beaconConfiguration) }
+    override val storageManager: StorageManager by lazyWeak { StorageManager(beaconScope, storage.scoped(beaconScope), secureStorage.scoped(beaconScope), identifierCreator, beaconConfiguration) }
 
     // -- blockchain --
 
@@ -113,13 +113,13 @@ internal class CoreDependencyRegistry(
     }
     private val serializerProvider: SerializerProvider by lazyWeak {
         when (BeaconConfiguration.serializerProvider) {
-            BeaconConfiguration.SerializerProvider.Base58Check -> Base58CheckSerializerProvider(base58Check)
+            BeaconConfiguration.SerializerProvider.Base58Check -> Base58CheckSerializerProvider(base58Check, json)
         }
     }
 
     // -- network --
 
-    override val json: Json by lazyWeak {
+    override val json: Json by lazy {
         Json(from = contextualJson(blockchainRegistry, compat)) {
             classDiscriminator = "_serializationType"
             ignoreUnknownKeys = true
