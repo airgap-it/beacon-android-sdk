@@ -5,6 +5,7 @@ import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
 import it.airgap.beaconsdk.blockchain.tezos.internal.utils.failWithUnknownMessage
 import it.airgap.beaconsdk.blockchain.tezos.message.request.PermissionTezosRequest
 import it.airgap.beaconsdk.blockchain.tezos.message.response.PermissionTezosResponse
+import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.data.Permission
 import it.airgap.beaconsdk.core.internal.blockchain.creator.DataBlockchainCreator
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
@@ -20,13 +21,13 @@ internal class DataTezosCreator(
     private val storageManager: StorageManager,
     private val identifierCreator: IdentifierCreator,
 ) : DataBlockchainCreator {
-    override suspend fun extractIncomingPermission(request: PermissionBeaconRequest, response: PermissionBeaconResponse): Result<List<Permission>> =
+    override suspend fun extractIncomingPermission(request: PermissionBeaconRequest, response: PermissionBeaconResponse, origin: Connection.Id): Result<List<Permission>> =
         runCatching {
             if (request !is PermissionTezosRequest) failWithUnknownMessage(request)
             if (response !is PermissionTezosResponse) failWithUnknownMessage(response)
 
-            val peer = storageManager.findPeer { it.publicKey == request.destination?.id } ?: failWithAppMetadataNotFound()
-            val senderId = identifierCreator.senderId(response.id.asHexString().toByteArray()).getOrThrow()
+            val peer = storageManager.findPeer { it.publicKey == origin.id } ?: failWithAppMetadataNotFound()
+            val senderId = identifierCreator.senderId(origin.id.asHexString().toByteArray()).getOrThrow()
             val appMetadata = TezosAppMetadata(senderId, peer.name, peer.icon)
 
             listOf(

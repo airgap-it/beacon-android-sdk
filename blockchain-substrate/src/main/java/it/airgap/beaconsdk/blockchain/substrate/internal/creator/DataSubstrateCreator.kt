@@ -5,6 +5,7 @@ import it.airgap.beaconsdk.blockchain.substrate.data.SubstratePermission
 import it.airgap.beaconsdk.blockchain.substrate.internal.utils.failWithUnknownMessage
 import it.airgap.beaconsdk.blockchain.substrate.message.request.PermissionSubstrateRequest
 import it.airgap.beaconsdk.blockchain.substrate.message.response.PermissionSubstrateResponse
+import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.data.Permission
 import it.airgap.beaconsdk.core.internal.blockchain.creator.DataBlockchainCreator
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
@@ -21,19 +22,17 @@ internal class DataSubstrateCreator(
     private val identifierCreator: IdentifierCreator,
 ) : DataBlockchainCreator {
 
-    override suspend fun extractIncomingPermission(request: PermissionBeaconRequest, response: PermissionBeaconResponse): Result<List<Permission>> =
+    override suspend fun extractIncomingPermission(request: PermissionBeaconRequest, response: PermissionBeaconResponse, origin: Connection.Id): Result<List<Permission>> =
         runCatching {
             if (request !is PermissionSubstrateRequest) failWithUnknownMessage(request)
             if (response !is PermissionSubstrateResponse) failWithUnknownMessage(response)
-
-            val destination = request.destination ?: failWithUnknownDestination()
 
             response.accounts.map { account ->
                 val accountId = identifierCreator.accountId(account.address, account.network).getOrThrow()
 
                 SubstratePermission(
                     accountId,
-                    identifierCreator.senderId(destination.id.asHexString().toByteArray()).getOrThrow(),
+                    identifierCreator.senderId(origin.id.asHexString().toByteArray()).getOrThrow(),
                     connectedAt = currentTimestamp(),
                     response.appMetadata,
                     response.scopes,
@@ -69,6 +68,5 @@ internal class DataSubstrateCreator(
             response.accounts.map { identifierCreator.accountId(it.address, it.network).getOrThrow() }
         }
 
-    private fun failWithUnknownDestination(): Nothing = failWithIllegalState("Permission could not be extracted, unknown destination.")
     private fun failWithAppMetadataNotFound(): Nothing = failWithIllegalState("Permission could not be extracted, matching appMetadata not found.")
 }

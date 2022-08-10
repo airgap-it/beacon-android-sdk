@@ -32,7 +32,7 @@ public class MessageController internal constructor(
             val message = message.toBeaconMessage(origin, destination, beaconScope).also {
                 when (it) {
                     is BeaconRequest -> onIncomingRequest(it)
-                    is BeaconResponse -> onIncomingResponse(it)
+                    is BeaconResponse -> onIncomingResponse(origin, it)
                     else -> { /* no action */ }
                 }
             }
@@ -53,19 +53,19 @@ public class MessageController internal constructor(
         storageManager.addAppMetadata(listOf(request.appMetadata))
     }
 
-    private suspend fun onIncomingResponse(response: BeaconResponse) {
+    private suspend fun onIncomingResponse(origin: Connection.Id, response: BeaconResponse) {
         val request = outgoingRequests.get(response.id, remove = response.isTerminal) ?: failWithNoPendingRequest()
         when (response) {
-            is PermissionBeaconResponse -> onIncomingPermissionResponse(response, request)
+            is PermissionBeaconResponse -> onIncomingPermissionResponse(origin, response, request)
             else -> { /* no action */ }
         }
     }
 
-    private suspend fun onIncomingPermissionResponse(response: PermissionBeaconResponse, request: BeaconRequest) {
+    private suspend fun onIncomingPermissionResponse(origin: Connection.Id, response: PermissionBeaconResponse, request: BeaconRequest) {
         if (request !is PermissionBeaconRequest) /* unknown state, no action */ return
 
         val blockchain = blockchainRegistry.get(response.blockchainIdentifier)
-        val permissions = blockchain.creator.data.extractIncomingPermission(request, response).getOrThrow()
+        val permissions = blockchain.creator.data.extractIncomingPermission(request, response, origin).getOrThrow()
 
         storageManager.addPermissions(permissions) // TODO: replace if accountId & senderId are the same
     }

@@ -70,13 +70,14 @@ private fun serializersModule(
 
     // -- pairing --
 
-    contextual(PairingMessage.serializer())
-    contextual(PairingRequest.serializer())
-    contextual(PairingResponse.serializer())
+    contextual(PairingMessage::class, PairingMessage.serializer())
+    contextual(PairingRequest::class, PairingRequest.serializer())
+    contextual(PairingResponse::class, PairingResponse.serializer())
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun contextualJson(blockchainRegistry: BlockchainRegistry, compat: Compat<VersionedCompat>): Json =
     Json {
+
         serializersModule = serializersModule(blockchainRegistry, compat)
     }

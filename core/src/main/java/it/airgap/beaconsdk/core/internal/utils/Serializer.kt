@@ -2,6 +2,7 @@ package it.airgap.beaconsdk.core.internal.utils
 
 import androidx.annotation.RestrictTo
 import io.ktor.util.reflect.*
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
@@ -51,8 +52,9 @@ public class SuperClassSerializer<T : Any, S : T>(private val subClass: KClass<S
 public inline fun <T : Any, reified S : T> SuperClassSerializer(subClassSerializer: KSerializer<S>): SuperClassSerializer<T, S> =
     SuperClassSerializer(S::class, subClassSerializer)
 
+@OptIn(ExperimentalSerializationApi::class)
 @Suppress("UNCHECKED_CAST")
 internal fun <T : Any> Json.serializerFor(target: KClass<out T>): KSerializer<T> {
     val type = target.createType()
-    return serializersModule.serializer(type) as KSerializer<T>
+    return (serializersModule.getContextual(target) ?: serializersModule.serializer(type)) as KSerializer<T>
 }
