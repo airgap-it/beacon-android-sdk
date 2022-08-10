@@ -1,7 +1,7 @@
 package it.airgap.beaconsdk.core.internal.message
 
 import androidx.annotation.RestrictTo
-import it.airgap.beaconsdk.core.data.Origin
+import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.internal.blockchain.BlockchainRegistry
 import it.airgap.beaconsdk.core.internal.compat.Compat
 import it.airgap.beaconsdk.core.internal.compat.VersionedCompat
@@ -29,7 +29,7 @@ import kotlinx.serialization.json.jsonObject
 public abstract class VersionedBeaconMessage {
     public abstract val version: String
 
-    public abstract suspend fun toBeaconMessage(origin: Origin, destination: Origin, beaconScope: BeaconScope): BeaconMessage
+    public abstract suspend fun toBeaconMessage(origin: Connection.Id, destination: Connection.Id, beaconScope: BeaconScope): BeaconMessage
 
     public companion object {
         public fun from(senderId: String, message: BeaconMessage, context: Context): VersionedBeaconMessage {

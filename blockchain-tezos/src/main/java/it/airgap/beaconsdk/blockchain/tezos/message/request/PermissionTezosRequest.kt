@@ -10,9 +10,6 @@ import it.airgap.beaconsdk.blockchain.tezos.message.response.PermissionTezosResp
 import it.airgap.beaconsdk.core.client.BeaconClient
 import it.airgap.beaconsdk.core.client.BeaconProducer
 import it.airgap.beaconsdk.core.data.Connection
-import it.airgap.beaconsdk.core.data.Origin
-import it.airgap.beaconsdk.core.internal.BeaconConfiguration
-import it.airgap.beaconsdk.core.message.BeaconResponse
 import it.airgap.beaconsdk.core.message.PermissionBeaconRequest
 
 /**
@@ -35,8 +32,8 @@ public data class PermissionTezosRequest internal constructor(
     override val blockchainIdentifier: String,
     override val senderId: String,
     override val appMetadata: TezosAppMetadata,
-    override val origin: Origin,
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) override val destination: Origin?,
+    override val origin: Connection.Id,
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) override val destination: Connection.Id?,
     public val network: TezosNetwork,
     public val scopes: List<TezosPermission.Scope>,
 ) : PermissionBeaconRequest() {

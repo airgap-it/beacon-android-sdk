@@ -60,7 +60,7 @@ dependencies {
 
     // Beacon
 
-    // // Local
+    // Local
     implementation project(path: ':core')
     implementation project(path: ':client-dapp')
     implementation project(path: ':client-wallet')

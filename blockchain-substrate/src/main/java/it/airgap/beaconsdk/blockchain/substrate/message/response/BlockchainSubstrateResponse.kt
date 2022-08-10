@@ -2,7 +2,7 @@ package it.airgap.beaconsdk.blockchain.substrate.message.response
 
 import it.airgap.beaconsdk.blockchain.substrate.message.request.SignPayloadSubstrateRequest
 import it.airgap.beaconsdk.blockchain.substrate.message.request.TransferSubstrateRequest
-import it.airgap.beaconsdk.core.data.Origin
+import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.message.BlockchainBeaconResponse
 
 public sealed class BlockchainSubstrateResponse : BlockchainBeaconResponse() {
@@ -13,7 +13,7 @@ public sealed class TransferSubstrateResponse : BlockchainSubstrateResponse() {
     public data class Submit internal constructor(
         override val id: String,
         override val version: String,
-        override val destination: Origin,
+        override val destination: Connection.Id,
         override val blockchainIdentifier: String,
         public val transactionHash: String,
     ) : TransferSubstrateResponse() {
@@ -23,7 +23,7 @@ public sealed class TransferSubstrateResponse : BlockchainSubstrateResponse() {
     public data class SubmitAndReturn internal constructor(
         override val id: String,
         override val version: String,
-        override val destination: Origin,
+        override val destination: Connection.Id,
         override val blockchainIdentifier: String,
         public val transactionHash: String,
         public val signature: String,
@@ -35,7 +35,7 @@ public sealed class TransferSubstrateResponse : BlockchainSubstrateResponse() {
     public data class Return internal constructor(
         override val id: String,
         override val version: String,
-        override val destination: Origin,
+        override val destination: Connection.Id,
         override val blockchainIdentifier: String,
         public val signature: String,
         public val payload: String?,
@@ -136,7 +136,7 @@ public sealed class SignPayloadSubstrateResponse : BlockchainSubstrateResponse()
     public data class Submit internal constructor(
         override val id: String,
         override val version: String,
-        override val destination: Origin,
+        override val destination: Connection.Id,
         override val blockchainIdentifier: String,
         public val transactionHash: String,
     ) : SignPayloadSubstrateResponse() {
@@ -146,7 +146,7 @@ public sealed class SignPayloadSubstrateResponse : BlockchainSubstrateResponse()
     public data class SubmitAndReturn internal constructor(
         override val id: String,
         override val version: String,
-        override val destination: Origin,
+        override val destination: Connection.Id,
         override val blockchainIdentifier: String,
         public val transactionHash: String,
         public val signature: String,
@@ -158,7 +158,7 @@ public sealed class SignPayloadSubstrateResponse : BlockchainSubstrateResponse()
     public data class Return internal constructor(
         override val id: String,
         override val version: String,
-        override val destination: Origin,
+        override val destination: Connection.Id,
         override val blockchainIdentifier: String,
         public val signature: String,
         public val payload: String?,

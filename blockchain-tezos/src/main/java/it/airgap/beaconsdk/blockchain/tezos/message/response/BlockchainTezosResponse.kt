@@ -4,7 +4,7 @@ import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.blockchain.tezos.message.request.BroadcastTezosRequest
 import it.airgap.beaconsdk.blockchain.tezos.message.request.OperationTezosRequest
 import it.airgap.beaconsdk.blockchain.tezos.message.request.SignPayloadTezosRequest
-import it.airgap.beaconsdk.core.data.Origin
+import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.data.SigningType
 import it.airgap.beaconsdk.core.message.BlockchainBeaconResponse
 
@@ -27,7 +27,7 @@ public sealed class BlockchainTezosResponse : BlockchainBeaconResponse() {
 public data class OperationTezosResponse internal constructor(
     override val id: String,
     override val version: String,
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) override val destination: Origin,
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) override val destination: Connection.Id,
     override val blockchainIdentifier: String,
     public val transactionHash: String,
 ) : BlockchainTezosResponse() {
@@ -58,7 +58,7 @@ public data class OperationTezosResponse internal constructor(
 public data class SignPayloadTezosResponse internal constructor(
     override val id: String,
     override val version: String,
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) override val destination: Origin,
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) override val destination: Connection.Id,
     override val blockchainIdentifier: String,
     public val signingType: SigningType,
     public val signature: String,
@@ -90,7 +90,7 @@ public data class SignPayloadTezosResponse internal constructor(
 public data class BroadcastTezosResponse internal constructor(
     override val id: String,
     override val version: String,
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) override val destination: Origin,
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) override val destination: Connection.Id,
     override val blockchainIdentifier: String,
     public val transactionHash: String,
 ) : BlockchainTezosResponse() {

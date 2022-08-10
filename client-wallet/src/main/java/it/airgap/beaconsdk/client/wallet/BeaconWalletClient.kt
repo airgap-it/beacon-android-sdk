@@ -3,14 +3,12 @@ package it.airgap.beaconsdk.client.wallet
 import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.client.wallet.internal.di.ExtendedDependencyRegistry
 import it.airgap.beaconsdk.client.wallet.internal.di.extend
-import it.airgap.beaconsdk.core.builder.InitBuilder
 import it.airgap.beaconsdk.core.builder.InitBuilderWithBaseStorage
 import it.airgap.beaconsdk.core.client.BeaconClient
 import it.airgap.beaconsdk.core.client.BeaconConsumer
 import it.airgap.beaconsdk.core.data.AppMetadata
-import it.airgap.beaconsdk.core.data.Origin
+import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.data.Peer
-import it.airgap.beaconsdk.core.data.Permission
 import it.airgap.beaconsdk.core.exception.BeaconException
 import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.controller.ConnectionController
@@ -19,14 +17,12 @@ import it.airgap.beaconsdk.core.internal.crypto.Crypto
 import it.airgap.beaconsdk.core.internal.data.BeaconApplication
 import it.airgap.beaconsdk.core.internal.serializer.Serializer
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
-import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
 import it.airgap.beaconsdk.core.internal.utils.dependencyRegistry
 import it.airgap.beaconsdk.core.internal.utils.mapException
 import it.airgap.beaconsdk.core.message.AcknowledgeBeaconResponse
 import it.airgap.beaconsdk.core.message.BeaconMessage
 import it.airgap.beaconsdk.core.message.BeaconRequest
 import it.airgap.beaconsdk.core.message.BeaconResponse
-import it.airgap.beaconsdk.core.scope.Scope
 import it.airgap.beaconsdk.core.scope.BeaconScope
 import it.airgap.beaconsdk.core.transport.data.PairingRequest
 import it.airgap.beaconsdk.core.transport.data.PairingResponse
@@ -166,7 +162,7 @@ public class BeaconWalletClient @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) cons
         storageManager.removeAppMetadata()
     }
 
-    protected override suspend fun processMessage(origin: Origin, message: BeaconMessage): Result<Unit> =
+    protected override suspend fun processMessage(origin: Connection.Id, message: BeaconMessage): Result<Unit> =
         when (message) {
             is BeaconRequest -> acknowledge(message)
             else -> super.processMessage(origin, message)
@@ -183,16 +179,14 @@ public class BeaconWalletClient @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) cons
         return send(acknowledgeResponse, isTerminal = false)
     }
 
-    public companion object {
-        private const val SCOPE_PREFIX = "wallet_client"
-    }
+    public companion object {}
 
     /**
      * Asynchronous builder for [BeaconWalletClient].
      *
      * @constructor Creates a builder configured with the specified application [name].
      */
-    public class Builder(name: String, clientId: String? = null) : InitBuilderWithBaseStorage<BeaconWalletClient, Builder>(name, Scope(clientId, SCOPE_PREFIX)) {
+    public class Builder(name: String, clientId: String? = null) : InitBuilderWithBaseStorage<BeaconWalletClient, Builder>(name, BeaconScope(clientId)) {
 
         private var _extendedDependencyRegistry: ExtendedDependencyRegistry? = null
         private val extendedDependencyRegistry: ExtendedDependencyRegistry

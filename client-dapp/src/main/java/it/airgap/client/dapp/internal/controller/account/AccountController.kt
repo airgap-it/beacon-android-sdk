@@ -1,10 +1,7 @@
 package it.airgap.client.dapp.internal.controller.account
 
 import androidx.annotation.RestrictTo
-import it.airgap.beaconsdk.core.data.Account
-import it.airgap.beaconsdk.core.data.Origin
-import it.airgap.beaconsdk.core.data.P2pPeer
-import it.airgap.beaconsdk.core.data.Peer
+import it.airgap.beaconsdk.core.data.*
 import it.airgap.beaconsdk.core.internal.blockchain.BlockchainRegistry
 import it.airgap.beaconsdk.core.message.PermissionBeaconResponse
 import it.airgap.beaconsdk.core.transport.data.PairingResponse
@@ -17,8 +14,8 @@ import it.airgap.client.dapp.internal.controller.account.store.ResetActiveAccoun
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class AccountController(private val store: AccountControllerStore, private val blockchainRegistry: BlockchainRegistry) {
 
-    public suspend fun getRequestDestination(): Origin? =
-        store.state().getOrThrow().activePeer?.toOrigin()
+    public suspend fun getRequestDestination(): Connection.Id? =
+        store.state().getOrThrow().activePeer?.toConnectionId()
 
     public suspend fun getActiveAccountId(): String? =
         store.state().getOrThrow().activeAccount?.accountId
@@ -36,7 +33,7 @@ public class AccountController(private val store: AccountControllerStore, privat
             store.intent(OnPeerPaired(pairingResponse.toPeer()))
         }
 
-    public suspend fun onPermissionResponse(origin: Origin, response: PermissionBeaconResponse): Result<Unit> =
+    public suspend fun onPermissionResponse(origin: Connection.Id, response: PermissionBeaconResponse): Result<Unit> =
         runCatching {
             val blockchain = blockchainRegistry.get(response.blockchainIdentifier)
             val accountId = blockchain.creator.data.extractAccounts(response).getOrThrow().firstOrNull() /* TODO: other selection criteria? */
@@ -45,8 +42,8 @@ public class AccountController(private val store: AccountControllerStore, privat
             account?.let { store.intent(OnNewActiveAccount(it)) }
         }
 
-    private fun Peer.toOrigin(): Origin =
+    private fun Peer.toConnectionId(): Connection.Id =
         when (this) {
-            is P2pPeer -> Origin.P2P(publicKey)
+            is P2pPeer -> Connection.Id.P2P(publicKey)
         }
 }

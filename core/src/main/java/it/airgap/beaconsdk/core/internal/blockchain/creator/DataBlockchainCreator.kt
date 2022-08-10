@@ -1,8 +1,6 @@
 package it.airgap.beaconsdk.core.internal.blockchain.creator
 
 import androidx.annotation.RestrictTo
-import it.airgap.beaconsdk.core.data.Account
-import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.data.Permission
 import it.airgap.beaconsdk.core.message.PermissionBeaconRequest
 import it.airgap.beaconsdk.core.message.PermissionBeaconResponse

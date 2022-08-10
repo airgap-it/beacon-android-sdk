@@ -96,8 +96,8 @@ internal class V2BeaconMessageTest {
     fun `converts to Beacon message`() {
         val senderId = "senderId"
         val otherId = "otherId"
-        val origin = Origin.P2P(senderId)
-        val destination = Origin.P2P(otherId)
+        val origin = Connection.Id.P2P(senderId)
+        val destination = Connection.Id.P2P(otherId)
 
         val matchingAppMetadata = MockAppMetadata(senderId, "v2App")
         val otherAppMetadata = MockAppMetadata(otherId, "v2OtherApp")
@@ -137,8 +137,8 @@ internal class V2BeaconMessageTest {
     private fun versionedWithBeacon(
         version: String = "2",
         senderId: String = "senderId",
-        origin: Origin = Origin.P2P(senderId),
-        destination: Origin = Origin.P2P("destination"),
+        origin: Connection.Id = Connection.Id.P2P(senderId),
+        destination: Connection.Id = Connection.Id.P2P("receiverId"),
         appMetadata: AppMetadata? = null,
     ): List<Pair<V2BeaconMessage, BeaconMessage>> =
         listOf(
@@ -424,8 +424,8 @@ internal class V2BeaconMessageTest {
         appMetadata: MockAppMetadata = MockAppMetadata("senderId", "v2App"),
         network: Network = MockNetwork(),
         scopes: List<String> = emptyList(),
-        origin: Origin = Origin.P2P(senderId),
-        destination: Origin? = Origin.P2P("destination"),
+        origin: Connection.Id = Connection.Id.P2P(senderId),
+        destination: Connection.Id? = Connection.Id.P2P("receiverId"),
     ): Pair<V2MockPermissionBeaconRequest, PermissionBeaconRequest> {
         val type = "permission_request"
         val rest = mapOf(
@@ -447,8 +447,8 @@ internal class V2BeaconMessageTest {
         tezosOperations: List<Map<String, String>> = emptyList(),
         sourceAddress: String = "sourceAddress",
         appMetadata: AppMetadata? = null,
-        origin: Origin = Origin.P2P(senderId),
-        destination: Origin? = Origin.P2P("destination"),
+        origin: Connection.Id = Connection.Id.P2P(senderId),
+        destination: Connection.Id? = Connection.Id.P2P("receiverId"),
     ): Pair<V2MockBlockchainBeaconMessage, BlockchainBeaconRequest> {
         val type = "operation_request"
         val rest = mapOf(
@@ -471,8 +471,8 @@ internal class V2BeaconMessageTest {
         payload: String = "payload",
         sourceAddress: String = "sourceAddress",
         appMetadata: AppMetadata? = null,
-        origin: Origin = Origin.P2P(senderId),
-        destination: Origin? = Origin.P2P("destination"),
+        origin: Connection.Id = Connection.Id.P2P(senderId),
+        destination: Connection.Id? = Connection.Id.P2P("receiverId"),
     ): Pair<V2MockBlockchainBeaconMessage, BlockchainBeaconRequest> {
         val type = "sign_payload_request"
         val rest = mapOf(
@@ -494,8 +494,8 @@ internal class V2BeaconMessageTest {
         network: Network = MockNetwork(),
         signedTransaction: String = "signedTransaction",
         appMetadata: AppMetadata? = null,
-        origin: Origin = Origin.P2P(senderId),
-        destination: Origin? = Origin.P2P("destination"),
+        origin: Connection.Id = Connection.Id.P2P(senderId),
+        destination: Connection.Id? = Connection.Id.P2P("receiverId"),
     ): Pair<V2MockBlockchainBeaconMessage, BlockchainBeaconRequest> {
         val type = "broadcast_request"
         val rest = mapOf(
@@ -518,7 +518,7 @@ internal class V2BeaconMessageTest {
         publicKey: String = "publicKey",
         network: Network = MockNetwork(),
         scopes: List<String> = emptyList(),
-        destination: Origin = Origin.P2P("destination"),
+        destination: Connection.Id = Connection.Id.P2P("receiverId"),
     ): Pair<V2MockPermissionBeaconResponse, PermissionBeaconResponse> {
         val type = "permission_response"
         val rest = mapOf(
@@ -538,7 +538,7 @@ internal class V2BeaconMessageTest {
         id: String = "id",
         senderId: String = "senderId",
         transactionHash: String = "transactionHash",
-        destination: Origin = Origin.P2P("destination"),
+        destination: Connection.Id = Connection.Id.P2P("receiverId"),
     ): Pair<V2MockBlockchainBeaconMessage, BlockchainBeaconResponse> {
         val type = "operation_response"
         val rest = mapOf(
@@ -557,7 +557,7 @@ internal class V2BeaconMessageTest {
         senderId: String = "senderId",
         signingType: SigningType = SigningType.Raw,
         signature: String = "signature",
-        destination: Origin = Origin.P2P("destination"),
+        destination: Connection.Id = Connection.Id.P2P("receiverId"),
     ): Pair<V2MockBlockchainBeaconMessage, BlockchainBeaconResponse> {
         val type = "sign_payload_response"
         val rest = mapOf(
@@ -576,7 +576,7 @@ internal class V2BeaconMessageTest {
         id: String = "id",
         senderId: String = "senderId",
         transactionHash: String = "transactionHash",
-        destination: Origin = Origin.P2P("destination"),
+        destination: Connection.Id = Connection.Id.P2P("receiverId"),
     ): Pair<V2MockBlockchainBeaconMessage, BlockchainBeaconResponse> {
         val type = "broadcast_response"
         val rest = mapOf(
@@ -594,7 +594,7 @@ internal class V2BeaconMessageTest {
         id: String = "id",
         senderId: String = "senderId",
         errorType: BeaconError = BeaconError.Unknown,
-        destination: Origin = Origin.P2P("destination"),
+        destination: Connection.Id = Connection.Id.P2P("receiverId"),
     ): Pair<ErrorV2BeaconResponse, ErrorBeaconResponse> =
         ErrorV2BeaconResponse(version, id, senderId, errorType) to ErrorBeaconResponse(id, version, destination, errorType, null)
 
@@ -604,8 +604,8 @@ internal class V2BeaconMessageTest {
         version: String = "2",
         id: String = "id",
         senderId: String = "senderId",
-        origin: Origin = Origin.P2P(senderId),
-        destination: Origin = Origin.P2P("destination"),
+        origin: Connection.Id = Connection.Id.P2P(senderId),
+        destination: Connection.Id = Connection.Id.P2P("receiverId"),
     ): Pair<DisconnectV2BeaconMessage, DisconnectBeaconMessage> =
         DisconnectV2BeaconMessage(version, id, senderId) to DisconnectBeaconMessage(id, senderId, version, origin, destination)
 }

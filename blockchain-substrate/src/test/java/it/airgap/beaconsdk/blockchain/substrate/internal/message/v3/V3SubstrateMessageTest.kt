@@ -4,7 +4,6 @@ import fromValues
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
-import io.mockk.mockk
 import it.airgap.beaconsdk.blockchain.substrate.Substrate
 import it.airgap.beaconsdk.blockchain.substrate.data.*
 import it.airgap.beaconsdk.blockchain.substrate.internal.creator.*
@@ -15,7 +14,7 @@ import it.airgap.beaconsdk.blockchain.substrate.message.request.TransferSubstrat
 import it.airgap.beaconsdk.blockchain.substrate.message.response.PermissionSubstrateResponse
 import it.airgap.beaconsdk.blockchain.substrate.message.response.SignPayloadSubstrateResponse
 import it.airgap.beaconsdk.blockchain.substrate.message.response.TransferSubstrateResponse
-import it.airgap.beaconsdk.core.data.Origin
+import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.compat.CoreCompat
 import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
@@ -113,8 +112,8 @@ internal class V3SubstrateMessageTest {
 
         val senderId = "senderId"
         val otherSenderId = "otherSenderId"
-        val origin = Origin.P2P(senderId)
-        val destination = Origin.P2P("destination")
+        val origin = Connection.Id.P2P(senderId)
+        val destination = Connection.Id.P2P("receiverId")
 
         val matchingAppMetadata = SubstrateAppMetadata(senderId, "v3App")
         val otherAppMetadata = SubstrateAppMetadata(otherSenderId, "v3OtherApp")
@@ -198,8 +197,8 @@ internal class V3SubstrateMessageTest {
     private fun versionedWithBeacon(
         version: String = "3",
         senderId: String = "senderId",
-        origin: Origin = Origin.P2P(senderId),
-        destination: Origin = Origin.P2P("destination"),
+        origin: Connection.Id = Connection.Id.P2P(senderId),
+        destination: Connection.Id = Connection.Id.P2P("receiverId"),
         appMetadata: SubstrateAppMetadata? = null,
         accountId: String = "accountId",
         account: SubstrateAccount = SubstrateAccount(accountId, SubstrateNetwork("genesisHash"), "publicKey", "address"),
@@ -497,8 +496,8 @@ internal class V3SubstrateMessageTest {
         appMetadata: SubstrateAppMetadata = SubstrateAppMetadata(senderId, "v3App"),
         scopes: List<SubstratePermission.Scope> = emptyList(),
         networks: List<SubstrateNetwork> = listOf(SubstrateNetwork("genesisHash")),
-        origin: Origin = Origin.P2P(senderId),
-        destination: Origin? = Origin.P2P("destination"),
+        origin: Connection.Id = Connection.Id.P2P(senderId),
+        destination: Connection.Id? = Connection.Id.P2P("receiverId"),
     ): Pair<V3BeaconMessage, PermissionBeaconRequest> =
         V3BeaconMessage(
             id,
@@ -525,8 +524,8 @@ internal class V3SubstrateMessageTest {
         network: SubstrateNetwork = SubstrateNetwork("genesisHash"),
         mode: TransferV3SubstrateRequest.Mode = TransferV3SubstrateRequest.Mode.SubmitAndReturn,
         appMetadata: SubstrateAppMetadata? = null,
-        origin: Origin = Origin.P2P(senderId),
-        destination: Origin? = Origin.P2P("destination"),
+        origin: Connection.Id = Connection.Id.P2P(senderId),
+        destination: Connection.Id? = Connection.Id.P2P("receiverId"),
     ): Pair<V3BeaconMessage, BlockchainBeaconRequest> =
         V3BeaconMessage(
             id,
@@ -601,8 +600,8 @@ internal class V3SubstrateMessageTest {
         ),
         mode: SignPayloadV3SubstrateRequest.Mode = SignPayloadV3SubstrateRequest.Mode.SubmitAndReturn,
         appMetadata: SubstrateAppMetadata? = null,
-        origin: Origin = Origin.P2P(senderId),
-        destination: Origin? = Origin.P2P("destination"),
+        origin: Connection.Id = Connection.Id.P2P(senderId),
+        destination: Connection.Id? = Connection.Id.P2P("receiverId"),
     ): Pair<V3BeaconMessage, BlockchainBeaconRequest> {
         val scope = when (payload) {
             is SubstrateSignerPayload.Json -> SubstratePermission.Scope.SignPayloadJson
@@ -674,7 +673,7 @@ internal class V3SubstrateMessageTest {
             SubstrateAccount("accountId1", SubstrateNetwork("genesisHash"), "publicKey1", "address1"),
             SubstrateAccount("accountId2", SubstrateNetwork("genesisHash"), "publicKey2", "address2"),
         ),
-        destination: Origin = Origin.P2P("destination"),
+        destination: Connection.Id = Connection.Id.P2P("receiverId"),
     ): Pair<V3BeaconMessage, PermissionBeaconResponse> =
         V3BeaconMessage(
             id,
@@ -697,7 +696,7 @@ internal class V3SubstrateMessageTest {
         transactionHash: String? = "transactionHash",
         signature: String? = "signature",
         payload: String? = "payload",
-        destination: Origin = Origin.P2P("destination"),
+        destination: Connection.Id = Connection.Id.P2P("receiverId"),
     ): Pair<V3BeaconMessage, BlockchainBeaconResponse> =
         V3BeaconMessage(
             id,
@@ -725,7 +724,7 @@ internal class V3SubstrateMessageTest {
         transactionHash: String? = "transactionHash",
         signature: String? = "signature",
         payload: String? = "payload",
-        destination: Origin = Origin.P2P("destination"),
+        destination: Connection.Id = Connection.Id.P2P("receiverId"),
     ): Pair<V3BeaconMessage, BlockchainBeaconResponse> =
         V3BeaconMessage(
             id,

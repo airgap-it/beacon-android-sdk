@@ -3,9 +3,9 @@ package it.airgap.beaconsdk.core.internal.blockchain.message
 import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.data.AppMetadata
 import it.airgap.beaconsdk.core.data.BeaconError
-import it.airgap.beaconsdk.core.data.Origin
-import it.airgap.beaconsdk.core.internal.message.v1.V1BeaconMessage
+import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.data.MockAppMetadata
+import it.airgap.beaconsdk.core.internal.message.v1.V1BeaconMessage
 import it.airgap.beaconsdk.core.internal.message.v2.V2BeaconMessage
 import it.airgap.beaconsdk.core.internal.message.v3.*
 import it.airgap.beaconsdk.core.message.BlockchainBeaconRequest
@@ -32,8 +32,8 @@ public data class PermissionMockRequest(
     override val version: String,
     override val blockchainIdentifier: String,
     override val senderId: String,
-    override val origin: Origin,
-    override val destination: Origin?,
+    override val origin: Connection.Id,
+    override val destination: Connection.Id?,
     override val appMetadata: MockAppMetadata,
     val rest: Map<String, JsonElement> = emptyMap(),
 ) : PermissionBeaconRequest() {
@@ -75,8 +75,8 @@ public data class BlockchainMockRequest(
     override val blockchainIdentifier: String,
     override val senderId: String,
     override val appMetadata: @Contextual AppMetadata?,
-    override val origin: Origin,
-    override val destination: Origin?,
+    override val origin: Connection.Id,
+    override val destination: Connection.Id?,
     override val accountId: String?,
     val rest: Map<String, JsonElement> = emptyMap(),
 ) : BlockchainBeaconRequest() {
@@ -113,7 +113,7 @@ public data class PermissionMockResponse(
     val type: String,
     override val id: String,
     override val version: String,
-    override val destination: Origin,
+    override val destination: Connection.Id,
     override val blockchainIdentifier: String,
     val rest: Map<String, JsonElement> = emptyMap(),
 ) : PermissionBeaconResponse() {
@@ -147,7 +147,7 @@ public data class BlockchainMockResponse(
     val type: String,
     override val id: String,
     override val version: String,
-    override val destination: Origin,
+    override val destination: Connection.Id,
     override val blockchainIdentifier: String,
     val rest: Map<String, JsonElement> = emptyMap(),
 ) : BlockchainBeaconResponse() {

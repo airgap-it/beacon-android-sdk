@@ -1,7 +1,7 @@
 package it.airgap.beaconsdk.core.internal.blockchain.message
 
+import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.data.MockAppMetadata
-import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.internal.message.v3.BlockchainV3BeaconRequestContent
 import it.airgap.beaconsdk.core.internal.message.v3.BlockchainV3BeaconResponseContent
 import it.airgap.beaconsdk.core.internal.message.v3.PermissionV3BeaconRequestContent
@@ -29,8 +29,8 @@ internal data class V3MockPermissionBeaconRequestData(
         id: String,
         version: String,
         senderId: String,
-        origin: Origin,
-        destination: Origin,
+        origin: Connection.Id,
+        destination: Connection.Id,
         blockchainIdentifier: String,
     ): BeaconMessage = PermissionMockRequest(
         "permission_request",
@@ -78,8 +78,8 @@ internal data class V3MockPermissionBeaconResponseData(
         id: String,
         version: String,
         senderId: String,
-        origin: Origin,
-        destination: Origin,
+        origin: Connection.Id,
+        destination: Connection.Id,
         blockchainIdentifier: String,
     ): BeaconMessage =
         PermissionMockResponse(
@@ -120,8 +120,8 @@ internal data class V3MockBlockchainBeaconRequestData(
         id: String,
         version: String,
         senderId: String,
-        origin: Origin,
-        destination: Origin,
+        origin: Connection.Id,
+        destination: Connection.Id,
         accountId: String,
         blockchainIdentifier: String,
     ): BeaconMessage {
@@ -169,8 +169,8 @@ internal data class V3MockBlockchainBeaconResponseData(
         id: String,
         version: String,
         senderId: String,
-        origin: Origin,
-        destination: Origin,
+        origin: Connection.Id,
+        destination: Connection.Id,
         blockchainIdentifier: String,
     ): BeaconMessage =
         BlockchainMockResponse(

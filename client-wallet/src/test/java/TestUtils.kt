@@ -44,8 +44,8 @@ internal fun permissionBeaconRequest(
     senderId: String = "senderId",
     appMetadata: MockAppMetadata = MockAppMetadata(senderId, "mockApp"),
     blockchainIdentifier: String = MockBlockchain.IDENTIFIER,
-    origin: Origin = Origin.P2P(senderId),
-    destination: Origin? = Origin.P2P("destination"),
+    origin: Connection.Id = Connection.Id.P2P(senderId),
+    destination: Connection.Id? = Connection.Id.P2P("receiverId"),
     version: String = "version",
 ): PermissionBeaconRequest = PermissionMockRequest(type, id, version, blockchainIdentifier, senderId, origin, destination, appMetadata)
 
@@ -56,8 +56,8 @@ internal fun blockchainBeaconRequest(
     accountId: String = "accountId",
     appMetadata: AppMetadata = MockAppMetadata(senderId, "mockApp"),
     blockchainIdentifier: String = MockBlockchain.IDENTIFIER,
-    origin: Origin = Origin.P2P(senderId),
-    destination: Origin? = Origin.P2P("destination"),
+    origin: Connection.Id = Connection.Id.P2P(senderId),
+    destination: Connection.Id? = Connection.Id.P2P("receiverId"),
     version: String = "version"
 ): BlockchainBeaconRequest = BlockchainMockRequest(type, id, version, blockchainIdentifier, senderId, appMetadata, origin, destination, accountId)
 
@@ -66,7 +66,7 @@ internal fun permissionBeaconResponse(
     id: String = "id",
     blockchainIdentifier: String = MockBlockchain.IDENTIFIER,
     version: String = "version",
-    destination: Origin = Origin.P2P("destination"),
+    destination: Connection.Id = Connection.Id.P2P("receiverId"),
 ): PermissionBeaconResponse = PermissionMockResponse(type, id, version, destination, blockchainIdentifier)
 
 internal fun blockchainBeaconResponse(
@@ -74,14 +74,14 @@ internal fun blockchainBeaconResponse(
     id: String = "id",
     blockchainIdentifier: String = MockBlockchain.IDENTIFIER,
     version: String = "version",
-    destination: Origin = Origin.P2P("destination"),
+    destination: Connection.Id = Connection.Id.P2P("receiverId"),
 ): BlockchainBeaconResponse = BlockchainMockResponse(type, id, version, destination, blockchainIdentifier)
 
 internal fun acknowledgeBeaconResponse(
     id: String = "id",
     senderId: String = "senderId",
     version: String = "version",
-    destination: Origin = Origin.P2P("destination"),
+    destination: Connection.Id = Connection.Id.P2P("receiverId"),
 ): AcknowledgeBeaconResponse =
     AcknowledgeBeaconResponse(id, version, destination, senderId)
 
@@ -90,28 +90,28 @@ internal fun errorBeaconResponse(
     errorType: BeaconError = BeaconError.Unknown,
     description: String? = null,
     version: String = "version",
-    destination: Origin = Origin.P2P("destination"),
+    destination: Connection.Id = Connection.Id.P2P("receiverId"),
 ): ErrorBeaconResponse = ErrorBeaconResponse(id, version, destination, errorType, description)
 
 internal fun disconnectBeaconMessage(
     id: String = "id",
     senderId: String = "senderId",
     version: String = "version",
-    origin: Origin = Origin.P2P(senderId),
-    destination: Origin = Origin.P2P("destination"),
+    origin: Connection.Id = Connection.Id.P2P(senderId),
+    destination: Connection.Id = Connection.Id.P2P("receiverId"),
 ): DisconnectBeaconMessage = DisconnectBeaconMessage(id, senderId, version, origin, destination)
 
 internal fun errorBeaconResponses(
     id: String = "id",
     version: String = "version",
-    destination: Origin = Origin.P2P("destination"),
+    destination: Connection.Id = Connection.Id.P2P("receiverId"),
 ): List<ErrorBeaconResponse> =
     listOf(
         errorBeaconResponse(id, BeaconError.Aborted, version = version, destination = destination),
         errorBeaconResponse(id, BeaconError.Unknown, version = version, destination = destination),
     )
 
-internal fun beaconResponses(version: String = "version", destination: Origin = Origin.P2P("destination")): List<BeaconResponse> =
+internal fun beaconResponses(version: String = "version", destination: Connection.Id = Connection.Id.P2P("receiverId")): List<BeaconResponse> =
     listOf(
         permissionBeaconResponse(version = version, destination = destination),
         blockchainBeaconResponse(version = version, destination = destination),

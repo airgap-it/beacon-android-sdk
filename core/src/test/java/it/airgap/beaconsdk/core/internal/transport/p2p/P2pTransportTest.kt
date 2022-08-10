@@ -3,7 +3,7 @@ package it.airgap.beaconsdk.core.internal.transport.p2p
 import containsLike
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
-import it.airgap.beaconsdk.core.data.Origin
+import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.data.P2pPeer
 import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.message.SerializedIncomingConnectionMessage
@@ -72,7 +72,7 @@ internal class P2pTransportTest {
 
         runBlocking { storageManager.setPeers(peers) }
 
-        val expected = transportMessages.map { SerializedIncomingConnectionMessage(Origin.P2P(it.publicKey), it.content) }
+        val expected = transportMessages.map { SerializedIncomingConnectionMessage(Connection.Id.P2P(it.publicKey), it.content) }
         val messages = runBlocking {
             p2pTransport.subscribe()
                 .onStart { transportMessageFlows.tryEmit(transportMessages) }
@@ -118,7 +118,7 @@ internal class P2pTransportTest {
 
         val message = "message"
         val recipient = peers.shuffled().first()
-        val serialized = SerializedOutgoingConnectionMessage(Origin.P2P(recipient.publicKey), message)
+        val serialized = SerializedOutgoingConnectionMessage(Connection.Id.P2P(recipient.publicKey), message)
 
         coEvery { p2pClient.sendTo(any(), any()) } returns Result.success()
 
@@ -139,7 +139,7 @@ internal class P2pTransportTest {
         every { p2pClient.isSubscribed(any()) } returns false
         every { p2pClient.subscribeTo(any()) } answers { transportMessageFlows.getValue(firstArg<P2pPeer>().publicKey.asHexString().asString()) }
 
-        val expected = transportMessages.map { SerializedIncomingConnectionMessage(Origin.P2P(it.publicKey), it.content) }
+        val expected = transportMessages.map { SerializedIncomingConnectionMessage(Connection.Id.P2P(it.publicKey), it.content) }
 
         runBlocking {
             val messages = async {

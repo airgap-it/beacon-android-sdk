@@ -1,6 +1,6 @@
 package it.airgap.beaconsdk.core.client
 
-import it.airgap.beaconsdk.core.data.Origin
+import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.data.Peer
 import it.airgap.beaconsdk.core.data.Permission
 import it.airgap.beaconsdk.core.exception.BeaconException
@@ -10,7 +10,6 @@ import it.airgap.beaconsdk.core.internal.controller.ConnectionController
 import it.airgap.beaconsdk.core.internal.controller.MessageController
 import it.airgap.beaconsdk.core.internal.crypto.Crypto
 import it.airgap.beaconsdk.core.internal.data.BeaconApplication
-import it.airgap.beaconsdk.core.internal.message.BeaconIncomingConnectionMessage
 import it.airgap.beaconsdk.core.internal.message.BeaconOutgoingConnectionMessage
 import it.airgap.beaconsdk.core.internal.serializer.Serializer
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
@@ -168,7 +167,7 @@ public abstract class BeaconClient<BM : BeaconMessage>(
     public fun deserializePairingData(serialized: String): PairingMessage =
         serializer.deserialize<PairingMessage>(serialized).getOrThrow()
 
-    protected open suspend fun processMessage(origin: Origin, message: BeaconMessage): Result<Unit> =
+    protected open suspend fun processMessage(origin: Connection.Id, message: BeaconMessage): Result<Unit> =
         when (message) {
             is DisconnectBeaconMessage -> {
                 removePeer(message.origin.id)
@@ -188,7 +187,7 @@ public abstract class BeaconClient<BM : BeaconMessage>(
 
     private suspend fun disconnect(peer: Peer): Result<Unit> =
         runCatchingFlat {
-            val peerOrigin = Origin.forPeer(peer)
+            val peerOrigin = Connection.Id.forPeer(peer)
 
             val message = DisconnectBeaconMessage(
                 id = crypto.guid().getOrThrow(),
@@ -216,11 +215,9 @@ public abstract class BeaconClient<BM : BeaconMessage>(
         }
     }
 
-    private fun ownOrigin(origin: Origin): Origin =
-        when (origin) {
-            is Origin.Website -> origin.copy(id = app.keyPair.publicKey.toHexString().asString())
-            is Origin.Extension -> origin.copy(id = app.keyPair.publicKey.toHexString().asString())
-            is Origin.P2P -> origin.copy(id = app.keyPair.publicKey.toHexString().asString())
+    private fun ownOrigin(destination: Connection.Id): Connection.Id =
+        when (destination) {
+            is Connection.Id.P2P -> destination.copy(id = app.keyPair.publicKey.toHexString().asString())
         }
 
     public companion object {}

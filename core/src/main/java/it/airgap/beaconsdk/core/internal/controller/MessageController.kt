@@ -1,7 +1,7 @@
 package it.airgap.beaconsdk.core.internal.controller
 
 import androidx.annotation.RestrictTo
-import it.airgap.beaconsdk.core.data.Origin
+import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.internal.blockchain.BlockchainRegistry
 import it.airgap.beaconsdk.core.internal.compat.Compat
 import it.airgap.beaconsdk.core.internal.compat.VersionedCompat
@@ -27,7 +27,7 @@ public class MessageController internal constructor(
 
     // -- on incoming --
 
-    public suspend fun onIncomingMessage(origin: Origin, destination: Origin, message: VersionedBeaconMessage): Result<Pair<Origin, BeaconMessage>> =
+    public suspend fun onIncomingMessage(origin: Connection.Id, destination: Connection.Id, message: VersionedBeaconMessage): Result<Pair<Connection.Id, BeaconMessage>> =
         runCatching {
             val message = message.toBeaconMessage(origin, destination, beaconScope).also {
                 when (it) {
@@ -82,7 +82,7 @@ public class MessageController internal constructor(
         beaconId: String,
         message: BeaconMessage,
         isTerminal: Boolean,
-    ): Result<Pair<Origin?, VersionedBeaconMessage>> =
+    ): Result<Pair<Connection.Id?, VersionedBeaconMessage>> =
         runCatching {
             when (message) {
                 is BeaconRequest -> onOutgoingRequest(message, isTerminal)

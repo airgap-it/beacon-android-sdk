@@ -1,12 +1,9 @@
 package it.airgap.beaconsdk.core.internal.transport.p2p
 
 import it.airgap.beaconsdk.core.data.Connection
-import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.data.P2pPeer
 import it.airgap.beaconsdk.core.data.selfPaired
 import it.airgap.beaconsdk.core.internal.message.*
-import it.airgap.beaconsdk.core.internal.message.IncomingConnectionTransportMessage
-import it.airgap.beaconsdk.core.internal.message.OutgoingConnectionTransportMessage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.transport.Transport
 import it.airgap.beaconsdk.core.internal.transport.p2p.data.P2pMessage
@@ -20,7 +17,6 @@ import it.airgap.beaconsdk.core.storage.findPeer
 import it.airgap.beaconsdk.core.transport.data.*
 import it.airgap.beaconsdk.core.transport.p2p.P2pClient
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 
 @OptIn(FlowPreview::class)
@@ -36,9 +32,7 @@ internal class P2pTransport(
             .filterIsInstance<P2pPeer>()
             .onEach { onUpdatedP2pPeer(it) }
             .filterNot { it.isRemoved || client.isSubscribed(it) }
-            .mapNotNull {
-                client.subscribeTo(it)
-            }
+            .mapNotNull { client.subscribeTo(it) }
             .flattenMerge()
             .map { IncomingConnectionMessage.fromResult(it) }
     }
@@ -121,5 +115,5 @@ internal class P2pTransport(
     private fun IncomingConnectionMessage.Companion.fromResult(
         p2pMessage: Result<P2pMessage>,
     ): Result<IncomingConnectionTransportMessage> =
-        p2pMessage.map { SerializedIncomingConnectionMessage(Origin.P2P(it.publicKey), it.content) }
+        p2pMessage.map { SerializedIncomingConnectionMessage(Connection.Id.P2P(it.publicKey), it.content) }
 }

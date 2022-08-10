@@ -22,7 +22,7 @@ class DAppFragmentViewModel : ViewModel() {
     private var awaitingResponse: BeaconResponse? = null
 
     fun startBeacon(): LiveData<Result<BeaconResponse>> = liveData {
-        beaconClient = BeaconDAppClient("Beacon SDK Demo (DApp)") {
+        beaconClient = BeaconDAppClient("Beacon SDK Demo (DApp)", clientId = "__dapp__") {
             support(tezos(), substrate())
             use(p2pMatrix())
 

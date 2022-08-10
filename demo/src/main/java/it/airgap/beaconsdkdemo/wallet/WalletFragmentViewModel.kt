@@ -40,7 +40,7 @@ class WalletFragmentViewModel : ViewModel() {
     private var awaitingRequest: BeaconRequest? = null
 
     fun startBeacon(): LiveData<Result<BeaconRequest>> = liveData {
-        beaconClient = BeaconWalletClient("Beacon SDK Demo (Wallet)") {
+        beaconClient = BeaconWalletClient("Beacon SDK Demo (Wallet)", clientId = "__wallet__") {
             support(tezos(), substrate())
             use(p2pMatrix())
 

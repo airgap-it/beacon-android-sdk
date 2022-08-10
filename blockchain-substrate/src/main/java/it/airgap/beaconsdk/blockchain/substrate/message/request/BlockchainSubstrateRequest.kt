@@ -1,9 +1,11 @@
 package it.airgap.beaconsdk.blockchain.substrate.message.request
 
-import it.airgap.beaconsdk.blockchain.substrate.data.*
-import it.airgap.beaconsdk.core.data.Origin
-import it.airgap.beaconsdk.core.message.BlockchainBeaconRequest
+import it.airgap.beaconsdk.blockchain.substrate.data.SubstrateNetwork
+import it.airgap.beaconsdk.blockchain.substrate.data.SubstratePermission
+import it.airgap.beaconsdk.blockchain.substrate.data.SubstrateSignerPayload
 import it.airgap.beaconsdk.core.data.AppMetadata
+import it.airgap.beaconsdk.core.data.Connection
+import it.airgap.beaconsdk.core.message.BlockchainBeaconRequest
 
 public sealed class BlockchainSubstrateRequest : BlockchainBeaconRequest() {
     public abstract val scope: SubstratePermission.Scope
@@ -25,8 +27,8 @@ public sealed class TransferSubstrateRequest : BlockchainSubstrateRequest() {
         override val blockchainIdentifier: String,
         override val senderId: String,
         override val appMetadata: AppMetadata?,
-        override val origin: Origin,
-        override val destination: Origin?,
+        override val origin: Connection.Id,
+        override val destination: Connection.Id?,
         override val accountId: String,
         override val sourceAddress: String,
         override val amount: String,
@@ -40,8 +42,8 @@ public sealed class TransferSubstrateRequest : BlockchainSubstrateRequest() {
         override val blockchainIdentifier: String,
         override val senderId: String,
         override val appMetadata: AppMetadata?,
-        override val origin: Origin,
-        override val destination: Origin?,
+        override val origin: Connection.Id,
+        override val destination: Connection.Id?,
         override val accountId: String,
         override val sourceAddress: String,
         override val amount: String,
@@ -55,8 +57,8 @@ public sealed class TransferSubstrateRequest : BlockchainSubstrateRequest() {
         override val blockchainIdentifier: String,
         override val senderId: String,
         override val appMetadata: AppMetadata?,
-        override val origin: Origin,
-        override val destination: Origin?,
+        override val origin: Connection.Id,
+        override val destination: Connection.Id?,
         override val accountId: String,
         override val sourceAddress: String,
         override val amount: String,
@@ -83,8 +85,8 @@ public sealed class SignPayloadSubstrateRequest : BlockchainSubstrateRequest() {
         override val blockchainIdentifier: String,
         override val senderId: String,
         override val appMetadata: AppMetadata?,
-        override val origin: Origin,
-        override val destination: Origin?,
+        override val origin: Connection.Id,
+        override val destination: Connection.Id?,
         override val accountId: String?,
         override val address: String,
         override val payload: SubstrateSignerPayload,
@@ -96,8 +98,8 @@ public sealed class SignPayloadSubstrateRequest : BlockchainSubstrateRequest() {
         override val blockchainIdentifier: String,
         override val senderId: String,
         override val appMetadata: AppMetadata?,
-        override val origin: Origin,
-        override val destination: Origin?,
+        override val origin: Connection.Id,
+        override val destination: Connection.Id?,
         override val accountId: String?,
         override val address: String,
         override val payload: SubstrateSignerPayload,
@@ -109,8 +111,8 @@ public sealed class SignPayloadSubstrateRequest : BlockchainSubstrateRequest() {
         override val blockchainIdentifier: String,
         override val senderId: String,
         override val appMetadata: AppMetadata?,
-        override val origin: Origin,
-        override val destination: Origin?,
+        override val origin: Connection.Id,
+        override val destination: Connection.Id?,
         override val accountId: String?,
         override val address: String,
         override val payload: SubstrateSignerPayload,

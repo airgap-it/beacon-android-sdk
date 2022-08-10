@@ -4,13 +4,13 @@ import it.airgap.beaconsdk.blockchain.substrate.data.SubstrateAccount
 import it.airgap.beaconsdk.blockchain.substrate.data.SubstrateAppMetadata
 import it.airgap.beaconsdk.blockchain.substrate.data.SubstratePermission
 import it.airgap.beaconsdk.blockchain.substrate.message.request.PermissionSubstrateRequest
-import it.airgap.beaconsdk.core.data.Origin
+import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.message.PermissionBeaconResponse
 
 public data class PermissionSubstrateResponse internal constructor(
     override val id: String,
     override val version: String,
-    override val destination: Origin,
+    override val destination: Connection.Id,
     override val blockchainIdentifier: String,
     public val appMetadata: SubstrateAppMetadata,
     public val scopes: List<SubstratePermission.Scope>,

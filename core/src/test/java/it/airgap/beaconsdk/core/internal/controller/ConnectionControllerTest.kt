@@ -8,7 +8,6 @@ import failures
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import it.airgap.beaconsdk.core.data.Connection
-import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.internal.compat.CoreCompat
 import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.core.internal.message.*
@@ -46,7 +45,7 @@ internal class ConnectionControllerTest {
     private lateinit var connectionClient: ConnectionController
     private lateinit var json: Json
 
-    private val origin: Origin = Origin.P2P("id")
+    private val origin: Connection.Id = Connection.Id.P2P("id")
     private val beaconScope: BeaconScope = BeaconScope.Global
 
     @Before
@@ -131,7 +130,7 @@ internal class ConnectionControllerTest {
     fun `sends serialized respond`() {
         coEvery { transport.send(any()) } returns Result.success()
 
-        val destination = Origin.P2P("destination")
+        val destination = Connection.Id.P2P("receiverId")
         val response = beaconVersionedResponses(context = dependencyRegistry.versionedBeaconMessageContext).shuffled().first()
         val serialized = serializer.serialize(response).getOrThrow()
 
@@ -148,7 +147,7 @@ internal class ConnectionControllerTest {
         serializerProvider.shouldFail = true
 
         val response = beaconVersionedResponses(context = dependencyRegistry.versionedBeaconMessageContext).shuffled().first()
-        val result = runBlocking { connectionClient.send(BeaconOutgoingConnectionMessage(Origin.P2P("destination"), response)) }
+        val result = runBlocking { connectionClient.send(BeaconOutgoingConnectionMessage(Connection.Id.P2P("receiverId"), response)) }
 
         assertTrue(result.isFailure, "Expected result to be a failure")
         coVerify(exactly = 0) { transport.send(any()) }
@@ -161,7 +160,7 @@ internal class ConnectionControllerTest {
         coEvery { transport.send(any()) } returns Result.failure()
 
         val response = beaconVersionedResponses(context = dependencyRegistry.versionedBeaconMessageContext).shuffled().first()
-        val result = runBlocking { connectionClient.send(BeaconOutgoingConnectionMessage(Origin.P2P("destination"), response)) }
+        val result = runBlocking { connectionClient.send(BeaconOutgoingConnectionMessage(Connection.Id.P2P("receiverId"), response)) }
 
         assertTrue(result.isFailure, "Expected result to be a failure")
         coVerify(exactly = 1) { transport.send(any()) }

@@ -2,12 +2,8 @@ package it.airgap.beaconsdk.core.client
 
 import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.data.Connection
-import it.airgap.beaconsdk.core.data.Origin
-import it.airgap.beaconsdk.core.internal.utils.failWithActiveAccountNotSet
 import it.airgap.beaconsdk.core.message.BeaconRequest
-import it.airgap.beaconsdk.core.transport.data.PairingMessage
 import it.airgap.beaconsdk.core.transport.data.PairingRequest
-import kotlinx.coroutines.flow.Flow
 
 public interface BeaconProducer {
     public val senderId: String
@@ -22,8 +18,8 @@ public interface BeaconProducer {
         public val id: String,
         public val version: String,
         public val senderId: String,
-        public val origin: Origin,
-        public val destination: Origin?,
+        public val origin: Connection.Id,
+        public val destination: Connection.Id?,
         public val accountId: String?,
     )
 }

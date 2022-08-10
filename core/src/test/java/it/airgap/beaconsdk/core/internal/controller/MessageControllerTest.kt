@@ -7,8 +7,8 @@ import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.unmockkAll
+import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.data.MockPermission
-import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchain
 import it.airgap.beaconsdk.core.internal.compat.CoreCompat
@@ -49,8 +49,8 @@ internal class MessageControllerTest {
     private val senderId: String = "00"
     private val receiverId: String = "01"
 
-    private val origin = Origin.P2P(senderId)
-    private val destination = Origin.P2P(receiverId)
+    private val origin = Connection.Id.P2P(senderId)
+    private val destination = Connection.Id.P2P(receiverId)
 
     private val beaconScope: BeaconScope = BeaconScope.Global
 
@@ -97,8 +97,8 @@ internal class MessageControllerTest {
 
     @Test
     fun `transforms outgoing BeaconMessages to VersionedBeaconMessage`() {
-        val origin = Origin.P2P(senderId)
-        val destination = Origin.P2P(receiverId)
+        val origin = Connection.Id.P2P(senderId)
+        val destination = Connection.Id.P2P(receiverId)
         val beaconMessage = beaconMessages(version = version, origin = origin, destination = destination)
 
         beaconMessage.forEach {

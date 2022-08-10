@@ -4,7 +4,7 @@ import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosAccount
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
 import it.airgap.beaconsdk.blockchain.tezos.message.request.PermissionTezosRequest
-import it.airgap.beaconsdk.core.data.Origin
+import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.exception.BeaconException
 import it.airgap.beaconsdk.core.message.PermissionBeaconResponse
 
@@ -21,7 +21,7 @@ import it.airgap.beaconsdk.core.message.PermissionBeaconResponse
 public data class PermissionTezosResponse internal constructor(
     override val id: String,
     override val version: String,
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) override val destination: Origin,
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) override val destination: Connection.Id,
     override val blockchainIdentifier: String,
     public val account: TezosAccount,
     public val scopes: List<TezosPermission.Scope>,

@@ -96,8 +96,8 @@ internal class V3BeaconMessageTest {
     fun `converts to Beacon message`() {
         val senderId = "senderId"
         val otherId = "otherId"
-        val origin = Origin.P2P(senderId)
-        val destination = Origin.P2P(otherId)
+        val origin = Connection.Id.P2P(senderId)
+        val destination = Connection.Id.P2P(otherId)
 
         val matchingAppMetadata = MockAppMetadata(senderId, "v3App")
         val otherAppMetadata = MockAppMetadata(otherId, "v3OtherApp")
@@ -134,8 +134,8 @@ internal class V3BeaconMessageTest {
     private fun versionedWithBeacon(
         version: String = "3",
         senderId: String = "senderId",
-        origin: Origin = Origin.P2P(senderId),
-        destination: Origin = Origin.P2P("destination"),
+        origin: Connection.Id = Connection.Id.P2P(senderId),
+        destination: Connection.Id = Connection.Id.P2P("receiverId"),
         appMetadata: AppMetadata? = null,
     ): List<Pair<V3BeaconMessage, BeaconMessage>> =
         listOf(
@@ -363,8 +363,8 @@ internal class V3BeaconMessageTest {
         appMetadata: MockAppMetadata = MockAppMetadata("senderId", "v3App"),
         network: Network = MockNetwork(),
         scopes: List<String> = emptyList(),
-        origin: Origin = Origin.P2P(senderId),
-        destination: Origin = Origin.P2P("destination"),
+        origin: Connection.Id = Connection.Id.P2P(senderId),
+        destination: Connection.Id = Connection.Id.P2P("receiverId"),
     ): Pair<V3BeaconMessage, PermissionBeaconRequest> {
         val rest = mapOf(
             "network" to json.encodeToJsonElement(network),
@@ -392,8 +392,8 @@ internal class V3BeaconMessageTest {
         blockchainIdentifier: String = MockBlockchain.IDENTIFIER,
         accountId: String = "accountId",
         appMetadata: AppMetadata? = null,
-        origin: Origin = Origin.P2P(senderId),
-        destination: Origin = Origin.P2P("destination"),
+        origin: Connection.Id = Connection.Id.P2P(senderId),
+        destination: Connection.Id = Connection.Id.P2P("receiverId"),
         message: String = "message",
     ): Pair<V3BeaconMessage, BlockchainMockRequest> {
         val rest = mapOf(
@@ -422,7 +422,7 @@ internal class V3BeaconMessageTest {
         publicKey: String = "publicKey",
         network: Network = MockNetwork(),
         scopes: List<String> = emptyList(),
-        destination: Origin = Origin.P2P("destination"),
+        destination: Connection.Id = Connection.Id.P2P("receiverId"),
     ): Pair<V3BeaconMessage, PermissionBeaconResponse> {
         val rest = mapOf(
             "publicKey" to json.encodeToJsonElement(publicKey),
@@ -446,7 +446,7 @@ internal class V3BeaconMessageTest {
         id: String = "id",
         senderId: String = "senderId",
         blockchainIdentifier: String = MockBlockchain.IDENTIFIER,
-        destination: Origin = Origin.P2P("destination"),
+        destination: Connection.Id = Connection.Id.P2P("receiverId"),
         signature: String = "signature",
     ): Pair<V3BeaconMessage, BlockchainBeaconResponse> {
         val rest = mapOf(
@@ -470,7 +470,7 @@ internal class V3BeaconMessageTest {
         senderId: String = "senderId",
         errorType: BeaconError = BeaconError.Unknown,
         description: String? = "description",
-        destination: Origin = Origin.P2P("destination"),
+        destination: Connection.Id = Connection.Id.P2P("receiverId"),
     ): Pair<V3BeaconMessage, ErrorBeaconResponse> =
         V3BeaconMessage(
             id,
@@ -488,8 +488,8 @@ internal class V3BeaconMessageTest {
         version: String = "3",
         id: String = "id",
         senderId: String = "senderId",
-        origin: Origin = Origin.P2P(senderId),
-        destination: Origin = Origin.P2P("destination"),
+        origin: Connection.Id = Connection.Id.P2P(senderId),
+        destination: Connection.Id = Connection.Id.P2P("receiverId"),
     ): Pair<V3BeaconMessage, DisconnectBeaconMessage> =
         V3BeaconMessage(id, version, senderId, DisconnectV3BeaconMessageContent) to DisconnectBeaconMessage(id, senderId, version, origin, destination)
 }

@@ -1,13 +1,13 @@
 
-import it.airgap.beaconsdk.core.data.Origin
-import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchain
-import it.airgap.beaconsdk.core.internal.utils.failWith
 import it.airgap.beaconsdk.blockchain.substrate.data.SubstrateAccount
 import it.airgap.beaconsdk.blockchain.substrate.data.SubstrateAppMetadata
 import it.airgap.beaconsdk.blockchain.substrate.data.SubstrateNetwork
 import it.airgap.beaconsdk.blockchain.substrate.data.SubstratePermission
 import it.airgap.beaconsdk.blockchain.substrate.message.request.PermissionSubstrateRequest
 import it.airgap.beaconsdk.blockchain.substrate.message.response.PermissionSubstrateResponse
+import it.airgap.beaconsdk.core.data.Connection
+import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchain
+import it.airgap.beaconsdk.core.internal.utils.failWith
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
@@ -38,8 +38,8 @@ internal fun permissionSubstrateRequest(
     version: String = "version",
     blockchainIdentifier: String = MockBlockchain.IDENTIFIER,
     senderId: String = "senderId",
-    origin: Origin = Origin.P2P(senderId),
-    destination: Origin? = Origin.P2P("destination"),
+    origin: Connection.Id = Connection.Id.P2P(senderId),
+    destination: Connection.Id? = Connection.Id.P2P("receiverId"),
     appMetadata: SubstrateAppMetadata = SubstrateAppMetadata(senderId, "mockApp"),
     scopes: List<SubstratePermission.Scope> = emptyList(),
     networks: List<SubstrateNetwork> = listOf(SubstrateNetwork("genesisHash")),
@@ -48,7 +48,7 @@ internal fun permissionSubstrateRequest(
 internal fun permissionSubstrateResponse(
     id: String = "id",
     version: String = "version",
-    destination: Origin = Origin.P2P("destination"),
+    destination: Connection.Id = Connection.Id.P2P("receiverId"),
     blockchainIdentifier: String = MockBlockchain.IDENTIFIER,
     appMetadata: SubstrateAppMetadata = SubstrateAppMetadata("senderId", "mockApp"),
     scopes: List<SubstratePermission.Scope> = emptyList(),

@@ -8,7 +8,7 @@ import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
 import it.airgap.beaconsdk.blockchain.tezos.data.operation.TezosOperation
 import it.airgap.beaconsdk.blockchain.tezos.message.request.*
 import it.airgap.beaconsdk.blockchain.tezos.message.response.*
-import it.airgap.beaconsdk.core.data.Origin
+import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.data.SigningType
 import it.airgap.beaconsdk.core.internal.message.v3.BlockchainV3BeaconRequestContent
 import it.airgap.beaconsdk.core.internal.message.v3.BlockchainV3BeaconResponseContent
@@ -42,8 +42,8 @@ internal data class PermissionV3TezosRequest(
         id: String,
         version: String,
         senderId: String,
-        origin: Origin,
-        destination: Origin,
+        origin: Connection.Id,
+        destination: Connection.Id,
         blockchainIdentifier: String,
     ): BeaconMessage = PermissionTezosRequest(id, version, blockchainIdentifier, senderId, appMetadata.toAppMetadata(), origin, destination, network, scopes)
 
@@ -134,8 +134,8 @@ internal data class OperationV3TezosRequest(
         id: String,
         version: String,
         senderId: String,
-        origin: Origin,
-        destination: Origin,
+        origin: Connection.Id,
+        destination: Connection.Id,
         accountId: String,
         blockchainIdentifier: String,
     ): BeaconMessage {
@@ -175,8 +175,8 @@ internal data class SignPayloadV3TezosRequest(
         id: String,
         version: String,
         senderId: String,
-        origin: Origin,
-        destination: Origin,
+        origin: Connection.Id,
+        destination: Connection.Id,
         accountId: String,
         blockchainIdentifier: String,
     ): BeaconMessage {
@@ -215,8 +215,8 @@ internal data class BroadcastV3TezosRequest(
         id: String,
         version: String,
         senderId: String,
-        origin: Origin,
-        destination: Origin,
+        origin: Connection.Id,
+        destination: Connection.Id,
         accountId: String,
         blockchainIdentifier: String,
     ): BeaconMessage {
@@ -266,8 +266,8 @@ internal data class PermissionV3TezosResponse(
         id: String,
         version: String,
         senderId: String,
-        origin: Origin,
-        destination: Origin,
+        origin: Connection.Id,
+        destination: Connection.Id,
         blockchainIdentifier: String,
     ): BeaconMessage = PermissionTezosResponse(id, version, destination, blockchainIdentifier, TezosAccount(accountId, network, publicKey, address), scopes)
 }
@@ -332,8 +332,8 @@ internal data class OperationV3TezosResponse(
         id: String,
         version: String,
         senderId: String,
-        origin: Origin,
-        destination: Origin,
+        origin: Connection.Id,
+        destination: Connection.Id,
         blockchainIdentifier: String,
     ): BeaconMessage = OperationTezosResponse(id, version, destination, blockchainIdentifier, transactionHash)
 
@@ -356,8 +356,8 @@ internal data class SignPayloadV3TezosResponse(
         id: String,
         version: String,
         senderId: String,
-        origin: Origin,
-        destination: Origin,
+        origin: Connection.Id,
+        destination: Connection.Id,
         blockchainIdentifier: String,
     ): BeaconMessage = SignPayloadTezosResponse(id, version, destination, blockchainIdentifier, signingType, signature)
 
@@ -379,8 +379,8 @@ internal data class BroadcastV3TezosResponse(
         id: String,
         version: String,
         senderId: String,
-        origin: Origin,
-        destination: Origin,
+        origin: Connection.Id,
+        destination: Connection.Id,
         blockchainIdentifier: String,
     ): BeaconMessage = BroadcastTezosResponse(id, version, destination, Tezos.IDENTIFIER, transactionHash)
 

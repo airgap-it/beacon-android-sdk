@@ -21,7 +21,7 @@ import it.airgap.beaconsdk.blockchain.tezos.message.response.BroadcastTezosRespo
 import it.airgap.beaconsdk.blockchain.tezos.message.response.OperationTezosResponse
 import it.airgap.beaconsdk.blockchain.tezos.message.response.PermissionTezosResponse
 import it.airgap.beaconsdk.blockchain.tezos.message.response.SignPayloadTezosResponse
-import it.airgap.beaconsdk.core.data.Origin
+import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.data.SigningType
 import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.compat.CoreCompat
@@ -121,8 +121,8 @@ internal class V3TezosMessageTest {
     fun `converts to Beacon message`() {
         val senderId = "senderId"
         val otherId = "otherId"
-        val origin = Origin.P2P(senderId)
-        val destination = Origin.P2P("destination")
+        val origin = Connection.Id.P2P(senderId)
+        val destination = Connection.Id.P2P("receiverId")
 
         val matchingAppMetadata = TezosAppMetadata(senderId, "v3App")
         val otherAppMetadata = TezosAppMetadata(otherId, "v3OtherApp")
@@ -160,8 +160,8 @@ internal class V3TezosMessageTest {
     private fun versionedWithBeacon(
         version: String = "3",
         senderId: String = "senderId",
-        origin: Origin = Origin.P2P(senderId),
-        destination: Origin = Origin.P2P("destination"),
+        origin: Connection.Id = Connection.Id.P2P(senderId),
+        destination: Connection.Id = Connection.Id.P2P("receiverId"),
         appMetadata: TezosAppMetadata? = null,
     ): List<Pair<V3BeaconMessage, BeaconMessage>> =
         listOf(
@@ -493,8 +493,8 @@ internal class V3TezosMessageTest {
         appMetadata: V3TezosAppMetadata = V3TezosAppMetadata("senderId", "v2App"),
         network: TezosNetwork = TezosNetwork.Custom(),
         scopes: List<TezosPermission.Scope> = emptyList(),
-        origin: Origin = Origin.P2P(senderId),
-        destination: Origin? = Origin.P2P("destination"),
+        origin: Connection.Id = Connection.Id.P2P(senderId),
+        destination: Connection.Id? = Connection.Id.P2P("receiverId"),
     ): Pair<V3BeaconMessage, PermissionBeaconRequest> =
         V3BeaconMessage(
             id,
@@ -519,8 +519,8 @@ internal class V3TezosMessageTest {
         tezosOperations: List<TezosOperation> = emptyList(),
         sourceAddress: String = "sourceAddress",
         appMetadata: TezosAppMetadata? = null,
-        origin: Origin = Origin.P2P(senderId),
-        destination: Origin? = Origin.P2P("destination"),
+        origin: Connection.Id = Connection.Id.P2P(senderId),
+        destination: Connection.Id? = Connection.Id.P2P("receiverId"),
     ): Pair<V3BeaconMessage, BlockchainBeaconRequest> =
         V3BeaconMessage(
             id,
@@ -546,8 +546,8 @@ internal class V3TezosMessageTest {
         payload: String = "payload",
         sourceAddress: String = "sourceAddress",
         appMetadata: TezosAppMetadata? = null,
-        origin: Origin = Origin.P2P(senderId),
-        destination: Origin? = Origin.P2P("destination"),
+        origin: Connection.Id = Connection.Id.P2P(senderId),
+        destination: Connection.Id? = Connection.Id.P2P("receiverId"),
     ): Pair<V3BeaconMessage, BlockchainBeaconRequest> =
         V3BeaconMessage(
             id,
@@ -572,8 +572,8 @@ internal class V3TezosMessageTest {
         network: TezosNetwork = TezosNetwork.Custom(),
         signedTransaction: String = "signedTransaction",
         appMetadata: TezosAppMetadata? = null,
-        origin: Origin = Origin.P2P(senderId),
-        destination: Origin? = Origin.P2P("destination"),
+        origin: Connection.Id = Connection.Id.P2P(senderId),
+        destination: Connection.Id? = Connection.Id.P2P("receiverId"),
     ): Pair<V3BeaconMessage, BlockchainBeaconRequest> =
         V3BeaconMessage(
             id,
@@ -597,7 +597,7 @@ internal class V3TezosMessageTest {
         senderId: String = "senderId",
         account: TezosAccount = TezosAccount("accountId", TezosNetwork.Custom(), "publicKey", "address"),
         scopes: List<TezosPermission.Scope> = emptyList(),
-        destination: Origin = Origin.P2P("destination"),
+        destination: Connection.Id = Connection.Id.P2P("receiverId"),
     ): Pair<V3BeaconMessage, PermissionBeaconResponse> =
         V3BeaconMessage(
             id,
@@ -620,7 +620,7 @@ internal class V3TezosMessageTest {
         id: String = "id",
         senderId: String = "senderId",
         transactionHash: String = "transactionHash",
-        destination: Origin = Origin.P2P("destination"),
+        destination: Connection.Id = Connection.Id.P2P("receiverId"),
     ): Pair<V3BeaconMessage, BlockchainBeaconResponse> =
         V3BeaconMessage(
             id,
@@ -638,7 +638,7 @@ internal class V3TezosMessageTest {
         senderId: String = "senderId",
         signingType: SigningType = SigningType.Raw,
         signature: String = "signature",
-        destination: Origin = Origin.P2P("destination"),
+        destination: Connection.Id = Connection.Id.P2P("receiverId"),
     ): Pair<V3BeaconMessage, BlockchainBeaconResponse> =
         V3BeaconMessage(
             id,
@@ -658,7 +658,7 @@ internal class V3TezosMessageTest {
         id: String = "id",
         senderId: String = "senderId",
         transactionHash: String = "transactionHash",
-        destination: Origin = Origin.P2P("destination"),
+        destination: Connection.Id = Connection.Id.P2P("receiverId"),
     ): Pair<V3BeaconMessage, BlockchainBeaconResponse> =
         V3BeaconMessage(
             id,

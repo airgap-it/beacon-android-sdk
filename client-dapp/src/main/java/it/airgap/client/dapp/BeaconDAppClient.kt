@@ -5,7 +5,6 @@ import it.airgap.beaconsdk.core.builder.InitBuilder
 import it.airgap.beaconsdk.core.client.BeaconClient
 import it.airgap.beaconsdk.core.client.BeaconProducer
 import it.airgap.beaconsdk.core.data.Connection
-import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.exception.BeaconException
 import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.controller.ConnectionController
@@ -21,7 +20,6 @@ import it.airgap.beaconsdk.core.message.BeaconRequest
 import it.airgap.beaconsdk.core.message.BeaconResponse
 import it.airgap.beaconsdk.core.message.PermissionBeaconResponse
 import it.airgap.beaconsdk.core.scope.BeaconScope
-import it.airgap.beaconsdk.core.scope.Scope
 import it.airgap.beaconsdk.core.storage.SecureStorage
 import it.airgap.beaconsdk.core.transport.data.PairingRequest
 import it.airgap.beaconsdk.core.transport.data.PairingResponse
@@ -93,13 +91,13 @@ public class BeaconDAppClient @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) constr
         BeaconProducer.RequestMetadata(
             id = crypto.guid().getOrThrow(),
             version = BeaconConfiguration.BEACON_VERSION,
-            origin = connectionType.toOrigin(),
+            origin = Connection.Id.fromType(connectionType),
             destination = accountController.getRequestDestination(),
             senderId = senderId,
             accountId = accountController.getActiveAccountId()
         )
 
-    override suspend fun processMessage(origin: Origin, message: BeaconMessage): Result<Unit> =
+    override suspend fun processMessage(origin: Connection.Id, message: BeaconMessage): Result<Unit> =
         runCatchingFlat {
             when (message) {
                 is PermissionBeaconResponse -> accountController.onPermissionResponse(origin, message).getOrThrow()
@@ -115,21 +113,19 @@ public class BeaconDAppClient @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) constr
             else -> null
         }
 
-    private fun Connection.Type.toOrigin(): Origin =
-        when (this) {
-            Connection.Type.P2P -> Origin.P2P(app.keyPair.publicKey.toHexString().asString())
+    private fun Connection.Id.Companion.fromType(type: Connection.Type): Connection.Id =
+        when (type) {
+            Connection.Type.P2P -> Connection.Id.P2P(app.keyPair.publicKey.toHexString().asString())
         }
 
-    public companion object {
-        private const val SCOPE_PREFIX = "dapp_client"
-    }
+    public companion object {}
 
     public class Builder(
         name: String,
         clientId: String? = null
     ) : InitBuilder<BeaconDAppClient, DAppClientStorage, SecureStorage, Builder>(
         name,
-        Scope(clientId, SCOPE_PREFIX),
+        BeaconScope(clientId),
         { SharedPreferencesDAppClientStorage(applicationContext) },
         { SharedPreferencesSecureStorage(applicationContext) },
     ) {

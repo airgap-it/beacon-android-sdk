@@ -12,7 +12,7 @@ import it.airgap.beaconsdk.blockchain.substrate.message.response.PermissionSubst
 import it.airgap.beaconsdk.blockchain.substrate.message.response.SignPayloadSubstrateResponse
 import it.airgap.beaconsdk.blockchain.substrate.message.response.TransferSubstrateResponse
 import it.airgap.beaconsdk.core.data.AppMetadata
-import it.airgap.beaconsdk.core.data.Origin
+import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.internal.message.v3.BlockchainV3BeaconRequestContent
 import it.airgap.beaconsdk.core.internal.message.v3.BlockchainV3BeaconResponseContent
 import it.airgap.beaconsdk.core.internal.message.v3.PermissionV3BeaconRequestContent
@@ -42,8 +42,8 @@ internal data class PermissionV3SubstrateRequest(
         id: String,
         version: String,
         senderId: String,
-        origin: Origin,
-        destination: Origin,
+        origin: Connection.Id,
+        destination: Connection.Id,
         blockchainIdentifier: String,
     ): BeaconMessage = PermissionSubstrateRequest(id, version, blockchainIdentifier, senderId, origin, destination, appMetadata, scopes, networks ?: emptyList())
 
@@ -130,8 +130,8 @@ internal data class TransferV3SubstrateRequest(
         id: String,
         version: String,
         senderId: String,
-        origin: Origin,
-        destination: Origin,
+        origin: Connection.Id,
+        destination: Connection.Id,
         accountId: String,
         blockchainIdentifier: String,
     ): BeaconMessage {
@@ -163,8 +163,8 @@ internal data class TransferV3SubstrateRequest(
                 blockchainIdentifier: String,
                 senderId: String,
                 appMetadata: @Contextual AppMetadata?,
-                origin: Origin,
-                destination: Origin,
+                origin: Connection.Id,
+                destination: Connection.Id,
                 accountId: String,
                 sourceAddress: String,
                 amount: String,
@@ -192,8 +192,8 @@ internal data class TransferV3SubstrateRequest(
                 blockchainIdentifier: String,
                 senderId: String,
                 appMetadata: @Contextual AppMetadata?,
-                origin: Origin,
-                destination: Origin,
+                origin: Connection.Id,
+                destination: Connection.Id,
                 accountId: String,
                 sourceAddress: String,
                 amount: String,
@@ -221,8 +221,8 @@ internal data class TransferV3SubstrateRequest(
                 blockchainIdentifier: String,
                 senderId: String,
                 appMetadata: @Contextual AppMetadata?,
-                origin: Origin,
-                destination: Origin,
+                origin: Connection.Id,
+                destination: Connection.Id,
                 accountId: String,
                 sourceAddress: String,
                 amount: String,
@@ -250,8 +250,8 @@ internal data class TransferV3SubstrateRequest(
             blockchainIdentifier: String,
             senderId: String,
             appMetadata: @Contextual AppMetadata?,
-            origin: Origin,
-            destination: Origin,
+            origin: Connection.Id,
+            destination: Connection.Id,
             accountId: String,
             sourceAddress: String,
             amount: String,
@@ -288,8 +288,8 @@ internal data class SignPayloadV3SubstrateRequest(
         id: String,
         version: String,
         senderId: String,
-        origin: Origin,
-        destination: Origin,
+        origin: Connection.Id,
+        destination: Connection.Id,
         accountId: String,
         blockchainIdentifier: String,
     ): BeaconMessage {
@@ -319,8 +319,8 @@ internal data class SignPayloadV3SubstrateRequest(
                 blockchainIdentifier: String,
                 senderId: String,
                 appMetadata: @Contextual AppMetadata?,
-                origin: Origin,
-                destination: Origin,
+                origin: Connection.Id,
+                destination: Connection.Id,
                 accountId: String,
                 address: String,
                 payload: SubstrateSignerPayload,
@@ -344,8 +344,8 @@ internal data class SignPayloadV3SubstrateRequest(
                 blockchainIdentifier: String,
                 senderId: String,
                 appMetadata: @Contextual AppMetadata?,
-                origin: Origin,
-                destination: Origin,
+                origin: Connection.Id,
+                destination: Connection.Id,
                 accountId: String,
                 address: String,
                 payload: SubstrateSignerPayload,
@@ -369,8 +369,8 @@ internal data class SignPayloadV3SubstrateRequest(
                 blockchainIdentifier: String,
                 senderId: String,
                 appMetadata: @Contextual AppMetadata?,
-                origin: Origin,
-                destination: Origin,
+                origin: Connection.Id,
+                destination: Connection.Id,
                 accountId: String,
                 address: String,
                 payload: SubstrateSignerPayload,
@@ -394,8 +394,8 @@ internal data class SignPayloadV3SubstrateRequest(
             blockchainIdentifier: String,
             senderId: String,
             appMetadata: @Contextual AppMetadata?,
-            origin: Origin,
-            destination: Origin,
+            origin: Connection.Id,
+            destination: Connection.Id,
             accountId: String,
             address: String,
             payload: SubstrateSignerPayload,
@@ -426,8 +426,8 @@ internal data class PermissionV3SubstrateResponse(
         id: String,
         version: String,
         senderId: String,
-        origin: Origin,
-        destination: Origin,
+        origin: Connection.Id,
+        destination: Connection.Id,
         blockchainIdentifier: String,
     ): BeaconMessage = PermissionSubstrateResponse(id, version, destination, blockchainIdentifier, appMetadata, scopes, accounts)
 
@@ -501,8 +501,8 @@ internal data class TransferV3SubstrateResponse(
         id: String,
         version: String,
         senderId: String,
-        origin: Origin,
-        destination: Origin,
+        origin: Connection.Id,
+        destination: Connection.Id,
         blockchainIdentifier: String,
     ): BeaconMessage = when {
         transactionHash != null && signature == null && payload == null -> TransferSubstrateResponse.Submit(id, version, destination, blockchainIdentifier, transactionHash)
@@ -541,8 +541,8 @@ internal data class SignPayloadV3SubstrateResponse(
         id: String,
         version: String,
         senderId: String,
-        origin: Origin,
-        destination: Origin,
+        origin: Connection.Id,
+        destination: Connection.Id,
         blockchainIdentifier: String,
     ): BeaconMessage = when {
         transactionHash != null && signature == null && payload == null -> SignPayloadSubstrateResponse.Submit(id, version, destination, blockchainIdentifier, transactionHash)

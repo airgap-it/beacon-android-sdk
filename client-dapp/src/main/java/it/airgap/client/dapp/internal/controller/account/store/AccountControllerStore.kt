@@ -1,16 +1,10 @@
 package it.airgap.client.dapp.internal.controller.account.store
 
 import androidx.annotation.RestrictTo
-import it.airgap.beaconsdk.core.data.Origin
-import it.airgap.beaconsdk.core.data.P2pPeer
 import it.airgap.beaconsdk.core.data.Peer
 import it.airgap.beaconsdk.core.internal.base.Store
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.client.dapp.internal.storage.*
-import it.airgap.client.dapp.internal.storage.getActiveAccount
-import it.airgap.client.dapp.internal.storage.getActivePeer
-import it.airgap.client.dapp.internal.storage.removeActivePeer
-import it.airgap.client.dapp.internal.storage.setActivePeer
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class AccountControllerStore(private val storageManager: StorageManager) : Store<AccountControllerStoreState, AccountControllerStoreAction>() {

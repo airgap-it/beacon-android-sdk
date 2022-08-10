@@ -74,10 +74,10 @@ internal class BeaconWalletClientTest {
 
     private val dAppVersion: String = "2"
     private val dAppId: String = "dAppId"
-    private val walletId: String = "walletId"
+    private val dAppConnectionId: Connection.Id = Connection.Id.P2P(dAppId)
 
-    private val dAppOrigin: Origin = Origin.P2P(dAppId)
-    private val walletOrigin: Origin = Origin.P2P(walletId)
+    private val walletId: String = "walletId"
+    private val walletConnectionId: Connection.Id = Connection.Id.P2P(walletId)
 
     private val beaconScope: BeaconScope = BeaconScope.Global
 
@@ -86,7 +86,7 @@ internal class BeaconWalletClientTest {
         MockKAnnotations.init(this)
 
         coEvery { messageController.onIncomingMessage(any(), any(), any()) } coAnswers {
-            Result.success(Pair(firstArg<Origin>(), thirdArg<VersionedBeaconMessage>().toBeaconMessage(firstArg(), secondArg(), beaconScope)))
+            Result.success(Pair(firstArg<Connection.Id>(), thirdArg<VersionedBeaconMessage>().toBeaconMessage(firstArg(), secondArg(), beaconScope)))
         }
 
         coEvery { messageController.onOutgoingMessage(any(), any(), any()) } coAnswers {
@@ -126,12 +126,12 @@ internal class BeaconWalletClientTest {
 
             val messages =
                 beaconWalletClient.connect()
-                    .onStart { beaconMessageFlow.tryEmitValues(requests.map { BeaconIncomingConnectionMessage(dAppOrigin, it) }) }
+                    .onStart { beaconMessageFlow.tryEmitValues(requests.map { BeaconIncomingConnectionMessage(dAppConnectionId, it) }) }
                     .mapNotNull { it.getOrNull() }
                     .take(requests.size)
                     .toList()
 
-            val expected = requests.map { it.toBeaconMessage(dAppOrigin, Origin.ownFrom(dAppOrigin), beaconScope) }
+            val expected = requests.map { it.toBeaconMessage(dAppConnectionId, Connection.Id.ownFrom(dAppConnectionId), beaconScope) }
 
             assertEquals(expected.sortedBy { it.toString() }, messages.sortedBy { it.toString() })
             coVerify(exactly = expected.size) { messageController.onIncomingMessage(any(), any(), any()) }
@@ -146,7 +146,7 @@ internal class BeaconWalletClientTest {
         runBlockingTest {
             coEvery { connectionController.send(any()) } returns Result.success()
 
-            val destination = Origin.P2P(dAppId)
+            val destination = Connection.Id.P2P(dAppId)
             val responses = beaconResponses(version = dAppVersion, destination = destination).shuffled()
 
             responses.forEach {
@@ -174,7 +174,7 @@ internal class BeaconWalletClientTest {
 
             val errors =
                 beaconWalletClient.connect()
-                    .onStart { beaconMessageFlow.tryEmitValues(requests.map { BeaconIncomingConnectionMessage(dAppOrigin, it) }) }
+                    .onStart { beaconMessageFlow.tryEmitValues(requests.map { BeaconIncomingConnectionMessage(dAppConnectionId, it) }) }
                     .mapNotNull { it.exceptionOrNull() }
                     .take(requests.size)
                     .toList()
@@ -229,7 +229,7 @@ internal class BeaconWalletClientTest {
     fun `removes peer on disconnect message received`() {
         runBlockingTest {
             val publicKey = "publicKey"
-            val origin = Origin.P2P(publicKey)
+            val origin = Connection.Id.P2P(publicKey)
             val peer = P2pPeer(name = "name", relayServer = "relayServer", publicKey = publicKey)
             storageManager.setPeers(listOf(peer))
 
@@ -294,8 +294,8 @@ internal class BeaconWalletClientTest {
             val (toKeep, toRemove) = p2pPeers(4).splitAt { it.size / 2 }
 
             val expectedDisconnectMessages = toRemove.map {
-                val peerOrigin = Origin.forPeer(it)
-                DisconnectBeaconMessage(crypto.guid().getOrThrow(), beaconId, it.version, Origin.ownFrom(peerOrigin), peerOrigin)
+                val peerOrigin = Connection.Id.forPeer(it)
+                DisconnectBeaconMessage(crypto.guid().getOrThrow(), beaconId, it.version, Connection.Id.ownFrom(peerOrigin), peerOrigin)
             }
 
             val expectedConnectionMessages = expectedDisconnectMessages.map {
@@ -337,8 +337,8 @@ internal class BeaconWalletClientTest {
             val peers = p2pPeers(4)
 
             val expectedDisconnectMessages = peers.map {
-                val peerOrigin = Origin.forPeer(it)
-                DisconnectBeaconMessage(crypto.guid().getOrThrow(), beaconId, it.version, Origin.ownFrom(peerOrigin), peerOrigin)
+                val peerOrigin = Connection.Id.forPeer(it)
+                DisconnectBeaconMessage(crypto.guid().getOrThrow(), beaconId, it.version, Connection.Id.ownFrom(peerOrigin), peerOrigin)
             }
             val expectedConnectionMessages = expectedDisconnectMessages.map {
                 BeaconOutgoingConnectionMessage(it.destination to VersionedBeaconMessage.from(beaconId, it, dependencyRegistry.versionedBeaconMessageContext))
@@ -531,10 +531,8 @@ internal class BeaconWalletClientTest {
         }
     }
 
-    private fun Origin.Companion.ownFrom(origin: Origin): Origin =
-        when (origin) {
-            is Origin.Website -> origin.copy(id = app.keyPair.publicKey.toHexString().asString())
-            is Origin.Extension -> origin.copy(id = app.keyPair.publicKey.toHexString().asString())
-            is Origin.P2P -> origin.copy(id = app.keyPair.publicKey.toHexString().asString())
+    private fun Connection.Id.Companion.ownFrom(destination: Connection.Id): Connection.Id =
+        when (destination) {
+            is Connection.Id.P2P -> destination.copy(id = app.keyPair.publicKey.toHexString().asString())
         }
 }

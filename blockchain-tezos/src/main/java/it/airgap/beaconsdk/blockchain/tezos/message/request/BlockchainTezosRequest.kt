@@ -12,7 +12,6 @@ import it.airgap.beaconsdk.blockchain.tezos.message.response.SignPayloadTezosRes
 import it.airgap.beaconsdk.core.client.BeaconClient
 import it.airgap.beaconsdk.core.client.BeaconProducer
 import it.airgap.beaconsdk.core.data.Connection
-import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.data.SigningType
 import it.airgap.beaconsdk.core.message.BlockchainBeaconRequest
 
@@ -46,8 +45,8 @@ public data class OperationTezosRequest internal constructor(
     override val blockchainIdentifier: String,
     override val senderId: String,
     override val appMetadata: TezosAppMetadata?,
-    override val origin: Origin,
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) override val destination: Origin?,
+    override val origin: Connection.Id,
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) override val destination: Connection.Id?,
     override val accountId: String?,
     public val network: TezosNetwork,
     public val operationDetails: List<TezosOperation>,
@@ -103,8 +102,8 @@ public data class SignPayloadTezosRequest internal constructor(
     override val blockchainIdentifier: String,
     override val senderId: String,
     override val appMetadata: TezosAppMetadata?,
-    override val origin: Origin,
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) override val destination: Origin?,
+    override val origin: Connection.Id,
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) override val destination: Connection.Id?,
     override val accountId: String?,
     public val signingType: SigningType,
     public val payload: String,
@@ -159,8 +158,8 @@ public data class BroadcastTezosRequest internal constructor(
     override val blockchainIdentifier: String,
     override val senderId: String,
     override val appMetadata: TezosAppMetadata?,
-    override val origin: Origin,
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) override val destination: Origin?,
+    override val origin: Connection.Id,
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) override val destination: Connection.Id?,
     override val accountId: String?,
     public val network: TezosNetwork,
     public val signedTransaction: String,

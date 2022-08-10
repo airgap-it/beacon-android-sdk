@@ -2,7 +2,7 @@ package it.airgap.beaconsdk.core.internal.message.v2
 
 import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.data.BeaconError
-import it.airgap.beaconsdk.core.data.Origin
+import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.internal.blockchain.BlockchainRegistry
 import it.airgap.beaconsdk.core.internal.compat.Compat
 import it.airgap.beaconsdk.core.internal.compat.VersionedCompat
@@ -98,7 +98,7 @@ public data class AcknowledgeV2BeaconResponse(
     @Required
     override val type: String = TYPE
 
-    override suspend fun toBeaconMessage(origin: Origin, destination: Origin, beaconScope: BeaconScope): BeaconMessage =
+    override suspend fun toBeaconMessage(origin: Connection.Id, destination: Connection.Id, beaconScope: BeaconScope): BeaconMessage =
         AcknowledgeBeaconResponse(id, version, destination, senderId)
 
     public companion object {
@@ -116,7 +116,7 @@ public data class ErrorV2BeaconResponse(
     @Required
     override val type: String = TYPE
 
-    override suspend fun toBeaconMessage(origin: Origin, destination: Origin, beaconScope: BeaconScope): BeaconMessage =
+    override suspend fun toBeaconMessage(origin: Connection.Id, destination: Connection.Id, beaconScope: BeaconScope): BeaconMessage =
         ErrorBeaconResponse(id, version, destination, errorType, null)
 
     public companion object {
@@ -178,7 +178,7 @@ public data class DisconnectV2BeaconMessage(
     @Required
     override val type: String = TYPE
 
-    override suspend fun toBeaconMessage(origin: Origin, destination: Origin, beaconScope: BeaconScope): BeaconMessage =
+    override suspend fun toBeaconMessage(origin: Connection.Id, destination: Connection.Id, beaconScope: BeaconScope): BeaconMessage =
         DisconnectBeaconMessage(id, senderId, version, origin, destination)
 
     public companion object {
