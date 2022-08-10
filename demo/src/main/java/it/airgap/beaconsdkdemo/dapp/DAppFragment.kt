@@ -39,9 +39,9 @@ class DAppFragment : Fragment(R.layout.fragment_dapp) {
         with (state) {
             clearResponseButton.isEnabled = hasAwaitingResponses
 
-            pairButton.isEnabled = !hasActiveAccount
-            resetButton.isEnabled = hasActiveAccount
-            requestPermissionButton.isEnabled = hasActiveAccount
+            pairButton.isEnabled = activeAccount == null
+            resetButton.isEnabled = activeAccount != null
+            requestPermissionButton.isEnabled = pairingRequest != null || activeAccount != null
 
             pairingRequestTextView.text = pairingRequest
 
@@ -57,13 +57,13 @@ class DAppFragment : Fragment(R.layout.fragment_dapp) {
         exception.printStackTrace()
         Toast.makeText(
             requireContext(),
-            "MockError: ${exception.message ?: "unknown"}",
+            "Error: ${exception.message ?: "unknown"}",
             Toast.LENGTH_SHORT
         ).show()
     }
 
     data class State(
-        val hasActiveAccount: Boolean = false,
+        val activeAccount: String? = null,
         val pairingRequest: String? = null,
         val hasAwaitingResponses: Boolean = false,
     )

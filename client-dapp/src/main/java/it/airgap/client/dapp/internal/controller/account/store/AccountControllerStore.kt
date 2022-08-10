@@ -50,6 +50,8 @@ public class AccountControllerStore(private val storageManager: StorageManager) 
 
     private suspend fun onNewActiveAccount(action: OnNewActiveAccount): Result<AccountControllerStoreState> =
         withState { state ->
+            storageManager.setActiveAccount(action.account)
+
             val peer = if (action.account.peerId != state.activePeer?.publicKey) {
                 storageManager.findPeer { it.publicKey == action.account.peerId }
             } else state.activePeer
@@ -59,7 +61,6 @@ public class AccountControllerStore(private val storageManager: StorageManager) 
             state.copy(
                 activeAccount = action.account,
                 activePeer = activePeer,
-                defaultDestination = activePeer?.toOrigin()
             )
         }
 
@@ -73,7 +74,6 @@ public class AccountControllerStore(private val storageManager: StorageManager) 
             state.copy(
                 activeAccount = null,
                 activePeer = null,
-                defaultDestination = null
             ).also {
                 storageManager.removeActiveAccount()
                 storageManager.removeActivePeer()
@@ -108,17 +108,11 @@ public class AccountControllerStore(private val storageManager: StorageManager) 
             AccountControllerStoreState(
                 activeAccount = activeAccount,
                 activePeer = activePeer,
-                defaultDestination = activePeer?.toOrigin(),
             )
         }
 
     private suspend fun StorageManager.getActivePeer(default: String?): String? =
         getActivePeer()?.takeIf { it == default } ?: default?.also { setActivePeer(it) }
-
-    private fun Peer.toOrigin(): Origin =
-        when (this) {
-            is P2pPeer -> Origin.P2P(publicKey)
-        }
 
     public companion object {}
 }

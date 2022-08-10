@@ -60,7 +60,7 @@ class WalletFragment : Fragment(R.layout.fragment_wallet) {
         exception.printStackTrace()
         Toast.makeText(
             requireContext(),
-            "MockError: ${exception.message ?: "unknown"}",
+            "Error: ${exception.message ?: "unknown"}",
             Toast.LENGTH_SHORT
         ).show()
     }
@@ -68,7 +68,7 @@ class WalletFragment : Fragment(R.layout.fragment_wallet) {
     private fun getPairingRequest(): String? = pairingRequestTextInput.text
 
     companion object {
-        const val examplePairingRequest = "BSdNU2tFbwJ8StjGvM1HtntsTHpfNdJUi4xihNE1uV1PxWeosBvuGTt7XSrjD9LVLtfVVVtFhifp5qz9K5ZXLu4X29F6MbrD1HkCDZFEmcX7gGPN3gBqm1TRgJYzNTVxpCELvctFmH5t3gACThRSqdXo2uejNfoZTJH5MeiT4KPunBWTW7ojt4mivNoEBZKmDEG2z65ZNbtkXyHQkf4uPQjqUEdBP4nMZHkZPY4uwdJFCpZVEzaJBYZYEMLNewdV9DSrEHYQ3bDA1UP1nqCiho8bKFK2nGGKjkpBshq7NjmXJwSU4AhSvNvoQ79Hgbsf414eWxbw"
+        const val examplePairingRequest = "3NDKTWt2x3EtVcnJKaRB6AxYiAPFTs5CK6UkN8STFYCvu4GzwRMZ2Yi3p8BKGpsPQTP2NpTWUHrXcLFVpgKkyALSr8pZQMJRWRRm1Qd3QNNmFXFuNmjC9UwZ6ienHsHFZ6bv789cka1EnwThoUEuReu4pbMKb3AxcVFt5MqCcxi1TWZMCgtLumarEykMVgg6sTGzvzCXP6H1zu1MSrFpEUCHE1hV9oRGtm45anHZUZiqpYFYg1fZPhtw6SmUzqLbsMHTaGBYCNuP2Vg6nsTZMaeAvsfurcN6y23542FrpJ2Uj7ejRc5a8fG1AvyzMSFamuREeom"
     }
 
     private var TextInputLayout.text: String?

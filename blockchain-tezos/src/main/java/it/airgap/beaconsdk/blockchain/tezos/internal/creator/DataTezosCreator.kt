@@ -27,8 +27,8 @@ internal class DataTezosCreator(
             if (request !is PermissionTezosRequest) failWithUnknownMessage(request)
             if (response !is PermissionTezosResponse) failWithUnknownMessage(response)
 
-            val peer = storageManager.findPeer { it.publicKey == request.origin.id } ?: failWithAppMetadataNotFound()
-            val senderId = identifierCreator.senderId(request.origin.id.asHexString().toByteArray()).getOrThrow()
+            val peer = storageManager.findPeer { it.publicKey == request.destination?.id } ?: failWithAppMetadataNotFound()
+            val senderId = identifierCreator.senderId(response.id.asHexString().toByteArray()).getOrThrow()
             val appMetadata = TezosAppMetadata(senderId, peer.name, peer.icon)
 
             listOf(
@@ -51,7 +51,7 @@ internal class DataTezosCreator(
             if (response !is PermissionTezosResponse) failWithUnknownMessage(response)
 
             val appMetadata = storageManager.findAppMetadata<TezosAppMetadata> { it.senderId == request.senderId } ?: failWithAppMetadataNotFound()
-            val senderId = identifierCreator.senderId(response.destination.id.asHexString().toByteArray()).getOrThrow()
+            val senderId = identifierCreator.senderId(request.origin.id.asHexString().toByteArray()).getOrThrow()
 
             listOf(
                 TezosPermission(

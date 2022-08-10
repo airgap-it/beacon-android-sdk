@@ -20,6 +20,7 @@ import it.airgap.beaconsdk.core.storage.findPeer
 import it.airgap.beaconsdk.core.transport.data.*
 import it.airgap.beaconsdk.core.transport.p2p.P2pClient
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 
 @OptIn(FlowPreview::class)
@@ -35,7 +36,9 @@ internal class P2pTransport(
             .filterIsInstance<P2pPeer>()
             .onEach { onUpdatedP2pPeer(it) }
             .filterNot { it.isRemoved || client.isSubscribed(it) }
-            .mapNotNull { client.subscribeTo(it) }
+            .mapNotNull {
+                client.subscribeTo(it)
+            }
             .flattenMerge()
             .map { IncomingConnectionMessage.fromResult(it) }
     }

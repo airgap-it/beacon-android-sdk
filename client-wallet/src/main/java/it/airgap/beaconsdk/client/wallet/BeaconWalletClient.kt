@@ -166,54 +166,6 @@ public class BeaconWalletClient @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) cons
         storageManager.removeAppMetadata()
     }
 
-    /**
-     * Returns a list of granted permissions.
-     */
-    public suspend fun getPermissions(): List<Permission> =
-        storageManager.getPermissions()
-
-    /**
-     * Returns the first permission granted for the specified [accountIdentifier]
-     * or `null` if no such permission was found.
-     */
-    public suspend fun getPermissionsFor(accountIdentifier: String): Permission? =
-        storageManager.findPermission { it.accountId == accountIdentifier }
-
-    /**
-     * Removes permissions granted for the specified [accountIdentifiers].
-     */
-    public suspend fun removePermissionsFor(vararg accountIdentifiers: String) {
-        storageManager.removePermissions { accountIdentifiers.contains(it.accountId) }
-    }
-
-    /**
-     * Removes permissions granted for the specified [accountIdentifiers].
-     */
-    public suspend fun removePermissionsFor(accountIdentifiers: List<String>) {
-        storageManager.removePermissions { accountIdentifiers.contains(it.accountId) }
-    }
-
-    /**
-     * Removes the specified [permissions].
-     */
-    public suspend fun removePermissions(vararg permissions: Permission) {
-        removePermissions(permissions.toList())
-    }
-
-    /**
-     * Removes the specified [permissions].
-     */
-    public suspend fun removePermissions(permissions: List<Permission>) {
-        storageManager.removePermissions(permissions)
-    }
-
-    /**
-     * Removes all granted permissions.
-     */
-    public suspend fun removeAllPermissions() {
-        storageManager.removePermissions()
-    }
-
     protected override suspend fun processMessage(origin: Origin, message: BeaconMessage): Result<Unit> =
         when (message) {
             is BeaconRequest -> acknowledge(message)

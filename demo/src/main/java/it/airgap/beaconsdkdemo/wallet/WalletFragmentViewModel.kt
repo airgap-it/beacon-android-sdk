@@ -24,6 +24,9 @@ import it.airgap.beaconsdk.core.message.BeaconMessage
 import it.airgap.beaconsdk.core.message.BeaconRequest
 import it.airgap.beaconsdk.core.message.ErrorBeaconResponse
 import it.airgap.beaconsdk.transport.p2p.matrix.p2pMatrix
+import it.airgap.beaconsdkdemo.dapp.DAppFragment
+import it.airgap.beaconsdkdemo.utils.setValue
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -55,7 +58,7 @@ class WalletFragmentViewModel : ViewModel() {
         val request = awaitingRequest ?: return
         val beaconClient = beaconClient ?: return
 
-        viewModelScope.launch {
+        viewModelScope.launch(Job()) {
             val response = when (request) {
 
                 /* Tezos */
@@ -72,20 +75,20 @@ class WalletFragmentViewModel : ViewModel() {
                 /* Others */
                 else -> ErrorBeaconResponse.from(request, BeaconError.Unknown)
             }
-            beaconClient?.respond(response)
+            beaconClient.respond(response)
             removeAwaitingRequest()
         }
     }
 
     fun pair(pairingRequest: String) {
-        viewModelScope.launch {
+        viewModelScope.launch(Job()) {
             beaconClient?.pair(pairingRequest)
             checkForPeers()
         }
     }
 
     fun removePeers() {
-        viewModelScope.launch {
+        viewModelScope.launch(Job()) {
             beaconClient?.removeAllPeers()
             checkForPeers()
         }
@@ -93,14 +96,11 @@ class WalletFragmentViewModel : ViewModel() {
 
     private suspend fun checkForPeers() {
         val peers = beaconClient?.getPeers()
-
-        val state = _state.value ?: WalletFragment.State()
-        _state.postValue(state.copy(hasPeers = peers?.isNotEmpty() ?: false))
+        _state.setValue { copy(hasPeers = peers?.isNotEmpty() ?: false) }
     }
 
     private fun checkForAwaitingRequest() {
-        val state = _state.value ?: WalletFragment.State()
-        _state.postValue(state.copy(hasAwaitingRequest = awaitingRequest != null))
+        _state.setValue { copy(hasAwaitingRequest = awaitingRequest != null) }
     }
 
     private fun saveAwaitingRequest(message: BeaconMessage) {
@@ -111,6 +111,10 @@ class WalletFragmentViewModel : ViewModel() {
     private fun removeAwaitingRequest() {
         awaitingRequest = null
         checkForAwaitingRequest()
+    }
+
+    private fun MutableLiveData<WalletFragment.State>.setValue(update: WalletFragment.State.() -> WalletFragment.State) {
+        setValue(WalletFragment.State(), update)
     }
 
     companion object {

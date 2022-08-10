@@ -143,7 +143,7 @@ public data class P2pPairingRequest(
     @EncodeDefault
     override val type: String = TYPE
 
-    override fun toPeer(): Peer = P2pPeer(id, name, publicKey, relayServer, version, icon, appUrl)
+    override fun toPeer(): Peer = P2pPeer(id = id, name = name, version = version, publicKey = publicKey, relayServer = relayServer, icon = icon, appUrl = appUrl)
 
     public companion object {
         public const val TYPE: String = "p2p-pairing-${PairingRequest.TYPE_SUFFIX}"
@@ -165,7 +165,7 @@ public data class P2pPairingResponse(
     @EncodeDefault
     override val type: String = TYPE
 
-    override fun toPeer(): Peer = P2pPeer(id, name, version, publicKey, relayServer, icon, appUrl, isPaired = true)
+    override fun toPeer(): Peer = P2pPeer(id = id, name = name, publicKey = publicKey, relayServer = relayServer, version = version, icon = icon, appUrl = appUrl, isPaired = true)
 
     public companion object {
         public const val TYPE: String = "p2p-pairing-${PairingResponse.TYPE_SUFFIX}"

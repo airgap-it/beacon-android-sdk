@@ -9,16 +9,16 @@ import it.airgap.beaconsdk.core.internal.utils.delegate.lazyWeak
 import it.airgap.client.dapp.BeaconDAppClient
 import it.airgap.client.dapp.internal.controller.account.AccountController
 import it.airgap.client.dapp.internal.controller.account.store.AccountControllerStore
-import it.airgap.client.dapp.storage.DAppClientStorage
+import it.airgap.client.dapp.internal.storage.plugin.DAppClientStoragePlugin
 
 internal class DAppClientDependencyRegistry(dependencyRegistry: DependencyRegistry) : ExtendedDependencyRegistry, DependencyRegistry by dependencyRegistry {
 
     // -- client --
 
     private var dAppClient: BeaconDAppClient? = null
-    override fun dAppClient(storage: DAppClientStorage, connections: List<Connection>, configuration: BeaconConfiguration): BeaconDAppClient {
+    override fun dAppClient(plugin: DAppClientStoragePlugin, connections: List<Connection>, configuration: BeaconConfiguration): BeaconDAppClient {
         with(storageManager) {
-            if (!hasPlugin<DAppClientStorage>()) addPlugins(storage.scoped(beaconScope).extend(configuration))
+            if (!hasPlugin<DAppClientStoragePlugin>()) addPlugins(plugin.scoped(beaconScope).extend(configuration))
         }
 
         return dAppClient ?: BeaconDAppClient(

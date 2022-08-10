@@ -31,7 +31,8 @@ import it.airgap.client.dapp.internal.di.extend
 import it.airgap.client.dapp.internal.storage.sharedpreferences.SharedPreferencesDAppClientStorage
 import it.airgap.client.dapp.storage.DAppClientStorage
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.takeWhile
 
 public class BeaconDAppClient @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) constructor(
     app: BeaconApplication,
@@ -70,20 +71,19 @@ public class BeaconDAppClient @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) constr
     override suspend fun pair(connectionType: Connection.Type): PairingRequest {
         val pairingRequestDeferred = CompletableDeferred<Result<PairingRequest>>()
 
-        CoroutineScope(CoroutineName("collectPairingMessages")).launch {
+        CoroutineScope(CoroutineName("collectPairingMessages") + Dispatchers.Default).launch {
             connectionController.pair(connectionType)
-                .takeWhile { it.isFailure || it.getOrNull() !is PairingResponse }
-                .collect { result ->
-                    try {
-                        when (val message = result.getOrThrow()) {
-                            is PairingRequest -> pairingRequestDeferred.complete(Result.success(message))
-                            is PairingResponse -> accountController.onPairingResponse(message)
-                        }
-                    } catch (e: Exception) {
-                        if (!pairingRequestDeferred.isCompleted) pairingRequestDeferred.complete(Result.failure(e))
-                        else { /* TODO: emit an error event */ }
+                .onEachSuccess {
+                    when (it) {
+                        is PairingRequest -> pairingRequestDeferred.complete(Result.success(it))
+                        is PairingResponse -> accountController.onPairingResponse(it)
                     }
                 }
+                .onEachFailure {
+                    if (!pairingRequestDeferred.isCompleted) pairingRequestDeferred.complete(Result.failure(it))
+                }
+                .takeWhile { it.isFailure || it.getOrNull() !is PairingResponse }
+                .collect()
         }
 
         return pairingRequestDeferred.await().getOrThrow()

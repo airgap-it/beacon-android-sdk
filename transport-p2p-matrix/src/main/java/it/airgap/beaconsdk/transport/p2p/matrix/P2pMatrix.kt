@@ -128,6 +128,7 @@ public class P2pMatrix internal constructor(
         matrixMessageEvents
             .filter { communicator.recognizeChannelOpeningMessage(it.message) }
             .map { communicator.destructChannelOpeningMessage(it.message) }
+            .map { security.decryptPairingPayload(it) }
             .map { communicator.pairingResponseFromPayload(it) }
     }
 
@@ -174,7 +175,7 @@ public class P2pMatrix internal constructor(
                 start(relayServer, id, password, deviceId).onFailure { this@P2pMatrix.resetHard() }
             }.getOrThrow()
 
-            CoroutineScope(CoroutineName("collectInviteEvents")).launch {
+            CoroutineScope(CoroutineName("collectInviteEvents") + Dispatchers.Default).launch {
                 matrixInviteEvents
                     .distinctUntilChangedBy { it.roomId }
                     .collect {
@@ -266,11 +267,6 @@ public class P2pMatrix internal constructor(
             }
         }
 
-    private suspend fun MatrixRoom.isActive(recipient: String): Boolean {
-        val activeChannels = store.state().getOrNull()?.activeChannels ?: return false
-        return activeChannels[recipient] == id
-    }
-
     private suspend fun MatrixRoom.isActive(): Boolean = !isInactive()
     private suspend fun MatrixRoom.isInactive(): Boolean {
         val inactiveChannels = store.state().getOrNull()?.inactiveChannels ?: return false
@@ -284,8 +280,11 @@ public class P2pMatrix internal constructor(
         logDebug(TAG, "$member joined room $id")
     }
 
-    private fun P2pMatrixCommunicator.pairingResponseFromPayload(recipientAndPayload: Result<Pair<String, String>>): Result<P2pPairingResponse> =
-        recipientAndPayload.map { pairingResponseFromPayload(it.second) }
+    private fun P2pMatrixSecurity.decryptPairingPayload(recipientAndPayload: Result<Pair<String, String>>): Result<String> =
+        recipientAndPayload.flatMap { decryptPairingPayload(it.second.asHexString().toByteArray()) }
+
+    private fun P2pMatrixCommunicator.pairingResponseFromPayload(payload: Result<String>): Result<P2pPairingResponse> =
+        payload.map { pairingResponseFromPayload(it) }
 
     private fun <V> MutableMap<HexString, MutableSet<V>>.addTo(key: ByteArray, value: V) {
         getOrPut(key.toHexString()) { mutableSetOf() }.add(value)

@@ -54,7 +54,7 @@ public class MessageController internal constructor(
     }
 
     private suspend fun onIncomingResponse(response: BeaconResponse) {
-        val request = outgoingRequests.get(response.id, remove = true) ?: failWithNoPendingRequest()
+        val request = outgoingRequests.get(response.id, remove = response.isTerminal) ?: failWithNoPendingRequest()
         when (response) {
             is PermissionBeaconResponse -> onIncomingPermissionResponse(response, request)
             else -> { /* no action */ }
@@ -69,6 +69,12 @@ public class MessageController internal constructor(
 
         storageManager.addPermissions(permissions) // TODO: replace if accountId & senderId are the same
     }
+
+    private val BeaconResponse.isTerminal: Boolean
+        get() = when (this) {
+            is AcknowledgeBeaconResponse -> false
+            else -> true
+        }
 
     // -- on outgoing --
 

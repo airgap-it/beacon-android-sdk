@@ -7,7 +7,9 @@ import it.airgap.beaconsdk.blockchain.tezos.tezos
 import it.airgap.beaconsdk.core.message.BeaconMessage
 import it.airgap.beaconsdk.core.message.BeaconResponse
 import it.airgap.beaconsdk.transport.p2p.matrix.p2pMatrix
+import it.airgap.beaconsdkdemo.utils.setValue
 import it.airgap.client.dapp.BeaconDAppClient
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
@@ -30,24 +32,26 @@ class DAppFragmentViewModel : ViewModel() {
         checkForActiveAccount()
 
         beaconClient?.connect()
-            ?.onEach { result -> result.getOrNull()?.let { saveAwaitingResponse(it) } }
+            ?.onEach { result -> result.getOrNull()?.let {
+                saveAwaitingResponse(it)
+                checkForActiveAccount()
+            } }
             ?.collect { emit(it) }
     }
 
     fun pair() {
-        viewModelScope.launch {
+        viewModelScope.launch(Job()) {
             val beaconClient = beaconClient ?: return@launch
 
             val pairingRequest = beaconClient.pair()
             val serializerPairingRequest = beaconClient.serializePairingData(pairingRequest)
 
-            val state = _state.value ?: DAppFragment.State()
-            _state.postValue(state.copy(pairingRequest = serializerPairingRequest))
+            _state.setValue { copy(pairingRequest = serializerPairingRequest) }
         }
     }
 
     fun requestPermission() {
-        viewModelScope.launch {
+        viewModelScope.launch(Job()) {
             beaconClient?.requestTezosPermission()
         }
     }
@@ -58,25 +62,27 @@ class DAppFragmentViewModel : ViewModel() {
     }
 
     fun reset() {
-        viewModelScope.launch {
+        viewModelScope.launch(Job()) {
             beaconClient?.reset()
+            checkForActiveAccount()
         }
     }
 
     private suspend fun checkForActiveAccount() {
         val activeAccount = beaconClient?.getActiveAccount()
-
-        val state = _state.value ?: DAppFragment.State()
-        _state.postValue(state.copy(hasActiveAccount = activeAccount != null))
+        _state.setValue { copy(activeAccount = activeAccount) }
     }
 
     private fun checkForAwaitingResponses() {
-        val state = _state.value ?: DAppFragment.State()
-        _state.postValue(state.copy(hasAwaitingResponses = awaitingResponse != null))
+        _state.setValue { copy(hasAwaitingResponses = awaitingResponse != null) }
     }
 
     private fun saveAwaitingResponse(message: BeaconMessage) {
         awaitingResponse = if (message is BeaconResponse) message else null
         checkForAwaitingResponses()
+    }
+
+    private fun MutableLiveData<DAppFragment.State>.setValue(update: DAppFragment.State.() -> DAppFragment.State) {
+        setValue(DAppFragment.State(), update)
     }
 }

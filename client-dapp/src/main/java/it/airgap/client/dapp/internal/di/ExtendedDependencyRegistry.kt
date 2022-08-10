@@ -7,13 +7,13 @@ import it.airgap.beaconsdk.core.internal.di.findExtended
 import it.airgap.client.dapp.BeaconDAppClient
 import it.airgap.client.dapp.internal.controller.account.AccountController
 import it.airgap.client.dapp.internal.controller.account.store.AccountControllerStore
-import it.airgap.client.dapp.storage.DAppClientStorage
+import it.airgap.client.dapp.internal.storage.plugin.DAppClientStoragePlugin
 
 internal interface ExtendedDependencyRegistry : DependencyRegistry {
 
     // -- client --
 
-    fun dAppClient(storage: DAppClientStorage, connections: List<Connection>, configuration: BeaconConfiguration): BeaconDAppClient
+    fun dAppClient(plugin: DAppClientStoragePlugin, connections: List<Connection>, configuration: BeaconConfiguration): BeaconDAppClient
 
     // -- controller --
 

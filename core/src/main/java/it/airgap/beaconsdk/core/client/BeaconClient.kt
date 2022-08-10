@@ -2,6 +2,7 @@ package it.airgap.beaconsdk.core.client
 
 import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.data.Peer
+import it.airgap.beaconsdk.core.data.Permission
 import it.airgap.beaconsdk.core.exception.BeaconException
 import it.airgap.beaconsdk.core.exception.BlockchainNotFoundException
 import it.airgap.beaconsdk.core.internal.BeaconConfiguration
@@ -107,6 +108,54 @@ public abstract class BeaconClient<BM : BeaconMessage>(
         val peers = storageManager.getPeers()
         storageManager.removePeers()
         peers.launchForEach { disconnect(it) }
+    }
+
+    /**
+     * Returns a list of granted permissions.
+     */
+    public suspend fun getPermissions(): List<Permission> =
+        storageManager.getPermissions()
+
+    /**
+     * Returns the first permission granted for the specified [accountIdentifier]
+     * or `null` if no such permission was found.
+     */
+    public suspend fun getPermissionsFor(accountIdentifier: String): Permission? =
+        storageManager.findPermission { it.accountId == accountIdentifier }
+
+    /**
+     * Removes permissions granted for the specified [accountIdentifiers].
+     */
+    public suspend fun removePermissionsFor(vararg accountIdentifiers: String) {
+        storageManager.removePermissions { accountIdentifiers.contains(it.accountId) }
+    }
+
+    /**
+     * Removes permissions granted for the specified [accountIdentifiers].
+     */
+    public suspend fun removePermissionsFor(accountIdentifiers: List<String>) {
+        storageManager.removePermissions { accountIdentifiers.contains(it.accountId) }
+    }
+
+    /**
+     * Removes the specified [permissions].
+     */
+    public suspend fun removePermissions(vararg permissions: Permission) {
+        removePermissions(permissions.toList())
+    }
+
+    /**
+     * Removes the specified [permissions].
+     */
+    public suspend fun removePermissions(permissions: List<Permission>) {
+        storageManager.removePermissions(permissions)
+    }
+
+    /**
+     * Removes all granted permissions.
+     */
+    public suspend fun removeAllPermissions() {
+        storageManager.removePermissions()
     }
 
     public fun serializePairingData(pairingMessage: PairingMessage): String =

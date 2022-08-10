@@ -3,11 +3,9 @@ package it.airgap.client.dapp.storage
 import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.scope.BeaconScope
 import it.airgap.beaconsdk.core.storage.ExtendedStorage
+import it.airgap.client.dapp.internal.storage.plugin.ExtendedDAppClientStoragePlugin
 
-public interface ExtendedDAppClientStorage : DAppClientStorage, ExtendedStorage {
-    public suspend fun removeActiveAccount()
-    public suspend fun removeActivePeer()
-
+public interface ExtendedDAppClientStorage : ExtendedStorage, ExtendedDAppClientStoragePlugin {
     override fun scoped(beaconScope: BeaconScope): ExtendedDAppClientStorage
     override fun extend(beaconConfiguration: BeaconConfiguration): ExtendedDAppClientStorage = this
 }

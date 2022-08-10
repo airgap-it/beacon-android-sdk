@@ -24,7 +24,8 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        bottomNavigationView.selectedItemId = R.id.wallet
+//        bottomNavigationView.selectedItemId = R.id.wallet
+        bottomNavigationView.selectedItemId = R.id.dapp
     }
 
     private fun changeFragment(fragment: Fragment): Boolean {

@@ -9,5 +9,4 @@ import it.airgap.beaconsdk.core.data.Peer
 public data class AccountControllerStoreState(
     val activeAccount: Account?,
     val activePeer: Peer?,
-    val defaultDestination: Origin?,
 )
