@@ -2,6 +2,7 @@ package it.airgap.beaconsdk.core.internal.blockchain
 
 import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.blockchain.Blockchain
+import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.data.MockPermission
 import it.airgap.beaconsdk.core.data.Permission
 import it.airgap.beaconsdk.core.internal.blockchain.creator.DataBlockchainCreator
@@ -26,13 +27,14 @@ public class MockBlockchainCreator : Blockchain.Creator {
     override val data: DataBlockchainCreator = object : DataBlockchainCreator {
         override suspend fun extractIncomingPermission(
             request: PermissionBeaconRequest,
-            response: PermissionBeaconResponse
+            response: PermissionBeaconResponse,
+            origin: Connection.Id,
         ): Result<List<Permission>> = runCatching {
             listOf(
                 MockPermission(
                     response.blockchainIdentifier,
                     "accountId",
-                    response.destination.id,
+                    origin.id,
                     currentTimestamp(),
                     if (response is PermissionMockResponse) response.rest else emptyMap(),
                 )
