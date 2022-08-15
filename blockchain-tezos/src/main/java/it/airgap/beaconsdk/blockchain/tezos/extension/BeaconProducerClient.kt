@@ -1,4 +1,4 @@
-package it.airgap.beaconsdk.blockchain.tezos.client
+package it.airgap.beaconsdk.blockchain.tezos.extension
 
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosAppMetadata
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosNetwork

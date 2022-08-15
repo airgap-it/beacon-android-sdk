@@ -2,7 +2,7 @@ package it.airgap.beaconsdkdemo.dapp
 
 import androidx.lifecycle.*
 import it.airgap.beaconsdk.blockchain.substrate.substrate
-import it.airgap.beaconsdk.blockchain.tezos.client.requestTezosPermission
+import it.airgap.beaconsdk.blockchain.tezos.extension.requestTezosPermission
 import it.airgap.beaconsdk.blockchain.tezos.tezos
 import it.airgap.beaconsdk.core.message.BeaconMessage
 import it.airgap.beaconsdk.core.message.BeaconResponse

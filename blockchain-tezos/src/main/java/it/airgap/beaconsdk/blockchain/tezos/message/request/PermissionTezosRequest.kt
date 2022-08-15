@@ -2,7 +2,7 @@ package it.airgap.beaconsdk.blockchain.tezos.message.request
 
 import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.blockchain.tezos.Tezos
-import it.airgap.beaconsdk.blockchain.tezos.client.ownAppMetadata
+import it.airgap.beaconsdk.blockchain.tezos.extension.ownAppMetadata
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosAppMetadata
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosNetwork
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
