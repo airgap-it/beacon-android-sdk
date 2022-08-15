@@ -45,7 +45,7 @@ To add `Beacon Android SDK` into your project:
   #### Groovy
   ```groovy
   dependencies {
-    def beacon_version = "3.1.0"
+    def beacon_version = "3.2.0"
 
     // REQUIRED, core
     implementation "com.github.airgap-it.beacon-android-sdk:core:$beacon_version"
@@ -76,7 +76,7 @@ To add `Beacon Android SDK` into your project:
   #### Kotlin
   ```kotlin
   dependencies {
-    val beaconVersion = "3.1.0"
+    val beaconVersion = "3.2.0"
   
     // REQUIRED, core
     implementation("com.github.airgap-it.beacon-android-sdk:core:$beaconVersion")
