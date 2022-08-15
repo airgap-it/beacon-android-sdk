@@ -4,11 +4,11 @@ import androidx.lifecycle.*
 import it.airgap.beaconsdk.blockchain.substrate.substrate
 import it.airgap.beaconsdk.blockchain.tezos.extension.requestTezosPermission
 import it.airgap.beaconsdk.blockchain.tezos.tezos
+import it.airgap.beaconsdk.client.dapp.BeaconDAppClient
 import it.airgap.beaconsdk.core.message.BeaconMessage
 import it.airgap.beaconsdk.core.message.BeaconResponse
 import it.airgap.beaconsdk.transport.p2p.matrix.p2pMatrix
 import it.airgap.beaconsdkdemo.utils.setValue
-import it.airgap.client.dapp.BeaconDAppClient
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
