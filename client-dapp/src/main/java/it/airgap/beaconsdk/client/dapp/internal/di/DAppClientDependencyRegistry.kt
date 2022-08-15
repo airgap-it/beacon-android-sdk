@@ -16,9 +16,9 @@ internal class DAppClientDependencyRegistry(dependencyRegistry: DependencyRegist
     // -- client --
 
     private var dAppClient: BeaconDAppClient? = null
-    override fun dAppClient(plugin: DAppClientStoragePlugin, connections: List<Connection>, configuration: BeaconConfiguration): BeaconDAppClient {
+    override fun dAppClient(storagePlugin: DAppClientStoragePlugin, connections: List<Connection>, configuration: BeaconConfiguration): BeaconDAppClient {
         with(storageManager) {
-            if (!hasPlugin<DAppClientStoragePlugin>()) addPlugins(plugin.scoped(beaconScope).extend(configuration))
+            if (!hasPlugin<DAppClientStoragePlugin>()) addPlugins(storagePlugin.scoped(beaconScope).extend(configuration))
         }
 
         return dAppClient ?: BeaconDAppClient(

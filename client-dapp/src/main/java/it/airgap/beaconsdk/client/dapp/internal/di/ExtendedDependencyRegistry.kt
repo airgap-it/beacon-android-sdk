@@ -13,7 +13,7 @@ internal interface ExtendedDependencyRegistry : DependencyRegistry {
 
     // -- client --
 
-    fun dAppClient(plugin: DAppClientStoragePlugin, connections: List<Connection>, configuration: BeaconConfiguration): BeaconDAppClient
+    fun dAppClient(storagePlugin: DAppClientStoragePlugin, connections: List<Connection>, configuration: BeaconConfiguration): BeaconDAppClient
 
     // -- controller --
 
