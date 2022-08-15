@@ -6,8 +6,8 @@ import it.airgap.beaconsdk.core.data.Permission
 import it.airgap.beaconsdk.core.exception.BeaconException
 import it.airgap.beaconsdk.core.exception.BlockchainNotFoundException
 import it.airgap.beaconsdk.core.internal.BeaconConfiguration
-import it.airgap.beaconsdk.core.internal.controller.ConnectionController
-import it.airgap.beaconsdk.core.internal.controller.MessageController
+import it.airgap.beaconsdk.core.internal.controller.connection.ConnectionController
+import it.airgap.beaconsdk.core.internal.controller.message.MessageController
 import it.airgap.beaconsdk.core.internal.crypto.Crypto
 import it.airgap.beaconsdk.core.internal.data.BeaconApplication
 import it.airgap.beaconsdk.core.internal.message.BeaconOutgoingConnectionMessage

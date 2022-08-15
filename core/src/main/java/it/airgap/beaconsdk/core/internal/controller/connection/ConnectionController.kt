@@ -1,4 +1,4 @@
-package it.airgap.beaconsdk.core.internal.controller
+package it.airgap.beaconsdk.core.internal.controller.connection
 
 import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.data.Connection
@@ -49,12 +49,6 @@ public class ConnectionController internal constructor(private val transports: L
         runCatchingFlat {
             val transport = transports.firstOrNull { it.supportsPairing(request) } ?: failWithTransportNotSupported()
             return transport.pair(request)
-        }
-
-    public suspend fun pair(request: String): Result<PairingResponse> =
-        runCatchingFlat {
-            val pairingRequest = serializer.deserialize<PairingRequest>(request).getOrThrow()
-            pair(pairingRequest)
         }
 
     private fun BeaconIncomingConnectionMessage.Companion.fromResult(

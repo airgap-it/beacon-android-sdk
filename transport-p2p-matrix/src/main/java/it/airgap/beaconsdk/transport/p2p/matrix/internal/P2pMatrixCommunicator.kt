@@ -53,7 +53,7 @@ internal class P2pMatrixCommunicator(private val app: BeaconApplication, private
             )
         }
 
-    fun pairingResponse(request: PairingRequest, relayServer: String): P2pPairingResponse =
+    fun pairingResponse(request: P2pPairingRequest, relayServer: String): P2pPairingResponse =
         P2pPairingResponse(
             id = request.id,
             name = app.name,

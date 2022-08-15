@@ -11,8 +11,8 @@ import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.data.Peer
 import it.airgap.beaconsdk.core.exception.BeaconException
 import it.airgap.beaconsdk.core.internal.BeaconConfiguration
-import it.airgap.beaconsdk.core.internal.controller.ConnectionController
-import it.airgap.beaconsdk.core.internal.controller.MessageController
+import it.airgap.beaconsdk.core.internal.controller.connection.ConnectionController
+import it.airgap.beaconsdk.core.internal.controller.message.MessageController
 import it.airgap.beaconsdk.core.internal.crypto.Crypto
 import it.airgap.beaconsdk.core.internal.data.BeaconApplication
 import it.airgap.beaconsdk.core.internal.serializer.Serializer
@@ -111,8 +111,10 @@ public class BeaconWalletClient @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) cons
     override suspend fun pair(request: PairingRequest): PairingResponse =
         connectionController.pair(request).getOrThrow()
 
-    override suspend fun pair(request: String): PairingResponse =
-        connectionController.pair(request).getOrThrow()
+    override suspend fun pair(request: String): PairingResponse {
+        val request = deserializePairingData<PairingRequest>(request)
+        return connectionController.pair(request).getOrThrow()
+    }
 
     /**
      * Returns a list of stored app metadata.

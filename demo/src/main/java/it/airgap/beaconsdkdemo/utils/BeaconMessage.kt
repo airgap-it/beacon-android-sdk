@@ -8,6 +8,7 @@ import it.airgap.beaconsdk.blockchain.substrate.message.response.*
 import it.airgap.beaconsdk.blockchain.tezos.message.request.*
 import it.airgap.beaconsdk.blockchain.tezos.message.response.*
 import it.airgap.beaconsdk.core.data.BeaconError
+import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.internal.utils.failWithIllegalArgument
 import it.airgap.beaconsdk.core.message.*
 import kotlinx.serialization.json.Json
@@ -90,7 +91,7 @@ fun DisconnectBeaconMessage.toJson(json: Json = Json.Default): JsonElement =
             "id" to json.encodeToJsonElement(id),
             "senderId" to json.encodeToJsonElement(senderId),
             "version" to json.encodeToJsonElement(version),
-            "origin" to json.encodeToJsonElement(origin),
+            "origin" to origin.toJson(json),
         )
     )
 
@@ -105,7 +106,7 @@ fun PermissionTezosRequest.toJson(json: Json = Json.Default): JsonElement =
             "blockchainIdentifier" to json.encodeToJsonElement(blockchainIdentifier),
             "senderId" to json.encodeToJsonElement(senderId),
             "appMetadata" to json.encodeToJsonElement(appMetadata),
-            "origin" to json.encodeToJsonElement(origin),
+            "origin" to origin.toJson(json),
             "network" to json.encodeToJsonElement(network),
             "scopes" to json.encodeToJsonElement(scopes),
         )
@@ -127,7 +128,7 @@ fun OperationTezosRequest.toJson(json: Json = Json.Default): JsonElement =
             "blockchainIdentifier" to json.encodeToJsonElement(blockchainIdentifier),
             "senderId" to json.encodeToJsonElement(senderId),
             "appMetadata" to json.encodeToJsonElement(appMetadata),
-            "origin" to json.encodeToJsonElement(origin),
+            "origin" to origin.toJson(json),
             "network" to json.encodeToJsonElement(network),
             "operationDetails" to json.encodeToJsonElement(operationDetails),
             "sourceAddress" to json.encodeToJsonElement(sourceAddress),
@@ -143,7 +144,7 @@ fun SignPayloadTezosRequest.toJson(json: Json = Json.Default): JsonElement =
             "blockchainIdentifier" to json.encodeToJsonElement(blockchainIdentifier),
             "senderId" to json.encodeToJsonElement(senderId),
             "appMetadata" to json.encodeToJsonElement(appMetadata),
-            "origin" to json.encodeToJsonElement(origin),
+            "origin" to origin.toJson(json),
             "signingType" to json.encodeToJsonElement(signingType),
             "payload" to json.encodeToJsonElement(payload),
             "sourceAddress" to json.encodeToJsonElement(sourceAddress),
@@ -159,7 +160,7 @@ fun BroadcastTezosRequest.toJson(json: Json = Json.Default): JsonElement =
             "blockchainIdentifier" to json.encodeToJsonElement(blockchainIdentifier),
             "senderId" to json.encodeToJsonElement(senderId),
             "appMetadata" to json.encodeToJsonElement(appMetadata),
-            "origin" to json.encodeToJsonElement(origin),
+            "origin" to origin.toJson(json),
             "network" to json.encodeToJsonElement(network),
             "signedTransaction" to json.encodeToJsonElement(signedTransaction),
         )
@@ -228,7 +229,7 @@ fun PermissionSubstrateRequest.toJson(json: Json = Json.Default): JsonElement =
             "version" to json.encodeToJsonElement(version),
             "blockchainIdentifier" to json.encodeToJsonElement(blockchainIdentifier),
             "senderId" to json.encodeToJsonElement(senderId),
-            "origin" to json.encodeToJsonElement(origin),
+            "origin" to origin.toJson(json),
             "appMetadata" to json.encodeToJsonElement(appMetadata),
             "scopes" to json.encodeToJsonElement(scopes),
             "networks" to json.encodeToJsonElement(networks),
@@ -264,7 +265,7 @@ fun TransferSubstrateRequest.Submit.toJson(json: Json = Json.Default): JsonEleme
             "blockchainIdentifier" to json.encodeToJsonElement(blockchainIdentifier),
             "senderId" to json.encodeToJsonElement(senderId),
             "appMetadata" to json.encodeToJsonElement(appMetadata),
-            "origin" to json.encodeToJsonElement(origin),
+            "origin" to origin.toJson(json),
             "accountId" to json.encodeToJsonElement(accountId),
             "scope" to json.encodeToJsonElement(scope),
             "sourceAddress" to json.encodeToJsonElement(sourceAddress),
@@ -283,7 +284,7 @@ fun TransferSubstrateRequest.SubmitAndReturn.toJson(json: Json = Json.Default): 
             "blockchainIdentifier" to json.encodeToJsonElement(blockchainIdentifier),
             "senderId" to json.encodeToJsonElement(senderId),
             "appMetadata" to json.encodeToJsonElement(appMetadata),
-            "origin" to json.encodeToJsonElement(origin),
+            "origin" to origin.toJson(json),
             "accountId" to json.encodeToJsonElement(accountId),
             "scope" to json.encodeToJsonElement(scope),
             "sourceAddress" to json.encodeToJsonElement(sourceAddress),
@@ -302,7 +303,7 @@ fun TransferSubstrateRequest.Return.toJson(json: Json = Json.Default): JsonEleme
             "blockchainIdentifier" to json.encodeToJsonElement(blockchainIdentifier),
             "senderId" to json.encodeToJsonElement(senderId),
             "appMetadata" to json.encodeToJsonElement(appMetadata),
-            "origin" to json.encodeToJsonElement(origin),
+            "origin" to origin.toJson(json),
             "accountId" to json.encodeToJsonElement(accountId),
             "scope" to json.encodeToJsonElement(scope),
             "sourceAddress" to json.encodeToJsonElement(sourceAddress),
@@ -321,7 +322,7 @@ fun SignPayloadSubstrateRequest.Submit.toJson(json: Json = Json.Default): JsonEl
             "blockchainIdentifier" to json.encodeToJsonElement(blockchainIdentifier),
             "senderId" to json.encodeToJsonElement(senderId),
             "appMetadata" to json.encodeToJsonElement(appMetadata),
-            "origin" to json.encodeToJsonElement(origin),
+            "origin" to origin.toJson(json),
             "accountId" to json.encodeToJsonElement(accountId),
             "scope" to json.encodeToJsonElement(scope),
             "address" to json.encodeToJsonElement(address),
@@ -338,7 +339,7 @@ fun SignPayloadSubstrateRequest.SubmitAndReturn.toJson(json: Json = Json.Default
             "blockchainIdentifier" to json.encodeToJsonElement(blockchainIdentifier),
             "senderId" to json.encodeToJsonElement(senderId),
             "appMetadata" to json.encodeToJsonElement(appMetadata),
-            "origin" to json.encodeToJsonElement(origin),
+            "origin" to origin.toJson(json),
             "accountId" to json.encodeToJsonElement(accountId),
             "scope" to json.encodeToJsonElement(scope),
             "address" to json.encodeToJsonElement(address),
@@ -355,7 +356,7 @@ fun SignPayloadSubstrateRequest.Return.toJson(json: Json = Json.Default): JsonEl
             "blockchainIdentifier" to json.encodeToJsonElement(blockchainIdentifier),
             "senderId" to json.encodeToJsonElement(senderId),
             "appMetadata" to json.encodeToJsonElement(appMetadata),
-            "origin" to json.encodeToJsonElement(origin),
+            "origin" to origin.toJson(json),
             "accountId" to json.encodeToJsonElement(accountId),
             "scope" to json.encodeToJsonElement(scope),
             "address" to json.encodeToJsonElement(address),
@@ -369,7 +370,7 @@ fun PermissionSubstrateResponse.toJson(json: Json = Json.Default): JsonElement =
             "type" to json.encodeToJsonElement("substrate_permission_response"),
             "id" to json.encodeToJsonElement(id),
             "version" to json.encodeToJsonElement(version),
-            "requestOrigin" to json.encodeToJsonElement(destination),
+            "destination" to destination.toJson(json),
             "blockchainIdentifier" to json.encodeToJsonElement(blockchainIdentifier),
             "appMetadata" to json.encodeToJsonElement(appMetadata),
             "scopes" to json.encodeToJsonElement(scopes),
@@ -403,7 +404,7 @@ fun TransferSubstrateResponse.Submit.toJson(json: Json = Json.Default): JsonElem
             "type" to json.encodeToJsonElement("substrate_transfer_broadcast_response"),
             "id" to json.encodeToJsonElement(id),
             "version" to json.encodeToJsonElement(version),
-            "requestOrigin" to json.encodeToJsonElement(destination),
+            "destination" to destination.toJson(json),
             "blockchainIdentifier" to json.encodeToJsonElement(blockchainIdentifier),
             "transactionHash" to json.encodeToJsonElement(transactionHash),
         )
@@ -415,7 +416,7 @@ fun TransferSubstrateResponse.SubmitAndReturn.toJson(json: Json = Json.Default):
             "type" to json.encodeToJsonElement("substrate_transfer_broadcast_and_return_response"),
             "id" to json.encodeToJsonElement(id),
             "version" to json.encodeToJsonElement(version),
-            "requestOrigin" to json.encodeToJsonElement(destination),
+            "destination" to destination.toJson(json),
             "blockchainIdentifier" to json.encodeToJsonElement(blockchainIdentifier),
             "transactionHash" to json.encodeToJsonElement(transactionHash),
             "signature" to json.encodeToJsonElement(signature),
@@ -429,7 +430,7 @@ fun TransferSubstrateResponse.Return.toJson(json: Json = Json.Default): JsonElem
             "type" to json.encodeToJsonElement("substrate_transfer_return_response"),
             "id" to json.encodeToJsonElement(id),
             "version" to json.encodeToJsonElement(version),
-            "requestOrigin" to json.encodeToJsonElement(destination),
+            "destination" to destination.toJson(json),
             "blockchainIdentifier" to json.encodeToJsonElement(blockchainIdentifier),
             "signature" to json.encodeToJsonElement(signature),
             "payload" to json.encodeToJsonElement(payload),
@@ -442,7 +443,7 @@ fun SignPayloadSubstrateResponse.Submit.toJson(json: Json = Json.Default): JsonE
             "type" to json.encodeToJsonElement("substrate_sign_payload_broadcast_response"),
             "id" to json.encodeToJsonElement(id),
             "version" to json.encodeToJsonElement(version),
-            "requestOrigin" to json.encodeToJsonElement(destination),
+            "destination" to destination.toJson(json),
             "blockchainIdentifier" to json.encodeToJsonElement(blockchainIdentifier),
             "transactionHash" to json.encodeToJsonElement(transactionHash),
         )
@@ -454,7 +455,7 @@ fun SignPayloadSubstrateResponse.SubmitAndReturn.toJson(json: Json = Json.Defaul
             "type" to json.encodeToJsonElement("substrate_sign_payload_broadcast_and_return_response"),
             "id" to json.encodeToJsonElement(id),
             "version" to json.encodeToJsonElement(version),
-            "requestOrigin" to json.encodeToJsonElement(destination),
+            "destination" to destination.toJson(json),
             "blockchainIdentifier" to json.encodeToJsonElement(blockchainIdentifier),
             "transactionHash" to json.encodeToJsonElement(transactionHash),
             "signature" to json.encodeToJsonElement(signature),
@@ -468,12 +469,25 @@ fun SignPayloadSubstrateResponse.Return.toJson(json: Json = Json.Default): JsonE
             "type" to json.encodeToJsonElement("substrate_sign_payload_return_response"),
             "id" to json.encodeToJsonElement(id),
             "version" to json.encodeToJsonElement(version),
-            "requestOrigin" to json.encodeToJsonElement(destination),
+            "destination" to destination.toJson(json),
             "blockchainIdentifier" to json.encodeToJsonElement(blockchainIdentifier),
             "signature" to json.encodeToJsonElement(signature),
             "payload" to json.encodeToJsonElement(payload),
         )
     )
+
+private fun Connection.Id.toJson(json: Json = Json.Default): JsonElement {
+    val type = when (this) {
+        is Connection.Id.P2P -> "p2p"
+    }
+    
+    return JsonObject(
+        mapOf(
+            "type" to json.encodeToJsonElement(type),
+            "id" to json.encodeToJsonElement(id),
+        )
+    )
+}
 
 private fun failWithUnknownPermissionBeaconRequest(request: PermissionBeaconRequest): Nothing =
     failWithIllegalArgument("Unknown Beacon permission request of type ${request::class}")

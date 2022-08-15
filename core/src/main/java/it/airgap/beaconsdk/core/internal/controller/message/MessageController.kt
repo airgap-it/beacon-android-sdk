@@ -1,4 +1,4 @@
-package it.airgap.beaconsdk.core.internal.controller
+package it.airgap.beaconsdk.core.internal.controller.message
 
 import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.data.Connection
@@ -67,7 +67,7 @@ public class MessageController internal constructor(
         val blockchain = blockchainRegistry.get(response.blockchainIdentifier)
         val permissions = blockchain.creator.data.extractIncomingPermission(request, response, origin).getOrThrow()
 
-        storageManager.addPermissions(permissions) // TODO: replace if accountId & senderId are the same
+        storageManager.addPermissions(permissions, overwrite = true) { listOf(accountId, senderId) }
     }
 
     private val BeaconResponse.isTerminal: Boolean
@@ -119,7 +119,7 @@ public class MessageController internal constructor(
         val blockchain = blockchainRegistry.get(response.blockchainIdentifier)
         val permissions = blockchain.creator.data.extractOutgoingPermission(request, response).getOrThrow()
 
-        storageManager.addPermissions(permissions) // TODO: replace if accountId & senderId are the same
+        storageManager.addPermissions(permissions, overwrite = true) { listOf(accountId, senderId) }
     }
 
     private fun failWithNoPendingRequest(): Nothing = failWithIllegalArgument("No matching request found")

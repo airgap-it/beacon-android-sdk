@@ -5,8 +5,8 @@ import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.internal.blockchain.BlockchainRegistry
 import it.airgap.beaconsdk.core.internal.compat.Compat
 import it.airgap.beaconsdk.core.internal.compat.VersionedCompat
-import it.airgap.beaconsdk.core.internal.controller.ConnectionController
-import it.airgap.beaconsdk.core.internal.controller.MessageController
+import it.airgap.beaconsdk.core.internal.controller.connection.ConnectionController
+import it.airgap.beaconsdk.core.internal.controller.message.MessageController
 import it.airgap.beaconsdk.core.internal.crypto.Crypto
 import it.airgap.beaconsdk.core.internal.migration.Migration
 import it.airgap.beaconsdk.core.internal.network.HttpClient
