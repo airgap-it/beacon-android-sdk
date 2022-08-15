@@ -12,6 +12,7 @@ import it.airgap.beaconsdk.core.data.MockPermission
 import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchain
 import it.airgap.beaconsdk.core.internal.compat.CoreCompat
+import it.airgap.beaconsdk.core.internal.controller.message.MessageController
 import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.core.internal.message.VersionedBeaconMessage
 import it.airgap.beaconsdk.core.internal.storage.MockSecureStorage
@@ -105,7 +106,6 @@ internal class MessageControllerTest {
             val pendingRequest = VersionedBeaconMessage.from(senderId, permissionBeaconRequest(id = it.id, senderId = senderId), dependencyRegistry.versionedBeaconMessageContext)
             runBlocking { messageController.onIncomingMessage(origin, destination, pendingRequest) }
 
-            runBlocking { println(storageManager.getAppMetadata()) }
             val versioned = runBlocking { messageController.onOutgoingMessage(senderId, it, true).getOrThrow() }
             val expected = runBlocking { Pair(destination, VersionedBeaconMessage.from(senderId, it, dependencyRegistry.versionedBeaconMessageContext)) }
 

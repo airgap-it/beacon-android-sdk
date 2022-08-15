@@ -37,7 +37,7 @@ public class DecoratedStorage(
     override suspend fun addPeers(
         peers: List<Peer>,
         overwrite: Boolean,
-        compare: (Peer, Peer) -> Boolean,
+        selector: Peer.() -> List<Any>?,
     ) {
         add(
             { getPeers(beaconConfiguration) },
@@ -45,7 +45,7 @@ public class DecoratedStorage(
             _peers,
             peers,
             overwrite,
-            compare,
+            selector,
         )
     }
 
@@ -65,7 +65,7 @@ public class DecoratedStorage(
     override suspend fun addAppMetadata(
         appsMetadata: List<AppMetadata>,
         overwrite: Boolean,
-        compare: (AppMetadata, AppMetadata) -> Boolean,
+        selector: AppMetadata.() -> List<Any>?,
     ) {
         add(
             { getAppMetadata(beaconConfiguration) },
@@ -73,7 +73,7 @@ public class DecoratedStorage(
             _appMetadata,
             appsMetadata,
             overwrite,
-            compare,
+            selector,
         )
     }
 
@@ -93,7 +93,7 @@ public class DecoratedStorage(
     override suspend fun addPermissions(
         permissions: List<Permission>,
         overwrite: Boolean,
-        compare: (Permission, Permission) -> Boolean,
+        selector: Permission.() -> List<Any>?,
     ) {
         add(
             { getPermissions(beaconConfiguration) },
@@ -101,7 +101,7 @@ public class DecoratedStorage(
             _permissions,
             permissions,
             overwrite,
-            compare,
+            selector,
         )
     }
 
@@ -146,29 +146,17 @@ public class DecoratedStorage(
         subscribeFlow: MutableSharedFlow<T>,
         elements: List<T>,
         overwrite: Boolean,
-        compare: (T, T) -> Boolean,
+        selector: T.() -> List<Any>?,
     ) {
-        val entities = select(this).toMutableList()
-        val updatedEntities = mutableListOf<T>()
+        val stored = select(this).distinctByKeepLast(selector)
 
-        val (newEntities, existingElements) = elements.partition { toInsert ->
-            !entities.any { compare(toInsert, it) }
-        }
+        val mappedIndices = createMappedIndices(stored, elements, selector)
+        val (toInsert, updatedIndices) = stored.updatedWith(elements, mappedIndices, overwrite)
 
-        // TODO: check if it really overwrites
-        if (overwrite) {
-            existingElements
-                .map { toInsert -> entities.indexOfFirst { compare(toInsert, it) } to toInsert }
-                .forEach { (index, toInsert) ->
-                    entities[index] = toInsert
-                    updatedEntities.add(toInsert)
-                }
-        }
-
-        insert(this, entities + newEntities)
+        insert(this, toInsert)
 
         CoroutineScope(Dispatchers.Default).launch {
-            (updatedEntities + newEntities).forEach { subscribeFlow.tryEmit(it) }
+            toInsert.filterIndexed { index, _ -> updatedIndices.contains(index) }.forEach { subscribeFlow.tryEmit(it) }
         }
     }
 
@@ -184,6 +172,53 @@ public class DecoratedStorage(
         insert(this, emptyList())
     }
 
+    private fun <T> createMappedIndices(first: List<T>, second: List<T>, selector: T.() -> List<Any>?): Map<Int, Int> {
+        val indices = mutableMapOf<Int, List<Int>>().apply {
+            fillWith(first, selector)
+            fillWith(second, selector)
+        }.toMap()
+
+        return indices.values.filter { it.size == 2 }.associate { it[0] to it[1] }
+    }
+
     private fun <T> resourceFlow(bufferCapacity: Int = 64): MutableSharedFlow<T> =
         MutableSharedFlow(extraBufferCapacity = bufferCapacity)
+
+    private inline fun <T> List<T>.distinctByKeepLast(selector: T.() -> List<Any>?): List<T> {
+        val (withSelector, withoutSelector) = map { selector(it)?.sumHashCodes() to it }
+            .partition { it.first != null }
+            .mapFirst { list -> list.associate { (it.first ?: it.second.hashCode()) to it.second } }
+
+        return withSelector.values + withoutSelector.map { it.second }
+    }
+
+    private inline fun <T> MutableMap<Int, List<Int>>.fillWith(elements: List<T>, selector: T.() -> List<Any>?) {
+        elements.forEachIndexed { index, element ->
+            selector(element)?.sumHashCodes()?.let {
+                this[it] = (this[it] ?: emptyList()) + index
+            }
+        }
+    }
+
+    private fun <T> List<T>.updatedWith(elements: List<T>, indicesMap: Map<Int, Int>, overwrite: Boolean): Pair<List<T>, Set<Int>> {
+        val updated = toMutableList()
+        val new = elements.filterIndexed { index, _ -> !indicesMap.containsValue(index) }
+
+        val updatedIndices = mutableSetOf<Int>()
+        val newIndices = (updated.size until updated.size + new.size)
+
+        indices.forEach { index ->
+            val mappedIndex = if (overwrite) indicesMap[index] else null
+            mappedIndex?.let {
+                updated[index] = elements[it]
+                updatedIndices.add(index)
+            }
+        }
+
+        return Pair(updated + new, updatedIndices + newIndices)
+    }
+
+    private fun List<Any>.sumHashCodes(): Int = fold(0) { acc, next -> acc + next.hashCode() }
+
+    private fun <A, B, R> Pair<A, B>.mapFirst(transform: (A) -> R): Pair<R, B> = Pair(transform(first), second)
 }

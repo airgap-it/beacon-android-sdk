@@ -18,7 +18,7 @@ public interface ExtendedStorage : Storage {
     public suspend fun addPeers(
         peers: List<Peer>,
         overwrite: Boolean = false,
-        compare: (Peer, Peer) -> Boolean = { first, second -> first == second },
+        selector: Peer.() -> List<Any>? = { listOfNotNull(id, name, publicKey, version, icon, appUrl, isPaired, isRemoved) },
     )
 
     public suspend fun findPeer(predicate: (Peer) -> Boolean): Peer?
@@ -28,7 +28,7 @@ public interface ExtendedStorage : Storage {
     public suspend fun addAppMetadata(
         appsMetadata: List<AppMetadata>,
         overwrite: Boolean = false,
-        compare: (AppMetadata, AppMetadata) -> Boolean = { first, second -> first == second },
+        selector: AppMetadata.() -> List<Any>? = { listOfNotNull(blockchainIdentifier, senderId, name, icon) },
     )
 
     public suspend fun findAppMetadata(predicate: (AppMetadata) -> Boolean): AppMetadata?
@@ -38,7 +38,7 @@ public interface ExtendedStorage : Storage {
     public suspend fun addPermissions(
         permissions: List<Permission>,
         overwrite: Boolean = false,
-        compare: (Permission, Permission) -> Boolean = { first, second -> first == second },
+        selector: Permission.() -> List<Any>? = { listOf(blockchainIdentifier, accountId, senderId, connectedAt) },
     )
 
     public suspend fun findPermission(predicate: (Permission) -> Boolean): Permission?

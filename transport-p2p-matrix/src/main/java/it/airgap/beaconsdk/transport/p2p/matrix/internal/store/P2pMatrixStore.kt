@@ -108,11 +108,7 @@ internal class P2pMatrixStore(
             }.getOrDefault(false)
         } ?: return
 
-        storageManager.addPeers(
-            listOf(peer.copy(relayServer = senderIdentifier.relayServer)),
-            overwrite = true,
-            compare = { lhs, rhs -> lhs.publicKey == rhs.publicKey }
-        )
+        storageManager.addPeers(listOf(peer.copy(relayServer = senderIdentifier.relayServer)), overwrite = true) { listOf(publicKey) }
     }
 
     private suspend inline fun <T> withState(action: (state: P2pMatrixStoreState) -> T): Result<T> {

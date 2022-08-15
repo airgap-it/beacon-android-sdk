@@ -61,14 +61,11 @@ public class StorageManager(
     public suspend fun getPeers(): List<Peer> =
         storage.getPeers(beaconConfiguration)
 
-    public suspend inline fun <reified T: Peer> updatePeers(
-        peers: List<T>,
-        compareWith: List<KProperty1<T, *>>
-    ) {
-        addPeers(peers, overwrite = true) { a, b ->
-            when {
-                a is T && b is T -> compareWith.fold(true) { acc, next -> acc && next(a) == next(b) }
-                else -> false
+    public suspend inline fun <reified T: Peer> updatePeers(peers: List<T>, noinline selector: T.() -> List<Any>) {
+        addPeers(peers, overwrite = true) {
+            when (this) {
+                is T -> selector(this)
+                else -> null
             }
         }
     }
@@ -82,14 +79,12 @@ public class StorageManager(
             val peers = storage.getPeers(beaconConfiguration)
             val toRemove = predicate?.let { peers.filter(it) } ?: peers
 
-            // TODO: remove appMetadata too
             storage.removePeers(predicate)
-            removePermissions { permission ->
-                toRemove.any {
-                    val senderId = identifierCreator.senderId(it.publicKey.asHexString().toByteArray()).getOrThrow()
-                    senderId == permission.senderId
-                }
-            }
+
+            val removedSenderIDs = toRemove.map { identifierCreator.senderId(it.publicKey.asHexString().toByteArray()).getOrThrow() }.toSet()
+
+            removePermissions { removedSenderIDs.contains(it.senderId) }
+            removeAppMetadata { removedSenderIDs.contains(it.senderId) }
 
             CoroutineScope(Dispatchers.Default).launch {
                 toRemove.map { it.selfRemoved() }.forEach {

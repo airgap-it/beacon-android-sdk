@@ -50,6 +50,7 @@ internal class P2pTransportTest {
         mockLog()
 
         coEvery { p2pClient.sendPairingResponse(any()) } returns Result.success()
+        every { identifierCreator.senderId(any()) } answers { Result.success(firstArg<ByteArray>().toHexString().asString()) }
 
         storageManager = StorageManager(beaconScope, MockStorage(), MockSecureStorage(), identifierCreator, BeaconConfiguration(ignoreUnsupportedBlockchains = false))
         p2pTransport = P2pTransport(storageManager, p2pClient, store)

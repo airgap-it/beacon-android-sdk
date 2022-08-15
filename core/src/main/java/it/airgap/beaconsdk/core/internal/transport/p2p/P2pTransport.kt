@@ -11,6 +11,7 @@ import it.airgap.beaconsdk.core.internal.transport.p2p.store.DiscardPairingData
 import it.airgap.beaconsdk.core.internal.transport.p2p.store.OnPairingCompleted
 import it.airgap.beaconsdk.core.internal.transport.p2p.store.OnPairingRequested
 import it.airgap.beaconsdk.core.internal.transport.p2p.store.P2pTransportStore
+import it.airgap.beaconsdk.core.internal.utils.flatMap
 import it.airgap.beaconsdk.core.internal.utils.runCatchingFlat
 import it.airgap.beaconsdk.core.internal.utils.success
 import it.airgap.beaconsdk.core.storage.findPeer
@@ -53,7 +54,7 @@ internal class P2pTransport(
     override suspend fun pair(request: PairingRequest): Result<PairingResponse> =
         runCatchingFlat {
             when (request) {
-                is P2pPairingRequest -> client.createPairingResponse(request).also { addPeer(request) }
+                is P2pPairingRequest -> runCatching { addPeer(request) }.flatMap { client.createPairingResponse(request) }
             }
         }
 
@@ -80,7 +81,7 @@ internal class P2pTransport(
     private suspend fun addPeer(pairingData: P2pPairingMessage) {
         when (val peer = pairingData.toPeer()) {
             is P2pPeer -> {
-                storageManager.addPeers(listOf(peer), overwrite = true) { lhs, rhs -> lhs.id == rhs.id }
+                storageManager.addPeers(listOf(peer), overwrite = true) { listOfNotNull(id) }
                 store.intent(OnPairingCompleted(peer))
             }
         }
@@ -95,17 +96,7 @@ internal class P2pTransport(
         val result = client.sendPairingResponse(peer)
 
         if (result.isSuccess) {
-            storageManager.updatePeers(
-                listOf(peer.selfPaired()),
-                compareWith = listOf(
-                    P2pPeer::id,
-                    P2pPeer::name,
-                    P2pPeer::publicKey,
-                    P2pPeer::relayServer,
-                    P2pPeer::icon,
-                    P2pPeer::appUrl,
-                )
-            )
+            storageManager.updatePeers(listOf(peer.selfPaired())) { listOfNotNull(id, name, publicKey, relayServer, icon, appUrl) }
         }
     }
 
