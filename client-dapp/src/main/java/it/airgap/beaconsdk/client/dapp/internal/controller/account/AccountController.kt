@@ -14,13 +14,13 @@ import it.airgap.beaconsdk.client.dapp.internal.controller.account.store.ResetAc
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class AccountController(private val store: AccountControllerStore, private val blockchainRegistry: BlockchainRegistry) {
 
-    public suspend fun getRequestDestination(): Connection.Id? =
-        store.state().getOrThrow().activePeer?.toConnectionId()
+    public suspend fun getActivePeer(): Peer? =
+        store.state().getOrThrow().activePeer
 
-    public suspend fun getActiveAccountId(): String? =
-        store.state().getOrThrow().activeAccount?.accountId
+    public suspend fun getActiveAccount(): Account? =
+        store.state().getOrThrow().activeAccount
 
-    public suspend fun clearActiveAccountId() {
+    public suspend fun clearActiveAccount() {
         store.intent(ResetActiveAccount)
     }
 
@@ -40,10 +40,5 @@ public class AccountController(private val store: AccountControllerStore, privat
             val account = accountId?.let { Account(it, origin.id) }
 
             account?.let { store.intent(OnNewActiveAccount(it)) }
-        }
-
-    private fun Peer.toConnectionId(): Connection.Id =
-        when (this) {
-            is P2pPeer -> Connection.Id.P2P(publicKey)
         }
 }

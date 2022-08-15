@@ -21,6 +21,8 @@ public sealed class Peer {
 
     public abstract fun paired(): Peer
     public abstract fun removed(): Peer
+
+    public abstract fun toConnectionId(): Connection.Id
 }
 
 // -- P2P --
@@ -63,6 +65,8 @@ public data class P2pPeer(
 
     override fun paired(): Peer = copy(isPaired = true)
     override fun removed(): Peer = copy(isRemoved = true)
+
+    override fun toConnectionId(): Connection.Id = Connection.Id.P2P(publicKey)
 }
 
 // -- extensions --

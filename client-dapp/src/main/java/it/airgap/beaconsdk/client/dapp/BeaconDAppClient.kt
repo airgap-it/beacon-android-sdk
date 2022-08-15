@@ -15,10 +15,6 @@ import it.airgap.beaconsdk.core.internal.serializer.Serializer
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.SharedPreferencesSecureStorage
 import it.airgap.beaconsdk.core.internal.utils.*
-import it.airgap.beaconsdk.core.message.BeaconMessage
-import it.airgap.beaconsdk.core.message.BeaconRequest
-import it.airgap.beaconsdk.core.message.BeaconResponse
-import it.airgap.beaconsdk.core.message.PermissionBeaconResponse
 import it.airgap.beaconsdk.core.scope.BeaconScope
 import it.airgap.beaconsdk.core.storage.SecureStorage
 import it.airgap.beaconsdk.core.transport.data.PairingRequest
@@ -28,7 +24,10 @@ import it.airgap.beaconsdk.client.dapp.internal.di.ExtendedDependencyRegistry
 import it.airgap.beaconsdk.client.dapp.internal.di.extend
 import it.airgap.beaconsdk.client.dapp.internal.storage.sharedpreferences.SharedPreferencesDAppClientStorage
 import it.airgap.beaconsdk.client.dapp.storage.DAppClientStorage
+import it.airgap.beaconsdk.core.data.Account
+import it.airgap.beaconsdk.core.message.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.takeWhile
 
@@ -56,10 +55,10 @@ public class BeaconDAppClient @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) constr
     }
 
     public suspend fun getActiveAccount(): String? =
-        accountController.getActiveAccountId()
+        accountController.getActiveAccount()?.accountId
 
     public suspend fun clearActiveAccount() {
-        accountController.clearActiveAccountId()
+        accountController.clearActiveAccount()
     }
 
     public suspend fun reset() {
@@ -92,15 +91,21 @@ public class BeaconDAppClient @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) constr
             id = crypto.guid().getOrThrow(),
             version = BeaconConfiguration.BEACON_VERSION,
             origin = Connection.Id.fromType(connectionType),
-            destination = accountController.getRequestDestination(),
+            destination = accountController.getActivePeer()?.toConnectionId(),
             senderId = senderId,
-            accountId = accountController.getActiveAccountId()
+            accountId = accountController.getActiveAccount()?.accountId,
         )
 
     override suspend fun processMessage(origin: Connection.Id, message: BeaconMessage): Result<Unit> =
         runCatchingFlat {
             when (message) {
                 is PermissionBeaconResponse -> accountController.onPermissionResponse(origin, message).getOrThrow()
+                is DisconnectBeaconMessage -> {
+                    // TODO: remove active account and peer and communicate it to the user
+                    // (the behavior is already implemented and will fire in `super.processMessage(origin, message)`
+
+                    return Result.success()
+                }
                 else -> { /* no action */ }
             }
 

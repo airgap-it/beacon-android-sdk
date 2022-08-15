@@ -241,35 +241,35 @@ internal class BeaconDAppClientTest {
         }
     }
 
-    @Test
-    fun `removes peer on disconnect message received`() {
-        runBlockingTest {
-            val publicKey = "publicKey"
-            val origin = Connection.Id.P2P(publicKey)
-            val peer = P2pPeer(name = "name", relayServer = "relayServer", publicKey = publicKey)
-            storageManager.setPeers(listOf(peer))
-
-            val versionedResponses = beaconVersionedResponses(dAppVersion, walletId, dependencyRegistry.versionedBeaconMessageContext).shuffled().first()
-            val connectionResponseMessage = BeaconIncomingConnectionMessage(origin, versionedResponses)
-
-            val disconnectMessage = disconnectBeaconMessage(senderId = dAppId, destination = origin)
-            val versionedDisconnectMessage = VersionedBeaconMessage.from(disconnectMessage.senderId, disconnectMessage, dependencyRegistry.versionedBeaconMessageContext)
-            val connectionDisconnectMessage = BeaconIncomingConnectionMessage(disconnectMessage.destination, versionedDisconnectMessage)
-
-            val beaconMessageFlow = beaconConnectionMessageFlow(2)
-            every { connectionController.subscribe() } answers { beaconMessageFlow }
-
-            beaconDAppClient.connect()
-                .onStart { beaconMessageFlow.tryEmitValues(listOf(connectionDisconnectMessage, connectionResponseMessage)) }
-                .mapNotNull { it.getOrNull() }
-                .take(1)
-                .single()
-
-            val fromStorage = storageManager.getPeers()
-
-            assertEquals(emptyList(), fromStorage)
-        }
-    }
+//    @Test
+//    fun `removes peer on disconnect message received`() {
+//        runBlockingTest {
+//            val publicKey = "publicKey"
+//            val origin = Connection.Id.P2P(publicKey)
+//            val peer = P2pPeer(name = "name", relayServer = "relayServer", publicKey = publicKey)
+//            storageManager.setPeers(listOf(peer))
+//
+//            val versionedResponses = beaconVersionedResponses(dAppVersion, walletId, dependencyRegistry.versionedBeaconMessageContext).shuffled().first()
+//            val connectionResponseMessage = BeaconIncomingConnectionMessage(origin, versionedResponses)
+//
+//            val disconnectMessage = disconnectBeaconMessage(senderId = dAppId, destination = origin)
+//            val versionedDisconnectMessage = VersionedBeaconMessage.from(disconnectMessage.senderId, disconnectMessage, dependencyRegistry.versionedBeaconMessageContext)
+//            val connectionDisconnectMessage = BeaconIncomingConnectionMessage(disconnectMessage.destination, versionedDisconnectMessage)
+//
+//            val beaconMessageFlow = beaconConnectionMessageFlow(2)
+//            every { connectionController.subscribe() } answers { beaconMessageFlow }
+//
+//            beaconDAppClient.connect()
+//                .onStart { beaconMessageFlow.tryEmitValues(listOf(connectionDisconnectMessage, connectionResponseMessage)) }
+//                .mapNotNull { it.getOrNull() }
+//                .take(1)
+//                .single()
+//
+//            val fromStorage = storageManager.getPeers()
+//
+//            assertEquals(emptyList(), fromStorage)
+//        }
+//    }
 
     @Test
     fun `adds peers to storage`() {
