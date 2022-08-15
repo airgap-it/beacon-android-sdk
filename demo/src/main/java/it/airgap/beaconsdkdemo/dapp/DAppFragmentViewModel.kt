@@ -40,7 +40,7 @@ class DAppFragmentViewModel : ViewModel() {
     }
 
     fun pair() {
-        viewModelScope.launch(Job()) {
+        viewModelScope.launch {
             val beaconClient = beaconClient ?: return@launch
 
             val pairingRequest = beaconClient.pair()
@@ -51,7 +51,7 @@ class DAppFragmentViewModel : ViewModel() {
     }
 
     fun requestPermission() {
-        viewModelScope.launch(Job()) {
+        viewModelScope.launch {
             beaconClient?.requestTezosPermission()
         }
     }
@@ -62,7 +62,7 @@ class DAppFragmentViewModel : ViewModel() {
     }
 
     fun reset() {
-        viewModelScope.launch(Job()) {
+        viewModelScope.launch {
             beaconClient?.reset()
             checkForActiveAccount()
         }

@@ -65,7 +65,7 @@
             android:id="@+id/messageTextView"
             android:gravity="center_vertical"
             android:padding="@dimen/size_large"
-            android:hint="@string/hint_beacon_request"
+            android:hint="@string/hint_beacon_response"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@id/clearResponseButton"

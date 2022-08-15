@@ -55,7 +55,7 @@ class WalletFragmentViewModel : ViewModel() {
         val request = awaitingRequest ?: return
         val beaconClient = beaconClient ?: return
 
-        viewModelScope.launch(Job()) {
+        viewModelScope.launch {
             val response = when (request) {
 
                 /* Tezos */
@@ -78,14 +78,14 @@ class WalletFragmentViewModel : ViewModel() {
     }
 
     fun pair(pairingRequest: String) {
-        viewModelScope.launch(Job()) {
+        viewModelScope.launch {
             beaconClient?.pair(pairingRequest)
             checkForPeers()
         }
     }
 
     fun removePeers() {
-        viewModelScope.launch(Job()) {
+        viewModelScope.launch {
             beaconClient?.removeAllPeers()
             checkForPeers()
         }
