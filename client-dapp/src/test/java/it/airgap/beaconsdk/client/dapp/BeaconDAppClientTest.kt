@@ -7,6 +7,7 @@ import disconnectBeaconMessage
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import it.airgap.beaconsdk.client.dapp.internal.controller.account.AccountController
+import it.airgap.beaconsdk.client.dapp.internal.storage.MockDAppClientStorage
 import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.data.P2pPeer
 import it.airgap.beaconsdk.core.data.Permission
@@ -105,7 +106,7 @@ internal class BeaconDAppClientTest {
         every { crypto.guid() } returns Result.success("guid")
 
         val configuration = BeaconConfiguration(ignoreUnsupportedBlockchains = false)
-        storageManager = StorageManager(beaconScope, MockStorage(), MockSecureStorage(), identifierCreator, configuration)
+        storageManager = StorageManager(beaconScope, MockDAppClientStorage(), MockSecureStorage(), identifierCreator, configuration)
         beaconDAppClient = BeaconDAppClient(
             app,
             beaconId,

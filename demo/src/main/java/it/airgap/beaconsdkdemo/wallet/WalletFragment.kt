@@ -68,7 +68,7 @@ class WalletFragment : Fragment(R.layout.fragment_wallet) {
     private fun getPairingRequest(): String? = pairingRequestTextInput.text
 
     companion object {
-        const val examplePairingRequest = "3NDKTWt2x3EtVcnJKaRB6AxYiAPFTs5CK6UkN8STFYCvu4GzwRMZ2Yi3p8BKGpsPQTP2NpTWUHrXcLFVpgKkyALSr8pZQMJRWRRm1Qd3QNNmFXFuNmjC9UwZ6ienHsHFZ6bv789cka1EnwThoUEuReu4pbMKb3AxcVFt5MqCcxi1TWZMCgtLumarEykMVgg6sTGzvzCXP6H1zu1MSrFpEUCHE1hV9oRGtm45anHZUZiqpYFYg1fZPhtw6SmUzqLbsMHTaGBYCNuP2Vg6nsTZMaeAvsfurcN6y23542FrpJ2Uj7ejRc5a8fG1AvyzMSFamuREeom"
+        const val examplePairingRequest = "6h663f1EiJXzYaybYBStHbxjuZP4QivkhhcvMVhjPxiszrxEmoj4AKZSfnKVeWu5gp6t2gVYLzbzb5z1mRdTTX9FWGS6irPU9WC2yS9tepbLZmT7YAA2Q3g7AbqBZgj4LssjXH3ijQZ1vo2oPj7m5vhWP5mmEDK4nWV84JdFY3wcoSamDPyv5rWUmxeoNbjJgdJRUBzHaSgCGS8EB2piXTvnXs4CyQapZ8n4FKnZYBM9vJEkZ3jiHcTcZ5jf65B5JYFatBxVzzWZ1vndRSYvs9DSXUM89dyN4dysw5YhDTAMYX5Bf9GpvdxjjBdVLgCrCrSTr9zzTmZw6dTXN8XMhMnEuXeh5i"
     }
 
     private var TextInputLayout.text: String?
