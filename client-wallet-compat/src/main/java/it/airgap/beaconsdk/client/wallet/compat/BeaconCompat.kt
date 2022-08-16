@@ -47,7 +47,7 @@ internal object BeaconCompat {
 
     private fun jobScope(scope: Scope, block: suspend () -> Unit) {
         _scopes
-            .getActiveOrPut(scope) { CoroutineScope(CoroutineName("BeaconClient#$scope")) }
+            .getActiveOrPut(scope) { CoroutineScope(CoroutineName("BeaconClient#$scope") + Dispatchers.Default) }
             .launch {
                 block()
                 _scopes.remove(scope)

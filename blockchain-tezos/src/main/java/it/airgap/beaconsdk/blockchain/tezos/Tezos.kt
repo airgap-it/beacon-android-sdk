@@ -32,9 +32,7 @@ public class Tezos internal constructor(
 
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         override fun create(dependencyRegistry: DependencyRegistry): Tezos =
-            with(extendedDependencyRegistry(dependencyRegistry)) {
-                Tezos(tezosWallet, tezosCreator, tezosSerializer)
-            }
+            extendedDependencyRegistry(dependencyRegistry).tezos
     }
 
     internal sealed interface Prefix {

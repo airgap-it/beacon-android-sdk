@@ -13,12 +13,16 @@ public sealed class Peer {
     public abstract val name: String
     public abstract val publicKey: String
     public abstract val version: String
+    public abstract val icon: String?
+    public abstract val appUrl: String?
 
     public abstract val isPaired: Boolean
     public abstract val isRemoved: Boolean
 
     public abstract fun paired(): Peer
     public abstract fun removed(): Peer
+
+    public abstract fun toConnectionId(): Connection.Id
 }
 
 // -- P2P --
@@ -41,8 +45,8 @@ public data class P2pPeer(
     override val publicKey: String,
     public val relayServer: String,
     override val version: String = "1",
-    public val icon: String? = null,
-    public val appUrl: String? = null,
+    override val icon: String? = null,
+    override val appUrl: String? = null,
     override val isPaired: Boolean = false,
     @Transient override val isRemoved: Boolean = false,
 ) : Peer() {
@@ -61,6 +65,8 @@ public data class P2pPeer(
 
     override fun paired(): Peer = copy(isPaired = true)
     override fun removed(): Peer = copy(isRemoved = true)
+
+    override fun toConnectionId(): Connection.Id = Connection.Id.P2P(publicKey)
 }
 
 // -- extensions --

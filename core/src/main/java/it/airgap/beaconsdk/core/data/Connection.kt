@@ -9,6 +9,27 @@ public sealed class Connection(public val type: Type) {
     public enum class Type {
         P2P
     }
+
+    /**
+     * A group of values that identify the connection.
+     *
+     * @property [id] The unique value that identifies the origin.
+     */
+    public sealed interface Id {
+        public val id: String
+
+        public data class P2P(override val id: String) : Id {
+            public companion object {}
+        }
+
+        public companion object {
+
+            public fun forPeer(peer: Peer): Id =
+                when (peer) {
+                    is P2pPeer -> P2P(peer.publicKey)
+                }
+        }
+    }
 }
 
 /**

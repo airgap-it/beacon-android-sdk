@@ -11,7 +11,6 @@ import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
 import it.airgap.beaconsdk.blockchain.tezos.data.operation.TezosEndorsementOperation
 import it.airgap.beaconsdk.blockchain.tezos.data.operation.TezosOperation
 import it.airgap.beaconsdk.blockchain.tezos.internal.creator.*
-import it.airgap.beaconsdk.blockchain.tezos.internal.di.extend
 import it.airgap.beaconsdk.blockchain.tezos.internal.serializer.*
 import it.airgap.beaconsdk.blockchain.tezos.internal.wallet.TezosWallet
 import it.airgap.beaconsdk.blockchain.tezos.message.request.BroadcastTezosRequest
@@ -22,15 +21,18 @@ import it.airgap.beaconsdk.blockchain.tezos.message.response.BroadcastTezosRespo
 import it.airgap.beaconsdk.blockchain.tezos.message.response.OperationTezosResponse
 import it.airgap.beaconsdk.blockchain.tezos.message.response.PermissionTezosResponse
 import it.airgap.beaconsdk.blockchain.tezos.message.response.SignPayloadTezosResponse
-import it.airgap.beaconsdk.core.data.Origin
+import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.data.SigningType
 import it.airgap.beaconsdk.core.internal.BeaconConfiguration
+import it.airgap.beaconsdk.core.internal.compat.CoreCompat
 import it.airgap.beaconsdk.core.internal.message.v1.V1BeaconMessage
+import it.airgap.beaconsdk.core.internal.serializer.contextualJson
 import it.airgap.beaconsdk.core.internal.storage.MockSecureStorage
 import it.airgap.beaconsdk.core.internal.storage.MockStorage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
 import it.airgap.beaconsdk.core.message.*
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -49,6 +51,9 @@ internal class V1TezosMessageTest {
     private lateinit var identifierCreator: IdentifierCreator
 
     private lateinit var storageManager: StorageManager
+    private lateinit var json: Json
+
+    private val beaconScope: BeaconScope = BeaconScope.Global
 
     @Before
     fun setup() {
@@ -56,7 +61,7 @@ internal class V1TezosMessageTest {
 
         every { identifierCreator.accountId(any(), any()) } answers { Result.success(firstArg()) }
 
-        storageManager = StorageManager(MockStorage(), MockSecureStorage(), identifierCreator, BeaconConfiguration(ignoreUnsupportedBlockchains = false))
+        storageManager = StorageManager(beaconScope, MockStorage(), MockSecureStorage(), identifierCreator, BeaconConfiguration(ignoreUnsupportedBlockchains = false))
         val tezos = Tezos(
             tezosWallet,
             TezosCreator(
@@ -77,12 +82,14 @@ internal class V1TezosMessageTest {
         every { dependencyRegistry.storageManager } returns storageManager
         every { dependencyRegistry.identifierCreator } returns identifierCreator
         every { tezosWallet.address(any()) } answers { Result.success(firstArg()) }
+
+        json = contextualJson(dependencyRegistry.blockchainRegistry, CoreCompat(beaconScope))
     }
 
     @Test
     fun `is deserialized from JSON`() {
         messagesWithJsonStrings()
-            .map { Json.decodeFromString<V1TezosMessage>(it.second) to it.first }
+            .map { json.decodeFromString<V1TezosMessage>(it.second) to it.first }
             .forEach {
                 assertEquals(it.second, it.first)
             }
@@ -91,8 +98,8 @@ internal class V1TezosMessageTest {
     @Test
     fun `serializes to JSON`() {
         messagesWithJsonStrings()
-            .map { Json.decodeFromString(JsonObject.serializer(), Json.encodeToString(it.first)) to
-                    Json.decodeFromString(JsonObject.serializer(), it.second) }
+            .map { json.decodeFromString(JsonObject.serializer(), json.encodeToString(it.first)) to
+                    json.decodeFromString(JsonObject.serializer(), it.second) }
             .forEach {
                 assertEquals(it.second, it.first)
             }
@@ -114,7 +121,8 @@ internal class V1TezosMessageTest {
     fun `converts to Beacon message`() {
         val senderId = "senderId"
         val otherId = "otherId"
-        val origin = Origin.P2P("v1App")
+        val origin = Connection.Id.P2P("v1App")
+        val destination = Connection.Id.P2P("receiverId")
 
         val matchingAppMetadata = TezosAppMetadata(senderId, "v1App")
         val otherAppMetadata = TezosAppMetadata(otherId, "v1OtherApp")
@@ -122,8 +130,8 @@ internal class V1TezosMessageTest {
         runBlocking { storageManager.setAppMetadata(listOf(otherAppMetadata, matchingAppMetadata)) }
 
         runBlocking {
-            versionedWithBeacon(beaconId = senderId, appMetadata = matchingAppMetadata, origin = origin)
-                .map { it.first.toBeaconMessage(origin) to it.second }
+            versionedWithBeacon(beaconId = senderId, appMetadata = matchingAppMetadata, origin = origin, destination = destination)
+                .map { it.first.toBeaconMessage(origin, destination, beaconScope) to it.second }
                 .forEach {
                     assertEquals(it.second, it.first)
                 }
@@ -151,26 +159,28 @@ internal class V1TezosMessageTest {
     private fun versionedWithBeacon(
         version: String = "1",
         beaconId: String = "beaconId",
-        origin: Origin = Origin.P2P(beaconId),
+        origin: Connection.Id = Connection.Id.P2P(beaconId),
+        destination: Connection.Id = Connection.Id.P2P("receiverId"),
         appMetadata: TezosAppMetadata? = null,
     ): List<Pair<V1BeaconMessage, BeaconMessage>> =
         listOf(
-            createPermissionRequestPair(version = version, beaconId = beaconId, origin = origin),
-            createOperationRequestPair(version = version, beaconId = beaconId, appMetadata = appMetadata, origin = origin),
+            createPermissionRequestPair(version = version, beaconId = beaconId, origin = origin, destination = destination),
+            createOperationRequestPair(version = version, beaconId = beaconId, appMetadata = appMetadata, origin = origin, destination = destination),
             createOperationRequestPair(
                 version = version,
                 beaconId = beaconId,
                 tezosOperations = listOf(TezosEndorsementOperation("level")),
                 appMetadata = appMetadata,
                 origin = origin,
+                destination = destination,
             ),
-            createSignPayloadRequestPair(version = version, beaconId = beaconId, appMetadata = appMetadata, origin = origin),
-            createBroadcastRequestPair(version = version, beaconId = beaconId, appMetadata = appMetadata, origin = origin),
+            createSignPayloadRequestPair(version = version, beaconId = beaconId, appMetadata = appMetadata, origin = origin, destination = destination),
+            createBroadcastRequestPair(version = version, beaconId = beaconId, appMetadata = appMetadata, origin = origin, destination = destination),
 
-            createPermissionResponsePair(version = version, beaconId = beaconId, origin = origin),
-            createOperationResponsePair(version = version, beaconId = beaconId, origin = origin),
-            createSignPayloadResponsePair(version = version, beaconId = beaconId, origin = origin),
-            createBroadcastResponsePair(version = version, beaconId = beaconId, origin = origin),
+            createPermissionResponsePair(version = version, beaconId = beaconId, destination = destination),
+            createOperationResponsePair(version = version, beaconId = beaconId, destination = destination),
+            createSignPayloadResponsePair(version = version, beaconId = beaconId, destination = destination),
+            createBroadcastResponsePair(version = version, beaconId = beaconId, destination = destination),
         )
 
     // -- request to JSON --
@@ -189,9 +199,9 @@ internal class V1TezosMessageTest {
                 "version": "$version",
                 "id": "$id",
                 "beaconId": "$beaconId",
-                "appMetadata": ${Json.encodeToString(appMetadata)},
-                "network": ${Json.encodeToString(network)},
-                "scopes": ${Json.encodeToString(scopes)}
+                "appMetadata": ${json.encodeToString(appMetadata)},
+                "network": ${json.encodeToString(network)},
+                "scopes": ${json.encodeToString(scopes)}
             }
         """.trimIndent()
 
@@ -209,8 +219,8 @@ internal class V1TezosMessageTest {
                 "version": "$version",
                 "id": "$id",
                 "beaconId": "$beaconId",
-                "network": ${Json.encodeToString(network)},
-                "operationDetails": ${Json.encodeToString(tezosOperations)},
+                "network": ${json.encodeToString(network)},
+                "operationDetails": ${json.encodeToString(tezosOperations)},
                 "sourceAddress": "$sourceAddress"
             }
         """.trimIndent()
@@ -246,7 +256,7 @@ internal class V1TezosMessageTest {
                 "version": "$version",
                 "id": "$id",
                 "beaconId": "$beaconId",
-                "network": ${Json.encodeToString(network)},
+                "network": ${json.encodeToString(network)},
                 "signedTransaction": "$signedTransaction"
             }
         """.trimIndent()
@@ -268,8 +278,8 @@ internal class V1TezosMessageTest {
                 "id": "$id",
                 "beaconId": "$beaconId",
                 "publicKey": "$publicKey",
-                "network": ${Json.encodeToString(network)},
-                "scopes": ${Json.encodeToString(scopes)}
+                "network": ${json.encodeToString(network)},
+                "scopes": ${json.encodeToString(scopes)}
             }
         """.trimIndent()
 
@@ -330,10 +340,11 @@ internal class V1TezosMessageTest {
         appMetadata: V1TezosAppMetadata = V1TezosAppMetadata("beaconId", "v1App"),
         network: TezosNetwork = TezosNetwork.Custom(),
         scopes: List<TezosPermission.Scope> = emptyList(),
-        origin: Origin = Origin.P2P(beaconId),
+        origin: Connection.Id = Connection.Id.P2P(beaconId),
+        destination: Connection.Id? = Connection.Id.P2P("receiverId"),
     ): Pair<PermissionV1TezosRequest, PermissionBeaconRequest> =
         PermissionV1TezosRequest(version, id, beaconId, appMetadata, network, scopes) to
-            PermissionTezosRequest(id, version, Tezos.IDENTIFIER, beaconId, appMetadata.toAppMetadata(), origin, network, scopes)
+            PermissionTezosRequest(id, version, Tezos.IDENTIFIER, beaconId, appMetadata.toAppMetadata(), origin, destination, network, scopes)
 
     private fun createOperationRequestPair(
         version: String = "1",
@@ -343,10 +354,11 @@ internal class V1TezosMessageTest {
         tezosOperations: List<TezosOperation> = emptyList(),
         sourceAddress: String = "sourceAddress",
         appMetadata: TezosAppMetadata? = null,
-        origin: Origin = Origin.P2P(beaconId),
+        origin: Connection.Id = Connection.Id.P2P(beaconId),
+        destination: Connection.Id? = Connection.Id.P2P("receiverId"),
     ): Pair<OperationV1TezosRequest, BlockchainBeaconRequest> =
         OperationV1TezosRequest(version, id, beaconId, network, tezosOperations, sourceAddress) to
-                OperationTezosRequest(id, version, Tezos.IDENTIFIER, beaconId, appMetadata, origin, null, network, tezosOperations, sourceAddress)
+                OperationTezosRequest(id, version, Tezos.IDENTIFIER, beaconId, appMetadata, origin, destination, null, network, tezosOperations, sourceAddress)
 
     private fun createSignPayloadRequestPair(
         version: String = "1",
@@ -355,10 +367,11 @@ internal class V1TezosMessageTest {
         payload: String = "payload",
         sourceAddress: String = "sourceAddress",
         appMetadata: TezosAppMetadata? = null,
-        origin: Origin = Origin.P2P(beaconId),
+        origin: Connection.Id = Connection.Id.P2P(beaconId),
+        destination: Connection.Id? = Connection.Id.P2P("receiverId"),
     ): Pair<SignPayloadV1TezosRequest, BlockchainBeaconRequest> =
         SignPayloadV1TezosRequest(version, id, beaconId, payload, sourceAddress) to
-                SignPayloadTezosRequest(id, version, Tezos.IDENTIFIER, beaconId, appMetadata, origin, null, SigningType.Raw, payload, sourceAddress)
+                SignPayloadTezosRequest(id, version, Tezos.IDENTIFIER, beaconId, appMetadata, origin, destination, null, SigningType.Raw, payload, sourceAddress)
 
     private fun createBroadcastRequestPair(
         version: String = "1",
@@ -367,10 +380,11 @@ internal class V1TezosMessageTest {
         network: TezosNetwork = TezosNetwork.Custom(),
         signedTransaction: String = "signedTransaction",
         appMetadata: TezosAppMetadata? = null,
-        origin: Origin = Origin.P2P(beaconId),
+        origin: Connection.Id = Connection.Id.P2P(beaconId),
+        destination: Connection.Id? = Connection.Id.P2P("receiverId"),
     ): Pair<BroadcastV1TezosRequest, BlockchainBeaconRequest> =
         BroadcastV1TezosRequest(version, id, beaconId, network, signedTransaction) to
-                BroadcastTezosRequest(id, version, Tezos.IDENTIFIER, beaconId, appMetadata, origin, null, network, signedTransaction)
+                BroadcastTezosRequest(id, version, Tezos.IDENTIFIER, beaconId, appMetadata, origin, destination, null, network, signedTransaction)
 
     // -- response to BeaconMessage --
 
@@ -381,38 +395,38 @@ internal class V1TezosMessageTest {
         publicKey: String = "publicKey",
         network: TezosNetwork = TezosNetwork.Custom(),
         scopes: List<TezosPermission.Scope> = emptyList(),
-        origin: Origin = Origin.P2P(beaconId),
+        destination: Connection.Id = Connection.Id.P2P("receiverId"),
     ): Pair<PermissionV1TezosResponse, PermissionBeaconResponse> =
         PermissionV1TezosResponse(version, id, beaconId, publicKey, network, scopes) to
-            PermissionTezosResponse(id, version, origin, Tezos.IDENTIFIER, TezosAccount(publicKey, network, publicKey, publicKey), scopes)
+            PermissionTezosResponse(id, version, destination, Tezos.IDENTIFIER, TezosAccount(publicKey, network, publicKey, publicKey), scopes)
 
     private fun createOperationResponsePair(
         version: String = "1",
         id: String = "id",
         beaconId: String = "beaconId",
         transactionHash: String = "transactionHash",
-        origin: Origin = Origin.P2P(beaconId),
+        destination: Connection.Id = Connection.Id.P2P("receiverId"),
     ): Pair<OperationV1TezosResponse, BlockchainBeaconResponse> =
         OperationV1TezosResponse(version, id, beaconId, transactionHash) to
-                OperationTezosResponse(id, version, origin, Tezos.IDENTIFIER, transactionHash)
+                OperationTezosResponse(id, version, destination, Tezos.IDENTIFIER, transactionHash)
 
     private fun createSignPayloadResponsePair(
         version: String = "1",
         id: String = "id",
         beaconId: String = "beaconId",
         signature: String = "signature",
-        origin: Origin = Origin.P2P(beaconId),
+        destination: Connection.Id = Connection.Id.P2P("receiverId"),
     ): Pair<SignPayloadV1TezosResponse, BlockchainBeaconResponse> =
         SignPayloadV1TezosResponse(version, id, beaconId, signature) to
-                SignPayloadTezosResponse(id, version, origin, Tezos.IDENTIFIER, SigningType.Raw, signature)
+                SignPayloadTezosResponse(id, version, destination, Tezos.IDENTIFIER, SigningType.Raw, signature)
 
     private fun createBroadcastResponsePair(
         version: String = "1",
         id: String = "id",
         beaconId: String = "beaconId",
         transactionHash: String = "transactionHash",
-        origin: Origin = Origin.P2P(beaconId),
+        destination: Connection.Id = Connection.Id.P2P("receiverId"),
     ): Pair<BroadcastV1TezosResponse, BlockchainBeaconResponse> =
         BroadcastV1TezosResponse(version, id, beaconId, transactionHash) to
-            BroadcastTezosResponse(id, version, origin, Tezos.IDENTIFIER, transactionHash)
+            BroadcastTezosResponse(id, version, destination, Tezos.IDENTIFIER, transactionHash)
 }

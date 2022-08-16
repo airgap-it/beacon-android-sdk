@@ -26,6 +26,8 @@ public data class BeaconConfiguration(
 
         public const val STORAGE_NAME: String = "beaconsdk"
 
+        public const val BEACON_VERSION: String = "3"
+
         @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public val sdkVersion: String
             get() = BuildConfig.VERSION_NAME

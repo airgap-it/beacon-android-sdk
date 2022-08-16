@@ -17,7 +17,6 @@ internal class SubstrateAppMetadataTest {
             expectedWithJson(icon = "icon"),
             expectedWithJson(includeNulls = true),
         ).map {
-            println(it.second)
             Json.decodeFromString<SubstrateAppMetadata>(it.second) to it.first
         }.forEach {
             assertEquals(it.second, it.first)

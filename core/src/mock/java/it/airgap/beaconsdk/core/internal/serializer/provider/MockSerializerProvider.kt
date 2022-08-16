@@ -8,9 +8,7 @@ import kotlinx.serialization.json.Json
 import kotlin.reflect.KClass
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class MockSerializerProvider(public var shouldFail: Boolean = false) : SerializerProvider {
-    private val json: Json by lazy { Json { classDiscriminator = "_type" } }
-
+public class MockSerializerProvider(private val json: Json, public var shouldFail: Boolean = false) : SerializerProvider {
     @Throws(Exception::class)
     override fun <T : Any> serialize(message: T, sourceClass: KClass<T>): String =
         if (shouldFail) failWith()

@@ -1,13 +1,15 @@
 package it.airgap.beaconsdk.core.data
 
-import androidx.annotation.RestrictTo
-import it.airgap.beaconsdk.core.internal.compat.CoreCompat
+import it.airgap.beaconsdk.core.internal.blockchain.BlockchainRegistry
+import it.airgap.beaconsdk.core.internal.compat.Compat
+import it.airgap.beaconsdk.core.internal.compat.VersionedCompat
 import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
 import it.airgap.beaconsdk.core.internal.utils.blockchainRegistry
+import it.airgap.beaconsdk.core.internal.utils.compat
 import it.airgap.beaconsdk.core.internal.utils.getStringOrNull
-import it.airgap.beaconsdk.core.message.PermissionBeaconResponse
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.Serializable
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.element
@@ -24,17 +26,23 @@ import kotlinx.serialization.json.jsonObject
  * @property [senderId] The value that identifies the sender to whom the permissions were granted.
  * @property [connectedAt] The timestamp at which the permissions were granted.
  */
-@Serializable(with = Permission.Serializer::class)
 public abstract class Permission {
     public abstract val blockchainIdentifier: String
     public abstract val accountId: String
     public abstract val senderId: String
     public abstract val connectedAt: Long
 
-    public companion object {}
+    public companion object {
+        public fun serializer(blockchainRegistry: BlockchainRegistry, compat: Compat<VersionedCompat>): KSerializer<Permission> =
+            Serializer(blockchainRegistry, compat)
+
+        public fun serializer(beaconScope: BeaconScope? = null): KSerializer<Permission> = Serializer(beaconScope)
+    }
 
     @OptIn(ExperimentalSerializationApi::class)
-    internal object Serializer : KJsonSerializer<Permission> {
+    internal class Serializer(private val blockchainRegistry: BlockchainRegistry, private val compat: Compat<VersionedCompat>) : KJsonSerializer<Permission> {
+        constructor(beaconScope: BeaconScope? = null) : this(blockchainRegistry(beaconScope), compat(beaconScope))
+
         override val descriptor: SerialDescriptor = buildClassSerialDescriptor("Permission") {
             element<String>("blockchainIdentifier")
         }
@@ -43,7 +51,7 @@ public abstract class Permission {
             val blockchainIdentifier = jsonElement.jsonObject.getStringOrNull(descriptor.getElementName(0))
             val blockchain = blockchainIdentifier?.let {
                 blockchainRegistry.get(blockchainIdentifier)
-            } ?: CoreCompat.versioned.blockchain
+            } ?: compat.versioned.blockchain
 
             return jsonDecoder.json.decodeFromJsonElement(blockchain.serializer.data.permission, jsonElement)
         }
@@ -52,10 +60,5 @@ public abstract class Permission {
             val blockchain = blockchainRegistry.get(value.blockchainIdentifier)
             jsonEncoder.encodeSerializableValue(blockchain.serializer.data.permission, value)
         }
-    }
-
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public interface Creator {
-        public fun fromPermissionResponse(response: PermissionBeaconResponse): Permission
     }
 }

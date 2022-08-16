@@ -1,3 +1,7 @@
 package it.airgap.beaconsdk.core.storage
 
-public interface StoragePlugin
+import it.airgap.beaconsdk.core.scope.BeaconScope
+
+public interface StoragePlugin {
+    public fun scoped(beaconScope: BeaconScope): StoragePlugin
+}

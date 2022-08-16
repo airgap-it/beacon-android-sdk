@@ -5,11 +5,21 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.confirmVerified
 import io.mockk.impl.annotations.MockK
+import it.airgap.beaconsdk.core.internal.compat.CoreCompat
+import it.airgap.beaconsdk.core.internal.network.HttpClient.Companion.get
+import it.airgap.beaconsdk.core.internal.network.HttpClient.Companion.post
+import it.airgap.beaconsdk.core.internal.network.HttpClient.Companion.put
 import it.airgap.beaconsdk.core.internal.network.data.ApplicationJson
+import it.airgap.beaconsdk.core.internal.serializer.contextualJson
 import it.airgap.beaconsdk.core.network.data.HttpParameter
-import it.airgap.beaconsdk.core.network.provider.HttpProvider
+import it.airgap.beaconsdk.core.network.provider.HttpClientProvider
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import kotlinx.coroutines.flow.single
 import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import mockDependencyRegistry
 import org.junit.Before
 import org.junit.Test
 import java.io.IOException
@@ -19,20 +29,28 @@ import kotlin.test.assertTrue
 internal class HttpClientTest {
 
     @MockK
-    private lateinit var httpClientProvider: HttpProvider
+    private lateinit var httpClientProvider: HttpClientProvider
 
     private lateinit var httpClient: HttpClient
+    private lateinit var json: Json
+
+    private val beaconScope: BeaconScope = BeaconScope.Global
 
     @Before
     fun setup() {
         MockKAnnotations.init(this)
 
-        httpClient = HttpClient(httpClientProvider)
+        val dependencyRegistry = mockDependencyRegistry()
+
+        json = Json(from = contextualJson(dependencyRegistry.blockchainRegistry, CoreCompat(beaconScope))) {
+            prettyPrint = true
+        }
+        httpClient = HttpClientImpl(httpClientProvider, json)
     }
 
     @Test
     fun `makes HTTP GET call to specified endpoint`() {
-        coEvery { httpClientProvider.get<Any, Throwable>(any(), any(), any(), any(), any(), any(), any()) } returns Unit
+        coEvery { httpClientProvider.get(any(), any(), any(), any(), any()) } returns ""
 
         runBlockingTest {
             val baseUrl = "baseUrl"
@@ -40,14 +58,14 @@ internal class HttpClientTest {
 
             httpClient.get<MockResponse, MockError>(baseUrl, endpoint).single()
 
-            coVerify { httpClientProvider.get(baseUrl, endpoint, emptyList(), emptyList(), MockResponse::class, MockError::class, null) }
+            coVerify { httpClientProvider.get(baseUrl, endpoint, emptyList(), emptyList(), null) }
             confirmVerified(httpClientProvider)
         }
     }
 
     @Test
     fun `makes HTTP GET call to specified endpoint with custom headers`() {
-        coEvery { httpClientProvider.get<Any, Throwable>(any(), any(), any(), any(), any(), any(), any()) } returns Unit
+        coEvery { httpClientProvider.get(any(), any(), any(), any(), any()) } returns ""
 
         runBlockingTest {
             val baseUrl = "baseUrl"
@@ -56,14 +74,14 @@ internal class HttpClientTest {
 
             httpClient.get<MockResponse, MockError>(baseUrl, endpoint, headers = headers).single()
 
-            coVerify { httpClientProvider.get(baseUrl, endpoint, headers, emptyList(), MockResponse::class, MockError::class, null) }
+            coVerify { httpClientProvider.get(baseUrl, endpoint, headers, emptyList(), null) }
             confirmVerified(httpClientProvider)
         }
     }
 
     @Test
     fun `makes HTTP GET call to specified endpoint with custom parameters`() {
-        coEvery { httpClientProvider.get<Any, Throwable>(any(), any(), any(), any(), any(), any(), any()) } returns Unit
+        coEvery { httpClientProvider.get(any(), any(), any(), any(), any()) } returns ""
 
         runBlockingTest {
             val baseUrl = "baseUrl"
@@ -72,14 +90,14 @@ internal class HttpClientTest {
 
             httpClient.get<MockResponse, MockError>(baseUrl, endpoint, parameters = parameters).single()
 
-            coVerify { httpClientProvider.get(baseUrl, endpoint, emptyList(), parameters, MockResponse::class, MockError::class, null) }
+            coVerify { httpClientProvider.get(baseUrl, endpoint, emptyList(), parameters, null) }
             confirmVerified(httpClientProvider)
         }
     }
 
     @Test
     fun `makes HTTP GET call to specified endpoint with custom timeout`() {
-        coEvery { httpClientProvider.get<Any, Throwable>(any(), any(), any(), any(), any(), any(), any()) } returns Unit
+        coEvery { httpClientProvider.get(any(), any(), any(), any(), any()) } returns ""
 
         runBlockingTest {
             val baseUrl = "baseUrl"
@@ -88,7 +106,7 @@ internal class HttpClientTest {
 
             httpClient.get<MockResponse, MockError>(baseUrl, endpoint, timeoutMillis = timeout).single()
 
-            coVerify { httpClientProvider.get(baseUrl, endpoint, emptyList(), emptyList(), MockResponse::class, MockError::class, timeout) }
+            coVerify { httpClientProvider.get(baseUrl, endpoint, emptyList(), emptyList(), timeout) }
             confirmVerified(httpClientProvider)
         }
     }
@@ -96,7 +114,7 @@ internal class HttpClientTest {
     @Test
     fun `emits success result with response on successful get`() {
         val response = MockResponse()
-        coEvery { httpClientProvider.get<MockResponse, MockError>(any(), any(), any(), any(), any(), any(), any()) } returns response
+        coEvery { httpClientProvider.get(any(), any(), any(), any(), any()) } returns json.encodeToString(response)
 
         runBlockingTest {
             val result = httpClient.get<MockResponse, MockError>("baseUrl", "endpoint").single()
@@ -108,7 +126,7 @@ internal class HttpClientTest {
 
     @Test
     fun `emits failure result with data if get failed`() {
-        coEvery { httpClientProvider.get<Any, Throwable>(any(), any(), any(), any(), any(), any(), any()) } throws IOException()
+        coEvery { httpClientProvider.get(any(), any(), any(), any(), any()) } throws IOException()
 
         runBlockingTest {
             val result = httpClient.get<Any, MockError>("baseUrl", "endpoint").single()
@@ -119,7 +137,7 @@ internal class HttpClientTest {
 
     @Test
     fun `makes HTTP POST call to specified endpoint`() {
-        coEvery { httpClientProvider.post<Any, Any, Throwable>(any(), any(), any(), any(), any(), any(), any(), any(), any()) } returns Unit
+        coEvery { httpClientProvider.post(any(), any(), any(), any(), any(), any()) } returns ""
 
         runBlockingTest {
             val baseUrl = "baseUrl"
@@ -134,9 +152,6 @@ internal class HttpClientTest {
                     emptyList(),
                     emptyList(),
                     null,
-                    MockRequest::class,
-                    MockResponse::class,
-                    MockError::class,
                     null,
                 )
             }
@@ -146,7 +161,7 @@ internal class HttpClientTest {
 
     @Test
     fun `makes HTTP POST call to specified endpoint with body`() {
-        coEvery { httpClientProvider.post<Any, Any, Throwable>(any(), any(), any(), any(), any(), any(), any(), any(), any()) } returns Unit
+        coEvery { httpClientProvider.post(any(), any(), any(), any(), any(), any()) } returns ""
 
         runBlockingTest {
             val baseUrl = "baseUrl"
@@ -161,10 +176,7 @@ internal class HttpClientTest {
                     endpoint,
                     emptyList(),
                     emptyList(),
-                    body,
-                    MockRequest::class,
-                    MockResponse::class,
-                    MockError::class,
+                    json.encodeToString(body),
                     null,
                 )
             }
@@ -174,7 +186,7 @@ internal class HttpClientTest {
 
     @Test
     fun `makes HTTP POST call to specified endpoint with custom headers`() {
-        coEvery { httpClientProvider.post<Any, Any, Throwable>(any(), any(), any(), any(), any(), any(), any(), any(), any()) } returns Unit
+        coEvery { httpClientProvider.post(any(), any(), any(), any(), any(), any()) } returns ""
 
         runBlockingTest {
             val baseUrl = "baseUrl"
@@ -190,9 +202,6 @@ internal class HttpClientTest {
                     headers,
                     emptyList(),
                     null,
-                    MockRequest::class,
-                    MockResponse::class,
-                    MockError::class,
                     null,
                 )
             }
@@ -202,7 +211,7 @@ internal class HttpClientTest {
 
     @Test
     fun `makes HTTP POST call to specified endpoint with custom parameters`() {
-        coEvery { httpClientProvider.post<Any, Any, Throwable>(any(), any(), any(), any(), any(), any(), any(), any(), any()) } returns Unit
+        coEvery { httpClientProvider.post(any(), any(), any(), any(), any(), any()) } returns ""
 
         runBlockingTest {
             val baseUrl = "baseUrl"
@@ -218,9 +227,6 @@ internal class HttpClientTest {
                     emptyList(),
                     parameters,
                     null,
-                    MockRequest::class,
-                    MockResponse::class,
-                    MockError::class,
                     null,
                 )
             }
@@ -230,7 +236,7 @@ internal class HttpClientTest {
 
     @Test
     fun `makes HTTP POST call to specified endpoint with custom timeout`() {
-        coEvery { httpClientProvider.post<Any, Any, Throwable>(any(), any(), any(), any(), any(), any(), any(), any(), any()) } returns Unit
+        coEvery { httpClientProvider.post(any(), any(), any(), any(), any(), any()) } returns ""
 
         runBlockingTest {
             val baseUrl = "baseUrl"
@@ -246,9 +252,6 @@ internal class HttpClientTest {
                     emptyList(),
                     emptyList(),
                     null,
-                    MockRequest::class,
-                    MockResponse::class,
-                    MockError::class,
                     timeout,
                 )
             }
@@ -259,7 +262,7 @@ internal class HttpClientTest {
     @Test
     fun `emits success result with response on successful post`() {
         val response = MockResponse()
-        coEvery { httpClientProvider.post<Any, Any, MockError>(any(), any(), any(), any(), any(), any(), any(), any(), any()) } returns response
+        coEvery { httpClientProvider.post(any(), any(), any(), any(), any(), any()) } returns json.encodeToString(response)
 
         runBlockingTest {
             val result = httpClient.post<Any, MockResponse, MockError>("baseUrl", "endpoint").single()
@@ -271,7 +274,7 @@ internal class HttpClientTest {
 
     @Test
     fun `emits failure result with data if post failed`() {
-        coEvery { httpClientProvider.post<Any, Any, Throwable>(any(), any(), any(), any(), any(), any(), any(), any(), any()) } throws IOException()
+        coEvery { httpClientProvider.post(any(), any(), any(), any(), any(), any()) } throws IOException()
 
         runBlockingTest {
             val result = httpClient.post<Any, Any, Throwable>("baseUrl", "endpoint").single()
@@ -282,7 +285,7 @@ internal class HttpClientTest {
 
     @Test
     fun `makes HTTP PUT call to specified endpoint`() {
-        coEvery { httpClientProvider.put<Any, Any, Throwable>(any(), any(), any(), any(), any(), any(), any(), any(), any()) } returns Unit
+        coEvery { httpClientProvider.put(any(), any(), any(), any(), any(), any()) } returns ""
 
         runBlockingTest {
             val baseUrl = "baseUrl"
@@ -297,9 +300,6 @@ internal class HttpClientTest {
                     emptyList(),
                     emptyList(),
                     null,
-                    MockRequest::class,
-                    MockResponse::class,
-                    MockError::class,
                     null,
                 )
             }
@@ -309,7 +309,7 @@ internal class HttpClientTest {
 
     @Test
     fun `makes HTTP PUT call to specified endpoint with body`() {
-        coEvery { httpClientProvider.put<Any, Any, Throwable>(any(), any(), any(), any(), any(), any(), any(), any(), any()) } returns Unit
+        coEvery { httpClientProvider.put(any(), any(), any(), any(), any(), any()) } returns ""
 
         runBlockingTest {
             val baseUrl = "baseUrl"
@@ -324,10 +324,7 @@ internal class HttpClientTest {
                     endpoint,
                     emptyList(),
                     emptyList(),
-                    body,
-                    MockRequest::class,
-                    MockResponse::class,
-                    MockError::class,
+                    json.encodeToString(body),
                     null,
                 )
             }
@@ -337,7 +334,7 @@ internal class HttpClientTest {
 
     @Test
     fun `makes HTTP PUT call to specified endpoint with custom headers`() {
-        coEvery { httpClientProvider.put<Any, Any, Throwable>(any(), any(), any(), any(), any(), any(), any(), any(), any()) } returns Unit
+        coEvery { httpClientProvider.put(any(), any(), any(), any(), any(), any()) } returns ""
 
         runBlockingTest {
             val baseUrl = "baseUrl"
@@ -353,9 +350,6 @@ internal class HttpClientTest {
                     headers,
                     emptyList(),
                     null,
-                    MockRequest::class,
-                    MockResponse::class,
-                    MockError::class,
                     null,
                 )
             }
@@ -365,7 +359,7 @@ internal class HttpClientTest {
 
     @Test
     fun `makes HTTP PUT call to specified endpoint with custom parameters`() {
-        coEvery { httpClientProvider.put<Any, Any, Throwable>(any(), any(), any(), any(), any(), any(), any(), any(), any()) } returns Unit
+        coEvery { httpClientProvider.put(any(), any(), any(), any(), any(), any()) } returns ""
 
         runBlockingTest {
             val baseUrl = "baseUrl"
@@ -381,9 +375,6 @@ internal class HttpClientTest {
                     emptyList(),
                     parameters,
                     null,
-                    MockRequest::class,
-                    MockResponse::class,
-                    MockError::class,
                     null,
                 )
             }
@@ -393,7 +384,7 @@ internal class HttpClientTest {
 
     @Test
     fun `makes HTTP PUT call to specified endpoint with custom timeout`() {
-        coEvery { httpClientProvider.put<Any, Any, Throwable>(any(), any(), any(), any(), any(), any(), any(), any(), any()) } returns Unit
+        coEvery { httpClientProvider.put(any(), any(), any(), any(), any(), any()) } returns ""
 
         runBlockingTest {
             val baseUrl = "baseUrl"
@@ -409,9 +400,6 @@ internal class HttpClientTest {
                     emptyList(),
                     emptyList(),
                     null,
-                    MockRequest::class,
-                    MockResponse::class,
-                    MockError::class,
                     timeout,
                 )
             }
@@ -422,7 +410,7 @@ internal class HttpClientTest {
     @Test
     fun `emits success result with response on successful put`() {
         val response = MockResponse()
-        coEvery { httpClientProvider.put<Any, Any, Throwable>(any(), any(), any(), any(), any(), any(), any(), any(), any()) } returns response
+        coEvery { httpClientProvider.put(any(), any(), any(), any(), any(), any()) } returns json.encodeToString(response)
 
         runBlockingTest {
             val result = httpClient.put<Any, MockResponse, MockError>("baseUrl", "endpoint").single()
@@ -434,7 +422,7 @@ internal class HttpClientTest {
 
     @Test
     fun `emits failure result with data if put failed`() {
-        coEvery { httpClientProvider.put<Any, Any, Throwable>(any(), any(), any(), any(), any(), any(), any(), any(), any()) } throws IOException()
+        coEvery { httpClientProvider.put(any(), any(), any(), any(), any(), any()) } throws IOException()
 
         runBlockingTest {
             val result = httpClient.put<Any, Any, MockError>("baseUrl", "endpoint").single()
@@ -443,7 +431,12 @@ internal class HttpClientTest {
         }
     }
 
+    @Serializable
     private data class MockRequest(val body: String = "body")
+
+    @Serializable
     private data class MockResponse(val content: String = "content")
+
+    @Serializable
     private data class MockError(val description: String = "description") : Throwable()
 }

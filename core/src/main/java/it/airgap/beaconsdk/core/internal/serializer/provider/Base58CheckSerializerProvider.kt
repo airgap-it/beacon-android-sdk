@@ -6,9 +6,7 @@ import it.airgap.beaconsdk.core.internal.utils.encodeToString
 import kotlinx.serialization.json.Json
 import kotlin.reflect.KClass
 
-internal class Base58CheckSerializerProvider(private val base58Check: Base58Check) : SerializerProvider {
-    private val json: Json by lazy { Json { ignoreUnknownKeys = true } }
-
+internal class Base58CheckSerializerProvider(private val base58Check: Base58Check, private val json: Json) : SerializerProvider {
     override fun <T : Any> serialize(message: T, sourceClass: KClass<T>): String {
         val jsonEncoded = json.encodeToString(message, sourceClass)
 

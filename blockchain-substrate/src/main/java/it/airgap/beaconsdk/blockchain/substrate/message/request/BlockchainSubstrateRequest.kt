@@ -1,9 +1,16 @@
 package it.airgap.beaconsdk.blockchain.substrate.message.request
 
-import it.airgap.beaconsdk.blockchain.substrate.data.*
-import it.airgap.beaconsdk.core.data.Origin
-import it.airgap.beaconsdk.core.message.BlockchainBeaconRequest
+import it.airgap.beaconsdk.blockchain.substrate.Substrate
+import it.airgap.beaconsdk.blockchain.substrate.data.SubstrateNetwork
+import it.airgap.beaconsdk.blockchain.substrate.data.SubstratePermission
+import it.airgap.beaconsdk.blockchain.substrate.data.SubstrateSignerPayload
+import it.airgap.beaconsdk.blockchain.substrate.extensions.ownAppMetadata
+import it.airgap.beaconsdk.core.client.BeaconClient
+import it.airgap.beaconsdk.core.client.BeaconProducer
 import it.airgap.beaconsdk.core.data.AppMetadata
+import it.airgap.beaconsdk.core.data.Connection
+import it.airgap.beaconsdk.core.internal.utils.failWithActiveAccountNotSet
+import it.airgap.beaconsdk.core.message.BlockchainBeaconRequest
 
 public sealed class BlockchainSubstrateRequest : BlockchainBeaconRequest() {
     public abstract val scope: SubstratePermission.Scope
@@ -25,7 +32,8 @@ public sealed class TransferSubstrateRequest : BlockchainSubstrateRequest() {
         override val blockchainIdentifier: String,
         override val senderId: String,
         override val appMetadata: AppMetadata?,
-        override val origin: Origin,
+        override val origin: Connection.Id,
+        override val destination: Connection.Id?,
         override val accountId: String,
         override val sourceAddress: String,
         override val amount: String,
@@ -39,7 +47,8 @@ public sealed class TransferSubstrateRequest : BlockchainSubstrateRequest() {
         override val blockchainIdentifier: String,
         override val senderId: String,
         override val appMetadata: AppMetadata?,
-        override val origin: Origin,
+        override val origin: Connection.Id,
+        override val destination: Connection.Id?,
         override val accountId: String,
         override val sourceAddress: String,
         override val amount: String,
@@ -53,7 +62,8 @@ public sealed class TransferSubstrateRequest : BlockchainSubstrateRequest() {
         override val blockchainIdentifier: String,
         override val senderId: String,
         override val appMetadata: AppMetadata?,
-        override val origin: Origin,
+        override val origin: Connection.Id,
+        override val destination: Connection.Id?,
         override val accountId: String,
         override val sourceAddress: String,
         override val amount: String,
@@ -62,6 +72,87 @@ public sealed class TransferSubstrateRequest : BlockchainSubstrateRequest() {
     ) : TransferSubstrateRequest()
 
     public companion object {}
+}
+
+@Suppress("FunctionName")
+public suspend fun <T> TransferSubmitSubstrateRequest(
+    sourceAddress: String,
+    amount: String,
+    recipient: String,
+    network: SubstrateNetwork,
+    producer: T,
+    transportType: Connection.Type = Connection.Type.P2P,
+) : TransferSubstrateRequest.Submit where T : BeaconClient<*>, T : BeaconProducer {
+    val requestMetadata = producer.prepareRequest(transportType)
+
+    return TransferSubstrateRequest.Submit(
+        id = requestMetadata.id,
+        version = requestMetadata.version,
+        blockchainIdentifier = Substrate.IDENTIFIER,
+        senderId = requestMetadata.senderId,
+        appMetadata = producer.ownAppMetadata(),
+        origin = requestMetadata.origin,
+        destination = requestMetadata.destination,
+        accountId = requestMetadata.accountId ?: failWithActiveAccountNotSet(),
+        sourceAddress = sourceAddress,
+        amount = amount,
+        recipient = recipient,
+        network = network,
+    )
+}
+
+@Suppress("FunctionName")
+public suspend fun <T> TransferSubmitAndReturnSubstrateRequest(
+    sourceAddress: String,
+    amount: String,
+    recipient: String,
+    network: SubstrateNetwork,
+    producer: T,
+    transportType: Connection.Type = Connection.Type.P2P,
+) : TransferSubstrateRequest.SubmitAndReturn where T : BeaconClient<*>, T : BeaconProducer {
+    val requestMetadata = producer.prepareRequest(transportType)
+
+    return TransferSubstrateRequest.SubmitAndReturn(
+        id = requestMetadata.id,
+        version = requestMetadata.version,
+        blockchainIdentifier = Substrate.IDENTIFIER,
+        senderId = requestMetadata.senderId,
+        appMetadata = producer.ownAppMetadata(),
+        origin = requestMetadata.origin,
+        destination = requestMetadata.destination,
+        accountId = requestMetadata.accountId ?: failWithActiveAccountNotSet(),
+        sourceAddress = sourceAddress,
+        amount = amount,
+        recipient = recipient,
+        network = network,
+    )
+}
+
+@Suppress("FunctionName")
+public suspend fun <T> TransferReturnSubstrateRequest(
+    sourceAddress: String,
+    amount: String,
+    recipient: String,
+    network: SubstrateNetwork,
+    producer: T,
+    transportType: Connection.Type = Connection.Type.P2P,
+) : TransferSubstrateRequest.Return where T : BeaconClient<*>, T : BeaconProducer {
+    val requestMetadata = producer.prepareRequest(transportType)
+
+    return TransferSubstrateRequest.Return(
+        id = requestMetadata.id,
+        version = requestMetadata.version,
+        blockchainIdentifier = Substrate.IDENTIFIER,
+        senderId = requestMetadata.senderId,
+        appMetadata = producer.ownAppMetadata(),
+        origin = requestMetadata.origin,
+        destination = requestMetadata.destination,
+        accountId = requestMetadata.accountId ?: failWithActiveAccountNotSet(),
+        sourceAddress = sourceAddress,
+        amount = amount,
+        recipient = recipient,
+        network = network,
+    )
 }
 
 public sealed class SignPayloadSubstrateRequest : BlockchainSubstrateRequest() {
@@ -80,7 +171,8 @@ public sealed class SignPayloadSubstrateRequest : BlockchainSubstrateRequest() {
         override val blockchainIdentifier: String,
         override val senderId: String,
         override val appMetadata: AppMetadata?,
-        override val origin: Origin,
+        override val origin: Connection.Id,
+        override val destination: Connection.Id?,
         override val accountId: String?,
         override val address: String,
         override val payload: SubstrateSignerPayload,
@@ -92,7 +184,8 @@ public sealed class SignPayloadSubstrateRequest : BlockchainSubstrateRequest() {
         override val blockchainIdentifier: String,
         override val senderId: String,
         override val appMetadata: AppMetadata?,
-        override val origin: Origin,
+        override val origin: Connection.Id,
+        override val destination: Connection.Id?,
         override val accountId: String?,
         override val address: String,
         override val payload: SubstrateSignerPayload,
@@ -104,11 +197,81 @@ public sealed class SignPayloadSubstrateRequest : BlockchainSubstrateRequest() {
         override val blockchainIdentifier: String,
         override val senderId: String,
         override val appMetadata: AppMetadata?,
-        override val origin: Origin,
+        override val origin: Connection.Id,
+        override val destination: Connection.Id?,
         override val accountId: String?,
         override val address: String,
         override val payload: SubstrateSignerPayload,
     ) : SignPayloadSubstrateRequest()
 
     public companion object {}
+}
+
+@Suppress("FunctionName")
+public suspend fun <T> SignPayloadSubmitSubstrateRequest(
+    address: String,
+    payload: SubstrateSignerPayload,
+    producer: T,
+    transportType: Connection.Type = Connection.Type.P2P,
+) : SignPayloadSubstrateRequest.Submit where T : BeaconClient<*>, T : BeaconProducer {
+    val requestMetadata = producer.prepareRequest(transportType)
+
+    return SignPayloadSubstrateRequest.Submit(
+        id = requestMetadata.id,
+        version = requestMetadata.version,
+        blockchainIdentifier = Substrate.IDENTIFIER,
+        senderId = requestMetadata.senderId,
+        appMetadata = producer.ownAppMetadata(),
+        origin = requestMetadata.origin,
+        destination = requestMetadata.destination,
+        accountId = requestMetadata.accountId ?: failWithActiveAccountNotSet(),
+        address = address,
+        payload = payload,
+    )
+}
+
+@Suppress("FunctionName")
+public suspend fun <T> SignPayloadSubmitAndReturnSubstrateRequest(
+    address: String,
+    payload: SubstrateSignerPayload,
+    producer: T,
+    transportType: Connection.Type = Connection.Type.P2P,
+) : SignPayloadSubstrateRequest.SubmitAndReturn where T : BeaconClient<*>, T : BeaconProducer {
+    val requestMetadata = producer.prepareRequest(transportType)
+
+    return SignPayloadSubstrateRequest.SubmitAndReturn(
+        id = requestMetadata.id,
+        version = requestMetadata.version,
+        blockchainIdentifier = Substrate.IDENTIFIER,
+        senderId = requestMetadata.senderId,
+        appMetadata = producer.ownAppMetadata(),
+        origin = requestMetadata.origin,
+        destination = requestMetadata.destination,
+        accountId = requestMetadata.accountId ?: failWithActiveAccountNotSet(),
+        address = address,
+        payload = payload,
+    )
+}
+
+@Suppress("FunctionName")
+public suspend fun <T> SignPayloadReturnSubstrateRequest(
+    address: String,
+    payload: SubstrateSignerPayload,
+    producer: T,
+    transportType: Connection.Type = Connection.Type.P2P,
+) : SignPayloadSubstrateRequest.Return where T : BeaconClient<*>, T : BeaconProducer {
+    val requestMetadata = producer.prepareRequest(transportType)
+
+    return SignPayloadSubstrateRequest.Return(
+        id = requestMetadata.id,
+        version = requestMetadata.version,
+        blockchainIdentifier = Substrate.IDENTIFIER,
+        senderId = requestMetadata.senderId,
+        appMetadata = producer.ownAppMetadata(),
+        origin = requestMetadata.origin,
+        destination = requestMetadata.destination,
+        accountId = requestMetadata.accountId ?: failWithActiveAccountNotSet(),
+        address = address,
+        payload = payload,
+    )
 }

@@ -45,10 +45,13 @@ To add `Beacon Android SDK` into your project:
   #### Groovy
   ```groovy
   dependencies {
-    def beacon_version = "3.1.0"
+    def beacon_version = "3.2.0"
 
     // REQUIRED, core
     implementation "com.github.airgap-it.beacon-android-sdk:core:$beacon_version"
+
+    // optional, client-dapp
+    implementation "com.github.airgap-it.beacon-android-sdk:client-dapp:$beacon_version"
   
     // optional, client-wallet
     implementation "com.github.airgap-it.beacon-android-sdk:client-wallet:$beacon_version"
@@ -73,10 +76,13 @@ To add `Beacon Android SDK` into your project:
   #### Kotlin
   ```kotlin
   dependencies {
-    val beaconVersion = "3.1.0"
+    val beaconVersion = "3.2.0"
   
     // REQUIRED, core
     implementation("com.github.airgap-it.beacon-android-sdk:core:$beaconVersion")
+
+    // optional, client-dapp
+    implementation("com.github.airgap-it.beacon-android-sdk:client-dapp:$beaconVersion")
   
     // optional, client-wallet
     implementation("com.github.airgap-it.beacon-android-sdk:client-wallet:$beaconVersion")
@@ -162,6 +168,7 @@ Client modules ship with Beacon implementations for different parts of the netwo
 
 | Module                  | Description                                                                                                                                | Dependencies                    | Required by             |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------- | ----------------------- |
+| `:client-dapp`          | Beacon implementation for dApps                                                                                                            | `:core`                         | ✖️                      |
 | `:client-wallet`        | Beacon implementation for wallets                                                                                                          | `:core`                         | `:client-wallet-compat` |
 | `:client-wallet-compat` | Provides a supplementary interface for `:client-wallet` for use without [Coroutines](https://kotlinlang.org/docs/coroutines-overview.html) | `:core` <br /> `:client-wallet` | ✖️                      |
 
@@ -192,7 +199,7 @@ Demo modules provide examples of how to use the library.
 
 ## Examples
 
-The snippets below show how to quickly setup listening for incoming Beacon messages in Kotlin with coroutines. 
+The snippets below show how to quickly setup a wallet listening for incoming Beacon messages in Kotlin with coroutines. 
 
 For more examples or examples of how to use the SDK without coroutines or in Java, please see our `demo` app (WIP).
 

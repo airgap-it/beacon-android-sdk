@@ -3,52 +3,58 @@ package it.airgap.beaconsdk.transport.p2p.matrix.internal.storage.sharedpreferen
 import android.content.Context
 import android.content.SharedPreferences
 import it.airgap.beaconsdk.core.internal.BeaconConfiguration
-import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.getSerializable
-import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.putSerializable
-import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.putString
+import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.SharedPreferencesBaseStorage
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import it.airgap.beaconsdk.transport.p2p.matrix.data.MatrixRoom
 import it.airgap.beaconsdk.transport.p2p.matrix.storage.P2pMatrixStoragePlugin
 
-internal class SharedPreferencesP2pMatrixStoragePlugin(private val sharedPreferences: SharedPreferences) :
-    P2pMatrixStoragePlugin {
+internal class SharedPreferencesP2pMatrixStoragePlugin(
+    sharedPreferences: SharedPreferences,
+    beaconScope: BeaconScope = BeaconScope.Global,
+) : P2pMatrixStoragePlugin, SharedPreferencesBaseStorage(beaconScope, sharedPreferences) {
+
     override suspend fun getMatrixRelayServer(): String? =
-        sharedPreferences.getString(KEY_MATRIX_RELAY_SERVER, null)
+        sharedPreferences.getString(Key.MatrixRelayServer.scoped(), null)
 
     override suspend fun setMatrixRelayServer(relayServer: String?) {
-        sharedPreferences.putString(KEY_MATRIX_RELAY_SERVER, relayServer)
+        sharedPreferences.putString(Key.MatrixRelayServer.scoped(), relayServer)
     }
 
     override suspend fun getMatrixChannels(): Map<String, String> =
-        sharedPreferences.getSerializable(KEY_MATRIX_CHANNELS, emptyMap())
+        sharedPreferences.getSerializable(Key.MatrixChannels.scoped(), emptyMap(), beaconScope)
 
     override suspend fun setMatrixChannels(channels: Map<String, String>) {
-        sharedPreferences.putSerializable(KEY_MATRIX_CHANNELS, channels)
+        sharedPreferences.putSerializable(Key.MatrixChannels.scoped(), channels, beaconScope)
     }
 
     override suspend fun getMatrixSyncToken(): String? =
-        sharedPreferences.getString(KEY_MATRIX_SYNC_TOKEN, null)
+        sharedPreferences.getString(Key.MatrixSyncToken.scoped(), null)
 
     override suspend fun setMatrixSyncToken(syncToken: String?) {
-        sharedPreferences.putString(KEY_MATRIX_SYNC_TOKEN, syncToken)
+        sharedPreferences.putString(Key.MatrixSyncToken.scoped(), syncToken)
     }
 
     override suspend fun getMatrixRooms(): List<MatrixRoom> =
-        sharedPreferences.getSerializable(KEY_MATRIX_ROOM_IDS, emptyList())
+        sharedPreferences.getSerializable(Key.MatrixRoomIds.scoped(), emptyList(), beaconScope)
 
     override suspend fun setMatrixRooms(rooms: List<MatrixRoom>) {
-        sharedPreferences.putSerializable(KEY_MATRIX_ROOM_IDS, rooms)
+        sharedPreferences.putSerializable(Key.MatrixRoomIds.scoped(), rooms, beaconScope)
     }
 
-    companion object {
-        private const val KEY_MATRIX_RELAY_SERVER = "matrixRelayServer"
-        private const val KEY_MATRIX_CHANNELS = "matrixChannels"
-        private const val KEY_MATRIX_SYNC_TOKEN = "matrixSyncToken"
-        private const val KEY_MATRIX_ROOM_IDS = "matrixRoomIds"
+    override fun scoped(beaconScope: BeaconScope): P2pMatrixStoragePlugin =
+        if (beaconScope == this.beaconScope) this
+        else SharedPreferencesP2pMatrixStoragePlugin(sharedPreferences, beaconScope)
 
-        fun create(context: Context): SharedPreferencesP2pMatrixStoragePlugin {
-            val sharedPreferences = context.getSharedPreferences(BeaconConfiguration.STORAGE_NAME, Context.MODE_PRIVATE)
-
-            return SharedPreferencesP2pMatrixStoragePlugin(sharedPreferences)
-        }
+    private enum class Key(override val value: String) : SharedPreferencesBaseStorage.Key {
+        MatrixRelayServer("matrixRelayServer"),
+        MatrixChannels("matrixChannels"),
+        MatrixSyncToken("matrixSyncToken"),
+        MatrixRoomIds("matrixRoomIds"),
     }
+}
+
+internal fun SharedPreferencesP2pMatrixStoragePlugin(context: Context): SharedPreferencesP2pMatrixStoragePlugin {
+    val sharedPreferences = context.getSharedPreferences(BeaconConfiguration.STORAGE_NAME, Context.MODE_PRIVATE)
+
+    return SharedPreferencesP2pMatrixStoragePlugin(sharedPreferences)
 }

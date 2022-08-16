@@ -1,6 +1,8 @@
 package it.airgap.beaconsdk.blockchain.substrate.data
 
+import it.airgap.beaconsdk.core.client.BeaconClient
 import it.airgap.beaconsdk.core.internal.utils.dependencyRegistry
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import kotlinx.serialization.Serializable
 
 /**
@@ -24,7 +26,23 @@ public data class SubstrateAccount internal constructor(
 /**
  * Creates a new instance of [SubstrateAccount] with the specified [publicKey], [address] and optional [network].
  */
-public fun SubstrateAccount(publicKey: String, address: String, network: SubstrateNetwork? = null): SubstrateAccount {
-    val accountId = dependencyRegistry.identifierCreator.accountId(address, network).getOrThrow()
+public fun SubstrateAccount(publicKey: String, address: String, network: SubstrateNetwork? = null, beaconScope: BeaconScope): SubstrateAccount {
+    val accountId = dependencyRegistry(beaconScope).identifierCreator.accountId(address, network).getOrThrow()
+    return SubstrateAccount(accountId, network, publicKey, address)
+}
+
+/**
+ * Creates a new instance of [SubstrateAccount] with the specified [publicKey], [address] and optional [network].
+ */
+public fun SubstrateAccount(publicKey: String, address: String, network: SubstrateNetwork? = null, client: BeaconClient<*>): SubstrateAccount {
+    val accountId = dependencyRegistry(client.beaconScope).identifierCreator.accountId(address, network).getOrThrow()
+    return SubstrateAccount(accountId, network, publicKey, address)
+}
+
+/**
+ * Creates a new instance of [SubstrateAccount] with the specified [publicKey], [address] and optional [network].
+ */
+public fun BeaconClient<*>.SubstrateAccount(publicKey: String, address: String, network: SubstrateNetwork? = null): SubstrateAccount {
+    val accountId = dependencyRegistry(beaconScope).identifierCreator.accountId(address, network).getOrThrow()
     return SubstrateAccount(accountId, network, publicKey, address)
 }

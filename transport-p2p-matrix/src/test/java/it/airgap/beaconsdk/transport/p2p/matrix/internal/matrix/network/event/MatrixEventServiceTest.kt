@@ -8,8 +8,9 @@ import io.mockk.impl.annotations.MockK
 import it.airgap.beaconsdk.core.internal.network.HttpClient
 import it.airgap.beaconsdk.core.internal.network.data.ApplicationJson
 import it.airgap.beaconsdk.core.internal.network.data.BearerHeader
+import it.airgap.beaconsdk.core.internal.utils.encodeToString
 import it.airgap.beaconsdk.core.network.data.HttpParameter
-import it.airgap.beaconsdk.core.network.provider.HttpProvider
+import it.airgap.beaconsdk.core.network.provider.HttpClientProvider
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.MatrixError
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.event.MatrixEventResponse
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.sync.MatrixSyncResponse
@@ -18,6 +19,8 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import nodeApiUrl
 import org.junit.Before
 import org.junit.Test
@@ -27,10 +30,11 @@ import kotlin.test.assertEquals
 internal class MatrixEventServiceTest {
 
     @MockK
-    private lateinit var httpClientProvider: HttpProvider
-    private lateinit var httpClient: HttpClient
+    private lateinit var httpClientProvider: HttpClientProvider
 
+    private lateinit var httpClient: HttpClient
     private lateinit var matrixEventService: MatrixEventService
+    private lateinit var json: Json
 
     private lateinit var testDeferred: CompletableDeferred<Unit>
 
@@ -38,7 +42,11 @@ internal class MatrixEventServiceTest {
     fun setup() {
         MockKAnnotations.init(this)
 
-        httpClient = HttpClient(httpClientProvider)
+        json = Json(from = Json.Default) {
+            prettyPrint = true
+        }
+
+        httpClient = HttpClient(httpClientProvider, json)
         matrixEventService = MatrixEventService(httpClient)
 
         testDeferred = CompletableDeferred()
@@ -47,7 +55,7 @@ internal class MatrixEventServiceTest {
     @Test
     fun `gets all events from server`() {
         val expectedResponse = MatrixSyncResponse()
-        coEvery { httpClientProvider.get<MatrixSyncResponse, MatrixError>(any(), any(), any(), any(), any(), any(), any()) } returns expectedResponse
+        coEvery { httpClientProvider.get(any(), any(), any(), any(), any()) } returns json.encodeToString(expectedResponse)
 
         runBlocking {
             val node = "node"
@@ -61,8 +69,6 @@ internal class MatrixEventServiceTest {
                 "/sync",
                 listOf(BearerHeader(accessToken), ApplicationJson()),
                 emptyList(),
-                MatrixSyncResponse::class,
-                MatrixError::class,
                 null,
             ) }
             confirmVerified(httpClientProvider)
@@ -72,7 +78,7 @@ internal class MatrixEventServiceTest {
     @Test
     fun `returns error if sync failed`() {
         val error = IOException()
-        coEvery { httpClientProvider.get<MatrixSyncResponse, MatrixError>(any(), any(), any(), any(), any(), any(), any()) } throws error
+        coEvery { httpClientProvider.get(any(), any(), any(), any(), any()) } throws error
 
         runBlocking {
             val exception = matrixEventService.sync("node", "token").exceptionOrNull()
@@ -84,7 +90,7 @@ internal class MatrixEventServiceTest {
     @Test
     fun `gets latest events from server based on specified token`() {
         val expectedResponse = MatrixSyncResponse()
-        coEvery { httpClientProvider.get<MatrixSyncResponse, MatrixError>(any(), any(), any(), any(), any(), any(), any()) } returns expectedResponse
+        coEvery { httpClientProvider.get(any(), any(), any(), any(), any()) } returns json.encodeToString(expectedResponse)
 
         runBlocking {
             val node = "node"
@@ -100,8 +106,6 @@ internal class MatrixEventServiceTest {
                 "/sync",
                 listOf(BearerHeader(accessToken), ApplicationJson()),
                 listOf(HttpParameter("since", since), HttpParameter("timeout", timeout.toString())),
-                MatrixSyncResponse::class,
-                MatrixError::class,
                 3L,
             ) }
             confirmVerified(httpClientProvider)
@@ -111,9 +115,9 @@ internal class MatrixEventServiceTest {
     @Test
     fun `has only one sync request pending at a time`() {
         val expectedResponse = MatrixSyncResponse()
-        coEvery { httpClientProvider.get<MatrixSyncResponse, MatrixError>(any(), any(), any(), any(), any(), any(), any()) } coAnswers {
+        coEvery { httpClientProvider.get(any(), any(), any(), any(), any()) } coAnswers {
             testDeferred.await()
-            expectedResponse
+            json.encodeToString(expectedResponse)
         }
 
         runBlocking {
@@ -133,8 +137,6 @@ internal class MatrixEventServiceTest {
                 "/sync",
                 listOf(BearerHeader(accessToken), ApplicationJson()),
                 emptyList(),
-                MatrixSyncResponse::class,
-                MatrixError::class,
                 null,
             ) }
             confirmVerified(httpClientProvider)
@@ -144,17 +146,14 @@ internal class MatrixEventServiceTest {
     @Test
     fun `sends text message and returns result`() {
         val expectedResponse = MatrixEventResponse("eventId")
-        coEvery { httpClientProvider.put<Any, MatrixEventResponse, MatrixError>(
+        coEvery { httpClientProvider.put(
             any(),
             any(),
             any(),
             any(),
             any(),
             any(),
-            any(),
-            any(),
-            any(),
-        ) } returns expectedResponse
+        ) } returns json.encodeToString(expectedResponse)
 
         runBlockingTest {
             val node = "node"
@@ -177,10 +176,7 @@ internal class MatrixEventServiceTest {
                 "/rooms/$roomId/send/m.room.message/$txnId",
                 listOf(BearerHeader(accessToken), ApplicationJson()),
                 emptyList(),
-                Message.Content(Message.Content.TYPE_TEXT, message),
-                Message.Content::class,
-                MatrixEventResponse::class,
-                MatrixError::class,
+                json.encodeToString(Message.Content(Message.Content.TYPE_TEXT, message)),
                 any(),
             ) }
             confirmVerified(httpClientProvider)
@@ -190,10 +186,7 @@ internal class MatrixEventServiceTest {
     @Test
     fun `returns error if sending text message failed`() {
         val error = IOException()
-        coEvery { httpClientProvider.put<Any, MatrixEventResponse, MatrixError>(
-            any(),
-            any(),
-            any(),
+        coEvery { httpClientProvider.put(
             any(),
             any(),
             any(),

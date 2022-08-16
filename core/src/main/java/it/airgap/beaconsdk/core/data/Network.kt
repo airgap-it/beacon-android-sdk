@@ -1,11 +1,13 @@
 package it.airgap.beaconsdk.core.data
 
 import androidx.annotation.RestrictTo
+import it.airgap.beaconsdk.core.internal.blockchain.BlockchainRegistry
 import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
 import it.airgap.beaconsdk.core.internal.utils.blockchainRegistry
 import it.airgap.beaconsdk.core.internal.utils.getString
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.Serializable
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.element
@@ -21,7 +23,6 @@ import kotlinx.serialization.json.jsonObject
  * @property [name] An optional name of the network.
  * @property [rpcUrl] An optional URL for the network RPC interface.
  */
-@Serializable(with = Network.Serializer::class)
 public abstract class Network {
     public abstract val blockchainIdentifier: String
     public abstract val name: String?
@@ -30,10 +31,15 @@ public abstract class Network {
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public abstract val identifier: String
 
-    public companion object {}
+    public companion object {
+        public fun serializer(blockchainRegistry: BlockchainRegistry): KSerializer<Network> = Serializer(blockchainRegistry)
+        public fun serializer(beaconScope: BeaconScope? = null): KSerializer<Network> = Serializer(beaconScope)
+    }
 
     @OptIn(ExperimentalSerializationApi::class)
-    internal object Serializer : KJsonSerializer<Network> {
+    internal class Serializer(private val blockchainRegistry: BlockchainRegistry) : KJsonSerializer<Network> {
+        constructor(beaconScope: BeaconScope? = null) : this(blockchainRegistry(beaconScope))
+
         override val descriptor: SerialDescriptor = buildClassSerialDescriptor("Network") {
             element<String>("blockchainIdentifier")
             element<String>("name", isOptional = true)
