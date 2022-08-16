@@ -8,8 +8,8 @@ import it.airgap.beaconsdk.core.internal.crypto.data.KeyPair
 public data class BeaconApplication(
     val keyPair: KeyPair,
     val name: String,
-    val icon: String?,
-    val url: String?,
+    val icon: String? = null,
+    val url: String? = null,
 ) {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public data class Partial(

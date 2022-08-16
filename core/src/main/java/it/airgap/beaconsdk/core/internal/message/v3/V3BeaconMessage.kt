@@ -2,17 +2,17 @@ package it.airgap.beaconsdk.core.internal.message.v3
 
 import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.data.BeaconError
-import it.airgap.beaconsdk.core.data.Origin
+import it.airgap.beaconsdk.core.data.Connection
+import it.airgap.beaconsdk.core.internal.blockchain.BlockchainRegistry
 import it.airgap.beaconsdk.core.internal.message.VersionedBeaconMessage
 import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
 import it.airgap.beaconsdk.core.internal.utils.blockchainRegistry
 import it.airgap.beaconsdk.core.message.*
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.builtins.ListSerializer
-import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.element
@@ -32,17 +32,23 @@ public data class V3BeaconMessage(
     public val message: Content,
 ) : VersionedBeaconMessage() {
 
-    override suspend fun toBeaconMessage(origin: Origin): BeaconMessage = message.toBeaconMessage(id, version, senderId, origin)
+    override suspend fun toBeaconMessage(
+        origin: Connection.Id,
+        destination: Connection.Id,
+        beaconScope: BeaconScope,
+    ): BeaconMessage = message.toBeaconMessage(beaconScope, id, version, senderId, origin, destination)
 
     @OptIn(ExperimentalSerializationApi::class)
     @Serializable
     @JsonClassDiscriminator(Content.CLASS_DISCRIMINATOR)
     public sealed class Content {
         public abstract suspend fun toBeaconMessage(
+            beaconScope: BeaconScope,
             id: String,
             version: String,
             senderId: String,
-            origin: Origin,
+            origin: Connection.Id,
+            destination: Connection.Id,
         ): BeaconMessage
 
         public companion object {
@@ -51,60 +57,80 @@ public data class V3BeaconMessage(
     }
 
     public companion object {
-        public fun from(senderId: String, message: BeaconMessage): V3BeaconMessage = with(message) {
+        public fun from(senderId: String, message: BeaconMessage, context: Context): V3BeaconMessage = with(message) {
             val content = when (this) {
                 is AcknowledgeBeaconResponse -> AcknowledgeV3BeaconResponseContent
                 is ErrorBeaconResponse -> ErrorV3BeaconResponseContent(errorType, description)
                 is DisconnectBeaconMessage -> DisconnectV3BeaconMessageContent
-                is PermissionBeaconRequest -> blockchainRegistry.get(blockchainIdentifier).creator.v3.contentFrom(message).getOrThrow()
-                is BlockchainBeaconRequest -> blockchainRegistry.get(blockchainIdentifier).creator.v3.contentFrom(message).getOrThrow()
-                is PermissionBeaconResponse -> blockchainRegistry.get(blockchainIdentifier).creator.v3.contentFrom(message).getOrThrow()
-                is BlockchainBeaconResponse -> blockchainRegistry.get(blockchainIdentifier).creator.v3.contentFrom(message).getOrThrow()
+                is PermissionBeaconRequest -> context.blockchainRegistry.get(blockchainIdentifier).creator.v3.contentFrom(message).getOrThrow()
+                is BlockchainBeaconRequest -> context.blockchainRegistry.get(blockchainIdentifier).creator.v3.contentFrom(message).getOrThrow()
+                is PermissionBeaconResponse -> context.blockchainRegistry.get(blockchainIdentifier).creator.v3.contentFrom(message).getOrThrow()
+                is BlockchainBeaconResponse -> context.blockchainRegistry.get(blockchainIdentifier).creator.v3.contentFrom(message).getOrThrow()
             }
 
             V3BeaconMessage(id, version, senderId, content)
         }
     }
+
+    public class Context(public val blockchainRegistry: BlockchainRegistry)
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@Serializable(with = PermissionV3BeaconRequestContent.Serializer::class)
 public data class PermissionV3BeaconRequestContent(
     public val blockchainIdentifier: String,
     public val blockchainData: BlockchainData,
 ) : V3BeaconMessage.Content() {
 
     override suspend fun toBeaconMessage(
+        beaconScope: BeaconScope,
         id: String,
         version: String,
         senderId: String,
-        origin: Origin,
-    ): BeaconMessage = blockchainData.toBeaconMessage(id, version, senderId, origin, blockchainIdentifier)
+        origin: Connection.Id,
+        destination: Connection.Id,
+    ): BeaconMessage = blockchainData.toBeaconMessage(beaconScope, id, version, senderId, origin, destination, blockchainIdentifier)
 
     @Serializable
     public abstract class BlockchainData {
         public abstract suspend fun toBeaconMessage(
+            beaconScope: BeaconScope,
             id: String,
             version: String,
             senderId: String,
-            origin: Origin,
+            origin: Connection.Id,
+            destination: Connection.Id,
             blockchainIdentifier: String,
         ): BeaconMessage
 
         public companion object {
-            public fun serializer(blockchainIdentifier: String): KSerializer<BlockchainData> = Serializer(blockchainIdentifier)
+            public fun serializer(blockchainRegistry: BlockchainRegistry, blockchainIdentifier: String): KSerializer<BlockchainData> =
+                Serializer(blockchainRegistry, blockchainIdentifier)
+
+            public fun serializer(blockchainIdentifier: String, beaconScope: BeaconScope? = null): KSerializer<BlockchainData> =
+                Serializer(blockchainIdentifier, beaconScope)
         }
 
-        internal data class Serializer(
+        public data class Serializer(
+            private val blockchainRegistry: BlockchainRegistry,
             private val blockchainIdentifier: String,
-        ) : KSerializer<BlockchainData> by blockchainRegistry.get(blockchainIdentifier).serializer.v3.permissionRequestData
+        ) : KSerializer<BlockchainData> by blockchainRegistry.get(blockchainIdentifier).serializer.v3.permissionRequestData {
+            public constructor(blockchainIdentifier: String, beaconScope: BeaconScope? = null) : this(blockchainRegistry(beaconScope), blockchainIdentifier)
+        }
     }
 
     public companion object {
         internal const val TYPE: String = "permission_request"
+
+        public fun serializer(blockchainRegistry: BlockchainRegistry): KSerializer<PermissionV3BeaconRequestContent> =
+            Serializer(blockchainRegistry)
+
+        public fun serializer(beaconScope: BeaconScope? = null): KSerializer<PermissionV3BeaconRequestContent> =
+            Serializer(beaconScope)
     }
 
-    internal object Serializer : KJsonSerializer<PermissionV3BeaconRequestContent> {
+    internal class Serializer(private val blockchainRegistry: BlockchainRegistry) : KJsonSerializer<PermissionV3BeaconRequestContent> {
+        constructor(beaconScope: BeaconScope? = null) : this(blockchainRegistry(beaconScope))
+
         override val descriptor: SerialDescriptor = buildClassSerialDescriptor(TYPE) {
             element<String>("blockchainIdentifier")
             element<BlockchainData>("blockchainData")
@@ -113,7 +139,7 @@ public data class PermissionV3BeaconRequestContent(
         override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): PermissionV3BeaconRequestContent =
             jsonDecoder.decodeStructure(descriptor) {
                 val blockchainIdentifier = decodeStringElement(descriptor, 0)
-                val blockchainData = decodeSerializableElement(descriptor, 1, BlockchainData.serializer(blockchainIdentifier))
+                val blockchainData = decodeSerializableElement(descriptor, 1, BlockchainData.serializer(blockchainRegistry, blockchainIdentifier))
 
                 PermissionV3BeaconRequestContent(blockchainIdentifier, blockchainData)
             }
@@ -122,14 +148,13 @@ public data class PermissionV3BeaconRequestContent(
             jsonEncoder.encodeStructure(descriptor) {
                 with(value) {
                     encodeStringElement(descriptor, 0, blockchainIdentifier)
-                    encodeSerializableElement(descriptor, 1, BlockchainData.serializer(blockchainIdentifier), blockchainData)
+                    encodeSerializableElement(descriptor, 1, BlockchainData.serializer(blockchainRegistry, blockchainIdentifier), blockchainData)
                 }
             }
     }
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@Serializable(with = BlockchainV3BeaconRequestContent.Serializer::class)
 public data class BlockchainV3BeaconRequestContent(
     public val blockchainIdentifier: String,
     public val accountId: String,
@@ -137,37 +162,56 @@ public data class BlockchainV3BeaconRequestContent(
 ) : V3BeaconMessage.Content() {
 
     override suspend fun toBeaconMessage(
+        beaconScope: BeaconScope,
         id: String,
         version: String,
         senderId: String,
-        origin: Origin,
-    ): BeaconMessage = blockchainData.toBeaconMessage(id, version, senderId, origin, accountId, blockchainIdentifier)
+        origin: Connection.Id,
+        destination: Connection.Id,
+    ): BeaconMessage = blockchainData.toBeaconMessage(beaconScope, id, version, senderId, origin, destination, accountId, blockchainIdentifier)
 
     @Serializable
     public abstract class BlockchainData {
         public abstract suspend fun toBeaconMessage(
+            beaconScope: BeaconScope,
             id: String,
             version: String,
             senderId: String,
-            origin: Origin,
+            origin: Connection.Id,
+            destination: Connection.Id,
             accountId: String,
             blockchainIdentifier: String,
         ): BeaconMessage
 
         public companion object {
-            public fun serializer(blockchainIdentifier: String): KSerializer<BlockchainData> = Serializer(blockchainIdentifier)
+            public fun serializer(blockchainRegistry: BlockchainRegistry, blockchainIdentifier: String): KSerializer<BlockchainData> =
+                Serializer(blockchainRegistry, blockchainIdentifier)
+
+            public fun serializer(blockchainIdentifier: String, beaconScope: BeaconScope): KSerializer<BlockchainData> =
+                Serializer(blockchainIdentifier, beaconScope)
         }
 
         internal data class Serializer(
+            private val blockchainRegistry: BlockchainRegistry,
             private val blockchainIdentifier: String,
-        ) : KSerializer<BlockchainData> by blockchainRegistry.get(blockchainIdentifier).serializer.v3.blockchainRequestData
+        ) : KSerializer<BlockchainData> by blockchainRegistry.get(blockchainIdentifier).serializer.v3.blockchainRequestData {
+            constructor(blockchainIdentifier: String, beaconScope: BeaconScope? = null) : this(blockchainRegistry(beaconScope), blockchainIdentifier)
+        }
     }
 
     public companion object {
         internal const val TYPE: String = "blockchain_request"
+
+        public fun serializer(blockchainRegistry: BlockchainRegistry): KSerializer<BlockchainV3BeaconRequestContent> =
+            Serializer(blockchainRegistry)
+
+        public fun serializer(beaconScope: BeaconScope? = null): KSerializer<BlockchainV3BeaconRequestContent> =
+            Serializer(beaconScope)
     }
 
-    internal object Serializer : KJsonSerializer<BlockchainV3BeaconRequestContent> {
+    internal class Serializer(private val blockchainRegistry: BlockchainRegistry) : KJsonSerializer<BlockchainV3BeaconRequestContent> {
+        constructor(beaconScope: BeaconScope? = null) : this(blockchainRegistry(beaconScope))
+
         override val descriptor: SerialDescriptor = buildClassSerialDescriptor(TYPE) {
             element<String>("blockchainIdentifier")
             element<String>("accountId")
@@ -178,7 +222,7 @@ public data class BlockchainV3BeaconRequestContent(
             jsonDecoder.decodeStructure(descriptor) {
                 val blockchainIdentifier = decodeStringElement(descriptor, 0)
                 val accountId = decodeStringElement(descriptor, 1)
-                val blockchainData = decodeSerializableElement(descriptor, 2, BlockchainData.serializer(blockchainIdentifier))
+                val blockchainData = decodeSerializableElement(descriptor, 2, BlockchainData.serializer(blockchainRegistry, blockchainIdentifier))
 
                 BlockchainV3BeaconRequestContent(blockchainIdentifier, accountId, blockchainData)
             }
@@ -188,50 +232,68 @@ public data class BlockchainV3BeaconRequestContent(
                 with(value) {
                     encodeStringElement(descriptor, 0, blockchainIdentifier)
                     encodeStringElement(descriptor, 1, accountId)
-                    encodeSerializableElement(descriptor, 2, BlockchainData.serializer(blockchainIdentifier), blockchainData)
+                    encodeSerializableElement(descriptor, 2, BlockchainData.serializer(blockchainRegistry, blockchainIdentifier), blockchainData)
                 }
             }
     }
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@Serializable(with = PermissionV3BeaconResponseContent.Serializer::class)
 public data class PermissionV3BeaconResponseContent(
     public val blockchainIdentifier: String,
     public val blockchainData: BlockchainData,
 ) : V3BeaconMessage.Content() {
 
     override suspend fun toBeaconMessage(
+        beaconScope: BeaconScope,
         id: String,
         version: String,
         senderId: String,
-        origin: Origin,
-    ): BeaconMessage = blockchainData.toBeaconMessage(id, version, senderId, origin, blockchainIdentifier)
+        origin: Connection.Id,
+        destination: Connection.Id,
+    ): BeaconMessage = blockchainData.toBeaconMessage(beaconScope, id, version, senderId, origin, destination, blockchainIdentifier)
 
     @Serializable
     public abstract class BlockchainData {
         public abstract suspend fun toBeaconMessage(
+            beaconScope: BeaconScope,
             id: String,
             version: String,
             senderId: String,
-            origin: Origin,
+            origin: Connection.Id,
+            destination: Connection.Id,
             blockchainIdentifier: String,
         ): BeaconMessage
 
         public companion object {
-            public fun serializer(blockchainIdentifier: String): KSerializer<BlockchainData> = Serializer(blockchainIdentifier)
+            public fun serializer(blockchainRegistry: BlockchainRegistry, blockchainIdentifier: String): KSerializer<BlockchainData> =
+                Serializer(blockchainRegistry, blockchainIdentifier)
+
+            public fun serializer(blockchainIdentifier: String, beaconScope: BeaconScope? = null): KSerializer<BlockchainData> =
+                Serializer(blockchainIdentifier, beaconScope)
         }
 
         internal data class Serializer(
+            private val blockchainRegistry: BlockchainRegistry,
             private val blockchainIdentifier: String,
-        ) : KSerializer<BlockchainData> by blockchainRegistry.get(blockchainIdentifier).serializer.v3.permissionResponseData
+        ) : KSerializer<BlockchainData> by blockchainRegistry.get(blockchainIdentifier).serializer.v3.permissionResponseData {
+            constructor(blockchainIdentifier: String, beaconScope: BeaconScope? = null) : this(blockchainRegistry(beaconScope), blockchainIdentifier)
+        }
     }
 
     public companion object {
         internal const val TYPE: String = "permission_response"
+
+        public fun serializer(blockchainRegistry: BlockchainRegistry): KSerializer<PermissionV3BeaconResponseContent> =
+            Serializer(blockchainRegistry)
+
+        public fun serializer(beaconScope: BeaconScope? = null): KSerializer<PermissionV3BeaconResponseContent> =
+            Serializer(beaconScope)
     }
 
-    internal object Serializer : KJsonSerializer<PermissionV3BeaconResponseContent> {
+    internal class Serializer(private val blockchainRegistry: BlockchainRegistry) : KJsonSerializer<PermissionV3BeaconResponseContent> {
+        constructor(beaconScope: BeaconScope? = null) : this(blockchainRegistry(beaconScope))
+
         override val descriptor: SerialDescriptor = buildClassSerialDescriptor(TYPE) {
             element<String>("blockchainIdentifier")
             element<BlockchainData>("blockchainData")
@@ -240,7 +302,7 @@ public data class PermissionV3BeaconResponseContent(
         override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): PermissionV3BeaconResponseContent =
             jsonDecoder.decodeStructure(descriptor) {
                 val blockchainIdentifier = decodeStringElement(descriptor, 0)
-                val blockchainData = decodeSerializableElement(descriptor, 1, BlockchainData.serializer(blockchainIdentifier))
+                val blockchainData = decodeSerializableElement(descriptor, 1, BlockchainData.serializer(blockchainRegistry, blockchainIdentifier))
 
                 PermissionV3BeaconResponseContent(blockchainIdentifier, blockchainData)
             }
@@ -249,50 +311,62 @@ public data class PermissionV3BeaconResponseContent(
             jsonEncoder.encodeStructure(descriptor) {
                 with(value) {
                     encodeStringElement(descriptor, 0, blockchainIdentifier)
-                    encodeSerializableElement(descriptor, 1, BlockchainData.serializer(blockchainIdentifier), blockchainData)
+                    encodeSerializableElement(descriptor, 1, BlockchainData.serializer(blockchainRegistry, blockchainIdentifier), blockchainData)
                 }
             }
     }
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@Serializable(with = BlockchainV3BeaconResponseContent.Serializer::class)
 public data class BlockchainV3BeaconResponseContent(
     public val blockchainIdentifier: String,
     public val blockchainData: BlockchainData,
 ) : V3BeaconMessage.Content() {
 
     override suspend fun toBeaconMessage(
+        beaconScope: BeaconScope,
         id: String,
         version: String,
         senderId: String,
-        origin: Origin,
-    ): BeaconMessage = blockchainData.toBeaconMessage(id, version, senderId, origin, blockchainIdentifier)
+        origin: Connection.Id,
+        destination: Connection.Id,
+    ): BeaconMessage = blockchainData.toBeaconMessage(beaconScope, id, version, senderId, origin, destination, blockchainIdentifier)
 
     @Serializable
     public abstract class BlockchainData {
         public abstract suspend fun toBeaconMessage(
+            beaconScope: BeaconScope,
             id: String,
             version: String,
             senderId: String,
-            origin: Origin,
+            origin: Connection.Id,
+            destination: Connection.Id,
             blockchainIdentifier: String,
         ): BeaconMessage
 
         public companion object {
-            public fun serializer(blockchainIdentifier: String): KSerializer<BlockchainData> = Serializer(blockchainIdentifier)
+            public fun serializer(blockchainRegistry: BlockchainRegistry, blockchainIdentifier: String): KSerializer<BlockchainData> = Serializer(blockchainRegistry, blockchainIdentifier)
         }
 
         internal data class Serializer(
+            private val blockchainRegistry: BlockchainRegistry,
             private val blockchainIdentifier: String,
         ) : KSerializer<BlockchainData> by blockchainRegistry.get(blockchainIdentifier).serializer.v3.blockchainResponseData
     }
 
     public companion object {
         internal const val TYPE: String = "blockchain_response"
+
+        public fun serializer(blockchainRegistry: BlockchainRegistry): KSerializer<BlockchainV3BeaconResponseContent> =
+            Serializer(blockchainRegistry)
+
+        public fun serializer(beaconScope: BeaconScope? = null): KSerializer<BlockchainV3BeaconResponseContent> =
+            Serializer(beaconScope)
     }
 
-    internal object Serializer : KJsonSerializer<BlockchainV3BeaconResponseContent> {
+    internal class Serializer(private val blockchainRegistry: BlockchainRegistry) : KJsonSerializer<BlockchainV3BeaconResponseContent> {
+        constructor(beaconScope: BeaconScope? = null) : this(blockchainRegistry(beaconScope))
+
         override val descriptor: SerialDescriptor = buildClassSerialDescriptor(TYPE) {
             element<String>("blockchainIdentifier")
             element<BlockchainData>("blockchainData")
@@ -301,7 +375,7 @@ public data class BlockchainV3BeaconResponseContent(
         override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): BlockchainV3BeaconResponseContent =
             jsonDecoder.decodeStructure(descriptor) {
                 val blockchainIdentifier = decodeStringElement(descriptor, 0)
-                val blockchainData = decodeSerializableElement(descriptor, 1, BlockchainData.serializer(blockchainIdentifier))
+                val blockchainData = decodeSerializableElement(descriptor, 1, BlockchainData.serializer(blockchainRegistry, blockchainIdentifier))
 
                 BlockchainV3BeaconResponseContent(blockchainIdentifier, blockchainData)
             }
@@ -310,7 +384,7 @@ public data class BlockchainV3BeaconResponseContent(
             jsonEncoder.encodeStructure(descriptor) {
                 with(value) {
                     encodeStringElement(descriptor, 0, blockchainIdentifier)
-                    encodeSerializableElement(descriptor, 1, BlockchainData.serializer(blockchainIdentifier), blockchainData)
+                    encodeSerializableElement(descriptor, 1, BlockchainData.serializer(blockchainRegistry, blockchainIdentifier), blockchainData)
                 }
             }
     }
@@ -323,15 +397,16 @@ public object AcknowledgeV3BeaconResponseContent : V3BeaconMessage.Content() {
     internal const val TYPE: String = "acknowledge"
 
     override suspend fun toBeaconMessage(
+        beaconScope: BeaconScope,
         id: String,
         version: String,
         senderId: String,
-        origin: Origin,
-    ): BeaconMessage = AcknowledgeBeaconResponse(id, version, origin, senderId)
+        origin: Connection.Id,
+        destination: Connection.Id,
+    ): BeaconMessage = AcknowledgeBeaconResponse(id, version, destination, senderId)
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@Serializable(with = ErrorV3BeaconResponseContent.Serializer::class)
 public data class ErrorV3BeaconResponseContent(
     val errorType: BeaconError,
     val description: String? = null,
@@ -339,20 +414,33 @@ public data class ErrorV3BeaconResponseContent(
     val blockchainIdentifier: String? = errorType.blockchainIdentifier
 
     override suspend fun toBeaconMessage(
+        beaconScope: BeaconScope,
         id: String,
         version: String,
         senderId: String,
-        origin: Origin,
-    ): BeaconMessage = ErrorBeaconResponse(id, version, origin, errorType, description)
+        origin: Connection.Id,
+        destination: Connection.Id,
+    ): BeaconMessage = ErrorBeaconResponse(id, version, destination, errorType, description)
 
     public companion object {
         internal const val TYPE: String = "error"
+
+        public fun serializer(blockchainRegistry: BlockchainRegistry): KSerializer<ErrorV3BeaconResponseContent> =
+            Serializer(blockchainRegistry)
+
+        public fun serializer(beaconScope: BeaconScope? = null): KSerializer<ErrorV3BeaconResponseContent> =
+            Serializer(beaconScope)
     }
 
-    internal class Serializer : KJsonSerializer<ErrorV3BeaconResponseContent> {
+    internal class Serializer(private val blockchainRegistry: BlockchainRegistry) : KJsonSerializer<ErrorV3BeaconResponseContent> {
+        constructor(beaconScope: BeaconScope? = null) : this(blockchainRegistry(beaconScope))
+
+        private fun beaconErrorSerializer(blockchainIdentifier: String? = null): KSerializer<BeaconError> =
+            BeaconError.serializer(blockchainRegistry, blockchainIdentifier)
+
         override val descriptor: SerialDescriptor = buildClassSerialDescriptor(TYPE) {
             element<String>("blockchainIdentifier", isOptional = true)
-            element<BeaconError>("errorType")
+            element("errorType", beaconErrorSerializer().descriptor)
             element<String>("description", isOptional = true)
         }
 
@@ -361,7 +449,7 @@ public data class ErrorV3BeaconResponseContent(
             jsonElement: JsonElement,
         ): ErrorV3BeaconResponseContent = jsonDecoder.decodeStructure(descriptor) {
             val blockchainIdentifier = runCatching { decodeStringElement(descriptor, 0) }.getOrNull()
-            val errorType = decodeSerializableElement(descriptor, 1, BeaconError.serializer(blockchainIdentifier))
+            val errorType = decodeSerializableElement(descriptor, 1, beaconErrorSerializer(blockchainIdentifier))
             val description = runCatching { decodeStringElement(descriptor, 2) }.getOrNull()
 
             return ErrorV3BeaconResponseContent(errorType, description)
@@ -371,7 +459,7 @@ public data class ErrorV3BeaconResponseContent(
             jsonEncoder.encodeStructure(descriptor) {
                 with(value) {
                     blockchainIdentifier?.let { encodeStringElement(descriptor, 0, it) }
-                    encodeSerializableElement(descriptor, 1, BeaconError.serializer(blockchainIdentifier), errorType)
+                    encodeSerializableElement(descriptor, 1, beaconErrorSerializer(blockchainIdentifier), errorType)
                     description?.let { encodeStringElement(descriptor, 2, it) }
                 }
             }
@@ -386,9 +474,11 @@ public object DisconnectV3BeaconMessageContent : V3BeaconMessage.Content() {
     internal const val TYPE: String = "disconnect"
 
     override suspend fun toBeaconMessage(
+        beaconScope: BeaconScope,
         id: String,
         version: String,
         senderId: String,
-        origin: Origin,
-    ): BeaconMessage = DisconnectBeaconMessage(id, senderId, version, origin)
+        origin: Connection.Id,
+        destination: Connection.Id,
+    ): BeaconMessage = DisconnectBeaconMessage(id, senderId, version, origin, destination)
 }

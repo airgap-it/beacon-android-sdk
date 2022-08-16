@@ -2,8 +2,14 @@ package it.airgap.beaconsdk.core.network.provider
 
 import it.airgap.beaconsdk.core.network.data.HttpHeader
 import it.airgap.beaconsdk.core.network.data.HttpParameter
+import it.airgap.beaconsdk.core.network.exception.HttpException
 import kotlin.reflect.KClass
 
+@Deprecated(
+    "Use HttpClientProvider instead.",
+    replaceWith = ReplaceWith("HttpClientProvider"),
+    level = DeprecationLevel.WARNING,
+)
 public interface HttpProvider {
 
     @Throws(Exception::class)

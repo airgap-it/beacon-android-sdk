@@ -4,11 +4,14 @@ import io.mockk.MockKAnnotations
 import io.mockk.coEvery
 import io.mockk.impl.annotations.MockK
 import it.airgap.beaconsdk.core.internal.network.HttpClient
+import it.airgap.beaconsdk.core.network.provider.HttpClientProvider
 import it.airgap.beaconsdk.core.network.provider.HttpProvider
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.BeaconP2pMatrixConfiguration
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.MatrixError
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.node.MatrixVersionsResponse
 import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import org.junit.Before
 import org.junit.Test
 import java.io.IOException
@@ -18,16 +21,21 @@ import kotlin.test.assertTrue
 internal class MatrixNodeServiceTest {
 
     @MockK
-    private lateinit var httpClientProvider: HttpProvider
-    private lateinit var httpClient: HttpClient
+    private lateinit var httpClientProvider: HttpClientProvider
 
+    private lateinit var httpClient: HttpClient
     private lateinit var matrixNodeService: MatrixNodeService
+    private lateinit var json: Json
 
     @Before
     fun setup() {
         MockKAnnotations.init(this)
 
-        httpClient = HttpClient(httpClientProvider)
+        json = Json(from = Json.Default) {
+            prettyPrint = true
+        }
+
+        httpClient = HttpClient(httpClientProvider, json)
         matrixNodeService = MatrixNodeService(httpClient)
     }
 
@@ -36,20 +44,16 @@ internal class MatrixNodeServiceTest {
         val upNode = "upNode"
         val downNode = "downNode"
 
-        coEvery { httpClientProvider.get<MatrixVersionsResponse, MatrixError>(
+        coEvery { httpClientProvider.get(
             "https://$upNode/${BeaconP2pMatrixConfiguration.MATRIX_API_BASE.trimStart('/')}",
             any(),
             any(),
             any(),
             any(),
-            any(),
-            any(),
-        ) } returns MatrixVersionsResponse(listOf())
+        ) } returns json.encodeToString(MatrixVersionsResponse(listOf()))
 
-        coEvery { httpClientProvider.get<MatrixVersionsResponse, MatrixError>(
+        coEvery { httpClientProvider.get(
             "https://$downNode/${BeaconP2pMatrixConfiguration.MATRIX_API_BASE.trimStart('/')}",
-            any(),
-            any(),
             any(),
             any(),
             any(),

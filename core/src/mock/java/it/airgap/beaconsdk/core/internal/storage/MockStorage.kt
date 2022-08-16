@@ -4,6 +4,7 @@ import it.airgap.beaconsdk.core.data.AppMetadata
 import it.airgap.beaconsdk.core.data.Maybe
 import it.airgap.beaconsdk.core.data.Peer
 import it.airgap.beaconsdk.core.data.Permission
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import it.airgap.beaconsdk.core.storage.Storage
 
 public class MockStorage : Storage {
@@ -37,4 +38,6 @@ public class MockStorage : Storage {
     override suspend fun setMigrations(migrations: Set<String>) {
         this.migrations = migrations
     }
+
+    override fun scoped(beaconScope: BeaconScope): Storage = this
 }

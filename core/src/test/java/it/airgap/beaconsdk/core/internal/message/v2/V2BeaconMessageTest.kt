@@ -8,11 +8,15 @@ import it.airgap.beaconsdk.core.data.*
 import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchain
 import it.airgap.beaconsdk.core.internal.blockchain.message.*
+import it.airgap.beaconsdk.core.internal.compat.CoreCompat
+import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
+import it.airgap.beaconsdk.core.internal.serializer.contextualJson
 import it.airgap.beaconsdk.core.internal.storage.MockSecureStorage
 import it.airgap.beaconsdk.core.internal.storage.MockStorage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
 import it.airgap.beaconsdk.core.message.*
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -24,6 +28,7 @@ import mockDependencyRegistry
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import v2BeaconMessageContext
 import kotlin.test.assertEquals
 
 internal class V2BeaconMessageTest {
@@ -31,17 +36,24 @@ internal class V2BeaconMessageTest {
     @MockK
     private lateinit var identifierCreator: IdentifierCreator
 
+    private lateinit var dependencyRegistry: DependencyRegistry
     private lateinit var storageManager: StorageManager
+    private lateinit var json: Json
+
+    private val beaconScope: BeaconScope = BeaconScope.Global
 
     @Before
     fun setup() {
         MockKAnnotations.init(this)
 
-        storageManager = StorageManager(MockStorage(), MockSecureStorage(), identifierCreator, BeaconConfiguration(ignoreUnsupportedBlockchains = false))
+        storageManager = StorageManager(beaconScope, MockStorage(), MockSecureStorage(), identifierCreator, BeaconConfiguration(ignoreUnsupportedBlockchains = false))
 
-        val dependencyRegistry = mockDependencyRegistry()
+        dependencyRegistry = mockDependencyRegistry()
         every { dependencyRegistry.storageManager } returns storageManager
         every { dependencyRegistry.identifierCreator } returns identifierCreator
+        every { dependencyRegistry.compat } returns CoreCompat(beaconScope)
+
+        json = contextualJson(dependencyRegistry.blockchainRegistry, dependencyRegistry.compat)
     }
 
     @After
@@ -52,7 +64,7 @@ internal class V2BeaconMessageTest {
     @Test
     fun `is deserialized from JSON`() {
         messagesWithJsonStrings()
-            .map { Json.decodeFromString<V2BeaconMessage>(it.second) to it.first }
+            .map { json.decodeFromString<V2BeaconMessage>(it.second) to it.first }
             .forEach {
                 assertEquals(it.second, it.first)
             }
@@ -61,8 +73,8 @@ internal class V2BeaconMessageTest {
     @Test
     fun `serializes to JSON`() {
         messagesWithJsonStrings()
-            .map { Json.decodeFromString(JsonObject.serializer(), Json.encodeToString(it.first)) to
-                    Json.decodeFromString(JsonObject.serializer(), it.second) }
+            .map { json.decodeFromString(JsonObject.serializer(), json.encodeToString(it.first)) to
+                    json.decodeFromString(JsonObject.serializer(), it.second) }
             .forEach {
                 assertEquals(it.second, it.first)
             }
@@ -74,7 +86,7 @@ internal class V2BeaconMessageTest {
         val senderId = "senderId"
 
         versionedWithBeacon(version, senderId)
-            .map { V2BeaconMessage.from(senderId, it.second) to it.first }
+            .map { V2BeaconMessage.from(senderId, it.second, dependencyRegistry.v2BeaconMessageContext) to it.first }
             .forEach {
                 assertEquals(it.second, it.first)
             }
@@ -84,7 +96,8 @@ internal class V2BeaconMessageTest {
     fun `converts to Beacon message`() {
         val senderId = "senderId"
         val otherId = "otherId"
-        val origin = Origin.P2P(senderId)
+        val origin = Connection.Id.P2P(senderId)
+        val destination = Connection.Id.P2P(otherId)
 
         val matchingAppMetadata = MockAppMetadata(senderId, "v2App")
         val otherAppMetadata = MockAppMetadata(otherId, "v2OtherApp")
@@ -92,8 +105,8 @@ internal class V2BeaconMessageTest {
         runBlocking { storageManager.setAppMetadata(listOf(otherAppMetadata, matchingAppMetadata)) }
 
         runBlocking {
-            versionedWithBeacon(senderId = senderId, appMetadata = matchingAppMetadata, origin = origin)
-                .map { it.first.toBeaconMessage(origin) to it.second }
+            versionedWithBeacon(senderId = senderId, appMetadata = matchingAppMetadata, origin = origin, destination = destination)
+                .map { it.first.toBeaconMessage(origin, destination, beaconScope) to it.second }
                 .forEach {
                     assertEquals(it.second, it.first)
                 }
@@ -124,22 +137,23 @@ internal class V2BeaconMessageTest {
     private fun versionedWithBeacon(
         version: String = "2",
         senderId: String = "senderId",
-        origin: Origin = Origin.P2P(senderId),
+        origin: Connection.Id = Connection.Id.P2P(senderId),
+        destination: Connection.Id = Connection.Id.P2P("receiverId"),
         appMetadata: AppMetadata? = null,
     ): List<Pair<V2BeaconMessage, BeaconMessage>> =
         listOf(
-            createPermissionRequestPair(version = version, senderId = senderId, origin = origin),
-            createOperationRequestPair(version = version, senderId = senderId, appMetadata = appMetadata, origin = origin),
-            createSignPayloadRequestPair(version = version, senderId = senderId, appMetadata = appMetadata, origin = origin),
-            createBroadcastRequestPair(version = version, senderId = senderId, appMetadata = appMetadata, origin = origin),
+            createPermissionRequestPair(version = version, senderId = senderId, origin = origin, destination = destination),
+            createOperationRequestPair(version = version, senderId = senderId, appMetadata = appMetadata, origin = origin, destination = destination),
+            createSignPayloadRequestPair(version = version, senderId = senderId, appMetadata = appMetadata, origin = origin, destination = destination),
+            createBroadcastRequestPair(version = version, senderId = senderId, appMetadata = appMetadata, origin = origin, destination = destination),
 
-            createPermissionResponsePair(version = version, senderId = senderId, origin = origin),
-            createOperationResponsePair(version = version, senderId = senderId, origin = origin),
-            createSignPayloadResponsePair(version = version, senderId = senderId, origin = origin),
-            createBroadcastResponsePair(version = version, senderId = senderId, origin = origin),
+            createPermissionResponsePair(version = version, senderId = senderId, destination = destination),
+            createOperationResponsePair(version = version, senderId = senderId, destination = destination),
+            createSignPayloadResponsePair(version = version, senderId = senderId, destination = destination),
+            createBroadcastResponsePair(version = version, senderId = senderId, destination = destination),
 
-            createDisconnectPair(version = version, senderId = senderId, origin = origin),
-            createErrorResponsePair(version = version, senderId = senderId, origin = origin),
+            createDisconnectPair(version = version, senderId = senderId, origin = origin, destination = destination),
+            createErrorResponsePair(version = version, senderId = senderId, destination = destination),
         )
 
     // -- request to JSON --
@@ -159,8 +173,8 @@ internal class V2BeaconMessageTest {
             senderId,
             appMetadata,
             mapOf(
-                "network" to Json.encodeToJsonElement(network),
-                "scopes" to Json.encodeToJsonElement(scopes),
+                "network" to json.encodeToJsonElement(network),
+                "scopes" to json.encodeToJsonElement(scopes),
             ),
         ) to """
             {
@@ -168,9 +182,9 @@ internal class V2BeaconMessageTest {
                 "version": "$version",
                 "id": "$id",
                 "senderId": "$senderId",
-                "appMetadata": ${Json.encodeToString(appMetadata)},
-                "network": ${Json.encodeToString(network)},
-                "scopes": ${Json.encodeToString(scopes)}
+                "appMetadata": ${json.encodeToString(appMetadata)},
+                "network": ${json.encodeToString(network)},
+                "scopes": ${json.encodeToString(scopes)}
             }
         """.trimIndent()
 
@@ -188,8 +202,8 @@ internal class V2BeaconMessageTest {
             id,
             senderId,
             mapOf(
-                "network" to Json.encodeToJsonElement(network),
-                "operationDetails" to Json.encodeToJsonElement(tezosOperations),
+                "network" to json.encodeToJsonElement(network),
+                "operationDetails" to json.encodeToJsonElement(tezosOperations),
                 "sourceAddress" to JsonPrimitive(sourceAddress),
             ),
         ) to """
@@ -198,8 +212,8 @@ internal class V2BeaconMessageTest {
                 "version": "$version",
                 "id": "$id",
                 "senderId": "$senderId",
-                "network": ${Json.encodeToString(network)},
-                "operationDetails": ${Json.encodeToString(tezosOperations)},
+                "network": ${json.encodeToString(network)},
+                "operationDetails": ${json.encodeToString(tezosOperations)},
                 "sourceAddress": "$sourceAddress"
             }
         """.trimIndent()
@@ -218,7 +232,7 @@ internal class V2BeaconMessageTest {
             id,
             senderId,
             mapOf(
-                "signingType" to Json.encodeToJsonElement(signingType),
+                "signingType" to json.encodeToJsonElement(signingType),
                 "payload" to JsonPrimitive(payload),
                 "sourceAddress" to JsonPrimitive(sourceAddress),
             )
@@ -228,7 +242,7 @@ internal class V2BeaconMessageTest {
                 "version": "$version",
                 "id": "$id",
                 "senderId": "$senderId",
-                "signingType": ${Json.encodeToString(signingType)},
+                "signingType": ${json.encodeToString(signingType)},
                 "payload": "$payload",
                 "sourceAddress": "$sourceAddress"
             }
@@ -247,7 +261,7 @@ internal class V2BeaconMessageTest {
             id,
             senderId,
             mapOf(
-                "network" to Json.encodeToJsonElement(network),
+                "network" to json.encodeToJsonElement(network),
                 "signedTransaction" to JsonPrimitive(signedTransaction),
             )
         ) to """
@@ -256,7 +270,7 @@ internal class V2BeaconMessageTest {
                 "version": "$version",
                 "id": "$id",
                 "senderId": "$senderId",
-                "network": ${Json.encodeToString(network)},
+                "network": ${json.encodeToString(network)},
                 "signedTransaction": "$signedTransaction"
             }
         """.trimIndent()
@@ -278,8 +292,8 @@ internal class V2BeaconMessageTest {
             senderId,
             mapOf(
                 "publicKey" to JsonPrimitive(publicKey),
-                "network" to Json.encodeToJsonElement(network),
-                "scopes" to Json.encodeToJsonElement(scopes),
+                "network" to json.encodeToJsonElement(network),
+                "scopes" to json.encodeToJsonElement(scopes),
             ),
         ) to """
             {
@@ -288,8 +302,8 @@ internal class V2BeaconMessageTest {
                 "id": "$id",
                 "senderId": "$senderId",
                 "publicKey": "$publicKey",
-                "network": ${Json.encodeToString(network)},
-                "scopes": ${Json.encodeToString(scopes)}
+                "network": ${json.encodeToString(network)},
+                "scopes": ${json.encodeToString(scopes)}
             }
         """.trimIndent()
     }
@@ -331,7 +345,7 @@ internal class V2BeaconMessageTest {
             id,
             senderId,
             mapOf(
-                "signingType" to Json.encodeToJsonElement(signingType),
+                "signingType" to json.encodeToJsonElement(signingType),
                 "signature" to JsonPrimitive(signature),
             ),
         ) to """
@@ -340,7 +354,7 @@ internal class V2BeaconMessageTest {
                 "version": "$version",
                 "id": "$id",
                 "senderId": "$senderId",
-                "signingType": ${Json.encodeToString(signingType)},
+                "signingType": ${json.encodeToString(signingType)},
                 "signature": "$signature"
             }
         """.trimIndent()
@@ -397,7 +411,7 @@ internal class V2BeaconMessageTest {
                 "version": "$version",
                 "id": "$id",
                 "senderId": "$senderId",
-                "errorType": ${Json.encodeToString(errorType)}
+                "errorType": ${json.encodeToString(errorType)}
             }
         """.trimIndent()
 
@@ -410,17 +424,18 @@ internal class V2BeaconMessageTest {
         appMetadata: MockAppMetadata = MockAppMetadata("senderId", "v2App"),
         network: Network = MockNetwork(),
         scopes: List<String> = emptyList(),
-        origin: Origin = Origin.P2P(senderId),
+        origin: Connection.Id = Connection.Id.P2P(senderId),
+        destination: Connection.Id? = Connection.Id.P2P("receiverId"),
     ): Pair<V2MockPermissionBeaconRequest, PermissionBeaconRequest> {
         val type = "permission_request"
         val rest = mapOf(
-            "network" to Json.encodeToJsonElement(network),
-            "scopes" to Json.encodeToJsonElement(scopes),
+            "network" to json.encodeToJsonElement(network),
+            "scopes" to json.encodeToJsonElement(scopes),
         )
 
         return (
             V2MockPermissionBeaconRequest(type, version, id, senderId, appMetadata, rest)
-                to PermissionMockRequest(type, id, version, MockBlockchain.IDENTIFIER, senderId, origin, appMetadata, rest)
+                to PermissionMockRequest(type, id, version, MockBlockchain.IDENTIFIER, senderId, origin, destination, appMetadata, rest)
         )
     }
 
@@ -432,18 +447,19 @@ internal class V2BeaconMessageTest {
         tezosOperations: List<Map<String, String>> = emptyList(),
         sourceAddress: String = "sourceAddress",
         appMetadata: AppMetadata? = null,
-        origin: Origin = Origin.P2P(senderId),
+        origin: Connection.Id = Connection.Id.P2P(senderId),
+        destination: Connection.Id? = Connection.Id.P2P("receiverId"),
     ): Pair<V2MockBlockchainBeaconMessage, BlockchainBeaconRequest> {
         val type = "operation_request"
         val rest = mapOf(
-            "network" to Json.encodeToJsonElement(network),
-            "operationDetails" to Json.encodeToJsonElement(tezosOperations),
+            "network" to json.encodeToJsonElement(network),
+            "operationDetails" to json.encodeToJsonElement(tezosOperations),
             "sourceAddress" to JsonPrimitive(sourceAddress),
         )
 
         return (
             V2MockBlockchainBeaconMessage.request(type, version, id, senderId, rest)
-                to BlockchainMockRequest(type, id, version, MockBlockchain.IDENTIFIER, senderId, appMetadata, origin, null, rest)
+                to BlockchainMockRequest(type, id, version, MockBlockchain.IDENTIFIER, senderId, appMetadata, origin, destination, null, rest)
         )
     }
 
@@ -455,18 +471,19 @@ internal class V2BeaconMessageTest {
         payload: String = "payload",
         sourceAddress: String = "sourceAddress",
         appMetadata: AppMetadata? = null,
-        origin: Origin = Origin.P2P(senderId),
+        origin: Connection.Id = Connection.Id.P2P(senderId),
+        destination: Connection.Id? = Connection.Id.P2P("receiverId"),
     ): Pair<V2MockBlockchainBeaconMessage, BlockchainBeaconRequest> {
         val type = "sign_payload_request"
         val rest = mapOf(
-            "signingType" to Json.encodeToJsonElement(signingType),
+            "signingType" to json.encodeToJsonElement(signingType),
             "payload" to JsonPrimitive(payload),
             "sourceAddress" to JsonPrimitive(sourceAddress),
         )
 
         return (
             V2MockBlockchainBeaconMessage.request(type, version, id, senderId, rest)
-                to BlockchainMockRequest(type, id, version, MockBlockchain.IDENTIFIER, senderId, appMetadata, origin, null, rest)
+                to BlockchainMockRequest(type, id, version, MockBlockchain.IDENTIFIER, senderId, appMetadata, origin, destination,null, rest)
         )
     }
 
@@ -477,17 +494,18 @@ internal class V2BeaconMessageTest {
         network: Network = MockNetwork(),
         signedTransaction: String = "signedTransaction",
         appMetadata: AppMetadata? = null,
-        origin: Origin = Origin.P2P(senderId),
+        origin: Connection.Id = Connection.Id.P2P(senderId),
+        destination: Connection.Id? = Connection.Id.P2P("receiverId"),
     ): Pair<V2MockBlockchainBeaconMessage, BlockchainBeaconRequest> {
         val type = "broadcast_request"
         val rest = mapOf(
-            "network" to Json.encodeToJsonElement(network),
+            "network" to json.encodeToJsonElement(network),
             "signedTransaction" to JsonPrimitive(signedTransaction),
         )
 
         return (
             V2MockBlockchainBeaconMessage.request(type, version, id, senderId, rest)
-                to BlockchainMockRequest(type, id, version, MockBlockchain.IDENTIFIER, senderId, appMetadata, origin, null, rest)
+                to BlockchainMockRequest(type, id, version, MockBlockchain.IDENTIFIER, senderId, appMetadata, origin, destination,null, rest)
         )
     }
 
@@ -500,18 +518,18 @@ internal class V2BeaconMessageTest {
         publicKey: String = "publicKey",
         network: Network = MockNetwork(),
         scopes: List<String> = emptyList(),
-        origin: Origin = Origin.P2P(senderId),
+        destination: Connection.Id = Connection.Id.P2P("receiverId"),
     ): Pair<V2MockPermissionBeaconResponse, PermissionBeaconResponse> {
         val type = "permission_response"
         val rest = mapOf(
-            "publicKey" to Json.encodeToJsonElement(publicKey),
-            "network" to Json.encodeToJsonElement(network),
-            "scopes" to Json.encodeToJsonElement(scopes),
+            "publicKey" to json.encodeToJsonElement(publicKey),
+            "network" to json.encodeToJsonElement(network),
+            "scopes" to json.encodeToJsonElement(scopes),
         )
 
         return (
             V2MockPermissionBeaconResponse(type, version, id, senderId, rest)
-                to PermissionMockResponse(type, id, version, origin, MockBlockchain.IDENTIFIER, rest)
+                to PermissionMockResponse(type, id, version, destination, MockBlockchain.IDENTIFIER, rest)
         )
     }
 
@@ -520,7 +538,7 @@ internal class V2BeaconMessageTest {
         id: String = "id",
         senderId: String = "senderId",
         transactionHash: String = "transactionHash",
-        origin: Origin = Origin.P2P(senderId),
+        destination: Connection.Id = Connection.Id.P2P("receiverId"),
     ): Pair<V2MockBlockchainBeaconMessage, BlockchainBeaconResponse> {
         val type = "operation_response"
         val rest = mapOf(
@@ -529,7 +547,7 @@ internal class V2BeaconMessageTest {
 
         return (
             V2MockBlockchainBeaconMessage.response(type, version, id, senderId, rest)
-                to BlockchainMockResponse(type, id, version, origin, MockBlockchain.IDENTIFIER, rest)
+                to BlockchainMockResponse(type, id, version, destination, MockBlockchain.IDENTIFIER, rest)
         )
     }
 
@@ -539,17 +557,17 @@ internal class V2BeaconMessageTest {
         senderId: String = "senderId",
         signingType: SigningType = SigningType.Raw,
         signature: String = "signature",
-        origin: Origin = Origin.P2P(senderId),
+        destination: Connection.Id = Connection.Id.P2P("receiverId"),
     ): Pair<V2MockBlockchainBeaconMessage, BlockchainBeaconResponse> {
         val type = "sign_payload_response"
         val rest = mapOf(
-            "signingType" to Json.encodeToJsonElement(signingType),
+            "signingType" to json.encodeToJsonElement(signingType),
             "signature" to JsonPrimitive(signature),
         )
 
         return (
             V2MockBlockchainBeaconMessage.response(type, version, id, senderId, rest)
-                to BlockchainMockResponse(type, id, version, origin, MockBlockchain.IDENTIFIER, rest)
+                to BlockchainMockResponse(type, id, version, destination, MockBlockchain.IDENTIFIER, rest)
         )
     }
 
@@ -558,7 +576,7 @@ internal class V2BeaconMessageTest {
         id: String = "id",
         senderId: String = "senderId",
         transactionHash: String = "transactionHash",
-        origin: Origin = Origin.P2P(senderId),
+        destination: Connection.Id = Connection.Id.P2P("receiverId"),
     ): Pair<V2MockBlockchainBeaconMessage, BlockchainBeaconResponse> {
         val type = "broadcast_response"
         val rest = mapOf(
@@ -567,7 +585,7 @@ internal class V2BeaconMessageTest {
 
         return (
             V2MockBlockchainBeaconMessage.response(type, version, id, senderId, rest)
-                to BlockchainMockResponse(type, id, version, origin, MockBlockchain.IDENTIFIER, rest)
+                to BlockchainMockResponse(type, id, version, destination, MockBlockchain.IDENTIFIER, rest)
         )
     }
 
@@ -576,9 +594,9 @@ internal class V2BeaconMessageTest {
         id: String = "id",
         senderId: String = "senderId",
         errorType: BeaconError = BeaconError.Unknown,
-        origin: Origin = Origin.P2P(senderId),
+        destination: Connection.Id = Connection.Id.P2P("receiverId"),
     ): Pair<ErrorV2BeaconResponse, ErrorBeaconResponse> =
-        ErrorV2BeaconResponse(version, id, senderId, errorType) to ErrorBeaconResponse(id, version, origin, errorType, null)
+        ErrorV2BeaconResponse(version, id, senderId, errorType) to ErrorBeaconResponse(id, version, destination, errorType, null)
 
     // -- other to BeaconMessage --
 
@@ -586,7 +604,8 @@ internal class V2BeaconMessageTest {
         version: String = "2",
         id: String = "id",
         senderId: String = "senderId",
-        origin: Origin = Origin.P2P(senderId),
+        origin: Connection.Id = Connection.Id.P2P(senderId),
+        destination: Connection.Id = Connection.Id.P2P("receiverId"),
     ): Pair<DisconnectV2BeaconMessage, DisconnectBeaconMessage> =
-        DisconnectV2BeaconMessage(version, id, senderId) to DisconnectBeaconMessage(id, senderId, version, origin)
+        DisconnectV2BeaconMessage(version, id, senderId) to DisconnectBeaconMessage(id, senderId, version, origin, destination)
 }

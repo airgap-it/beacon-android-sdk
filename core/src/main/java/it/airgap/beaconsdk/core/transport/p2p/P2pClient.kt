@@ -1,14 +1,18 @@
 package it.airgap.beaconsdk.core.transport.p2p
 
 import it.airgap.beaconsdk.core.data.P2pPeer
+import it.airgap.beaconsdk.core.internal.data.BeaconApplication
 import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.core.internal.transport.p2p.data.P2pMessage
+import it.airgap.beaconsdk.core.transport.data.P2pPairingRequest
+import it.airgap.beaconsdk.core.transport.data.P2pPairingResponse
 import kotlinx.coroutines.flow.Flow
 
 /**
  * Base for different P2P implementations provided in Beacon.
  */
 public interface P2pClient {
+
     /**
      * Checks if [peer] has been already subscribed.
      */
@@ -31,7 +35,19 @@ public interface P2pClient {
     public suspend fun sendTo(peer: P2pPeer, message: String): Result<Unit>
 
     /**
-     * Sends a pairing message to the specified [peer].
+     * Creates a pairing request.
+     */
+    public suspend fun createPairingRequest(): Result<P2pPairingRequest>
+
+    /**
+     * Creates a pairing response from the [request].
+     */
+    public suspend fun createPairingResponse(request: P2pPairingRequest): Result<P2pPairingResponse>
+
+    public val pairingResponses: Flow<Result<P2pPairingResponse>>
+
+    /**
+     * Sends a pairing response to the specified [peer].
      */
     public suspend fun sendPairingResponse(peer: P2pPeer): Result<Unit>
 

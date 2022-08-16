@@ -8,27 +8,30 @@ import failures
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import it.airgap.beaconsdk.core.data.Connection
-import it.airgap.beaconsdk.core.data.Origin
-import it.airgap.beaconsdk.core.internal.message.BeaconConnectionMessage
-import it.airgap.beaconsdk.core.internal.message.ConnectionTransportMessage
-import it.airgap.beaconsdk.core.internal.message.SerializedConnectionMessage
-import it.airgap.beaconsdk.core.internal.message.VersionedBeaconMessage
+import it.airgap.beaconsdk.core.internal.compat.CoreCompat
+import it.airgap.beaconsdk.core.internal.controller.connection.ConnectionController
+import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
+import it.airgap.beaconsdk.core.internal.message.*
 import it.airgap.beaconsdk.core.internal.serializer.Serializer
+import it.airgap.beaconsdk.core.internal.serializer.contextualJson
 import it.airgap.beaconsdk.core.internal.serializer.provider.MockSerializerProvider
 import it.airgap.beaconsdk.core.internal.transport.Transport
 import it.airgap.beaconsdk.core.internal.utils.failure
 import it.airgap.beaconsdk.core.internal.utils.success
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
-import mockBlockchainRegistry
+import kotlinx.serialization.json.Json
+import mockDependencyRegistry
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import tryEmitFailures
 import tryEmitValues
+import versionedBeaconMessageContext
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -37,21 +40,27 @@ internal class ConnectionControllerTest {
     @MockK
     private lateinit var transport: Transport
 
+    private lateinit var dependencyRegistry: DependencyRegistry
     private lateinit var serializerProvider: MockSerializerProvider
     private lateinit var serializer: Serializer
     private lateinit var connectionClient: ConnectionController
+    private lateinit var json: Json
 
-    private val origin: Origin = Origin.P2P("id")
+    private val origin: Connection.Id = Connection.Id.P2P("id")
+    private val beaconScope: BeaconScope = BeaconScope.Global
 
     @Before
     fun setup() {
         MockKAnnotations.init(this)
 
-        mockBlockchainRegistry()
-
         every { transport.type } returns Connection.Type.P2P
 
-        serializerProvider = MockSerializerProvider()
+        dependencyRegistry = mockDependencyRegistry()
+        every { dependencyRegistry.compat } returns CoreCompat(beaconScope)
+
+        json = contextualJson(dependencyRegistry.blockchainRegistry, dependencyRegistry.compat)
+
+        serializerProvider = MockSerializerProvider(json)
         serializer = Serializer(serializerProvider)
         connectionClient = ConnectionController(listOf(transport), serializer)
     }
@@ -63,7 +72,7 @@ internal class ConnectionControllerTest {
 
     @Test
     fun `subscribes for new messages`() {
-        val requests = beaconVersionedRequests().shuffled()
+        val requests = beaconVersionedRequests(context = dependencyRegistry.versionedBeaconMessageContext).shuffled()
         val connectionMessages = validConnectionMessages(requests)
         val connectionMessageFlow = connectionMessageFlow(connectionMessages.size + 1)
 
@@ -77,14 +86,14 @@ internal class ConnectionControllerTest {
                 .toList()
         }
 
-        val expected = requests.map { BeaconConnectionMessage(origin, it) }
+        val expected = requests.map { BeaconIncomingConnectionMessage(origin, it) }
 
         assertEquals(expected.sortedBy { it.toString() }, messages.sortedBy { it.toString() })
     }
 
     @Test
     fun `propagates failure messages`() {
-        val failures = failures<ConnectionTransportMessage>(2, IllegalStateException())
+        val failures = failures<IncomingConnectionTransportMessage>(2, IllegalStateException())
         val connectionMessageFlow = connectionMessageFlow(failures.size + 1)
 
         every { transport.subscribe() } answers { connectionMessageFlow }
@@ -122,12 +131,12 @@ internal class ConnectionControllerTest {
     fun `sends serialized respond`() {
         coEvery { transport.send(any()) } returns Result.success()
 
-        val origin = Origin.P2P("senderId")
-        val response = beaconVersionedResponses().shuffled().first()
+        val destination = Connection.Id.P2P("receiverId")
+        val response = beaconVersionedResponses(context = dependencyRegistry.versionedBeaconMessageContext).shuffled().first()
         val serialized = serializer.serialize(response).getOrThrow()
 
-        val message = BeaconConnectionMessage(origin, response)
-        val expected = SerializedConnectionMessage(origin, serialized)
+        val message = BeaconOutgoingConnectionMessage(destination, response)
+        val expected = SerializedOutgoingConnectionMessage(destination, serialized)
 
         runBlocking { connectionClient.send(message).getOrThrow() }
 
@@ -138,8 +147,8 @@ internal class ConnectionControllerTest {
     fun `returns failure on respond when serialization failed`() {
         serializerProvider.shouldFail = true
 
-        val response = beaconVersionedResponses().shuffled().first()
-        val result = runBlocking { connectionClient.send(BeaconConnectionMessage(Origin.P2P("senderId"), response)) }
+        val response = beaconVersionedResponses(context = dependencyRegistry.versionedBeaconMessageContext).shuffled().first()
+        val result = runBlocking { connectionClient.send(BeaconOutgoingConnectionMessage(Connection.Id.P2P("receiverId"), response)) }
 
         assertTrue(result.isFailure, "Expected result to be a failure")
         coVerify(exactly = 0) { transport.send(any()) }
@@ -151,16 +160,16 @@ internal class ConnectionControllerTest {
     fun `returns failure on respond when sending failed`() {
         coEvery { transport.send(any()) } returns Result.failure()
 
-        val response = beaconVersionedResponses().shuffled().first()
-        val result = runBlocking { connectionClient.send(BeaconConnectionMessage(Origin.P2P("senderId"), response)) }
+        val response = beaconVersionedResponses(context = dependencyRegistry.versionedBeaconMessageContext).shuffled().first()
+        val result = runBlocking { connectionClient.send(BeaconOutgoingConnectionMessage(Connection.Id.P2P("receiverId"), response)) }
 
         assertTrue(result.isFailure, "Expected result to be a failure")
         coVerify(exactly = 1) { transport.send(any()) }
     }
 
-    private fun validConnectionMessages(beaconRequests: List<VersionedBeaconMessage>): List<ConnectionTransportMessage> =
-        beaconRequests.map { SerializedConnectionMessage(origin, serializer.serialize(it).getOrThrow()) }
+    private fun validConnectionMessages(beaconRequests: List<VersionedBeaconMessage>): List<IncomingConnectionTransportMessage> =
+        beaconRequests.map { SerializedIncomingConnectionMessage(origin, serializer.serialize(it).getOrThrow()) }
 
-    private fun invalidConnectionMessages(@IntRange(from = 1) number: Int = 1): List<ConnectionTransportMessage> =
-        (0 until number).map { SerializedConnectionMessage(origin, it.toString()) }
+    private fun invalidConnectionMessages(@IntRange(from = 1) number: Int = 1): List<IncomingConnectionTransportMessage> =
+        (0 until number).map { SerializedIncomingConnectionMessage(origin, it.toString()) }
 }

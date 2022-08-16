@@ -1,46 +1,49 @@
 package it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.login
 
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonClassDiscriminator
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
-internal sealed class MatrixLoginRequest(private val type: Type) {
+@JsonClassDiscriminator(MatrixLoginRequest.CLASS_DISCRIMINATOR)
+internal sealed class MatrixLoginRequest {
     abstract val identifier: UserIdentifier
     abstract val deviceId: String?
 
     @Serializable
+    @SerialName(Password.TYPE)
     data class Password(
         override val identifier: UserIdentifier,
         val password: String,
         @SerialName("device_id") override val deviceId: String? = null,
-    ) : MatrixLoginRequest(Type.Password)
+    ) : MatrixLoginRequest() {
 
-    @Serializable
-    private enum class Type {
-        @SerialName("m.login.password")
-        Password,
-
-        @SerialName("m.login.token")
-        Token,
+        companion object {
+            const val TYPE = "m.login.password"
+        }
     }
 
     @Serializable
-    sealed class UserIdentifier(private val type: Type) {
+    @JsonClassDiscriminator(UserIdentifier.CLASS_DISCRIMINATOR)
+    sealed class UserIdentifier {
 
         @Serializable
-        data class User(val user: String) : UserIdentifier(Type.User)
-
-        @Serializable
-        private enum class Type {
-            @SerialName("m.id.user")
-            User,
-
-            @SerialName("m.id.thirdparty")
-            ThirdParty,
-
-            @SerialName("m.id.phone")
-            Phone,
+        @SerialName(User.TYPE)
+        data class User(val user: String) : UserIdentifier() {
+            companion object {
+                const val TYPE = "m.id.user"
+            }
         }
+
+        companion object {
+            const val CLASS_DISCRIMINATOR = "type"
+        }
+    }
+
+    companion object {
+        const val CLASS_DISCRIMINATOR = "type"
     }
 }
 

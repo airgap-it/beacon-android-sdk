@@ -1,6 +1,8 @@
 package it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.network.event
 
 import it.airgap.beaconsdk.core.internal.network.HttpClient
+import it.airgap.beaconsdk.core.internal.network.HttpClient.Companion.get
+import it.airgap.beaconsdk.core.internal.network.HttpClient.Companion.put
 import it.airgap.beaconsdk.core.internal.network.data.ApplicationJson
 import it.airgap.beaconsdk.core.internal.network.data.BearerHeader
 import it.airgap.beaconsdk.core.network.data.HttpParameter
@@ -9,10 +11,7 @@ import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.event.M
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.sync.MatrixSyncResponse
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.sync.MatrixSyncStateEvent
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.network.MatrixService
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 
 internal class MatrixEventService(httpClient: HttpClient) : MatrixService(httpClient) {
@@ -78,13 +77,13 @@ internal class MatrixEventService(httpClient: HttpClient) : MatrixService(httpCl
             ).single()
         }
 
-    private inline fun <T : Any> getOngoingOrRun(
+    private suspend inline fun <T : Any> getOngoingOrRun(
         getter: () -> Flow<Result<T>>?,
         crossinline setter: (Flow<Result<T>>?) -> Unit,
         action: () -> Flow<Result<T>>,
     ): Flow<Result<T>> =
         getter() ?: run {
-            val scope = CoroutineScope(CoroutineName("sync") + Dispatchers.Default)
+            val scope = CoroutineScope(CoroutineName("sync")) + Dispatchers.Default
             action()
                 .shareIn(scope, SharingStarted.Eagerly, replay = 1)
                 .take(1)

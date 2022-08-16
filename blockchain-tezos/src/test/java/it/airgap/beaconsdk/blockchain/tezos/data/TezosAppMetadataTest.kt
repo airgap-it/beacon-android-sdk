@@ -18,7 +18,6 @@ internal class TezosAppMetadataTest {
             expectedWithJson(icon = "icon"),
             expectedWithJson(includeNulls = true),
         ).map {
-            println(it.second)
             Json.decodeFromString<TezosAppMetadata>(it.second) to it.first
         }.forEach {
             assertEquals(it.second, it.first)

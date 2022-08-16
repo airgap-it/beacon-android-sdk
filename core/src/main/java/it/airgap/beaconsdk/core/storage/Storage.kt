@@ -1,11 +1,12 @@
 package it.airgap.beaconsdk.core.storage
 
 import it.airgap.beaconsdk.core.data.AppMetadata
+import it.airgap.beaconsdk.core.data.Maybe
 import it.airgap.beaconsdk.core.data.Peer
 import it.airgap.beaconsdk.core.data.Permission
-import it.airgap.beaconsdk.core.data.Maybe
 import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.storage.decorator.DecoratedStorage
+import it.airgap.beaconsdk.core.scope.BeaconScope
 
 public interface Storage {
 
@@ -28,5 +29,6 @@ public interface Storage {
     public suspend fun getMigrations(): Set<String>
     public suspend fun setMigrations(migrations: Set<String>)
 
+    public fun scoped(beaconScope: BeaconScope): Storage
     public fun extend(beaconConfiguration: BeaconConfiguration): ExtendedStorage = DecoratedStorage(this, beaconConfiguration)
 }

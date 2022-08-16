@@ -1,6 +1,6 @@
 package it.airgap.beaconsdk.transport.p2p.matrix.internal.data
 
-import it.airgap.beaconsdk.core.internal.transport.p2p.data.P2pPairingResponse
+import it.airgap.beaconsdk.core.transport.data.P2pPairingResponse
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -33,16 +33,15 @@ internal class P2pPairingResponseTest {
 
     private fun expectedWithJson(
         id: String = "id",
-        type: String = "type",
         name: String = "name",
         version: String = "version",
         publicKey: String = "publicKey",
         relayServer: String = "relayServer",
     ): Pair<P2pPairingResponse, String> =
-        P2pPairingResponse(id, type, name, version, publicKey, relayServer) to """
+        P2pPairingResponse(id, name, version, publicKey, relayServer) to """
             {
                 "id": "$id",
-                "type": "$type",
+                "type": "${P2pPairingResponse.TYPE}",
                 "name": "$name",
                 "version": "$version",
                 "publicKey": "$publicKey",

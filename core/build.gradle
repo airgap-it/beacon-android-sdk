@@ -51,16 +51,23 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
 
-    afterEvaluate {
-        publishing {
-            publications {
-                release(MavenPublication) {
-                    from components.prodRelease
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+            withJavadocJar()
+        }
+    }
+}
 
-                    groupId = 'it.airgap.beaconsdk'
-                    artifactId = 'core'
-                    version = Android.versionName
-                }
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                from components.prodRelease
+
+                groupId = 'it.airgap.beaconsdk'
+                artifactId = 'core'
+                version = Android.versionName
             }
         }
     }

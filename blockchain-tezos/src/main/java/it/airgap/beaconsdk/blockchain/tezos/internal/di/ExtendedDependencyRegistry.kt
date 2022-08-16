@@ -1,5 +1,6 @@
 package it.airgap.beaconsdk.blockchain.tezos.internal.di
 
+import it.airgap.beaconsdk.blockchain.tezos.Tezos
 import it.airgap.beaconsdk.blockchain.tezos.internal.creator.TezosCreator
 import it.airgap.beaconsdk.blockchain.tezos.internal.serializer.TezosSerializer
 import it.airgap.beaconsdk.blockchain.tezos.internal.wallet.TezosWallet
@@ -7,6 +8,10 @@ import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.core.internal.di.findExtended
 
 internal interface ExtendedDependencyRegistry : DependencyRegistry {
+
+    // -- blockchain --
+
+    val tezos: Tezos
 
     // -- wallet --
 

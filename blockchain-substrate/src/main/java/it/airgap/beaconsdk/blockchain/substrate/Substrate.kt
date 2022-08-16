@@ -30,9 +30,7 @@ public class Substrate internal constructor(
 
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         override fun create(dependencyRegistry: DependencyRegistry): Substrate =
-            with(extendedDependencyRegistry(dependencyRegistry)) {
-                Substrate(substrateCreator, substrateSerializer)
-            }
+            extendedDependencyRegistry(dependencyRegistry).substrate
 
     }
 

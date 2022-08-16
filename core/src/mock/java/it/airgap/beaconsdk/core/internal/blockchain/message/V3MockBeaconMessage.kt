@@ -1,7 +1,7 @@
 package it.airgap.beaconsdk.core.internal.blockchain.message
 
+import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.data.MockAppMetadata
-import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.internal.message.v3.BlockchainV3BeaconRequestContent
 import it.airgap.beaconsdk.core.internal.message.v3.BlockchainV3BeaconResponseContent
 import it.airgap.beaconsdk.core.internal.message.v3.PermissionV3BeaconRequestContent
@@ -10,6 +10,7 @@ import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
 import it.airgap.beaconsdk.core.internal.utils.dependencyRegistry
 import it.airgap.beaconsdk.core.internal.utils.getSerializable
 import it.airgap.beaconsdk.core.message.BeaconMessage
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -24,10 +25,12 @@ internal data class V3MockPermissionBeaconRequestData(
     val rest: Map<String, JsonElement>,
 ) : PermissionV3BeaconRequestContent.BlockchainData() {
     override suspend fun toBeaconMessage(
+        beaconScope: BeaconScope,
         id: String,
         version: String,
         senderId: String,
-        origin: Origin,
+        origin: Connection.Id,
+        destination: Connection.Id,
         blockchainIdentifier: String,
     ): BeaconMessage = PermissionMockRequest(
         "permission_request",
@@ -36,6 +39,7 @@ internal data class V3MockPermissionBeaconRequestData(
         blockchainIdentifier,
         senderId,
         origin,
+        destination,
         appMetadata,
         rest,
     )
@@ -70,17 +74,19 @@ internal data class V3MockPermissionBeaconResponseData(
     val rest: Map<String, JsonElement>,
 ) : PermissionV3BeaconResponseContent.BlockchainData() {
     override suspend fun toBeaconMessage(
+        beaconScope: BeaconScope,
         id: String,
         version: String,
         senderId: String,
-        origin: Origin,
+        origin: Connection.Id,
+        destination: Connection.Id,
         blockchainIdentifier: String,
     ): BeaconMessage =
         PermissionMockResponse(
             "permission_response",
             id,
             version,
-            origin,
+            destination,
             blockchainIdentifier,
             rest,
         )
@@ -110,14 +116,16 @@ internal data class V3MockBlockchainBeaconRequestData(
     val rest: Map<String, JsonElement>
 ) : BlockchainV3BeaconRequestContent.BlockchainData() {
     override suspend fun toBeaconMessage(
+        beaconScope: BeaconScope,
         id: String,
         version: String,
         senderId: String,
-        origin: Origin,
+        origin: Connection.Id,
+        destination: Connection.Id,
         accountId: String,
         blockchainIdentifier: String,
     ): BeaconMessage {
-        val appMetadata = dependencyRegistry.storageManager.findAppMetadata { it.senderId == senderId }
+        val appMetadata = dependencyRegistry(beaconScope).storageManager.findAppMetadata { it.senderId == senderId }
         return BlockchainMockRequest(
             "blockchain_request",
             id,
@@ -126,6 +134,7 @@ internal data class V3MockBlockchainBeaconRequestData(
             senderId,
             appMetadata,
             origin,
+            destination,
             accountId,
             rest,
         )
@@ -156,17 +165,19 @@ internal data class V3MockBlockchainBeaconResponseData(
     val rest: Map<String, JsonElement>
 ) : BlockchainV3BeaconResponseContent.BlockchainData() {
     override suspend fun toBeaconMessage(
+        beaconScope: BeaconScope,
         id: String,
         version: String,
         senderId: String,
-        origin: Origin,
+        origin: Connection.Id,
+        destination: Connection.Id,
         blockchainIdentifier: String,
     ): BeaconMessage =
         BlockchainMockResponse(
             "blockchain_response",
             id,
             version,
-            origin,
+            destination,
             blockchainIdentifier,
             rest,
         )
