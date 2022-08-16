@@ -355,7 +355,7 @@ internal class TezosOperationTest {
         gasLimit: String? = null,
         storageLimit: String? = null,
         amount: String = "amount",
-        destination: String = "destination",
+        destination: String = "receiverId",
         parameters: TezosTransactionOperation.Parameters? = null,
         includeNulls: Boolean = false,
     ) : Pair<TezosTransactionOperation, String> {

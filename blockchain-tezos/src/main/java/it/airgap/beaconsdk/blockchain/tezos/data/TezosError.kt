@@ -134,6 +134,8 @@ public sealed class TezosError : BeaconError() {
         override fun serialize(jsonEncoder: JsonEncoder, value: TezosError) {
             when (value) {
                 BroadcastError -> jsonEncoder.encodeString(BroadcastError.IDENTIFIER)
+                NetworkNotSupported -> jsonEncoder.encodeString(NetworkNotSupported.IDENTIFIER)
+                NoAddressError -> jsonEncoder.encodeString(NoAddressError.IDENTIFIER)
                 NoPrivateKeyFound -> jsonEncoder.encodeString(NoPrivateKeyFound.IDENTIFIER)
                 NotGranted -> jsonEncoder.encodeString(NotGranted.IDENTIFIER)
                 ParametersInvalid -> jsonEncoder.encodeString(ParametersInvalid.IDENTIFIER)

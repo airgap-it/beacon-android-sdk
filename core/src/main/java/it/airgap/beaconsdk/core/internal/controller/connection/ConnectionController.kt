@@ -1,34 +1,37 @@
-package it.airgap.beaconsdk.core.internal.controller
+package it.airgap.beaconsdk.core.internal.controller.connection
 
 import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.exception.ConnectionException
 import it.airgap.beaconsdk.core.exception.MultipleConnectionException
-import it.airgap.beaconsdk.core.internal.message.BeaconConnectionMessage
-import it.airgap.beaconsdk.core.internal.message.ConnectionTransportMessage
-import it.airgap.beaconsdk.core.internal.message.SerializedConnectionMessage
+import it.airgap.beaconsdk.core.internal.message.*
+import it.airgap.beaconsdk.core.internal.message.IncomingConnectionTransportMessage
 import it.airgap.beaconsdk.core.internal.serializer.Serializer
 import it.airgap.beaconsdk.core.internal.transport.Transport
 import it.airgap.beaconsdk.core.internal.utils.*
+import it.airgap.beaconsdk.core.transport.data.PairingMessage
+import it.airgap.beaconsdk.core.transport.data.PairingRequest
+import it.airgap.beaconsdk.core.transport.data.PairingResponse
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
+import kotlin.reflect.KClass
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class ConnectionController internal constructor(private val transports: List<Transport>, private val serializer: Serializer) {
 
-    public fun subscribe(): Flow<Result<BeaconConnectionMessage>> =
+    public fun subscribe(): Flow<Result<BeaconIncomingConnectionMessage>> =
         transports
             .map { it.subscribe() }
             .merge()
-            .map { BeaconConnectionMessage.fromResult(it)}
+            .map { BeaconIncomingConnectionMessage.fromResult(it)}
 
-    public suspend fun send(message: BeaconConnectionMessage): Result<Unit> =
+    public suspend fun send(message: BeaconOutgoingConnectionMessage): Result<Unit> =
         runCatchingFlat {
             val serializedContent = serializer.serialize(message.content).getOrThrow()
-            val serializedMessage = SerializedConnectionMessage(message.origin, serializedContent)
+            val serializedMessage = SerializedOutgoingConnectionMessage(message.destination, serializedContent)
 
             return transports
                 .asyncMap { it.send(serializedMessage) }
@@ -37,15 +40,28 @@ public class ConnectionController internal constructor(private val transports: L
                 }
         }
 
-    private fun BeaconConnectionMessage.Companion.fromResult(
-        connectionMessage: Result<ConnectionTransportMessage>
-    ): Result<BeaconConnectionMessage> = connectionMessage.flatMap { message ->
-        val content = when (message) {
-            is SerializedConnectionMessage -> serializer.deserialize(message.content)
-            is BeaconConnectionMessage -> Result.success(message.content)
+    public suspend fun pair(connectionType: Connection.Type): Flow<Result<PairingMessage>> {
+        val transport = transports.firstOrNull { it.type == connectionType } ?: failWithTransportNotSupported(connectionType)
+        return transport.pair()
+    }
+
+    public suspend fun pair(request: PairingRequest): Result<PairingResponse> =
+        runCatchingFlat {
+            val transport = transports.firstOrNull { it.supportsPairing(request) } ?: failWithTransportNotSupported()
+            return transport.pair(request)
         }
 
-        content.map { BeaconConnectionMessage(message.origin, it) }
+    private fun BeaconIncomingConnectionMessage.Companion.fromResult(
+        connectionMessage: Result<IncomingConnectionTransportMessage>
+    ): Result<BeaconIncomingConnectionMessage> = connectionMessage.flatMap { message ->
+        val content = runCatchingFlat {
+            when (message) {
+                is SerializedIncomingConnectionMessage -> serializer.deserialize(message.content)
+                is BeaconIncomingConnectionMessage -> Result.success(message.content)
+            }
+        }
+
+        content.map { BeaconIncomingConnectionMessage(message.origin, it) }
     }
 
     private fun Result<Unit>.concat(other: Result<Unit>, connectionType: Connection.Type): Result<Unit> {
@@ -80,4 +96,7 @@ public class ConnectionController internal constructor(private val transports: L
 
             else -> null
         }
+
+    private fun failWithUnexpectedConnectionTransportMessage(type: KClass<out IncomingConnectionTransportMessage>): Nothing =
+        failWithIllegalArgument("Unexpected ConnectionTransportMessageType $type")
 }

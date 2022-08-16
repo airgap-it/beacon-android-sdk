@@ -1,6 +1,8 @@
 package it.airgap.beaconsdk.blockchain.tezos.data
 
+import it.airgap.beaconsdk.core.client.BeaconClient
 import it.airgap.beaconsdk.core.internal.utils.dependencyRegistry
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import kotlinx.serialization.Serializable
 
 /**
@@ -24,7 +26,23 @@ public data class TezosAccount internal constructor(
 /**
  * Creates a new instance of [TezosAccount] with the specified [publicKey], [address] and [network].
  */
-public fun TezosAccount(publicKey: String, address: String, network: TezosNetwork): TezosAccount {
-    val accountId = dependencyRegistry.identifierCreator.accountId(address, network).getOrThrow()
+public fun TezosAccount(publicKey: String, address: String, network: TezosNetwork, beaconScope: BeaconScope): TezosAccount {
+    val accountId = dependencyRegistry(beaconScope).identifierCreator.accountId(address, network).getOrThrow()
+    return TezosAccount(accountId, network, publicKey, address)
+}
+
+/**
+ * Creates a new instance of [TezosAccount] with the specified [publicKey], [address] and [network].
+ */
+public fun TezosAccount(publicKey: String, address: String, network: TezosNetwork, client: BeaconClient<*>): TezosAccount {
+    val accountId = dependencyRegistry(client.beaconScope).identifierCreator.accountId(address, network).getOrThrow()
+    return TezosAccount(accountId, network, publicKey, address)
+}
+
+/**
+ * Creates a new instance of [TezosAccount] with the specified [publicKey], [address] and [network].
+ */
+public fun BeaconClient<*>.TezosAccount(publicKey: String, address: String, network: TezosNetwork): TezosAccount {
+    val accountId = dependencyRegistry(beaconScope).identifierCreator.accountId(address, network).getOrThrow()
     return TezosAccount(accountId, network, publicKey, address)
 }

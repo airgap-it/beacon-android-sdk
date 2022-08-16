@@ -1,11 +1,12 @@
 package it.airgap.beaconsdk.core.internal.blockchain.message
 
+import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.data.MockAppMetadata
-import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchain
 import it.airgap.beaconsdk.core.internal.message.v2.V2BeaconMessage
 import it.airgap.beaconsdk.core.internal.utils.*
 import it.airgap.beaconsdk.core.message.BeaconMessage
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -23,7 +24,7 @@ internal data class V2MockPermissionBeaconRequest(
     val appMetadata: MockAppMetadata,
     val rest: Map<String, JsonElement>,
 ) : V2BeaconMessage() {
-    override suspend fun toBeaconMessage(origin: Origin): BeaconMessage =
+    override suspend fun toBeaconMessage(origin: Connection.Id, destination: Connection.Id, beaconScope: BeaconScope): BeaconMessage =
         PermissionMockRequest(
             type,
             id,
@@ -31,6 +32,7 @@ internal data class V2MockPermissionBeaconRequest(
             MockBlockchain.IDENTIFIER,
             senderId,
             origin,
+            destination,
             appMetadata,
             rest,
         )
@@ -80,12 +82,12 @@ internal data class V2MockPermissionBeaconResponse(
     override val senderId: String,
     val rest: Map<String, JsonElement>,
 ) : V2BeaconMessage() {
-    override suspend fun toBeaconMessage(origin: Origin): BeaconMessage =
+    override suspend fun toBeaconMessage(origin: Connection.Id, destination: Connection.Id, beaconScope: BeaconScope): BeaconMessage =
         PermissionMockResponse(
             type,
             id,
             version,
-            origin,
+            destination,
             MockBlockchain.IDENTIFIER,
             rest,
         )
@@ -134,10 +136,10 @@ internal data class V2MockBlockchainBeaconMessage(
     val mockType: MockBeaconMessageType
 ) : V2BeaconMessage() {
 
-    override suspend fun toBeaconMessage(origin: Origin): BeaconMessage =
+    override suspend fun toBeaconMessage(origin: Connection.Id, destination: Connection.Id, beaconScope: BeaconScope): BeaconMessage =
         when (mockType) {
             MockBeaconMessageType.Request -> {
-                val appMetadata = dependencyRegistry.storageManager.findAppMetadata { it.senderId == senderId }
+                val appMetadata = dependencyRegistry(beaconScope).storageManager.findAppMetadata { it.senderId == senderId }
                 BlockchainMockRequest(
                     type,
                     id,
@@ -146,6 +148,7 @@ internal data class V2MockBlockchainBeaconMessage(
                     senderId,
                     appMetadata,
                     origin,
+                    destination,
                     null,
                     rest,
                 )
@@ -153,7 +156,7 @@ internal data class V2MockBlockchainBeaconMessage(
             MockBeaconMessageType.Response -> BlockchainMockResponse(type,
                 id,
                 version,
-                origin,
+                destination,
                 MockBlockchain.IDENTIFIER,
                 rest)
         }

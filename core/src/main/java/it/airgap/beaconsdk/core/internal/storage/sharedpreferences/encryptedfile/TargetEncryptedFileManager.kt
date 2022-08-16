@@ -60,10 +60,8 @@ internal class TargetEncryptedFileManager(private val context: Context, private 
         File(context.filesDir, name).apply {
             deleteIfNoKey(keyAlias)
         }
-    
+
     private fun getOrCreateKey(alias: String): String {
-        keyStore.load(null)
-        
         val parameterSpec = KeyGenParameterSpec.Builder(alias, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT).apply {
             setKeySize(SIZE_KEY)
             setDigests(KeyProperties.DIGEST_SHA512)

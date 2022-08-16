@@ -1,5 +1,6 @@
 package it.airgap.beaconsdk.core.internal.storage.decorator
 
+import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.data.AppMetadata
 import it.airgap.beaconsdk.core.data.Peer
 import it.airgap.beaconsdk.core.data.Permission
@@ -7,6 +8,7 @@ import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.getAppMetadata
 import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.getPeers
 import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.getPermissions
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import it.airgap.beaconsdk.core.storage.ExtendedStorage
 import it.airgap.beaconsdk.core.storage.Storage
 import kotlinx.coroutines.CoroutineScope
@@ -18,100 +20,101 @@ import kotlin.reflect.KClass
 private typealias StorageSelectCollection<T> = suspend Storage.() -> List<T>
 private typealias StorageInsertCollection<T> = suspend Storage.(List<T>) -> Unit
 
-internal class DecoratedStorage(
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public class DecoratedStorage(
     private val storage: Storage,
-    private val configuration: BeaconConfiguration,
+    private val beaconConfiguration: BeaconConfiguration,
 ) : ExtendedStorage, Storage by storage {
     private val _appMetadata: MutableSharedFlow<AppMetadata> by lazy { resourceFlow() }
-    override val appMetadata: Flow<AppMetadata> get() = _appMetadata.onSubscription { emitAll(getAppMetadata(configuration).asFlow()) }
+    override val appMetadata: Flow<AppMetadata> get() = _appMetadata.onSubscription { emitAll(getAppMetadata(beaconConfiguration).asFlow()) }
 
     private val _permissions: MutableSharedFlow<Permission> by lazy { resourceFlow() }
-    override val permissions: Flow<Permission> get() = _permissions.onSubscription { emitAll(getPermissions(configuration).asFlow()) }
+    override val permissions: Flow<Permission> get() = _permissions.onSubscription { emitAll(getPermissions(beaconConfiguration).asFlow()) }
 
     private val _peers: MutableSharedFlow<Peer> by lazy { resourceFlow() }
-    override val peers: Flow<Peer> get() = _peers.onSubscription { emitAll(getPeers(configuration).asFlow()) }
+    override val peers: Flow<Peer> get() = _peers.onSubscription { emitAll(getPeers(beaconConfiguration).asFlow()) }
 
     override suspend fun addPeers(
         peers: List<Peer>,
         overwrite: Boolean,
-        compare: (Peer, Peer) -> Boolean,
+        selector: Peer.() -> List<Any>?,
     ) {
         add(
-            { getPeers(configuration) },
+            { getPeers(beaconConfiguration) },
             Storage::setPeers,
             _peers,
             peers,
             overwrite,
-            compare,
+            selector,
         )
     }
 
     override suspend fun findPeer(predicate: (Peer) -> Boolean): Peer? =
-        selectFirst({ getPeers(configuration) }, predicate)
+        selectFirst({ getPeers(beaconConfiguration) }, predicate)
 
     override suspend fun <T : Peer> findPeer(
         instanceClass: KClass<T>,
         predicate: (T) -> Boolean,
-    ): T? = selectFirstInstance({ getPeers(configuration) }, instanceClass, predicate)
+    ): T? = selectFirstInstance({ getPeers(beaconConfiguration) }, instanceClass, predicate)
 
     override suspend fun removePeers(predicate: ((Peer) -> Boolean)?) {
-        if (predicate != null) remove({ getPeers(configuration) }, Storage::setPeers, predicate)
+        if (predicate != null) remove({ getPeers(beaconConfiguration) }, Storage::setPeers, predicate)
         else removeAll(Storage::setPeers)
     }
 
     override suspend fun addAppMetadata(
         appsMetadata: List<AppMetadata>,
         overwrite: Boolean,
-        compare: (AppMetadata, AppMetadata) -> Boolean,
+        selector: AppMetadata.() -> List<Any>?,
     ) {
         add(
-            { getAppMetadata(configuration) },
+            { getAppMetadata(beaconConfiguration) },
             Storage::setAppMetadata,
             _appMetadata,
             appsMetadata,
             overwrite,
-            compare,
+            selector,
         )
     }
 
     override suspend fun findAppMetadata(predicate: (AppMetadata) -> Boolean): AppMetadata? =
-        selectFirst({ getAppMetadata(configuration) }, predicate)
+        selectFirst({ getAppMetadata(beaconConfiguration) }, predicate)
 
     override suspend fun <T : AppMetadata> findAppMetadata(
         instanceClass: KClass<T>,
         predicate: (T) -> Boolean,
-    ): T? = selectFirstInstance({ getAppMetadata(configuration) }, instanceClass, predicate)
+    ): T? = selectFirstInstance({ getAppMetadata(beaconConfiguration) }, instanceClass, predicate)
 
     override suspend fun removeAppMetadata(predicate: ((AppMetadata) -> Boolean)?) {
-        if (predicate != null) remove({ getAppMetadata(configuration) }, Storage::setAppMetadata, predicate)
+        if (predicate != null) remove({ getAppMetadata(beaconConfiguration) }, Storage::setAppMetadata, predicate)
         else removeAll(Storage::setAppMetadata)
     }
 
     override suspend fun addPermissions(
         permissions: List<Permission>,
         overwrite: Boolean,
-        compare: (Permission, Permission) -> Boolean,
+        selector: Permission.() -> List<Any>?,
     ) {
         add(
-            { getPermissions(configuration) },
+            { getPermissions(beaconConfiguration) },
             Storage::setPermissions,
             _permissions,
             permissions,
             overwrite,
-            compare,
+            selector,
         )
     }
 
     override suspend fun findPermission(predicate: (Permission) -> Boolean): Permission? =
-        selectFirst({ getPermissions(configuration) }, predicate)
+        selectFirst({ getPermissions(beaconConfiguration) }, predicate)
 
     override suspend fun <T : Permission> findPermission(
         instanceClass: KClass<T>,
         predicate: (T) -> Boolean,
-    ): T? = selectFirstInstance({ getPermissions(configuration) }, instanceClass, predicate)
+    ): T? = selectFirstInstance({ getPermissions(beaconConfiguration) }, instanceClass, predicate)
 
     override suspend fun removePermissions(predicate: ((Permission) -> Boolean)?) {
-        if (predicate != null) remove({ getPermissions(configuration) }, Storage::setPermissions, predicate)
+        if (predicate != null) remove({ getPermissions(beaconConfiguration) }, Storage::setPermissions, predicate)
         else removeAll(Storage::setPermissions)
     }
 
@@ -123,6 +126,7 @@ internal class DecoratedStorage(
         setMigrations(storageMigrations)
     }
 
+    override fun scoped(beaconScope: BeaconScope): ExtendedStorage = DecoratedStorage(storage.scoped(beaconScope), beaconConfiguration)
     override fun extend(beaconConfiguration: BeaconConfiguration): ExtendedStorage = this
 
     private suspend fun <T> selectFirst(
@@ -142,28 +146,17 @@ internal class DecoratedStorage(
         subscribeFlow: MutableSharedFlow<T>,
         elements: List<T>,
         overwrite: Boolean,
-        compare: (T, T) -> Boolean,
+        selector: T.() -> List<Any>?,
     ) {
-        val entities = select(this).toMutableList()
-        val updatedEntities = mutableListOf<T>()
+        val stored = select(this).distinctByKeepLast(selector)
 
-        val (newEntities, existingElements) = elements.partition { toInsert ->
-            !entities.any { compare(toInsert, it) }
-        }
+        val mappedIndices = createMappedIndices(stored, elements, selector)
+        val (toInsert, updatedIndices) = stored.updatedWith(elements, mappedIndices, overwrite)
 
-        if (overwrite) {
-            existingElements
-                .map { toInsert -> entities.indexOfFirst { compare(toInsert, it) } to toInsert }
-                .forEach { (index, toInsert) ->
-                    entities[index] = toInsert
-                    updatedEntities.add(toInsert)
-                }
-        }
-
-        insert(this, entities + newEntities)
+        insert(this, toInsert)
 
         CoroutineScope(Dispatchers.Default).launch {
-            (updatedEntities + newEntities).forEach { subscribeFlow.tryEmit(it) }
+            toInsert.filterIndexed { index, _ -> updatedIndices.contains(index) }.forEach { subscribeFlow.tryEmit(it) }
         }
     }
 
@@ -179,6 +172,53 @@ internal class DecoratedStorage(
         insert(this, emptyList())
     }
 
+    private fun <T> createMappedIndices(first: List<T>, second: List<T>, selector: T.() -> List<Any>?): Map<Int, Int> {
+        val indices = mutableMapOf<Int, List<Int>>().apply {
+            fillWith(first, selector)
+            fillWith(second, selector)
+        }.toMap()
+
+        return indices.values.filter { it.size == 2 }.associate { it[0] to it[1] }
+    }
+
     private fun <T> resourceFlow(bufferCapacity: Int = 64): MutableSharedFlow<T> =
         MutableSharedFlow(extraBufferCapacity = bufferCapacity)
+
+    private inline fun <T> List<T>.distinctByKeepLast(selector: T.() -> List<Any>?): List<T> {
+        val (withSelector, withoutSelector) = map { selector(it)?.sumHashCodes() to it }
+            .partition { it.first != null }
+            .mapFirst { list -> list.associate { (it.first ?: it.second.hashCode()) to it.second } }
+
+        return withSelector.values + withoutSelector.map { it.second }
+    }
+
+    private inline fun <T> MutableMap<Int, List<Int>>.fillWith(elements: List<T>, selector: T.() -> List<Any>?) {
+        elements.forEachIndexed { index, element ->
+            selector(element)?.sumHashCodes()?.let {
+                this[it] = (this[it] ?: emptyList()) + index
+            }
+        }
+    }
+
+    private fun <T> List<T>.updatedWith(elements: List<T>, indicesMap: Map<Int, Int>, overwrite: Boolean): Pair<List<T>, Set<Int>> {
+        val updated = toMutableList()
+        val new = elements.filterIndexed { index, _ -> !indicesMap.containsValue(index) }
+
+        val updatedIndices = mutableSetOf<Int>()
+        val newIndices = (updated.size until updated.size + new.size)
+
+        indices.forEach { index ->
+            val mappedIndex = if (overwrite) indicesMap[index] else null
+            mappedIndex?.let {
+                updated[index] = elements[it]
+                updatedIndices.add(index)
+            }
+        }
+
+        return Pair(updated + new, updatedIndices + newIndices)
+    }
+
+    private fun List<Any>.sumHashCodes(): Int = fold(0) { acc, next -> acc + next.hashCode() }
+
+    private fun <A, B, R> Pair<A, B>.mapFirst(transform: (A) -> R): Pair<R, B> = Pair(transform(first), second)
 }

@@ -5,12 +5,14 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosAppMetadata
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
+import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.storage.MockSecureStorage
 import it.airgap.beaconsdk.core.internal.storage.MockStorage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
 import it.airgap.beaconsdk.core.internal.utils.toHexString
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import kotlinx.coroutines.runBlocking
 import mockTime
 import org.junit.Before
@@ -31,6 +33,8 @@ internal class TezosCreatorTest {
 
     private val currentTimeMillis: Long = 1
 
+    private val beaconScope: BeaconScope = BeaconScope.Global
+
     private val version: String = "2"
     private val senderId: String = "00"
 
@@ -43,7 +47,7 @@ internal class TezosCreatorTest {
         every { identifierCreator.accountId(any(), any()) } answers { Result.success(firstArg()) }
         every { identifierCreator.senderId(any()) } answers { Result.success(firstArg<ByteArray>().toHexString().asString()) }
 
-        storageManager = StorageManager(MockStorage(), MockSecureStorage(), identifierCreator, BeaconConfiguration(ignoreUnsupportedBlockchains = false))
+        storageManager = StorageManager(beaconScope, MockStorage(), MockSecureStorage(), identifierCreator, BeaconConfiguration(ignoreUnsupportedBlockchains = false))
         creator = TezosCreator(
             DataTezosCreator(storageManager, identifierCreator),
             V1BeaconMessageTezosCreator(),
@@ -58,11 +62,11 @@ internal class TezosCreatorTest {
 
         val appMetadata = TezosAppMetadata(senderId, "mockApp")
         val permissionRequest = permissionTezosRequest(id = id, version = version, senderId = senderId)
-        val permissionResponse = permissionTezosResponse(id = id, version = version)
+        val permissionResponse = permissionTezosResponse(id = id, version = version, destination = Connection.Id.P2P("00"))
 
         runBlocking {
             storageManager.setAppMetadata(listOf(appMetadata))
-            val permission = creator.data.extractPermission(permissionRequest, permissionResponse).getOrThrow()
+            val permission = creator.data.extractOutgoingPermission(permissionRequest, permissionResponse).getOrThrow()
 
             val expected = listOf(TezosPermission(
                 permissionResponse.account.accountId,
@@ -92,7 +96,7 @@ internal class TezosCreatorTest {
         }
 
         assertFailsWith<IllegalStateException> {
-            runBlocking { creator.data.extractPermission(permissionRequest, permissionResponse).getOrThrow() }
+            runBlocking { creator.data.extractOutgoingPermission(permissionRequest, permissionResponse).getOrThrow() }
         }
     }
 }

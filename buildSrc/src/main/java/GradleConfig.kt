@@ -1,10 +1,10 @@
 object Android {
-    const val compileSdk = 30
+    const val compileSdk = 32
     const val minSdk = 21
-    const val targetSdk = 30
+    const val targetSdk = 32
 
-    const val versionCode = 17
-    const val versionName = "3.1.1"
+    const val versionCode = 21
+    const val versionName = "3.2.0"
 }
 
 object Version {
@@ -17,6 +17,7 @@ object Version {
     const val androidxConstraintLayout = "2.1.0"
 
     const val androidxActivity = "1.3.1"
+    const val androidxFragment = "1.5.1"
     const val androidxLifecycle = "2.3.1"
 
     const val androidxSecurity = "1.0.0"
@@ -59,6 +60,7 @@ object Dependencies {
     const val androidxConstraintLayout = "androidx.constraintlayout:constraintlayout:${Version.androidxConstraintLayout}"
 
     const val androidxActivity = "androidx.activity:activity-ktx:${Version.androidxActivity}"
+    const val androidxFragment= "androidx.fragment:fragment-ktx:${Version.androidxFragment}"
 
     const val androidxLifecycleViewModel = "androidx.lifecycle:lifecycle-viewmodel-ktx:${Version.androidxLifecycle}"
     const val androidxLifecycleLiveData = "androidx.lifecycle:lifecycle-livedata-ktx:${Version.androidxLifecycle}"

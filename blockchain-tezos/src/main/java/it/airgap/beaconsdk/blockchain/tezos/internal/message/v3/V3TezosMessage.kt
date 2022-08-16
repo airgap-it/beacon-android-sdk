@@ -8,7 +8,7 @@ import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
 import it.airgap.beaconsdk.blockchain.tezos.data.operation.TezosOperation
 import it.airgap.beaconsdk.blockchain.tezos.message.request.*
 import it.airgap.beaconsdk.blockchain.tezos.message.response.*
-import it.airgap.beaconsdk.core.data.Origin
+import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.data.SigningType
 import it.airgap.beaconsdk.core.internal.message.v3.BlockchainV3BeaconRequestContent
 import it.airgap.beaconsdk.core.internal.message.v3.BlockchainV3BeaconResponseContent
@@ -19,6 +19,7 @@ import it.airgap.beaconsdk.core.internal.utils.dependencyRegistry
 import it.airgap.beaconsdk.core.internal.utils.failWithIllegalArgument
 import it.airgap.beaconsdk.core.internal.utils.getString
 import it.airgap.beaconsdk.core.message.BeaconMessage
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import it.airgap.beaconsdk.core.storage.findAppMetadata
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Required
@@ -37,12 +38,14 @@ internal data class PermissionV3TezosRequest(
 ) : PermissionV3BeaconRequestContent.BlockchainData() {
 
     override suspend fun toBeaconMessage(
+        beaconScope: BeaconScope,
         id: String,
         version: String,
         senderId: String,
-        origin: Origin,
+        origin: Connection.Id,
+        destination: Connection.Id,
         blockchainIdentifier: String,
-    ): BeaconMessage = PermissionTezosRequest(id, version, blockchainIdentifier, senderId, appMetadata.toAppMetadata(), origin, network, scopes)
+    ): BeaconMessage = PermissionTezosRequest(id, version, blockchainIdentifier, senderId, appMetadata.toAppMetadata(), origin, destination, network, scopes)
 
     companion object {
         fun from(permissionRequest: PermissionTezosRequest): PermissionV3TezosRequest = with(permissionRequest) {
@@ -127,14 +130,16 @@ internal data class OperationV3TezosRequest(
     override val type: String = TYPE
 
     override suspend fun toBeaconMessage(
+        beaconScope: BeaconScope,
         id: String,
         version: String,
         senderId: String,
-        origin: Origin,
+        origin: Connection.Id,
+        destination: Connection.Id,
         accountId: String,
         blockchainIdentifier: String,
     ): BeaconMessage {
-        val appMetadata = dependencyRegistry.storageManager.findAppMetadata<TezosAppMetadata> { it.senderId == senderId }
+        val appMetadata = dependencyRegistry(beaconScope).storageManager.findAppMetadata<TezosAppMetadata> { it.senderId == senderId }
         return OperationTezosRequest(
             id,
             version,
@@ -142,6 +147,7 @@ internal data class OperationV3TezosRequest(
             senderId,
             appMetadata,
             origin,
+            destination,
             accountId,
             network,
             operationDetails,
@@ -165,14 +171,16 @@ internal data class SignPayloadV3TezosRequest(
     override val type: String = TYPE
 
     override suspend fun toBeaconMessage(
+        beaconScope: BeaconScope,
         id: String,
         version: String,
         senderId: String,
-        origin: Origin,
+        origin: Connection.Id,
+        destination: Connection.Id,
         accountId: String,
         blockchainIdentifier: String,
     ): BeaconMessage {
-        val appMetadata = dependencyRegistry.storageManager.findAppMetadata<TezosAppMetadata> { it.senderId == senderId }
+        val appMetadata = dependencyRegistry(beaconScope).storageManager.findAppMetadata<TezosAppMetadata> { it.senderId == senderId }
         return SignPayloadTezosRequest(
             id,
             version,
@@ -180,6 +188,7 @@ internal data class SignPayloadV3TezosRequest(
             senderId,
             appMetadata,
             origin,
+            destination,
             accountId,
             signingType,
             payload,
@@ -202,14 +211,16 @@ internal data class BroadcastV3TezosRequest(
     override val type: String = TYPE
 
     override suspend fun toBeaconMessage(
+        beaconScope: BeaconScope,
         id: String,
         version: String,
         senderId: String,
-        origin: Origin,
+        origin: Connection.Id,
+        destination: Connection.Id,
         accountId: String,
         blockchainIdentifier: String,
     ): BeaconMessage {
-        val appMetadata = dependencyRegistry.storageManager.findAppMetadata<TezosAppMetadata> { it.senderId == senderId }
+        val appMetadata = dependencyRegistry(beaconScope).storageManager.findAppMetadata<TezosAppMetadata> { it.senderId == senderId }
         return BroadcastTezosRequest(
             id,
             version,
@@ -217,6 +228,7 @@ internal data class BroadcastV3TezosRequest(
             senderId,
             appMetadata,
             origin,
+            destination,
             accountId,
             network,
             signedTransaction,
@@ -250,12 +262,14 @@ internal data class PermissionV3TezosResponse(
     }
 
     override suspend fun toBeaconMessage(
+        beaconScope: BeaconScope,
         id: String,
         version: String,
         senderId: String,
-        origin: Origin,
+        origin: Connection.Id,
+        destination: Connection.Id,
         blockchainIdentifier: String,
-    ): BeaconMessage = PermissionTezosResponse(id, version, origin, blockchainIdentifier, TezosAccount(accountId, network, publicKey, address), scopes)
+    ): BeaconMessage = PermissionTezosResponse(id, version, destination, blockchainIdentifier, TezosAccount(accountId, network, publicKey, address), scopes)
 }
 
 @OptIn(ExperimentalSerializationApi::class)
@@ -314,12 +328,14 @@ internal data class OperationV3TezosResponse(
     override val type: String = TYPE
 
     override suspend fun toBeaconMessage(
+        beaconScope: BeaconScope,
         id: String,
         version: String,
         senderId: String,
-        origin: Origin,
+        origin: Connection.Id,
+        destination: Connection.Id,
         blockchainIdentifier: String,
-    ): BeaconMessage = OperationTezosResponse(id, version, origin, blockchainIdentifier, transactionHash)
+    ): BeaconMessage = OperationTezosResponse(id, version, destination, blockchainIdentifier, transactionHash)
 
     companion object {
         const val TYPE = "operation_response"
@@ -336,12 +352,14 @@ internal data class SignPayloadV3TezosResponse(
     override val type: String = TYPE
 
     override suspend fun toBeaconMessage(
+        beaconScope: BeaconScope,
         id: String,
         version: String,
         senderId: String,
-        origin: Origin,
+        origin: Connection.Id,
+        destination: Connection.Id,
         blockchainIdentifier: String,
-    ): BeaconMessage = SignPayloadTezosResponse(id, version, origin, blockchainIdentifier, signingType, signature)
+    ): BeaconMessage = SignPayloadTezosResponse(id, version, destination, blockchainIdentifier, signingType, signature)
 
     companion object {
         const val TYPE = "sign_payload_response"
@@ -357,12 +375,14 @@ internal data class BroadcastV3TezosResponse(
     override val type: String = TYPE
 
     override suspend fun toBeaconMessage(
+        beaconScope: BeaconScope,
         id: String,
         version: String,
         senderId: String,
-        origin: Origin,
+        origin: Connection.Id,
+        destination: Connection.Id,
         blockchainIdentifier: String,
-    ): BeaconMessage = BroadcastTezosResponse(id, version, origin, Tezos.IDENTIFIER, transactionHash)
+    ): BeaconMessage = BroadcastTezosResponse(id, version, destination, Tezos.IDENTIFIER, transactionHash)
 
     companion object {
         const val TYPE = "broadcast_response"

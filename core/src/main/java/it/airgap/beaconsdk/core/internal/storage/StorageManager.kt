@@ -6,6 +6,7 @@ import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.*
 import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
 import it.airgap.beaconsdk.core.internal.utils.asHexString
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import it.airgap.beaconsdk.core.storage.ExtendedStorage
 import it.airgap.beaconsdk.core.storage.SecureStorage
 import it.airgap.beaconsdk.core.storage.Storage
@@ -22,10 +23,11 @@ import kotlin.reflect.KProperty1
 @OptIn(ExperimentalCoroutinesApi::class)
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class StorageManager(
-    @PublishedApi internal val storage: ExtendedStorage,
-    @PublishedApi internal val secureStorage: SecureStorage,
+    private val beaconScope: BeaconScope,
+    private val storage: ExtendedStorage,
+    private val secureStorage: SecureStorage,
     private val identifierCreator: IdentifierCreator,
-    private val configuration: BeaconConfiguration,
+    public val beaconConfiguration: BeaconConfiguration,
 ) : ExtendedStorage by storage, SecureStorage by secureStorage {
 
     private val _plugins: MutableList<StoragePlugin> = mutableListOf()
@@ -33,14 +35,15 @@ public class StorageManager(
     internal val plugins: List<StoragePlugin> get() = _plugins
 
     public constructor(
+        beaconScope: BeaconScope,
         storage: Storage,
         secureStorage: SecureStorage,
         identifierCreator: IdentifierCreator,
-        beaconConfiguration: BeaconConfiguration,
-    ) : this(storage.extend(beaconConfiguration), secureStorage, identifierCreator, beaconConfiguration)
+        configuration: BeaconConfiguration,
+    ) : this(beaconScope, storage.extend(configuration), secureStorage, identifierCreator, configuration)
 
     public fun addPlugins(plugins: List<StoragePlugin>) {
-        _plugins.addAll(plugins)
+        _plugins.addAll(plugins.map { it.scoped(beaconScope) })
     }
 
     public fun addPlugins(vararg plugins: StoragePlugin) {
@@ -56,16 +59,13 @@ public class StorageManager(
         get() = merge(storage.peers, removedPeers)
 
     public suspend fun getPeers(): List<Peer> =
-        storage.getPeers(configuration)
+        storage.getPeers(beaconConfiguration)
 
-    public suspend inline fun <reified T: Peer> updatePeers(
-        peers: List<T>,
-        compareWith: List<KProperty1<T, *>>
-    ) {
-        addPeers(peers, overwrite = true) { a, b ->
-            when {
-                a is T && b is T -> compareWith.fold(true) { acc, next -> acc && next(a) == next(b) }
-                else -> false
+    public suspend inline fun <reified T: Peer> updatePeers(peers: List<T>, noinline selector: T.() -> List<Any>) {
+        addPeers(peers, overwrite = true) {
+            when (this) {
+                is T -> selector(this)
+                else -> null
             }
         }
     }
@@ -76,16 +76,15 @@ public class StorageManager(
 
     override suspend fun removePeers(predicate: ((Peer) -> Boolean)?) {
         runCatching {
-            val peers = storage.getPeers(configuration)
+            val peers = storage.getPeers(beaconConfiguration)
             val toRemove = predicate?.let { peers.filter(it) } ?: peers
 
             storage.removePeers(predicate)
-            removePermissions { permission ->
-                toRemove.any {
-                    val senderId = identifierCreator.senderId(it.publicKey.asHexString().toByteArray()).getOrThrow()
-                    senderId == permission.senderId
-                }
-            }
+
+            val removedSenderIDs = toRemove.map { identifierCreator.senderId(it.publicKey.asHexString().toByteArray()).getOrThrow() }.toSet()
+
+            removePermissions { removedSenderIDs.contains(it.senderId) }
+            removeAppMetadata { removedSenderIDs.contains(it.senderId) }
 
             CoroutineScope(Dispatchers.Default).launch {
                 toRemove.map { it.selfRemoved() }.forEach {
@@ -96,16 +95,20 @@ public class StorageManager(
     }
 
     public suspend fun getAppMetadata(): List<AppMetadata> =
-        storage.getAppMetadata(configuration)
+        storage.getAppMetadata(beaconConfiguration)
 
     public suspend fun removeAppMetadata(appsMetadata: List<AppMetadata>) {
         removeAppMetadata { metadata -> appsMetadata.any { it.senderId == metadata.senderId } }
     }
 
     public suspend fun getPermissions(): List<Permission> =
-        storage.getPermissions(configuration)
+        storage.getPermissions(beaconConfiguration)
 
     public suspend fun removePermissions(permissions: List<Permission>) {
         removePermissions { permission -> permissions.any { it == permission } }
     }
+
+    override fun scoped(beaconScope: BeaconScope): StorageManager =
+        if (beaconScope == this.beaconScope) this
+        else StorageManager(beaconScope, storage.scoped(beaconScope), secureStorage.scoped(beaconScope), identifierCreator, beaconConfiguration)
 }

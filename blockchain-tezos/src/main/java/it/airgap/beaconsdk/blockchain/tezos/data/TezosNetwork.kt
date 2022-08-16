@@ -3,9 +3,11 @@ package it.airgap.beaconsdk.blockchain.tezos.data
 import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.blockchain.tezos.Tezos
 import it.airgap.beaconsdk.core.data.Network
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import kotlinx.serialization.json.JsonClassDiscriminator
 
 /**
  * Type of Tezos networks supported in Beacon.
@@ -15,7 +17,9 @@ import kotlinx.serialization.Transient
  * @property [name] An optional name of the network.
  * @property [rpcUrl] An optional URL for the network RPC interface.
  */
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
+@JsonClassDiscriminator(TezosNetwork.CLASS_DISCRIMINATOR)
 public sealed class TezosNetwork : Network() {
     @Transient
     override val blockchainIdentifier: String = Tezos.IDENTIFIER
@@ -40,6 +44,48 @@ public sealed class TezosNetwork : Network() {
 
         public companion object {
             internal const val TYPE = "mainnet"
+        }
+    }
+
+    @Serializable
+    @SerialName(Ghostnet.TYPE)
+    public data class Ghostnet(
+        override val name: String? = null,
+        override val rpcUrl: String? = null,
+    ) : TezosNetwork() {
+        @Transient
+        override val type: String = TYPE
+
+        public companion object {
+            internal const val TYPE = "ghostnet"
+        }
+    }
+
+    @Serializable
+    @SerialName(Mondaynet.TYPE)
+    public data class Mondaynet(
+        override val name: String? = null,
+        override val rpcUrl: String? = null,
+    ) : TezosNetwork() {
+        @Transient
+        override val type: String = TYPE
+
+        public companion object {
+            internal const val TYPE = "mondaynet"
+        }
+    }
+
+    @Serializable
+    @SerialName(Dailynet.TYPE)
+    public data class Dailynet(
+        override val name: String? = null,
+        override val rpcUrl: String? = null,
+    ) : TezosNetwork() {
+        @Transient
+        override val type: String = TYPE
+
+        public companion object {
+            internal const val TYPE = "dailynet"
         }
     }
 
@@ -88,6 +134,7 @@ public sealed class TezosNetwork : Network() {
         }
     }
 
+    @Deprecated("'Granadanet' is no longer a maintained Tezos test network and will be removed from Beacon in future versions.")
     @Serializable
     @SerialName(Granadanet.TYPE)
     public data class Granadanet(
@@ -102,6 +149,7 @@ public sealed class TezosNetwork : Network() {
         }
     }
 
+    @Deprecated("'Hangzhounet' is no longer a maintained Tezos test network and will be removed from Beacon in future versions.")
     @Serializable
     @SerialName(Hangzhounet.TYPE)
     public data class Hangzhounet(
@@ -130,6 +178,33 @@ public sealed class TezosNetwork : Network() {
         }
     }
 
+    @Serializable
+    @SerialName(Jakartanet.TYPE)
+    public data class Jakartanet(
+        override val name: String? = null,
+        override val rpcUrl: String? = null,
+    ) : TezosNetwork() {
+        @Transient
+        override val type: String = TYPE
+
+        public companion object {
+            internal const val TYPE = "jakartanet"
+        }
+    }
+
+    @Serializable
+    @SerialName(Kathmandunet.TYPE)
+    public data class Kathmandunet(
+        override val name: String? = null,
+        override val rpcUrl: String? = null,
+    ) : TezosNetwork() {
+        @Transient
+        override val type: String = TYPE
+
+        public companion object {
+            internal const val TYPE = "kathmandunet"
+        }
+    }
 
     @Serializable
     @SerialName(Custom.TYPE)
@@ -145,5 +220,7 @@ public sealed class TezosNetwork : Network() {
         }
     }
 
-    public companion object {}
+    public companion object {
+        internal const val CLASS_DISCRIMINATOR = "type"
+    }
 }

@@ -50,16 +50,24 @@ android {
         freeCompilerArgs += '-Xopt-in=kotlin.RequiresOptIn'
     }
 
-    afterEvaluate {
-        publishing {
-            publications {
-                release(MavenPublication) {
-                    from components.prodRelease
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+            withJavadocJar()
+        }
+    }
 
-                    groupId = 'it.airgap.beaconsdk'
-                    artifactId = 'blockchain-substrate'
-                    version = Android.versionName
-                }
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                from components.prodRelease
+
+                groupId = 'it.airgap.beaconsdk'
+                artifactId = 'blockchain-substrate'
+                version = Android.versionName
             }
         }
     }

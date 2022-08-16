@@ -1,5 +1,6 @@
 package it.airgap.beaconsdk.transport.p2p.matrix.internal.storage
 
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import it.airgap.beaconsdk.transport.p2p.matrix.data.MatrixRoom
 import it.airgap.beaconsdk.transport.p2p.matrix.storage.P2pMatrixStoragePlugin
 
@@ -28,4 +29,6 @@ internal class MockP2pMatrixStoragePlugin : P2pMatrixStoragePlugin {
     override suspend fun setMatrixRooms(rooms: List<MatrixRoom>) {
         this.matrixRooms = rooms
     }
+
+    override fun scoped(beaconScope: BeaconScope): P2pMatrixStoragePlugin = this
 }

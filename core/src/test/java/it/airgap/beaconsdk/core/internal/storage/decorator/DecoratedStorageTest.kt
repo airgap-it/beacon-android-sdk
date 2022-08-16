@@ -86,7 +86,7 @@ internal class DecoratedStorageTest {
             decoratedStorage.addAppMetadata(
                 changed + toAdd,
                 overwrite = true
-            ) { a, b -> a.name == b.name }
+            ) { listOf(name) }
         }
 
         val fromStorage = runBlocking { storage.getAppMetadata() }
@@ -114,7 +114,7 @@ internal class DecoratedStorageTest {
             decoratedStorage.addPermissions(
                 changed + toAdd,
                 overwrite = true
-            ) { a, b -> a.accountId == b.accountId }
+            ) { listOf(accountId) }
         }
 
         val fromStorage = runBlocking { storage.getPermissions() }
@@ -142,7 +142,7 @@ internal class DecoratedStorageTest {
             decoratedStorage.addPeers(
                 changed + toAdd,
                 overwrite = true
-            ) { a, b -> a.name == b.name }
+            ) { listOf(name) }
         }
 
         val fromStorage = runBlocking { storage.getPeers() }
@@ -162,9 +162,7 @@ internal class DecoratedStorageTest {
 
         runBlocking { storage.setAppMetadata(toStorage) }
         runBlocking {
-            decoratedStorage.addAppMetadata(changed + toAdd, overwrite = false) { a, b ->
-                a.name == b.name
-            }
+            decoratedStorage.addAppMetadata(changed + toAdd, overwrite = false) { listOf(name) }
         }
 
         val fromStorage = runBlocking { storage.getAppMetadata() }
@@ -184,9 +182,7 @@ internal class DecoratedStorageTest {
 
         runBlocking { storage.setPermissions(toStorage) }
         runBlocking {
-            decoratedStorage.addPermissions(changed + toAdd, overwrite = false) { a, b ->
-                a.accountId == b.accountId
-            }
+            decoratedStorage.addPermissions(changed + toAdd, overwrite = false) { listOf(accountId) }
         }
 
         val fromStorage = runBlocking { storage.getPermissions() }
@@ -206,9 +202,7 @@ internal class DecoratedStorageTest {
 
         runBlocking { storage.setPeers(toStorage) }
         runBlocking {
-            decoratedStorage.addPeers(changed + toAdd, overwrite = false) { a, b ->
-                a.name == b.name
-            }
+            decoratedStorage.addPeers(changed + toAdd, overwrite = false) { listOf(name) }
         }
 
         val fromStorage = runBlocking { storage.getPeers() }

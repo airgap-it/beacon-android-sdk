@@ -9,6 +9,7 @@ import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.SharedPrefere
 import it.airgap.beaconsdk.core.internal.utils.applicationContext
 import it.airgap.beaconsdk.core.internal.utils.beaconSdk
 import it.airgap.beaconsdk.core.internal.utils.delegate.default
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import it.airgap.beaconsdk.core.storage.SecureStorage
 import it.airgap.beaconsdk.core.storage.Storage
 
@@ -17,7 +18,12 @@ import it.airgap.beaconsdk.core.storage.Storage
  *
  * @constructor Creates a builder configured with the specified application [name].
  */
-public abstract class InitBuilder<T, Self : InitBuilder<T, Self>>(protected val name: String) {
+public abstract class InitBuilder<T, S : Storage, SecureS : SecureStorage, Self : InitBuilder<T, S, SecureS, Self>>(
+    protected val name: String,
+    protected val beaconScope: BeaconScope,
+    defaultStorage: () -> S,
+    defaultSecureStorage: () -> SecureS,
+) {
     // -- app --
 
     /**
@@ -53,6 +59,8 @@ public abstract class InitBuilder<T, Self : InitBuilder<T, Self>>(protected val 
 
     /**
      * Registers connections that should be supported by the configured client.
+     * If more than one connection of a certain type is registered,
+     * only the first one will be supported by the client and the rest will be ignored.
      */
     public fun use(vararg connections: Connection): Self = self.apply {
         this.connections.addAll(connections.toList())
@@ -63,12 +71,13 @@ public abstract class InitBuilder<T, Self : InitBuilder<T, Self>>(protected val 
     /**
      * An optional external implementation of [Storage]. If not provided, an internal implementation will be used.
      */
-    public var storage: Storage by default { SharedPreferencesStorage.create(applicationContext) }
+
+    public open var storage: S by default { defaultStorage() }
 
     /**
      * An optional external implementation of [SecureStorage]. If not provided, an internal implementation will be used.
      */
-    public var secureStorage: SecureStorage by default { SharedPreferencesSecureStorage.create(applicationContext) }
+    public open var secureStorage: SecureS by default { defaultSecureStorage() }
 
     // -- configuration --
 
@@ -84,7 +93,7 @@ public abstract class InitBuilder<T, Self : InitBuilder<T, Self>>(protected val 
         val configuration = BeaconConfiguration(ignoreUnsupportedBlockchains)
         val partialApp = BeaconApplication.Partial(name, iconUrl, appUrl)
 
-        beaconSdk.init(partialApp, configuration, blockchains, storage, secureStorage)
+        beaconSdk.add(beaconScope, partialApp, configuration, blockchains, storage, secureStorage)
 
         return createInstance(configuration)
     }
@@ -95,3 +104,8 @@ public abstract class InitBuilder<T, Self : InitBuilder<T, Self>>(protected val 
     private val self: Self
         get() = this as Self
 }
+
+public abstract class InitBuilderWithBaseStorage<T, Self : InitBuilderWithBaseStorage<T, Self>>(
+    name: String,
+    beaconScope: BeaconScope
+) : InitBuilder<T, Storage, SecureStorage, Self>(name, beaconScope, { SharedPreferencesStorage(applicationContext) }, { SharedPreferencesSecureStorage(applicationContext) })

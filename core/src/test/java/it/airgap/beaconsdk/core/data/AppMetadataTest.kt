@@ -6,7 +6,10 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import it.airgap.beaconsdk.core.internal.blockchain.BlockchainRegistry
 import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchain
+import it.airgap.beaconsdk.core.internal.compat.CoreCompat
 import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
+import it.airgap.beaconsdk.core.internal.serializer.contextualJson
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -25,6 +28,9 @@ internal class AppMetadataTest {
     private lateinit var blockchainRegistry: BlockchainRegistry
 
     private lateinit var mockBlockchain: MockBlockchain
+    private lateinit var json: Json
+
+    private val beaconScope: BeaconScope = BeaconScope.Global
 
     @Before
     fun setup() {
@@ -38,6 +44,8 @@ internal class AppMetadataTest {
 
         every { blockchainRegistry.get(any()) } returns mockBlockchain
         every { blockchainRegistry.getOrNull(any()) } returns mockBlockchain
+
+        json = contextualJson(dependencyRegistry.blockchainRegistry, CoreCompat(beaconScope))
     }
 
     @Test
@@ -47,7 +55,7 @@ internal class AppMetadataTest {
             expectedWithJson(icon = "icon"),
             expectedWithJson(includeNulls = true),
         ).map {
-            Json.decodeFromString<AppMetadata>(it.second) to it.first
+            json.decodeFromString<AppMetadata>(it.second) to it.first
         }.forEach {
             assertEquals(it.second, it.first)
         }
@@ -56,8 +64,8 @@ internal class AppMetadataTest {
     @Test
     fun `serializes to JSON`() {
         listOf(expectedWithJson(), expectedWithJson(icon = "icon"))
-            .map { Json.decodeFromString(JsonObject.serializer(), Json.encodeToString(it.first)) to
-                    Json.decodeFromString(JsonObject.serializer(), it.second) }
+            .map { json.decodeFromString(JsonObject.serializer(), json.encodeToString(it.first)) to
+                    json.decodeFromString(JsonObject.serializer(), it.second) }
             .forEach {
                 assertEquals(it.second, it.first)
             }

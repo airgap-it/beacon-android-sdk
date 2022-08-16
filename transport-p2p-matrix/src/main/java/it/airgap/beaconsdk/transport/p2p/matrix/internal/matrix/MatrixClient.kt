@@ -181,7 +181,7 @@ internal class MatrixClient(
 
     private suspend fun syncScope(node: String, block: suspend (CoroutineScope) -> Unit) {
         syncScopes
-            .getOrPut(node) { CoroutineScope(CoroutineName(syncScopeName(node))) }
+            .getOrPut(node) { CoroutineScope(CoroutineName(syncScopeName(node)) + Dispatchers.Default) }
             .launch {
                 block(this)
                 syncScopes.remove(node)
