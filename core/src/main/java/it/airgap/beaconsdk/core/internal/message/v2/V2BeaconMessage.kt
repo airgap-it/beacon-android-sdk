@@ -16,10 +16,7 @@ import it.airgap.beaconsdk.core.message.BeaconMessage
 import it.airgap.beaconsdk.core.message.DisconnectBeaconMessage
 import it.airgap.beaconsdk.core.message.ErrorBeaconResponse
 import it.airgap.beaconsdk.core.scope.BeaconScope
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Required
-import kotlinx.serialization.Serializable
+import kotlinx.serialization.*
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.element
@@ -34,9 +31,11 @@ import kotlinx.serialization.json.jsonObject
 public abstract class V2BeaconMessage : VersionedBeaconMessage() {
     public abstract val id: String
     public abstract val type: String
-    public abstract val senderId: String
+    public abstract val senderId: String?
 
     public companion object {
+        public const val VERSION: String = "2"
+
         public fun from(senderId: String, message: BeaconMessage, context: Context): V2BeaconMessage =
             with(message) {
                 when (this) {
@@ -88,12 +87,13 @@ public abstract class V2BeaconMessage : VersionedBeaconMessage() {
     }
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Serializable
 public data class AcknowledgeV2BeaconResponse(
-    override val version: String,
+    @EncodeDefault override val version: String = VERSION,
     override val id: String,
-    override val senderId: String,
+    override val senderId: String?,
 ) : V2BeaconMessage() {
     @Required
     override val type: String = TYPE
@@ -106,9 +106,10 @@ public data class AcknowledgeV2BeaconResponse(
     }
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public data class ErrorV2BeaconResponse(
-    override val version: String,
+    @EncodeDefault override val version: String = VERSION,
     override val id: String,
     override var senderId: String,
     val errorType: BeaconError,
@@ -168,10 +169,11 @@ public data class ErrorV2BeaconResponse(
     }
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Serializable
 public data class DisconnectV2BeaconMessage(
-    override val version: String,
+    @EncodeDefault override val version: String = VERSION,
     override val id: String,
     override var senderId: String,
 ) : V2BeaconMessage() {
