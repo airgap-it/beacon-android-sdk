@@ -101,17 +101,6 @@ internal class P2pMatrixCommunicatorTest {
     }
 
     @Test
-    fun `creates pairing request payload for specified version`() {
-        val id = "id"
-        val relayServer = "relayServer"
-
-        versionsWithPairingPayloads(id, app.name, app.icon, app.url, app.keyPair.publicKey.toHexString().asString(), relayServer)
-            .map { P2pPeer(id = id, name = "name", publicKey = "01", relayServer = "peerServer", version = it.first) to it.second }
-            .map { p2pMatrixCommunicator.pairingResponsePayload(it.first, relayServer) to it.second }
-            .forEach { assertEquals(it.second, it.first.getOrThrow()) }
-    }
-
-    @Test
     fun `creates channel opening message`() {
         val recipient = "recipient"
         val payload = "payload"
