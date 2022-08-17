@@ -9,7 +9,6 @@ import it.airgap.beaconsdk.core.message.BeaconMessage
 import it.airgap.beaconsdk.core.message.BeaconResponse
 import it.airgap.beaconsdk.transport.p2p.matrix.p2pMatrix
 import it.airgap.beaconsdkdemo.utils.setValue
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
