@@ -5,6 +5,7 @@ import it.airgap.beaconsdk.blockchain.substrate.data.SubstrateAppMetadata
 import it.airgap.beaconsdk.blockchain.substrate.data.SubstrateNetwork
 import it.airgap.beaconsdk.blockchain.substrate.data.SubstratePermission
 import it.airgap.beaconsdk.blockchain.substrate.extensions.ownAppMetadata
+import it.airgap.beaconsdk.blockchain.substrate.internal.SubstrateBeaconConfiguration
 import it.airgap.beaconsdk.core.client.BeaconClient
 import it.airgap.beaconsdk.core.client.BeaconProducer
 import it.airgap.beaconsdk.core.data.Connection
@@ -34,7 +35,7 @@ public suspend fun <T> PermissionSubstrateRequest(
 
     return PermissionSubstrateRequest(
         id = requestMetadata.id,
-        version = requestMetadata.version,
+        version = SubstrateBeaconConfiguration.MESSAGE_VERSION,
         blockchainIdentifier = Substrate.IDENTIFIER,
         senderId = requestMetadata.senderId,
         appMetadata = producer.ownAppMetadata(),

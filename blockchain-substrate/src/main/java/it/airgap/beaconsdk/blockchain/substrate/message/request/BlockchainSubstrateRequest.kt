@@ -5,6 +5,7 @@ import it.airgap.beaconsdk.blockchain.substrate.data.SubstrateNetwork
 import it.airgap.beaconsdk.blockchain.substrate.data.SubstratePermission
 import it.airgap.beaconsdk.blockchain.substrate.data.SubstrateSignerPayload
 import it.airgap.beaconsdk.blockchain.substrate.extensions.ownAppMetadata
+import it.airgap.beaconsdk.blockchain.substrate.internal.SubstrateBeaconConfiguration
 import it.airgap.beaconsdk.core.client.BeaconClient
 import it.airgap.beaconsdk.core.client.BeaconProducer
 import it.airgap.beaconsdk.core.data.AppMetadata
@@ -87,7 +88,7 @@ public suspend fun <T> TransferSubmitSubstrateRequest(
 
     return TransferSubstrateRequest.Submit(
         id = requestMetadata.id,
-        version = requestMetadata.version,
+        version = SubstrateBeaconConfiguration.MESSAGE_VERSION,
         blockchainIdentifier = Substrate.IDENTIFIER,
         senderId = requestMetadata.senderId,
         appMetadata = producer.ownAppMetadata(),
@@ -114,7 +115,7 @@ public suspend fun <T> TransferSubmitAndReturnSubstrateRequest(
 
     return TransferSubstrateRequest.SubmitAndReturn(
         id = requestMetadata.id,
-        version = requestMetadata.version,
+        version = SubstrateBeaconConfiguration.MESSAGE_VERSION,
         blockchainIdentifier = Substrate.IDENTIFIER,
         senderId = requestMetadata.senderId,
         appMetadata = producer.ownAppMetadata(),
@@ -141,7 +142,7 @@ public suspend fun <T> TransferReturnSubstrateRequest(
 
     return TransferSubstrateRequest.Return(
         id = requestMetadata.id,
-        version = requestMetadata.version,
+        version = SubstrateBeaconConfiguration.MESSAGE_VERSION,
         blockchainIdentifier = Substrate.IDENTIFIER,
         senderId = requestMetadata.senderId,
         appMetadata = producer.ownAppMetadata(),
@@ -218,7 +219,7 @@ public suspend fun <T> SignPayloadSubmitSubstrateRequest(
 
     return SignPayloadSubstrateRequest.Submit(
         id = requestMetadata.id,
-        version = requestMetadata.version,
+        version = SubstrateBeaconConfiguration.MESSAGE_VERSION,
         blockchainIdentifier = Substrate.IDENTIFIER,
         senderId = requestMetadata.senderId,
         appMetadata = producer.ownAppMetadata(),
@@ -241,7 +242,7 @@ public suspend fun <T> SignPayloadSubmitAndReturnSubstrateRequest(
 
     return SignPayloadSubstrateRequest.SubmitAndReturn(
         id = requestMetadata.id,
-        version = requestMetadata.version,
+        version = SubstrateBeaconConfiguration.MESSAGE_VERSION,
         blockchainIdentifier = Substrate.IDENTIFIER,
         senderId = requestMetadata.senderId,
         appMetadata = producer.ownAppMetadata(),
@@ -264,7 +265,7 @@ public suspend fun <T> SignPayloadReturnSubstrateRequest(
 
     return SignPayloadSubstrateRequest.Return(
         id = requestMetadata.id,
-        version = requestMetadata.version,
+        version = SubstrateBeaconConfiguration.MESSAGE_VERSION,
         blockchainIdentifier = Substrate.IDENTIFIER,
         senderId = requestMetadata.senderId,
         appMetadata = producer.ownAppMetadata(),

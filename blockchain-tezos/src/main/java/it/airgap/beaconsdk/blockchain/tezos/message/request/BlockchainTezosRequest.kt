@@ -6,6 +6,7 @@ import it.airgap.beaconsdk.blockchain.tezos.extension.ownAppMetadata
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosAppMetadata
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosNetwork
 import it.airgap.beaconsdk.blockchain.tezos.data.operation.TezosOperation
+import it.airgap.beaconsdk.blockchain.tezos.internal.TezosBeaconConfiguration
 import it.airgap.beaconsdk.blockchain.tezos.message.response.BroadcastTezosResponse
 import it.airgap.beaconsdk.blockchain.tezos.message.response.OperationTezosResponse
 import it.airgap.beaconsdk.blockchain.tezos.message.response.SignPayloadTezosResponse
@@ -67,7 +68,7 @@ public suspend fun <T> OperationTezosRequest(
 
     return OperationTezosRequest(
         id = requestMetadata.id,
-        version = requestMetadata.version,
+        version = TezosBeaconConfiguration.MESSAGE_VERSION,
         blockchainIdentifier = Tezos.IDENTIFIER,
         senderId = requestMetadata.senderId,
         appMetadata = producer.ownAppMetadata(),
@@ -124,7 +125,7 @@ public suspend fun <T> SignPayloadTezosRequest(
 
     return SignPayloadTezosRequest(
         id = requestMetadata.id,
-        version = requestMetadata.version,
+        version = TezosBeaconConfiguration.MESSAGE_VERSION,
         blockchainIdentifier = Tezos.IDENTIFIER,
         senderId = requestMetadata.senderId,
         appMetadata = producer.ownAppMetadata(),
@@ -178,7 +179,7 @@ public suspend fun <T> BroadcastTezosRequest(
 
     return BroadcastTezosRequest(
         id = requestMetadata.id,
-        version = requestMetadata.version,
+        version = TezosBeaconConfiguration.MESSAGE_VERSION,
         blockchainIdentifier = Tezos.IDENTIFIER,
         senderId = requestMetadata.senderId,
         appMetadata = producer.ownAppMetadata(),

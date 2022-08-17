@@ -71,7 +71,7 @@ public data class SignPayloadTezosResponse internal constructor(
          *
          * The response will have an id matching the one of the [request].
          */
-        public fun from(request: SignPayloadTezosRequest, signingType: SigningType, signature: String): SignPayloadTezosResponse =
+        public fun from(request: SignPayloadTezosRequest, signingType: SigningType = request.signingType, signature: String): SignPayloadTezosResponse =
             SignPayloadTezosResponse(request.id, request.version, request.origin, request.blockchainIdentifier, signingType, signature)
 
     }
