@@ -1,19 +1,23 @@
 package it.airgap.beaconsdk.core.data
 
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonClassDiscriminator
 
 /**
  * A group of values that identify the source of an incoming request.
  *
  * @property [id] The unique value that identifies the origin.
  */
+@OptIn(ExperimentalSerializationApi::class)
 @Deprecated(
     message = "Use Connection.Id instead.",
     replaceWith = ReplaceWith("Connection.Id()", imports = arrayOf("it.airgap.beaconsdk.core.data.Connection")),
     level = DeprecationLevel.WARNING,
 )
 @Serializable
+@JsonClassDiscriminator(Origin.CLASS_DISCRIMINATOR)
 public sealed class Origin {
     public abstract val id: String
 
@@ -43,6 +47,7 @@ public sealed class Origin {
     }
 
     public companion object {
+        internal const val CLASS_DISCRIMINATOR = "type"
 
         public fun forPeer(peer: Peer): Origin =
             when (peer) {

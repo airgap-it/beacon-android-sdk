@@ -1,13 +1,17 @@
 package it.airgap.beaconsdk.core.data
 
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import kotlinx.serialization.json.JsonClassDiscriminator
 
 /**
  * Base for types of peers supported in Beacon.
  */
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
+@JsonClassDiscriminator(Peer.CLASS_DISCRIMINATOR)
 public sealed class Peer {
     public abstract val id: String?
     public abstract val name: String
@@ -23,6 +27,10 @@ public sealed class Peer {
     public abstract fun removed(): Peer
 
     public abstract fun toConnectionId(): Connection.Id
+
+    public companion object {
+        internal const val CLASS_DISCRIMINATOR = "type"
+    }
 }
 
 // -- P2P --

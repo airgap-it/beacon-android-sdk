@@ -3,13 +3,17 @@ package it.airgap.beaconsdk.transport.p2p.matrix.data
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.MatrixEvent
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.sync.MatrixSyncRoom
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.sync.MatrixSyncRooms
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonClassDiscriminator
 
 /**
  * Base for types of [Matrix](https://matrix.org/) rooms supported in Beacon.
  */
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
+@JsonClassDiscriminator(MatrixRoom.CLASS_DISCRIMINATOR)
 public sealed class MatrixRoom {
     public abstract val id: String
     public abstract val members: List<String>
@@ -65,6 +69,8 @@ public sealed class MatrixRoom {
         }
 
     public companion object {
+        internal const val CLASS_DISCRIMINATOR = "type"
+
         internal fun fromSync(node: String, syncRooms: MatrixSyncRooms): List<MatrixRoom> {
             val joined =
                 syncRooms.join?.entries?.map { Joined(it.key, membersFromSync(node, it.key, it.value)) } ?: emptyList()

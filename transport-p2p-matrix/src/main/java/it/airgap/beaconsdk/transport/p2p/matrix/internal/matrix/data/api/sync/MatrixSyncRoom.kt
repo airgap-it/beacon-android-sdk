@@ -1,9 +1,13 @@
 package it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.sync
 
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonClassDiscriminator
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
+@JsonClassDiscriminator(MatrixSyncRoom.CLASS_DISCRIMINATOR)
 internal sealed class MatrixSyncRoom {
 
     @Serializable
@@ -20,6 +24,10 @@ internal sealed class MatrixSyncRoom {
     @Serializable
     @SerialName("left")
     data class Left(val state: MatrixSyncState? = null, val timeline: MatrixSyncTimeline? = null) : MatrixSyncRoom()
+
+    companion object {
+        const val CLASS_DISCRIMINATOR = "type"
+    }
 }
 
 @Serializable
