@@ -66,7 +66,7 @@ internal data class V1MockPermissionBeaconRequest(
                 descriptor.getElementName(1) to JsonPrimitive(value.version),
                 descriptor.getElementName(2) to JsonPrimitive(value.id),
                 descriptor.getElementName(3) to JsonPrimitive(value.beaconId),
-                descriptor.getElementName(4) to Json.encodeToJsonElement(value.appMetadata)
+                descriptor.getElementName(4) to jsonEncoder.json.encodeToJsonElement(value.appMetadata)
             ) + value.rest
 
             jsonEncoder.encodeSerializableValue(JsonObject.serializer(), JsonObject(fields))

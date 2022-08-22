@@ -45,7 +45,7 @@ class WalletFragment : Fragment(R.layout.fragment_wallet) {
         with (state) {
             respondButton.isEnabled = hasAwaitingRequest
 
-            pairButton.isEnabled = !hasPeers
+            pairButton.isEnabled = true
             unpairButton.isEnabled = hasPeers
 
             if (!hasAwaitingRequest) messageTextView.text = null
@@ -68,7 +68,7 @@ class WalletFragment : Fragment(R.layout.fragment_wallet) {
     private fun getPairingRequest(): String? = pairingRequestTextInput.text
 
     companion object {
-        const val examplePairingRequest = "6h663f1EiJXzYaybYBStHbxjuZP4QivkhhcvMVhjPxiszrxEmoj4AKZSfnKVeWu5gp6t2gVYLzbzb5z1mRdTTX9FWGS6irPU9WC2yS9tepbLZmT7YAA2Q3g7AbqBZgj4LssjXH3ijQZ1vo2oPj7m5vhWP5mmEDK4nWV84JdFY3wcoSamDPyv5rWUmxeoNbjJgdJRUBzHaSgCGS8EB2piXTvnXs4CyQapZ8n4FKnZYBM9vJEkZ3jiHcTcZ5jf65B5JYFatBxVzzWZ1vndRSYvs9DSXUM89dyN4dysw5YhDTAMYX5Bf9GpvdxjjBdVLgCrCrSTr9zzTmZw6dTXN8XMhMnEuXeh5i"
+        const val examplePairingRequest = "3NDKTWt2x3EYdgULnnnHhVGJc2FYnaqKKTx99ntsB3CRoc3VZztm5FynoVj5qgciUf1KtAJMEDHicbmnKuwLnZV3YVLmThdUX3C29zadfhEwRkng4oqUSzfRMFiUzL9QrpjMxXzdn4MZiCHoxm9r2mrZ56vnzwGWPo7vKUFhWPXUWj2JfMaih4hRnRt5H1Y3DiXmuYGwfEEAXMjXDNvsuBjkv6NtQ6t3zUnrqhJd26RCyhvdkfPaB1HjxyEsUQQeu9HdKNUR9CfXrkNTDqFzcCWUTF1Uo9whBFEpx9dqbZb7dG1S2i8kqVMxoheYCZxjUNzT5dD"
     }
 
     private var TextInputLayout.text: String?

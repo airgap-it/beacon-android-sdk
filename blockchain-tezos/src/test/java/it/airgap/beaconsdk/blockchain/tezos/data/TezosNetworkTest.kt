@@ -1,14 +1,69 @@
 package it.airgap.beaconsdk.blockchain.tezos.data
 
 import fromValues
+import io.mockk.MockKAnnotations
+import io.mockk.impl.annotations.MockK
+import it.airgap.beaconsdk.blockchain.tezos.Tezos
+import it.airgap.beaconsdk.blockchain.tezos.internal.creator.*
+import it.airgap.beaconsdk.blockchain.tezos.internal.serializer.*
+import it.airgap.beaconsdk.blockchain.tezos.internal.wallet.TezosWallet
+import it.airgap.beaconsdk.core.internal.BeaconConfiguration
+import it.airgap.beaconsdk.core.internal.compat.CoreCompat
+import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
+import it.airgap.beaconsdk.core.internal.serializer.contextualJson
+import it.airgap.beaconsdk.core.internal.storage.MockSecureStorage
+import it.airgap.beaconsdk.core.internal.storage.MockStorage
+import it.airgap.beaconsdk.core.internal.storage.StorageManager
+import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import mockDependencyRegistry
+import org.junit.Before
 import org.junit.Test
 import kotlin.test.assertEquals
 
 internal class TezosNetworkTest {
+    @MockK
+    private lateinit var wallet: TezosWallet
+
+    @MockK
+    private lateinit var identifierCreator: IdentifierCreator
+
+    private lateinit var dependencyRegistry: DependencyRegistry
+    private lateinit var storageManager: StorageManager
+
+    private lateinit var json: Json
+
+    private val beaconScope: BeaconScope = BeaconScope.Global
+
+    @Before
+    fun setup() {
+        MockKAnnotations.init(this)
+
+        storageManager = StorageManager(beaconScope, MockStorage(), MockSecureStorage(), identifierCreator, BeaconConfiguration(ignoreUnsupportedBlockchains = false))
+        val tezos = Tezos(
+            wallet,
+            TezosCreator(
+                DataTezosCreator(storageManager, identifierCreator),
+                V1BeaconMessageTezosCreator(),
+                V2BeaconMessageTezosCreator(),
+                V3BeaconMessageTezosCreator(),
+            ),
+            TezosSerializer(
+                DataTezosSerializer(),
+                V1BeaconMessageTezosSerializer(),
+                V2BeaconMessageTezosSerializer(),
+                V3BeaconMessageTezosSerializer(),
+            ),
+        )
+
+        dependencyRegistry = mockDependencyRegistry(tezos)
+        json = contextualJson(dependencyRegistry.blockchainRegistry, CoreCompat(beaconScope))
+    }
+
     @Test
     fun `is deserialized from JSON`() {
         (
@@ -18,7 +73,7 @@ internal class TezosNetworkTest {
                 expectedWithJsonStrings(rpcUrl = "rpcUrl") +
                 expectedWithJsonStrings(name = "name", rpcUrl = "rpcUrl")
         ).map {
-            Json.decodeFromString<TezosNetwork>(it.second) to it.first
+            json.decodeFromString<TezosNetwork>(it.second) to it.first
         }.forEach {
             assertEquals(it.second, it.first)
         }
@@ -32,8 +87,8 @@ internal class TezosNetworkTest {
                 expectedWithJsonStrings(rpcUrl = "rpcUrl") +
                 expectedWithJsonStrings(name = "name", rpcUrl = "rpcUrl")
         ).map {
-            Json.decodeFromString(JsonObject.serializer(), Json.encodeToString(it.first)) to
-                    Json.decodeFromString(JsonObject.serializer(), it.second)
+            json.decodeFromString(JsonObject.serializer(), json.encodeToString(it.first)) to
+                    json.decodeFromString(JsonObject.serializer(), it.second)
         }.forEach {
             assertEquals(it.second, it.first)
         }
@@ -45,10 +100,17 @@ internal class TezosNetworkTest {
         includeNulls: Boolean = false,
     ): List<Pair<TezosNetwork, String>> = listOf(
         TezosNetwork.Mainnet(name, rpcUrl) to json("mainnet", name, rpcUrl, includeNulls),
+        TezosNetwork.Ghostnet(name, rpcUrl) to json("ghostnet", name, rpcUrl, includeNulls),
+        TezosNetwork.Mondaynet(name, rpcUrl) to json("mondaynet", name, rpcUrl, includeNulls),
+        TezosNetwork.Dailynet(name, rpcUrl) to json("dailynet", name, rpcUrl, includeNulls),
         TezosNetwork.Delphinet(name, rpcUrl) to json("delphinet", name, rpcUrl, includeNulls),
         TezosNetwork.Edonet(name, rpcUrl) to json("edonet", name, rpcUrl, includeNulls),
         TezosNetwork.Florencenet(name, rpcUrl) to json("florencenet", name, rpcUrl, includeNulls),
         TezosNetwork.Granadanet(name, rpcUrl) to json("granadanet", name, rpcUrl, includeNulls),
+        TezosNetwork.Hangzhounet(name, rpcUrl) to json("hangzhounet", name, rpcUrl, includeNulls),
+        TezosNetwork.Ithacanet(name, rpcUrl) to json("ithacanet", name, rpcUrl, includeNulls),
+        TezosNetwork.Jakartanet(name, rpcUrl) to json("jakartanet", name, rpcUrl, includeNulls),
+        TezosNetwork.Kathmandunet(name, rpcUrl) to json("kathmandunet", name, rpcUrl, includeNulls),
         TezosNetwork.Custom(name, rpcUrl) to json("custom", name, rpcUrl, includeNulls),
     )
 
