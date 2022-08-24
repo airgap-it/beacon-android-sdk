@@ -1,42 +1,44 @@
 package it.airgap.beaconsdkdemo.dapp
 
-import androidx.lifecycle.*
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import it.airgap.beaconsdk.blockchain.substrate.substrate
 import it.airgap.beaconsdk.blockchain.tezos.extension.requestTezosPermission
 import it.airgap.beaconsdk.blockchain.tezos.tezos
 import it.airgap.beaconsdk.client.dapp.BeaconDAppClient
-import it.airgap.beaconsdk.core.message.BeaconMessage
 import it.airgap.beaconsdk.core.message.BeaconResponse
 import it.airgap.beaconsdk.transport.p2p.matrix.p2pMatrix
-import it.airgap.beaconsdkdemo.utils.setValue
-import kotlinx.coroutines.flow.onEach
+import it.airgap.beaconsdkdemo.utils.emit
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 
 class DAppFragmentViewModel : ViewModel() {
-    private val _state: MutableLiveData<DAppFragment.State> = MutableLiveData(DAppFragment.State())
-    val state: LiveData<DAppFragment.State>
+    private val _state: MutableStateFlow<DAppFragment.State> = MutableStateFlow(DAppFragment.State())
+    val state: Flow<DAppFragment.State>
         get() = _state
+
+    init {
+        viewModelScope.launch {
+            val client = BeaconDAppClient("Beacon SDK Demo (DApp)", clientId = "__dapp__") {
+                support(tezos(), substrate())
+                use(p2pMatrix())
+
+                ignoreUnsupportedBlockchains = true
+            }.also { beaconClient = it }
+
+            client.connect()
+                .onStart { checkForActiveAccount() }
+                .collect { result ->
+                    result.getOrNull()?.let { onBeaconResponse(it) }
+                    result.exceptionOrNull()?.let { onError(it) }
+                }
+        }
+    }
 
     private var beaconClient: BeaconDAppClient? = null
     private var awaitingResponse: BeaconResponse? = null
-
-    fun startBeacon(): LiveData<Result<BeaconResponse>> = liveData {
-        beaconClient = BeaconDAppClient("Beacon SDK Demo (DApp)", clientId = "__dapp__") {
-            support(tezos(), substrate())
-            use(p2pMatrix())
-
-            ignoreUnsupportedBlockchains = true
-        }
-
-        checkForActiveAccount()
-
-        beaconClient?.connect()
-            ?.onEach { result -> result.getOrNull()?.let {
-                saveAwaitingResponse(it)
-                checkForActiveAccount()
-            } }
-            ?.collect { emit(it) }
-    }
 
     fun pair() {
         viewModelScope.launch {
@@ -45,7 +47,7 @@ class DAppFragmentViewModel : ViewModel() {
             val pairingRequest = beaconClient.pair()
             val serializerPairingRequest = beaconClient.serializePairingData(pairingRequest)
 
-            _state.setValue { copy(pairingRequest = serializerPairingRequest) }
+            _state.emit { copy(pairingRequest = serializerPairingRequest) }
         }
     }
 
@@ -57,7 +59,7 @@ class DAppFragmentViewModel : ViewModel() {
 
     fun clearResponse() {
         awaitingResponse = null
-        checkForAwaitingResponses()
+        _state.emit { copy(beaconResponse = null) }
     }
 
     fun reset() {
@@ -67,21 +69,22 @@ class DAppFragmentViewModel : ViewModel() {
         }
     }
 
+    private suspend fun onBeaconResponse(response: BeaconResponse) {
+        awaitingResponse = response
+        checkForActiveAccount()
+        _state.emit { copy(beaconResponse = response) }
+    }
+
+    private fun onError(error: Throwable) {
+        _state.emit { copy(error = error) }
+    }
+
     private suspend fun checkForActiveAccount() {
         val activeAccount = beaconClient?.getActiveAccount()
-        _state.setValue { copy(activeAccount = activeAccount?.accountId) }
+        _state.emit { copy(activeAccount = activeAccount?.accountId) }
     }
 
-    private fun checkForAwaitingResponses() {
-        _state.setValue { copy(hasAwaitingResponses = awaitingResponse != null) }
-    }
-
-    private fun saveAwaitingResponse(message: BeaconMessage) {
-        awaitingResponse = if (message is BeaconResponse) message else null
-        checkForAwaitingResponses()
-    }
-
-    private fun MutableLiveData<DAppFragment.State>.setValue(update: DAppFragment.State.() -> DAppFragment.State) {
-        setValue(DAppFragment.State(), update)
+    private fun MutableStateFlow<DAppFragment.State>.emit(update: DAppFragment.State.() -> DAppFragment.State) {
+        emit(DAppFragment.State(), update)
     }
 }

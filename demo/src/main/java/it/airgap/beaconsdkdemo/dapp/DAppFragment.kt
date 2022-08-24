@@ -5,10 +5,15 @@ import android.view.View
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import it.airgap.beaconsdk.core.message.BeaconResponse
 import it.airgap.beaconsdkdemo.R
 import it.airgap.beaconsdkdemo.utils.toJson
 import kotlinx.android.synthetic.main.fragment_dapp.*
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -22,11 +27,10 @@ class DAppFragment : Fragment(R.layout.fragment_dapp) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        viewModel.state.observe(viewLifecycleOwner) { render(it) }
-
-        viewModel.startBeacon().observe(viewLifecycleOwner) { result ->
-            result.getOrNull()?.let { onBeaconResponse(it) }
-            result.exceptionOrNull()?.let { onError(it) }
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.state.collect { render(it) }
+            }
         }
 
         resetButton.setOnClickListener { viewModel.reset() }
@@ -37,20 +41,20 @@ class DAppFragment : Fragment(R.layout.fragment_dapp) {
 
     private fun render(state: State) {
         with (state) {
-            clearResponseButton.isEnabled = hasAwaitingResponses
+            onBeaconResponse(beaconResponse)
+            error?.let { onError(it) }
 
             pairButton.isEnabled = activeAccount == null
             resetButton.isEnabled = activeAccount != null
             requestPermissionButton.isEnabled = pairingRequest != null || activeAccount != null
 
             pairingRequestTextView.text = pairingRequest
-
-            if (!hasAwaitingResponses) messageTextView.text = null
         }
     }
 
-    private fun onBeaconResponse(beaconResponse: BeaconResponse) {
-        messageTextView.text = json.encodeToString(beaconResponse.toJson(json))
+    private fun onBeaconResponse(beaconResponse: BeaconResponse?) {
+        clearResponseButton.isEnabled = beaconResponse != null
+        messageTextView.text = beaconResponse?.let { json.encodeToString(it.toJson(json)) }
     }
 
     private fun onError(exception: Throwable) {
@@ -65,6 +69,7 @@ class DAppFragment : Fragment(R.layout.fragment_dapp) {
     data class State(
         val activeAccount: String? = null,
         val pairingRequest: String? = null,
-        val hasAwaitingResponses: Boolean = false,
+        val beaconResponse: BeaconResponse? = null,
+        val error: Throwable? = null,
     )
 }

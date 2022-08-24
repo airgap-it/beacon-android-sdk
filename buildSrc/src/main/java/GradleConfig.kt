@@ -19,6 +19,7 @@ object Version {
     const val androidxActivity = "1.3.1"
     const val androidxFragment = "1.5.1"
     const val androidxLifecycle = "2.3.1"
+    const val androidxNavigation = "2.5.1"
 
     const val androidxSecurity = "1.0.0"
 
@@ -65,6 +66,9 @@ object Dependencies {
     const val androidxLifecycleViewModel = "androidx.lifecycle:lifecycle-viewmodel-ktx:${Version.androidxLifecycle}"
     const val androidxLifecycleLiveData = "androidx.lifecycle:lifecycle-livedata-ktx:${Version.androidxLifecycle}"
     const val androidxLifecycleRuntime = "androidx.lifecycle:lifecycle-runtime-ktx:${Version.androidxLifecycle}"
+
+    const val androidxNavigationFragment = "androidx.navigation:navigation-fragment-ktx:${Version.androidxNavigation}"
+    const val androidxNavigationUi = "androidx.navigation:navigation-ui-ktx:${Version.androidxNavigation}"
 
     const val androidxSecurity = "androidx.security:security-crypto:${Version.androidxSecurity}"
 
