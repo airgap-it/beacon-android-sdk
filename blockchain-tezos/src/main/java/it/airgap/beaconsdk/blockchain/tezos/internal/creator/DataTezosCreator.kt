@@ -5,6 +5,7 @@ import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
 import it.airgap.beaconsdk.blockchain.tezos.internal.utils.failWithUnknownMessage
 import it.airgap.beaconsdk.blockchain.tezos.message.request.PermissionTezosRequest
 import it.airgap.beaconsdk.blockchain.tezos.message.response.PermissionTezosResponse
+import it.airgap.beaconsdk.core.data.Account
 import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.data.Permission
 import it.airgap.beaconsdk.core.internal.blockchain.creator.DataBlockchainCreator
@@ -66,11 +67,11 @@ internal class DataTezosCreator(
             )
         }
 
-    override fun extractAccounts(response: PermissionBeaconResponse): Result<List<String>> =
+    override fun extractAccounts(response: PermissionBeaconResponse): Result<List<Account>> =
         runCatching {
             if (response !is PermissionTezosResponse) failWithUnknownMessage(response)
 
-            listOf(response.account.accountId)
+            listOf(Account(response.account.accountId, response.account.address))
         }
 
     private fun failWithAppMetadataNotFound(): Nothing = failWithIllegalState("Permission could not be extracted, matching appMetadata not found.")

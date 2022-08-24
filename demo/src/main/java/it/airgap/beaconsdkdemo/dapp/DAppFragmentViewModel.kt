@@ -69,7 +69,7 @@ class DAppFragmentViewModel : ViewModel() {
 
     private suspend fun checkForActiveAccount() {
         val activeAccount = beaconClient?.getActiveAccount()
-        _state.setValue { copy(activeAccount = activeAccount) }
+        _state.setValue { copy(activeAccount = activeAccount?.accountId) }
     }
 
     private fun checkForAwaitingResponses() {

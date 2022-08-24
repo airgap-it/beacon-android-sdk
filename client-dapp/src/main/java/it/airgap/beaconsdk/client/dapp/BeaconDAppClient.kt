@@ -27,7 +27,6 @@ import it.airgap.beaconsdk.client.dapp.storage.DAppClientStorage
 import it.airgap.beaconsdk.core.data.Account
 import it.airgap.beaconsdk.core.message.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.takeWhile
 
@@ -54,8 +53,8 @@ public class BeaconDAppClient @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) constr
             ?.getOrThrow()
     }
 
-    public suspend fun getActiveAccount(): String? =
-        accountController.getActiveAccount()?.accountId
+    public suspend fun getActiveAccount(): Account? =
+        accountController.getActiveAccount()?.account
 
     public suspend fun clearActiveAccount() {
         accountController.clearActiveAccount()
@@ -93,7 +92,7 @@ public class BeaconDAppClient @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) constr
             origin = Connection.Id.fromType(connectionType),
             destination = accountController.getActivePeer()?.toConnectionId(),
             senderId = senderId,
-            accountId = accountController.getActiveAccount()?.accountId,
+            account = accountController.getActiveAccount()?.account,
         )
 
     override suspend fun processMessage(origin: Connection.Id, message: BeaconMessage): Result<Unit> =

@@ -6,6 +6,7 @@ import it.airgap.beaconsdk.blockchain.substrate.data.SubstratePermission
 import it.airgap.beaconsdk.blockchain.substrate.data.SubstrateSignerPayload
 import it.airgap.beaconsdk.blockchain.substrate.extensions.ownAppMetadata
 import it.airgap.beaconsdk.blockchain.substrate.internal.SubstrateBeaconConfiguration
+import it.airgap.beaconsdk.blockchain.substrate.internal.utils.getNetworkFor
 import it.airgap.beaconsdk.core.client.BeaconClient
 import it.airgap.beaconsdk.core.client.BeaconProducer
 import it.airgap.beaconsdk.core.data.AppMetadata
@@ -77,14 +78,15 @@ public sealed class TransferSubstrateRequest : BlockchainSubstrateRequest() {
 
 @Suppress("FunctionName")
 public suspend fun <T> TransferSubmitSubstrateRequest(
-    sourceAddress: String,
     amount: String,
     recipient: String,
-    network: SubstrateNetwork,
+    network: SubstrateNetwork? = null,
     producer: T,
     transportType: Connection.Type = Connection.Type.P2P,
 ) : TransferSubstrateRequest.Submit where T : BeaconClient<*>, T : BeaconProducer {
     val requestMetadata = producer.prepareRequest(transportType)
+    val account = requestMetadata.account ?: failWithActiveAccountNotSet()
+    val network = network ?: producer.getNetworkFor(account.accountId)
 
     return TransferSubstrateRequest.Submit(
         id = requestMetadata.id,
@@ -94,8 +96,8 @@ public suspend fun <T> TransferSubmitSubstrateRequest(
         appMetadata = producer.ownAppMetadata(),
         origin = requestMetadata.origin,
         destination = requestMetadata.destination,
-        accountId = requestMetadata.accountId ?: failWithActiveAccountNotSet(),
-        sourceAddress = sourceAddress,
+        accountId = account.accountId,
+        sourceAddress = account.address,
         amount = amount,
         recipient = recipient,
         network = network,
@@ -104,14 +106,15 @@ public suspend fun <T> TransferSubmitSubstrateRequest(
 
 @Suppress("FunctionName")
 public suspend fun <T> TransferSubmitAndReturnSubstrateRequest(
-    sourceAddress: String,
     amount: String,
     recipient: String,
-    network: SubstrateNetwork,
+    network: SubstrateNetwork? = null,
     producer: T,
     transportType: Connection.Type = Connection.Type.P2P,
 ) : TransferSubstrateRequest.SubmitAndReturn where T : BeaconClient<*>, T : BeaconProducer {
     val requestMetadata = producer.prepareRequest(transportType)
+    val account = requestMetadata.account ?: failWithActiveAccountNotSet()
+    val network = network ?: producer.getNetworkFor(account.accountId)
 
     return TransferSubstrateRequest.SubmitAndReturn(
         id = requestMetadata.id,
@@ -121,8 +124,8 @@ public suspend fun <T> TransferSubmitAndReturnSubstrateRequest(
         appMetadata = producer.ownAppMetadata(),
         origin = requestMetadata.origin,
         destination = requestMetadata.destination,
-        accountId = requestMetadata.accountId ?: failWithActiveAccountNotSet(),
-        sourceAddress = sourceAddress,
+        accountId = account.accountId,
+        sourceAddress = account.address,
         amount = amount,
         recipient = recipient,
         network = network,
@@ -131,14 +134,15 @@ public suspend fun <T> TransferSubmitAndReturnSubstrateRequest(
 
 @Suppress("FunctionName")
 public suspend fun <T> TransferReturnSubstrateRequest(
-    sourceAddress: String,
     amount: String,
     recipient: String,
-    network: SubstrateNetwork,
+    network: SubstrateNetwork? = null,
     producer: T,
     transportType: Connection.Type = Connection.Type.P2P,
 ) : TransferSubstrateRequest.Return where T : BeaconClient<*>, T : BeaconProducer {
     val requestMetadata = producer.prepareRequest(transportType)
+    val account = requestMetadata.account ?: failWithActiveAccountNotSet()
+    val network = network ?: producer.getNetworkFor(account.accountId)
 
     return TransferSubstrateRequest.Return(
         id = requestMetadata.id,
@@ -148,8 +152,8 @@ public suspend fun <T> TransferReturnSubstrateRequest(
         appMetadata = producer.ownAppMetadata(),
         origin = requestMetadata.origin,
         destination = requestMetadata.destination,
-        accountId = requestMetadata.accountId ?: failWithActiveAccountNotSet(),
-        sourceAddress = sourceAddress,
+        accountId = account.accountId,
+        sourceAddress = account.address,
         amount = amount,
         recipient = recipient,
         network = network,
@@ -225,7 +229,7 @@ public suspend fun <T> SignPayloadSubmitSubstrateRequest(
         appMetadata = producer.ownAppMetadata(),
         origin = requestMetadata.origin,
         destination = requestMetadata.destination,
-        accountId = requestMetadata.accountId ?: failWithActiveAccountNotSet(),
+        accountId = requestMetadata.account?.accountId ?: failWithActiveAccountNotSet(),
         address = address,
         payload = payload,
     )
@@ -248,7 +252,7 @@ public suspend fun <T> SignPayloadSubmitAndReturnSubstrateRequest(
         appMetadata = producer.ownAppMetadata(),
         origin = requestMetadata.origin,
         destination = requestMetadata.destination,
-        accountId = requestMetadata.accountId ?: failWithActiveAccountNotSet(),
+        accountId = requestMetadata.account?.accountId ?: failWithActiveAccountNotSet(),
         address = address,
         payload = payload,
     )
@@ -271,7 +275,7 @@ public suspend fun <T> SignPayloadReturnSubstrateRequest(
         appMetadata = producer.ownAppMetadata(),
         origin = requestMetadata.origin,
         destination = requestMetadata.destination,
-        accountId = requestMetadata.accountId ?: failWithActiveAccountNotSet(),
+        accountId = requestMetadata.account?.accountId ?: failWithActiveAccountNotSet(),
         address = address,
         payload = payload,
     )
