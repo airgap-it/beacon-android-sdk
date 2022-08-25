@@ -1,6 +1,7 @@
 package it.airgap.beaconsdk.client.dapp.internal.controller.account
 
 import androidx.annotation.RestrictTo
+import it.airgap.beaconsdk.client.dapp.data.PairedAccount
 import it.airgap.beaconsdk.core.data.*
 import it.airgap.beaconsdk.core.internal.blockchain.BlockchainRegistry
 import it.airgap.beaconsdk.core.message.PermissionBeaconResponse
@@ -17,7 +18,7 @@ public class AccountController(private val store: AccountControllerStore, privat
     public suspend fun getActivePeer(): Peer? =
         store.state().getOrThrow().activePeer
 
-    public suspend fun getActiveAccount(): Account? =
+    public suspend fun getActiveAccount(): PairedAccount? =
         store.state().getOrThrow().activeAccount
 
     public suspend fun clearActiveAccount() {
@@ -37,7 +38,7 @@ public class AccountController(private val store: AccountControllerStore, privat
         runCatching {
             val blockchain = blockchainRegistry.get(response.blockchainIdentifier)
             val accountId = blockchain.creator.data.extractAccounts(response).getOrThrow().firstOrNull() /* TODO: other selection criteria? */
-            val account = accountId?.let { Account(it, origin.id) }
+            val account = accountId?.let { PairedAccount(it, origin.id) }
 
             account?.let { store.intent(OnNewActiveAccount(it)) }
         }

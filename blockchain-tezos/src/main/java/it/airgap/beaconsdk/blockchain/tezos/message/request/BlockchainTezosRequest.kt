@@ -6,6 +6,8 @@ import it.airgap.beaconsdk.blockchain.tezos.extension.ownAppMetadata
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosAppMetadata
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosNetwork
 import it.airgap.beaconsdk.blockchain.tezos.data.operation.TezosOperation
+import it.airgap.beaconsdk.blockchain.tezos.internal.TezosBeaconConfiguration
+import it.airgap.beaconsdk.blockchain.tezos.internal.utils.getNetworkFor
 import it.airgap.beaconsdk.blockchain.tezos.message.response.BroadcastTezosResponse
 import it.airgap.beaconsdk.blockchain.tezos.message.response.OperationTezosResponse
 import it.airgap.beaconsdk.blockchain.tezos.message.response.SignPayloadTezosResponse
@@ -13,6 +15,7 @@ import it.airgap.beaconsdk.core.client.BeaconClient
 import it.airgap.beaconsdk.core.client.BeaconProducer
 import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.data.SigningType
+import it.airgap.beaconsdk.core.internal.utils.failWithActiveAccountNotSet
 import it.airgap.beaconsdk.core.message.BlockchainBeaconRequest
 
 /**
@@ -56,27 +59,27 @@ public data class OperationTezosRequest internal constructor(
 }
 
 public suspend fun <T> OperationTezosRequest(
-    sourceAddress: String,
     operationDetails: List<TezosOperation> = emptyList(),
-    network: TezosNetwork = TezosNetwork.Mainnet(),
+    network: TezosNetwork? = null,
     producer: T,
     transportType: Connection.Type = Connection.Type.P2P,
-    accountId: String? = null,
 ) : OperationTezosRequest where T : BeaconClient<*>, T : BeaconProducer {
     val requestMetadata = producer.prepareRequest(transportType)
+    val account = requestMetadata.account ?: failWithActiveAccountNotSet()
+    val network = network ?: producer.getNetworkFor(account.accountId)
 
     return OperationTezosRequest(
         id = requestMetadata.id,
-        version = requestMetadata.version,
+        version = TezosBeaconConfiguration.MESSAGE_VERSION,
         blockchainIdentifier = Tezos.IDENTIFIER,
         senderId = requestMetadata.senderId,
         appMetadata = producer.ownAppMetadata(),
         origin = requestMetadata.origin,
         destination = requestMetadata.destination,
-        accountId = accountId ?: requestMetadata.accountId,
+        accountId = account.accountId,
         network = network,
         operationDetails = operationDetails,
-        sourceAddress = sourceAddress,
+        sourceAddress = account.address,
     )
 }
 
@@ -115,25 +118,23 @@ public data class SignPayloadTezosRequest internal constructor(
 public suspend fun <T> SignPayloadTezosRequest(
     signingType: SigningType,
     payload: String,
-    sourceAddress: String,
     producer: T,
     transportType: Connection.Type = Connection.Type.P2P,
-    accountId: String? = null,
 ) : SignPayloadTezosRequest where T : BeaconClient<*>, T : BeaconProducer {
     val requestMetadata = producer.prepareRequest(transportType)
 
     return SignPayloadTezosRequest(
         id = requestMetadata.id,
-        version = requestMetadata.version,
+        version = TezosBeaconConfiguration.MESSAGE_VERSION,
         blockchainIdentifier = Tezos.IDENTIFIER,
         senderId = requestMetadata.senderId,
         appMetadata = producer.ownAppMetadata(),
         origin = requestMetadata.origin,
         destination = requestMetadata.destination,
-        accountId = accountId ?: requestMetadata.accountId,
+        accountId = requestMetadata.account?.accountId ?: failWithActiveAccountNotSet(),
         signingType = signingType,
         payload = payload,
-        sourceAddress = sourceAddress,
+        sourceAddress = requestMetadata.account?.address ?: failWithActiveAccountNotSet(),
     )
 }
 
@@ -169,22 +170,23 @@ public data class BroadcastTezosRequest internal constructor(
 
 public suspend fun <T> BroadcastTezosRequest(
     signedTransaction: String,
-    network: TezosNetwork = TezosNetwork.Mainnet(),
+    network: TezosNetwork? = null,
     producer: T,
     transportType: Connection.Type = Connection.Type.P2P,
-    accountId: String? = null,
 ) : BroadcastTezosRequest where T : BeaconClient<*>, T : BeaconProducer {
     val requestMetadata = producer.prepareRequest(transportType)
+    val account = requestMetadata.account ?: failWithActiveAccountNotSet()
+    val network = network ?: producer.getNetworkFor(account.accountId)
 
     return BroadcastTezosRequest(
         id = requestMetadata.id,
-        version = requestMetadata.version,
+        version = TezosBeaconConfiguration.MESSAGE_VERSION,
         blockchainIdentifier = Tezos.IDENTIFIER,
         senderId = requestMetadata.senderId,
         appMetadata = producer.ownAppMetadata(),
         origin = requestMetadata.origin,
         destination = requestMetadata.destination,
-        accountId = accountId ?: requestMetadata.accountId,
+        accountId = account.accountId,
         network = network,
         signedTransaction = signedTransaction,
     )

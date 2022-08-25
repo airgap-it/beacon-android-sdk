@@ -45,5 +45,7 @@ public abstract class SharedPreferencesBaseStorage(public val beaconScope: Beaco
 
     protected interface Key {
         public val value: String
+
+        public fun unscoped(): String = value
     }
 }

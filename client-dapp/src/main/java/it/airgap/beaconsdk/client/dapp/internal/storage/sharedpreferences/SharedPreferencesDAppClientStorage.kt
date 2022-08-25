@@ -2,7 +2,7 @@ package it.airgap.beaconsdk.client.dapp.internal.storage.sharedpreferences
 
 import android.content.Context
 import android.content.SharedPreferences
-import it.airgap.beaconsdk.core.data.Account
+import it.airgap.beaconsdk.client.dapp.data.PairedAccount
 import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.SharedPreferencesBaseStorage
 import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.SharedPreferencesStorage
@@ -17,10 +17,10 @@ internal class SharedPreferencesDAppClientStorage(
     sharedPreferences: SharedPreferences,
     beaconScope: BeaconScope = BeaconScope.Global,
 ) : DAppClientStorage, SharedPreferencesBaseStorage(beaconScope, sharedPreferences), Storage by storage {
-    override suspend fun getActiveAccount(): Account? =
+    override suspend fun getActiveAccount(): PairedAccount? =
         sharedPreferences.getSerializable(Key.ActiveAccount.scoped(), null, beaconScope)
 
-    override suspend fun setActiveAccount(account: Account?) {
+    override suspend fun setActiveAccount(account: PairedAccount?) {
         sharedPreferences.putSerializable(Key.ActiveAccount.scoped(), account, beaconScope)
     }
 

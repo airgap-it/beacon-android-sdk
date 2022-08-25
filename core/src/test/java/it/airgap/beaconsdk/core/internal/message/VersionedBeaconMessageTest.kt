@@ -8,7 +8,7 @@ import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.core.internal.message.v1.V1BeaconMessage
 import it.airgap.beaconsdk.core.internal.message.v2.V2BeaconMessage
 import it.airgap.beaconsdk.core.internal.message.v3.V3BeaconMessage
-import it.airgap.beaconsdk.core.internal.serializer.contextualJson
+import it.airgap.beaconsdk.core.internal.serializer.coreJson
 import it.airgap.beaconsdk.core.internal.utils.failWith
 import it.airgap.beaconsdk.core.message.AcknowledgeBeaconResponse
 import it.airgap.beaconsdk.core.message.BeaconMessage
@@ -45,7 +45,7 @@ internal class VersionedBeaconMessageTest {
         dependencyRegistry = mockDependencyRegistry()
         every { dependencyRegistry.compat } returns CoreCompat(beaconScope)
 
-        json = contextualJson(dependencyRegistry.blockchainRegistry, dependencyRegistry.compat)
+        json = coreJson(dependencyRegistry.blockchainRegistry, dependencyRegistry.compat)
     }
 
     @After

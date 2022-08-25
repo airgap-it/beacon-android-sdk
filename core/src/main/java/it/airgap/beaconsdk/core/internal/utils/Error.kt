@@ -51,6 +51,10 @@ public fun failWithActiveAccountNotSet(): Nothing =
     failWithIllegalState("Active Account has not been set.")
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun failWithAccountNetworkNotFound(accountId: String): Nothing =
+    failWithIllegalState("Account ($accountId) network not found.")
+
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun failWithExpectedJsonDecoder(actual: KClass<out Decoder>): Nothing =
     throw SerializationException("Expected Json decoder, got $actual")
 

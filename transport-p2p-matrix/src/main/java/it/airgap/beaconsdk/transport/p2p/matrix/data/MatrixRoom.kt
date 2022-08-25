@@ -3,13 +3,13 @@ package it.airgap.beaconsdk.transport.p2p.matrix.data
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.MatrixEvent
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.sync.MatrixSyncRoom
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.sync.MatrixSyncRooms
-import kotlinx.serialization.SerialName
+import it.airgap.beaconsdk.transport.p2p.matrix.internal.migration.v3_2_0.MatrixRoomSerializer
 import kotlinx.serialization.Serializable
 
 /**
  * Base for types of [Matrix](https://matrix.org/) rooms supported in Beacon.
  */
-@Serializable
+@Serializable(with = MatrixRoomSerializer::class)
 public sealed class MatrixRoom {
     public abstract val id: String
     public abstract val members: List<String>
@@ -21,8 +21,11 @@ public sealed class MatrixRoom {
      * @property [members] A list of members that has joined the room.
      */
     @Serializable
-    @SerialName("joined")
-    public data class Joined(override val id: String, override val members: List<String>) : MatrixRoom()
+    public data class Joined(override val id: String, override val members: List<String>) : MatrixRoom() {
+        public companion object {
+            internal const val TYPE = "joined"
+        }
+    }
 
     /**
      * A room the client has been invited to.
@@ -31,8 +34,11 @@ public sealed class MatrixRoom {
      * @property [members] A list of members that has joined the room.
      */
     @Serializable
-    @SerialName("invited")
-    public data class Invited(override val id: String, override val members: List<String>) : MatrixRoom()
+    public data class Invited(override val id: String, override val members: List<String>) : MatrixRoom() {
+        public companion object {
+            internal const val TYPE = "invited"
+        }
+    }
 
     /**
      * A room the client has left.
@@ -41,8 +47,11 @@ public sealed class MatrixRoom {
      * @property [members] A list of members that has joined the room.
      */
     @Serializable
-    @SerialName("left")
-    public data class Left(override val id: String, override val members: List<String>) : MatrixRoom()
+    public data class Left(override val id: String, override val members: List<String>) : MatrixRoom() {
+        public companion object {
+            internal const val TYPE = "left"
+        }
+    }
 
     /**
      * A room with an unknown relation to the client.
@@ -51,8 +60,11 @@ public sealed class MatrixRoom {
      * @property [members] A list of members that has joined the room.
      */
     @Serializable
-    @SerialName("unknown")
-    public data class Unknown(override val id: String, override val members: List<String> = emptyList()) : MatrixRoom()
+    public data class Unknown(override val id: String, override val members: List<String> = emptyList()) : MatrixRoom() {
+        public companion object {
+            internal const val TYPE = "unknown"
+        }
+    }
 
     internal fun hasMember(member: String): Boolean = members.contains(member)
 

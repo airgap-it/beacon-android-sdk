@@ -13,7 +13,7 @@ import it.airgap.beaconsdk.core.internal.controller.connection.ConnectionControl
 import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.core.internal.message.*
 import it.airgap.beaconsdk.core.internal.serializer.Serializer
-import it.airgap.beaconsdk.core.internal.serializer.contextualJson
+import it.airgap.beaconsdk.core.internal.serializer.coreJson
 import it.airgap.beaconsdk.core.internal.serializer.provider.MockSerializerProvider
 import it.airgap.beaconsdk.core.internal.transport.Transport
 import it.airgap.beaconsdk.core.internal.utils.failure
@@ -58,7 +58,7 @@ internal class ConnectionControllerTest {
         dependencyRegistry = mockDependencyRegistry()
         every { dependencyRegistry.compat } returns CoreCompat(beaconScope)
 
-        json = contextualJson(dependencyRegistry.blockchainRegistry, dependencyRegistry.compat)
+        json = coreJson(dependencyRegistry.blockchainRegistry, dependencyRegistry.compat)
 
         serializerProvider = MockSerializerProvider(json)
         serializer = Serializer(serializerProvider)

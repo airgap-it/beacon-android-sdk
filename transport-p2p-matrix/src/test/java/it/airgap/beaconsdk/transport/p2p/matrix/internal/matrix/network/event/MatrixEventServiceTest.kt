@@ -5,13 +5,15 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.confirmVerified
 import io.mockk.impl.annotations.MockK
+import it.airgap.beaconsdk.core.internal.compat.CoreCompat
+import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.core.internal.network.HttpClient
 import it.airgap.beaconsdk.core.internal.network.data.ApplicationJson
 import it.airgap.beaconsdk.core.internal.network.data.BearerHeader
-import it.airgap.beaconsdk.core.internal.utils.encodeToString
+import it.airgap.beaconsdk.core.internal.serializer.coreJson
 import it.airgap.beaconsdk.core.network.data.HttpParameter
 import it.airgap.beaconsdk.core.network.provider.HttpClientProvider
-import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.MatrixError
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.event.MatrixEventResponse
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.sync.MatrixSyncResponse
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.sync.MatrixSyncStateEvent.Message
@@ -21,6 +23,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runBlockingTest
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import mockDependencyRegistry
 import nodeApiUrl
 import org.junit.Before
 import org.junit.Test
@@ -32,17 +35,22 @@ internal class MatrixEventServiceTest {
     @MockK
     private lateinit var httpClientProvider: HttpClientProvider
 
+    private lateinit var dependencyRegistry: DependencyRegistry
     private lateinit var httpClient: HttpClient
     private lateinit var matrixEventService: MatrixEventService
     private lateinit var json: Json
 
     private lateinit var testDeferred: CompletableDeferred<Unit>
 
+    private val beaconScope: BeaconScope = BeaconScope.Global
+
     @Before
     fun setup() {
         MockKAnnotations.init(this)
 
-        json = Json(from = Json.Default) {
+        dependencyRegistry = mockDependencyRegistry()
+
+        json = Json(from = coreJson(dependencyRegistry.blockchainRegistry, CoreCompat(beaconScope))) {
             prettyPrint = true
         }
 

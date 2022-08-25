@@ -121,6 +121,8 @@ public sealed class TezosError : BeaconError() {
             
             return when (value) {
                 BroadcastError.IDENTIFIER -> BroadcastError
+                NetworkNotSupported.IDENTIFIER -> NetworkNotSupported
+                NoAddressError.IDENTIFIER -> NoAddressError
                 NoPrivateKeyFound.IDENTIFIER -> NoPrivateKeyFound
                 NotGranted.IDENTIFIER -> NotGranted
                 ParametersInvalid.IDENTIFIER -> ParametersInvalid

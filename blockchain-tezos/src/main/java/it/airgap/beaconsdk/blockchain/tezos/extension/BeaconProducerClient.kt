@@ -34,33 +34,28 @@ public suspend fun <T> T.requestTezosPermission(
 }
 
 public suspend fun <T> T.requestTezosOperation(
-    sourceAddress: String,
     operationDetails: List<TezosOperation> = emptyList(),
-    network: TezosNetwork = TezosNetwork.Mainnet(),
+    network: TezosNetwork? = null,
     transportType: Connection.Type = Connection.Type.P2P,
-    accountId: String? = null,
 ) where T : BeaconProducer, T : BeaconClient<*> {
-    val permissionRequest = OperationTezosRequest(sourceAddress, operationDetails, network, this, transportType, accountId)
+    val permissionRequest = OperationTezosRequest(operationDetails, network, this, transportType)
     request(permissionRequest)
 }
 
 public suspend fun <T> T.requestTezosSignPayload(
     signingType: SigningType,
     payload: String,
-    sourceAddress: String,
     transportType: Connection.Type = Connection.Type.P2P,
-    accountId: String? = null,
 ) where T : BeaconProducer, T : BeaconClient<*> {
-    val permissionRequest = SignPayloadTezosRequest(signingType, payload, sourceAddress, this, transportType, accountId)
+    val permissionRequest = SignPayloadTezosRequest(signingType, payload, this, transportType)
     request(permissionRequest)
 }
 
 public suspend fun <T> T.requestTezosBroadcast(
     signedTransaction: String,
-    network: TezosNetwork = TezosNetwork.Mainnet(),
+    network: TezosNetwork? = null,
     transportType: Connection.Type = Connection.Type.P2P,
-    accountId: String? = null,
 ) where T : BeaconProducer, T : BeaconClient<*> {
-    val permissionRequest = BroadcastTezosRequest(signedTransaction, network, this, transportType, accountId)
+    val permissionRequest = BroadcastTezosRequest(signedTransaction, network, this, transportType)
     request(permissionRequest)
 }

@@ -8,7 +8,7 @@ import it.airgap.beaconsdk.core.internal.blockchain.BlockchainRegistry
 import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchain
 import it.airgap.beaconsdk.core.internal.compat.CoreCompat
 import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
-import it.airgap.beaconsdk.core.internal.serializer.contextualJson
+import it.airgap.beaconsdk.core.internal.serializer.coreJson
 import it.airgap.beaconsdk.core.scope.BeaconScope
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -45,7 +45,7 @@ internal class AppMetadataTest {
         every { blockchainRegistry.get(any()) } returns mockBlockchain
         every { blockchainRegistry.getOrNull(any()) } returns mockBlockchain
 
-        json = contextualJson(dependencyRegistry.blockchainRegistry, CoreCompat(beaconScope))
+        json = coreJson(dependencyRegistry.blockchainRegistry, CoreCompat(beaconScope))
     }
 
     @Test

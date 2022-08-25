@@ -10,7 +10,7 @@ import it.airgap.beaconsdk.core.internal.network.HttpClient.Companion.get
 import it.airgap.beaconsdk.core.internal.network.HttpClient.Companion.post
 import it.airgap.beaconsdk.core.internal.network.HttpClient.Companion.put
 import it.airgap.beaconsdk.core.internal.network.data.ApplicationJson
-import it.airgap.beaconsdk.core.internal.serializer.contextualJson
+import it.airgap.beaconsdk.core.internal.serializer.coreJson
 import it.airgap.beaconsdk.core.network.data.HttpParameter
 import it.airgap.beaconsdk.core.network.provider.HttpClientProvider
 import it.airgap.beaconsdk.core.scope.BeaconScope
@@ -42,7 +42,7 @@ internal class HttpClientTest {
 
         val dependencyRegistry = mockDependencyRegistry()
 
-        json = Json(from = contextualJson(dependencyRegistry.blockchainRegistry, CoreCompat(beaconScope))) {
+        json = Json(from = coreJson(dependencyRegistry.blockchainRegistry, CoreCompat(beaconScope))) {
             prettyPrint = true
         }
         httpClient = HttpClientImpl(httpClientProvider, json)

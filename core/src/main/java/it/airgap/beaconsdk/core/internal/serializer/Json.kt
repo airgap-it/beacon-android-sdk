@@ -76,8 +76,12 @@ private fun serializersModule(
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public fun contextualJson(blockchainRegistry: BlockchainRegistry, compat: Compat<VersionedCompat>): Json =
-    Json {
+public const val BEACON_CORE_CLASS_DISCRIMINATOR: String = "_serializationType"
 
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun coreJson(blockchainRegistry: BlockchainRegistry, compat: Compat<VersionedCompat>): Json =
+    Json {
         serializersModule = serializersModule(blockchainRegistry, compat)
+        classDiscriminator = BEACON_CORE_CLASS_DISCRIMINATOR
+        ignoreUnknownKeys = true
     }

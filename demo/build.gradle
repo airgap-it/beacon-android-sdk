@@ -92,6 +92,10 @@ dependencies {
     implementation(Dependencies.androidxLifecycleLiveData)
     implementation(Dependencies.androidxLifecycleRuntime)
 
+    // Navigation
+    implementation(Dependencies.androidxNavigationFragment)
+    implementation(Dependencies.androidxNavigationUi)
+
     // Serialization
     implementation(Dependencies.kotlinxSerializationJson)
 
