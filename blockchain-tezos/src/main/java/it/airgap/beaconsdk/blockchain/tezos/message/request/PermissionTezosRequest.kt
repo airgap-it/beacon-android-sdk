@@ -6,6 +6,7 @@ import it.airgap.beaconsdk.blockchain.tezos.extension.ownAppMetadata
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosAppMetadata
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosNetwork
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
+import it.airgap.beaconsdk.blockchain.tezos.internal.TezosBeaconConfiguration
 import it.airgap.beaconsdk.blockchain.tezos.message.response.PermissionTezosResponse
 import it.airgap.beaconsdk.core.client.BeaconClient
 import it.airgap.beaconsdk.core.client.BeaconProducer
@@ -50,7 +51,7 @@ public suspend fun <T> PermissionTezosRequest(
 
     return PermissionTezosRequest(
         id = requestMetadata.id,
-        version = requestMetadata.version,
+        version = TezosBeaconConfiguration.MESSAGE_VERSION,
         blockchainIdentifier = Tezos.IDENTIFIER,
         senderId = requestMetadata.senderId,
         appMetadata = producer.ownAppMetadata(),

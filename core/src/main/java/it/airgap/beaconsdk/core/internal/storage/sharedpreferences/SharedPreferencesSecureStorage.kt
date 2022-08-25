@@ -22,9 +22,9 @@ public class SharedPreferencesSecureStorage(
 ) : SecureStorage, SharedPreferencesBaseStorage(beaconScope, sharedPreferences) {
 
     private var masterKeyAlias: String?
-        get() = sharedPreferences.getString(Key.MasterKeyAlias.scoped(), null)
+        get() = sharedPreferences.getString(Key.MasterKeyAlias.unscoped(), null)
         set(value) {
-            value?.let { sharedPreferences.putString(Key.MasterKeyAlias.scoped(), it) }
+            value?.let { sharedPreferences.putString(Key.MasterKeyAlias.unscoped(), it) }
         }
 
     override suspend fun getSdkSecretSeed(): String? {

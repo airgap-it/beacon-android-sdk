@@ -61,7 +61,7 @@ internal data class V3MockPermissionBeaconRequestData(
 
         override fun serialize(jsonEncoder: JsonEncoder, value: V3MockPermissionBeaconRequestData) {
             val fields = mapOf(
-                descriptor.getElementName(0) to Json.encodeToJsonElement(value.appMetadata)
+                descriptor.getElementName(0) to jsonEncoder.json.encodeToJsonElement(value.appMetadata)
             ) + value.rest
 
             jsonEncoder.encodeSerializableValue(JsonObject.serializer(), JsonObject(fields))

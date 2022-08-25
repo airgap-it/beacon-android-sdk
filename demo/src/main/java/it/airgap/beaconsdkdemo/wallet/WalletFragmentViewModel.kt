@@ -1,6 +1,7 @@
 package it.airgap.beaconsdkdemo.wallet
 
-import androidx.lifecycle.*
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import it.airgap.beaconsdk.blockchain.substrate.data.SubstrateAccount
 import it.airgap.beaconsdk.blockchain.substrate.data.SubstrateNetwork
 import it.airgap.beaconsdk.blockchain.substrate.message.request.PermissionSubstrateRequest
@@ -19,36 +20,39 @@ import it.airgap.beaconsdk.blockchain.tezos.tezos
 import it.airgap.beaconsdk.client.wallet.BeaconWalletClient
 import it.airgap.beaconsdk.core.client.BeaconClient
 import it.airgap.beaconsdk.core.data.BeaconError
-import it.airgap.beaconsdk.core.message.BeaconMessage
 import it.airgap.beaconsdk.core.message.BeaconRequest
 import it.airgap.beaconsdk.core.message.ErrorBeaconResponse
 import it.airgap.beaconsdk.transport.p2p.matrix.p2pMatrix
-import it.airgap.beaconsdkdemo.utils.setValue
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.onEach
+import it.airgap.beaconsdkdemo.utils.emit
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 
 class WalletFragmentViewModel : ViewModel() {
-    private val _state: MutableLiveData<WalletFragment.State> = MutableLiveData(WalletFragment.State())
-    val state: LiveData<WalletFragment.State>
+    private val _state: MutableStateFlow<WalletFragment.State> = MutableStateFlow(WalletFragment.State())
+    val state: Flow<WalletFragment.State>
         get() = _state
 
     private var beaconClient: BeaconWalletClient? = null
     private var awaitingRequest: BeaconRequest? = null
 
-    fun startBeacon(): LiveData<Result<BeaconRequest>> = liveData {
-        beaconClient = BeaconWalletClient("Beacon SDK Demo (Wallet)", clientId = "__wallet__") {
-            support(tezos(), substrate())
-            use(p2pMatrix())
+    init {
+        viewModelScope.launch {
+            val client = BeaconWalletClient("Beacon SDK Demo (Wallet)", clientId = "__wallet__") {
+                support(tezos(), substrate())
+                use(p2pMatrix())
 
-            ignoreUnsupportedBlockchains = true
+                ignoreUnsupportedBlockchains = true
+            }.also { beaconClient = it }
+
+            client.connect()
+                .onStart { checkForPeers() }
+                .collect { result ->
+                    result.getOrNull()?.let { onBeaconRequest(it) }
+                    result.exceptionOrNull()?.let { onError(it) }
+                }
         }
-
-        checkForPeers()
-
-        beaconClient?.connect()
-            ?.onEach { result -> result.getOrNull()?.let { saveAwaitingRequest(it) } }
-            ?.collect { emit(it) }
     }
 
     fun respondExample() {
@@ -91,27 +95,27 @@ class WalletFragmentViewModel : ViewModel() {
         }
     }
 
+    private fun onBeaconRequest(request: BeaconRequest) {
+        awaitingRequest = request
+        _state.emit { copy(beaconRequest = request) }
+    }
+
+    private fun onError(error: Throwable) {
+        _state.emit { copy(error = error) }
+    }
+
     private suspend fun checkForPeers() {
         val peers = beaconClient?.getPeers()
-        _state.setValue { copy(hasPeers = peers?.isNotEmpty() ?: false) }
-    }
-
-    private fun checkForAwaitingRequest() {
-        _state.setValue { copy(hasAwaitingRequest = awaitingRequest != null) }
-    }
-
-    private fun saveAwaitingRequest(message: BeaconMessage) {
-        awaitingRequest = if (message is BeaconRequest) message else null
-        checkForAwaitingRequest()
+        _state.emit { copy(hasPeers = peers?.isNotEmpty() ?: false) }
     }
 
     private fun removeAwaitingRequest() {
         awaitingRequest = null
-        checkForAwaitingRequest()
+        _state.emit { copy(beaconRequest = null) }
     }
 
-    private fun MutableLiveData<WalletFragment.State>.setValue(update: WalletFragment.State.() -> WalletFragment.State) {
-        setValue(WalletFragment.State(), update)
+    private fun MutableStateFlow<WalletFragment.State>.emit(update: WalletFragment.State.() -> WalletFragment.State) {
+        emit(WalletFragment.State(), update)
     }
 
     companion object {

@@ -1,6 +1,7 @@
 package it.airgap.beaconsdk.core.client
 
 import androidx.annotation.RestrictTo
+import it.airgap.beaconsdk.core.data.Account
 import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.message.BeaconRequest
 import it.airgap.beaconsdk.core.transport.data.PairingRequest
@@ -20,6 +21,6 @@ public interface BeaconProducer {
         public val senderId: String,
         public val origin: Connection.Id,
         public val destination: Connection.Id?,
-        public val accountId: String?,
+        public val account: Account?,
     )
 }

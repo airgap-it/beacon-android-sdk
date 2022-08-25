@@ -30,35 +30,32 @@ public suspend fun <T> T.requestSubstratePermission(
 }
 
 public suspend fun <T> T.requestSubstrateTransferSubmit(
-    sourceAddress: String,
     amount: String,
     recipient: String,
-    network: SubstrateNetwork,
+    network: SubstrateNetwork? = null,
     transportType: Connection.Type = Connection.Type.P2P,
 ) where T : BeaconProducer, T : BeaconClient<*> {
-    val permissionRequest = TransferSubmitSubstrateRequest(sourceAddress, amount, recipient, network, this, transportType)
+    val permissionRequest = TransferSubmitSubstrateRequest(amount, recipient, network, this, transportType)
     request(permissionRequest)
 }
 
 public suspend fun <T> T.requestSubstrateTransferSubmitAndReturn(
-    sourceAddress: String,
     amount: String,
     recipient: String,
-    network: SubstrateNetwork,
+    network: SubstrateNetwork? = null,
     transportType: Connection.Type = Connection.Type.P2P,
 ) where T : BeaconProducer, T : BeaconClient<*> {
-    val permissionRequest = TransferSubmitAndReturnSubstrateRequest(sourceAddress, amount, recipient, network, this, transportType)
+    val permissionRequest = TransferSubmitAndReturnSubstrateRequest(amount, recipient, network, this, transportType)
     request(permissionRequest)
 }
 
 public suspend fun <T> T.requestSubstrateTransferReturn(
-    sourceAddress: String,
     amount: String,
     recipient: String,
-    network: SubstrateNetwork,
+    network: SubstrateNetwork? = null,
     transportType: Connection.Type = Connection.Type.P2P,
 ) where T : BeaconProducer, T : BeaconClient<*> {
-    val permissionRequest = TransferReturnSubstrateRequest(sourceAddress, amount, recipient, network, this, transportType)
+    val permissionRequest = TransferReturnSubstrateRequest(amount, recipient, network, this, transportType)
     request(permissionRequest)
 }
 

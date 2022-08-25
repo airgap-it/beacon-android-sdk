@@ -1,13 +1,13 @@
 package it.airgap.beaconsdk.core.data
 
-import kotlinx.serialization.SerialName
+import it.airgap.beaconsdk.core.internal.migration.v3_2_0.PeerSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 
 /**
  * Base for types of peers supported in Beacon.
  */
-@Serializable
+@Serializable(with = PeerSerializer::class)
 public sealed class Peer {
     public abstract val id: String?
     public abstract val name: String
@@ -23,6 +23,8 @@ public sealed class Peer {
     public abstract fun removed(): Peer
 
     public abstract fun toConnectionId(): Connection.Id
+
+    public companion object {}
 }
 
 // -- P2P --
@@ -38,7 +40,6 @@ public sealed class Peer {
  * @property [appUrl] An optional URL for the peer application.
  */
 @Serializable
-@SerialName("p2p")
 public data class P2pPeer(
     override val id: String? = null,
     override val name: String,
@@ -61,7 +62,9 @@ public data class P2pPeer(
         appUrl: String? = null,
     ) : this(id, name, publicKey, relayServer, version, icon, appUrl, isPaired = false, isRemoved = false)
 
-    public companion object {}
+    public companion object {
+        internal const val TYPE = "p2p"
+    }
 
     override fun paired(): Peer = copy(isPaired = true)
     override fun removed(): Peer = copy(isRemoved = true)

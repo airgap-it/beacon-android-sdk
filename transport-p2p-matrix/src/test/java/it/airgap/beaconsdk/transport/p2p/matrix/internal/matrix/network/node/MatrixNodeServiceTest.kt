@@ -3,15 +3,18 @@ package it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.network.node
 import io.mockk.MockKAnnotations
 import io.mockk.coEvery
 import io.mockk.impl.annotations.MockK
+import it.airgap.beaconsdk.core.internal.compat.CoreCompat
+import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.core.internal.network.HttpClient
+import it.airgap.beaconsdk.core.internal.serializer.coreJson
 import it.airgap.beaconsdk.core.network.provider.HttpClientProvider
-import it.airgap.beaconsdk.core.network.provider.HttpProvider
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.BeaconP2pMatrixConfiguration
-import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.MatrixError
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.node.MatrixVersionsResponse
 import kotlinx.coroutines.test.runBlockingTest
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import mockDependencyRegistry
 import org.junit.Before
 import org.junit.Test
 import java.io.IOException
@@ -23,15 +26,20 @@ internal class MatrixNodeServiceTest {
     @MockK
     private lateinit var httpClientProvider: HttpClientProvider
 
+    private lateinit var dependencyRegistry: DependencyRegistry
     private lateinit var httpClient: HttpClient
     private lateinit var matrixNodeService: MatrixNodeService
     private lateinit var json: Json
+
+    private val beaconScope: BeaconScope = BeaconScope.Global
 
     @Before
     fun setup() {
         MockKAnnotations.init(this)
 
-        json = Json(from = Json.Default) {
+        dependencyRegistry = mockDependencyRegistry()
+
+        json = Json(from = coreJson(dependencyRegistry.blockchainRegistry, CoreCompat(beaconScope))) {
             prettyPrint = true
         }
 

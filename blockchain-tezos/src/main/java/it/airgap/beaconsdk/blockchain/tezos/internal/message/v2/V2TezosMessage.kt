@@ -26,10 +26,7 @@ import it.airgap.beaconsdk.core.internal.utils.getString
 import it.airgap.beaconsdk.core.message.BeaconMessage
 import it.airgap.beaconsdk.core.scope.BeaconScope
 import it.airgap.beaconsdk.core.storage.findAppMetadata
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.Required
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
+import kotlinx.serialization.*
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.element
@@ -147,10 +144,11 @@ internal sealed class V2TezosMessage : V2BeaconMessage() {
 
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
 @SerialName(PermissionV2TezosRequest.TYPE)
 internal data class PermissionV2TezosRequest(
-    override val version: String,
+    @EncodeDefault override val version: String = VERSION,
     override val id: String,
     override val senderId: String,
     val appMetadata: V2TezosAppMetadata,
@@ -168,10 +166,11 @@ internal data class PermissionV2TezosRequest(
     }
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
 @SerialName(OperationV2TezosRequest.TYPE)
 internal data class OperationV2TezosRequest(
-    override val version: String,
+    @EncodeDefault override val version: String = VERSION,
     override val id: String,
     override val senderId: String,
     val network: TezosNetwork,
@@ -203,10 +202,11 @@ internal data class OperationV2TezosRequest(
     }
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
 @SerialName(SignPayloadV2TezosRequest.TYPE)
 internal data class SignPayloadV2TezosRequest(
-    override val version: String,
+    @EncodeDefault override val version: String = VERSION,
     override val id: String,
     override val senderId: String,
     val signingType: SigningType,
@@ -238,10 +238,11 @@ internal data class SignPayloadV2TezosRequest(
     }
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
 @SerialName(BroadcastV2TezosRequest.TYPE)
 internal data class BroadcastV2TezosRequest(
-    override val version: String,
+    @EncodeDefault override val version: String = VERSION,
     override val id: String,
     override val senderId: String,
     val network: TezosNetwork,
@@ -271,10 +272,11 @@ internal data class BroadcastV2TezosRequest(
     }
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
 @SerialName(PermissionV2TezosResponse.TYPE)
 internal data class PermissionV2TezosResponse(
-    override val version: String,
+    @EncodeDefault override val version: String = VERSION,
     override val id: String,
     override val senderId: String,
     val publicKey: String,
@@ -302,10 +304,11 @@ internal data class PermissionV2TezosResponse(
     }
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
 @SerialName(OperationV2TezosResponse.TYPE)
 internal data class OperationV2TezosResponse(
-    override val version: String,
+    @EncodeDefault override val version: String = VERSION,
     override val id: String,
     override val senderId: String,
     val transactionHash: String,
@@ -327,10 +330,11 @@ internal data class OperationV2TezosResponse(
     }
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
 @SerialName(SignPayloadV2TezosResponse.TYPE)
 internal data class SignPayloadV2TezosResponse(
-    override val version: String,
+    @EncodeDefault override val version: String = VERSION,
     override val id: String,
     override val senderId: String,
     val signingType: SigningType,
@@ -354,10 +358,11 @@ internal data class SignPayloadV2TezosResponse(
     }
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
 @SerialName(BroadcastV2TezosResponse.TYPE)
 internal data class BroadcastV2TezosResponse(
-    override val version: String,
+    @EncodeDefault override val version: String = VERSION,
     override val id: String,
     override val senderId: String,
     val transactionHash: String,

@@ -2,6 +2,8 @@
 import android.content.Context
 import io.mockk.*
 import it.airgap.beaconsdk.core.internal.BeaconSdk
+import it.airgap.beaconsdk.core.internal.blockchain.BlockchainRegistry
+import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchain
 import it.airgap.beaconsdk.core.internal.data.BeaconApplication
 import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.core.internal.utils.currentTimestamp
@@ -31,6 +33,18 @@ internal fun mockBeaconSdk(
     }
 
 // -- static --
+
+internal fun mockDependencyRegistry(): DependencyRegistry =
+    mockkClass(DependencyRegistry::class).also {
+        val blockchainRegistry = mockkClass(BlockchainRegistry::class)
+        val mockBlockchain = MockBlockchain()
+
+        every { blockchainRegistry.get(any()) } returns mockBlockchain
+        every { blockchainRegistry.getOrNull(any()) } returns mockBlockchain
+        every { it.blockchainRegistry } returns blockchainRegistry
+
+        mockBeaconSdk(dependencyRegistry = it)
+    }
 
 internal fun mockLog() {
     mockkStatic("it.airgap.beaconsdk.core.internal.utils.LogKt")

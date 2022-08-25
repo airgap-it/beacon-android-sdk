@@ -5,5 +5,5 @@ import kotlinx.serialization.Serializable
 @Serializable
 public data class Account(
     public val accountId: String,
-    public val peerId: String,
+    public val address: String,
 )

@@ -57,7 +57,7 @@ internal class P2pMatrixCommunicator(private val app: BeaconApplication, private
         P2pPairingResponse(
             id = request.id,
             name = app.name,
-            version = request.version,
+            version = BeaconConfiguration.BEACON_VERSION,
             publicKey = keyPair.publicKey.toHexString().asString(),
             relayServer = relayServer,
             icon = app.icon,

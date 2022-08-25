@@ -5,11 +5,10 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.mockk
 import io.mockk.unmockkAll
-import it.airgap.beaconsdk.core.data.P2pPeer
 import it.airgap.beaconsdk.core.internal.crypto.Crypto
 import it.airgap.beaconsdk.core.internal.crypto.data.KeyPair
 import it.airgap.beaconsdk.core.internal.data.BeaconApplication
-import it.airgap.beaconsdk.core.internal.serializer.contextualJson
+import it.airgap.beaconsdk.core.internal.serializer.coreJson
 import it.airgap.beaconsdk.core.transport.data.P2pPairingResponse
 import it.airgap.beaconsdk.core.internal.utils.asHexString
 import it.airgap.beaconsdk.core.internal.utils.toHexString
@@ -44,7 +43,7 @@ internal class P2pMatrixCommunicatorTest {
 
         every { crypto.hashKey(any<ByteArray>()) } answers { Result.success(firstArg()) }
 
-        json = Json(from = contextualJson(mockk(relaxed = true), mockk(relaxed = true))) {}
+        json = Json(from = coreJson(mockk(relaxed = true), mockk(relaxed = true))) {}
         p2pMatrixCommunicator = P2pMatrixCommunicator(app, crypto, json)
     }
 
@@ -98,17 +97,6 @@ internal class P2pMatrixCommunicatorTest {
 
         assertTrue(p2pMatrixCommunicator.isValidMessage(valid), "Expected message to be recognized as valid")
         assertFalse(p2pMatrixCommunicator.isValidMessage(invalid), "Expected message to be recognized as invalid")
-    }
-
-    @Test
-    fun `creates pairing request payload for specified version`() {
-        val id = "id"
-        val relayServer = "relayServer"
-
-        versionsWithPairingPayloads(id, app.name, app.icon, app.url, app.keyPair.publicKey.toHexString().asString(), relayServer)
-            .map { P2pPeer(id = id, name = "name", publicKey = "01", relayServer = "peerServer", version = it.first) to it.second }
-            .map { p2pMatrixCommunicator.pairingResponsePayload(it.first, relayServer) to it.second }
-            .forEach { assertEquals(it.second, it.first.getOrThrow()) }
     }
 
     @Test

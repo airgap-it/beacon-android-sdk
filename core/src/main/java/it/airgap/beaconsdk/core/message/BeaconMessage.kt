@@ -109,7 +109,7 @@ public data class AcknowledgeBeaconResponse(
     override val id: String,
     override val version: String,
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) override val destination: Connection.Id,
-    val senderId: String,
+    val senderId: String?,
 ) : BeaconResponse() {
 
     public companion object {
