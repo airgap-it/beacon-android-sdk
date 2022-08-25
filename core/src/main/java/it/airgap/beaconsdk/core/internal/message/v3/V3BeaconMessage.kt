@@ -9,10 +9,7 @@ import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
 import it.airgap.beaconsdk.core.internal.utils.blockchainRegistry
 import it.airgap.beaconsdk.core.message.*
 import it.airgap.beaconsdk.core.scope.BeaconScope
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
+import kotlinx.serialization.*
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.element
@@ -23,11 +20,12 @@ import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonEncoder
 
+@OptIn(ExperimentalSerializationApi::class)
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Serializable
 public data class V3BeaconMessage(
     public val id: String,
-    override val version: String,
+    @EncodeDefault override val version: String = VERSION,
     public val senderId: String,
     public val message: Content,
 ) : VersionedBeaconMessage() {
@@ -57,6 +55,8 @@ public data class V3BeaconMessage(
     }
 
     public companion object {
+        public const val VERSION: String = "3"
+
         public fun from(senderId: String, message: BeaconMessage, context: Context): V3BeaconMessage = with(message) {
             val content = when (this) {
                 is AcknowledgeBeaconResponse -> AcknowledgeV3BeaconResponseContent

@@ -5,6 +5,7 @@ import it.airgap.beaconsdk.blockchain.substrate.data.SubstratePermission
 import it.airgap.beaconsdk.blockchain.substrate.internal.utils.failWithUnknownMessage
 import it.airgap.beaconsdk.blockchain.substrate.message.request.PermissionSubstrateRequest
 import it.airgap.beaconsdk.blockchain.substrate.message.response.PermissionSubstrateResponse
+import it.airgap.beaconsdk.core.data.Account
 import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.data.Permission
 import it.airgap.beaconsdk.core.internal.blockchain.creator.DataBlockchainCreator
@@ -61,11 +62,13 @@ internal class DataSubstrateCreator(
             }
         }
 
-    override fun extractAccounts(response: PermissionBeaconResponse): Result<List<String>> =
+    override fun extractAccounts(response: PermissionBeaconResponse): Result<List<Account>> =
         runCatching {
             if (response !is PermissionSubstrateResponse) failWithUnknownMessage(response)
 
-            response.accounts.map { identifierCreator.accountId(it.address, it.network).getOrThrow() }
+            response.accounts.map {
+                Account(identifierCreator.accountId(it.address, it.network).getOrThrow(), it.address)
+            }
         }
 
     private fun failWithAppMetadataNotFound(): Nothing = failWithIllegalState("Permission could not be extracted, matching appMetadata not found.")

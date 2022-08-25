@@ -1,6 +1,6 @@
 package it.airgap.beaconsdk.client.dapp.internal.storage
 
-import it.airgap.beaconsdk.core.data.Account
+import it.airgap.beaconsdk.client.dapp.data.PairedAccount
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.utils.failWithIllegalState
 import it.airgap.beaconsdk.client.dapp.internal.storage.plugin.DAppClientStoragePlugin
@@ -9,8 +9,8 @@ import it.airgap.beaconsdk.client.dapp.internal.storage.plugin.ExtendedDAppClien
 internal val StorageManager.dAppClientPlugin: ExtendedDAppClientStoragePlugin
     get() = getPlugin() ?: getPlugin<DAppClientStoragePlugin>()?.extend(beaconConfiguration)?.also { addPlugins(it) } ?: failWithDAppStoragePluginMissing()
 
-internal suspend fun StorageManager.getActiveAccount(): Account? = dAppClientPlugin.getActiveAccount()
-internal suspend fun StorageManager.setActiveAccount(account: Account?) = dAppClientPlugin.setActiveAccount(account)
+internal suspend fun StorageManager.getActiveAccount(): PairedAccount? = dAppClientPlugin.getActiveAccount()
+internal suspend fun StorageManager.setActiveAccount(account: PairedAccount?) = dAppClientPlugin.setActiveAccount(account)
 
 internal suspend fun StorageManager.removeActiveAccount() = dAppClientPlugin.removeActiveAccount()
 

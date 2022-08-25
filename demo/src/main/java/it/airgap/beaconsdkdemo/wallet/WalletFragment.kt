@@ -1,15 +1,22 @@
 package it.airgap.beaconsdkdemo.wallet
 
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.textfield.TextInputLayout
 import it.airgap.beaconsdk.core.message.BeaconRequest
 import it.airgap.beaconsdkdemo.R
 import it.airgap.beaconsdkdemo.utils.toJson
 import kotlinx.android.synthetic.main.fragment_wallet.*
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -20,15 +27,22 @@ class WalletFragment : Fragment(R.layout.fragment_wallet) {
         Json { prettyPrint = true }
     }
 
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.state.collect { render(it) }
+            }
+        }
+
+        return super.onCreateView(inflater, container, savedInstanceState)
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        viewModel.state.observe(viewLifecycleOwner) { render(it) }
-
-        viewModel.startBeacon().observe(viewLifecycleOwner) { result ->
-            result.getOrNull()?.let { onBeaconRequest(it) }
-            result.exceptionOrNull()?.let { onError(it) }
-        }
 
         pairingRequestTextInput.text = examplePairingRequest
 
@@ -43,17 +57,18 @@ class WalletFragment : Fragment(R.layout.fragment_wallet) {
 
     private fun render(state: State) {
         with (state) {
-            respondButton.isEnabled = hasAwaitingRequest
+            onBeaconRequest(beaconRequest)
 
-            pairButton.isEnabled = !hasPeers
+            pairButton.isEnabled = true
             unpairButton.isEnabled = hasPeers
 
-            if (!hasAwaitingRequest) messageTextView.text = null
+            error?.let { onError(it) }
         }
     }
 
-    private fun onBeaconRequest(beaconRequest: BeaconRequest) {
-        messageTextView.text = json.encodeToString(beaconRequest.toJson(json))
+    private fun onBeaconRequest(beaconRequest: BeaconRequest?) {
+        respondButton.isEnabled = beaconRequest != null
+        messageTextView.text = beaconRequest?.let { json.encodeToString(it.toJson(json)) }
     }
 
     private fun onError(exception: Throwable) {
@@ -68,7 +83,7 @@ class WalletFragment : Fragment(R.layout.fragment_wallet) {
     private fun getPairingRequest(): String? = pairingRequestTextInput.text
 
     companion object {
-        const val examplePairingRequest = "6h663f1EiJXzYaybYBStHbxjuZP4QivkhhcvMVhjPxiszrxEmoj4AKZSfnKVeWu5gp6t2gVYLzbzb5z1mRdTTX9FWGS6irPU9WC2yS9tepbLZmT7YAA2Q3g7AbqBZgj4LssjXH3ijQZ1vo2oPj7m5vhWP5mmEDK4nWV84JdFY3wcoSamDPyv5rWUmxeoNbjJgdJRUBzHaSgCGS8EB2piXTvnXs4CyQapZ8n4FKnZYBM9vJEkZ3jiHcTcZ5jf65B5JYFatBxVzzWZ1vndRSYvs9DSXUM89dyN4dysw5YhDTAMYX5Bf9GpvdxjjBdVLgCrCrSTr9zzTmZw6dTXN8XMhMnEuXeh5i"
+        const val examplePairingRequest = "3NDKTWt2x3LCHC2AMJk1U6off23vDCn6FEnR8TE7p4xyRS8Na5MJwcdh2ovvofd5ieieSKgZy2Y6uyoEDtT2kUHdNgB4Uvurbp3qdGkurh4YD9JdaSjk8tyWMhbbnLmJnKoWSiJpPGnNRYCt7QNx6Rg8hNdPCp5yHEfB4dKrr7nyB48gJNTEJ5wVCzfxAxyeQGjn41LC5d47qZD7iK5YNRg3QLRNPsNjEtGWUPPtagWB13Aua8csinhhmVgedhBwYrvDd5TmVnGdYBHKfTeugtYrF4bkgeNvbM5RL4TmBpNiFZ86qnRHo22dwESfmHfeW91gfpD"
     }
 
     private var TextInputLayout.text: String?
@@ -77,6 +92,7 @@ class WalletFragment : Fragment(R.layout.fragment_wallet) {
 
     data class State(
         val hasPeers: Boolean = false,
-        val hasAwaitingRequest: Boolean = false,
+        val beaconRequest: BeaconRequest? = null,
+        val error: Throwable? = null,
     )
 }

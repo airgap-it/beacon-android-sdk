@@ -27,7 +27,7 @@ import it.airgap.beaconsdk.core.data.SigningType
 import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.compat.CoreCompat
 import it.airgap.beaconsdk.core.internal.message.v2.V2BeaconMessage
-import it.airgap.beaconsdk.core.internal.serializer.contextualJson
+import it.airgap.beaconsdk.core.internal.serializer.coreJson
 import it.airgap.beaconsdk.core.internal.storage.MockSecureStorage
 import it.airgap.beaconsdk.core.internal.storage.MockStorage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
@@ -85,7 +85,7 @@ internal class V2TezosMessageTest {
         every { dependencyRegistry.identifierCreator } returns identifierCreator
         every { dependencyRegistry.extend().tezosWallet.address(any()) } answers { Result.success(firstArg()) }
 
-        json = contextualJson(dependencyRegistry.blockchainRegistry, CoreCompat(beaconScope))
+        json = coreJson(dependencyRegistry.blockchainRegistry, CoreCompat(beaconScope))
     }
 
     @Test

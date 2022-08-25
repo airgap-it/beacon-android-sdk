@@ -2,6 +2,7 @@ package it.airgap.beaconsdk.core.internal.blockchain
 
 import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.blockchain.Blockchain
+import it.airgap.beaconsdk.core.data.Account
 import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.data.MockPermission
 import it.airgap.beaconsdk.core.data.Permission
@@ -56,8 +57,8 @@ public class MockBlockchainCreator : Blockchain.Creator {
             )
         }
 
-        override fun extractAccounts(response: PermissionBeaconResponse): Result<List<String>> = runCatching {
-            listOf("accountId")
+        override fun extractAccounts(response: PermissionBeaconResponse): Result<List<Account>> = runCatching {
+            listOf(Account("accountId", "address"))
         }
     }
 

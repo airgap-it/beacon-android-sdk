@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/walletFragment">
+
+    <fragment
+        android:id="@+id/walletFragment"
+        android:name="it.airgap.beaconsdkdemo.wallet.WalletFragment"
+        tools:layout="@layout/fragment_wallet"
+        android:label="WalletFragment" />
+    <fragment
+        android:id="@+id/dAppFragment"
+        android:name="it.airgap.beaconsdkdemo.dapp.DAppFragment"
+        tools:layout="@layout/fragment_dapp"
+        android:label="DAppFragment" />
+
+</navigation>

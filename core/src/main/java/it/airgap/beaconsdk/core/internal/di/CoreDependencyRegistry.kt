@@ -19,7 +19,7 @@ import it.airgap.beaconsdk.core.internal.network.HttpClient
 import it.airgap.beaconsdk.core.internal.network.HttpClientDeprecated
 import it.airgap.beaconsdk.core.internal.network.provider.KtorHttpClientProvider
 import it.airgap.beaconsdk.core.internal.serializer.Serializer
-import it.airgap.beaconsdk.core.internal.serializer.contextualJson
+import it.airgap.beaconsdk.core.internal.serializer.coreJson
 import it.airgap.beaconsdk.core.internal.serializer.provider.Base58CheckSerializerProvider
 import it.airgap.beaconsdk.core.internal.serializer.provider.SerializerProvider
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
@@ -120,9 +120,7 @@ internal class CoreDependencyRegistry(
     // -- network --
 
     override val json: Json by lazy {
-        Json(from = contextualJson(blockchainRegistry, compat)) {
-            classDiscriminator = "_serializationType"
-            ignoreUnknownKeys = true
+        Json(from = coreJson(blockchainRegistry, compat)) {
             prettyPrint = false
         }
     }

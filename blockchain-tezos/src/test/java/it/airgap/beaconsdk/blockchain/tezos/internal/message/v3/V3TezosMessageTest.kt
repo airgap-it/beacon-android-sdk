@@ -27,7 +27,7 @@ import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.compat.CoreCompat
 import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.core.internal.message.v3.*
-import it.airgap.beaconsdk.core.internal.serializer.contextualJson
+import it.airgap.beaconsdk.core.internal.serializer.coreJson
 import it.airgap.beaconsdk.core.internal.storage.MockSecureStorage
 import it.airgap.beaconsdk.core.internal.storage.MockStorage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
@@ -83,7 +83,7 @@ internal class V3TezosMessageTest {
         every { dependencyRegistry.storageManager } returns storageManager
         every { dependencyRegistry.identifierCreator } returns identifierCreator
 
-        json = contextualJson(dependencyRegistry.blockchainRegistry, CoreCompat(beaconScope))
+        json = coreJson(dependencyRegistry.blockchainRegistry, CoreCompat(beaconScope))
     }
 
     @Test

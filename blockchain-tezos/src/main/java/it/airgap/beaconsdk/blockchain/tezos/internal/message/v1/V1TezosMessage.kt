@@ -19,6 +19,7 @@ import it.airgap.beaconsdk.blockchain.tezos.message.response.SignPayloadTezosRes
 import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.data.SigningType
 import it.airgap.beaconsdk.core.internal.message.v1.V1BeaconMessage
+import it.airgap.beaconsdk.core.internal.message.v2.V2BeaconMessage
 import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
 import it.airgap.beaconsdk.core.internal.utils.dependencyRegistry
 import it.airgap.beaconsdk.core.internal.utils.failWithIllegalArgument
@@ -26,10 +27,7 @@ import it.airgap.beaconsdk.core.internal.utils.getString
 import it.airgap.beaconsdk.core.message.BeaconMessage
 import it.airgap.beaconsdk.core.scope.BeaconScope
 import it.airgap.beaconsdk.core.storage.findAppMetadata
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.Required
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
+import kotlinx.serialization.*
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.element
@@ -145,10 +143,11 @@ internal sealed class V1TezosMessage : V1BeaconMessage() {
 
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
 @SerialName(PermissionV1TezosRequest.TYPE)
 internal data class PermissionV1TezosRequest(
-    override val version: String,
+    @EncodeDefault override val version: String = VERSION,
     override val id: String,
     override val beaconId: String,
     val appMetadata: V1TezosAppMetadata,
@@ -166,10 +165,11 @@ internal data class PermissionV1TezosRequest(
     }
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
 @SerialName(OperationV1TezosRequest.TYPE)
 internal data class OperationV1TezosRequest(
-    override val version: String,
+    @EncodeDefault override val version: String = VERSION,
     override val id: String,
     override val beaconId: String,
     val network: TezosNetwork,
@@ -201,10 +201,11 @@ internal data class OperationV1TezosRequest(
     }
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
 @SerialName(SignPayloadV1TezosRequest.TYPE)
 internal data class SignPayloadV1TezosRequest(
-    override val version: String,
+    @EncodeDefault override val version: String = VERSION,
     override val id: String,
     override val beaconId: String,
     val payload: String,
@@ -235,10 +236,11 @@ internal data class SignPayloadV1TezosRequest(
     }
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
 @SerialName(BroadcastV1TezosRequest.TYPE)
 internal data class BroadcastV1TezosRequest(
-    override val version: String,
+    @EncodeDefault override val version: String = VERSION,
     override val id: String,
     override val beaconId: String,
     val network: TezosNetwork,
@@ -268,10 +270,11 @@ internal data class BroadcastV1TezosRequest(
     }
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
 @SerialName(PermissionV1TezosResponse.TYPE)
 internal data class PermissionV1TezosResponse(
-    override val version: String,
+    @EncodeDefault override val version: String = VERSION,
     override val id: String,
     override val beaconId: String,
     val publicKey: String,
@@ -299,10 +302,11 @@ internal data class PermissionV1TezosResponse(
     }
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
 @SerialName(OperationV1TezosResponse.TYPE)
 internal data class OperationV1TezosResponse(
-    override val version: String,
+    @EncodeDefault override val version: String = VERSION,
     override val id: String,
     override val beaconId: String,
     val transactionHash: String,
@@ -324,10 +328,11 @@ internal data class OperationV1TezosResponse(
     }
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
 @SerialName(SignPayloadV1TezosResponse.TYPE)
 internal data class SignPayloadV1TezosResponse(
-    override val version: String,
+    @EncodeDefault override val version: String = VERSION,
     override val id: String,
     override val beaconId: String,
     val signature: String,
@@ -350,10 +355,11 @@ internal data class SignPayloadV1TezosResponse(
     }
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
 @SerialName(BroadcastV1TezosResponse.TYPE)
 internal data class BroadcastV1TezosResponse(
-    override val version: String,
+    @EncodeDefault override val version: String = VERSION,
     override val id: String,
     override val beaconId: String,
     val transactionHash: String,

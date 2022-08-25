@@ -7,16 +7,14 @@ import it.airgap.beaconsdk.core.internal.blockchain.BlockchainRegistry
 import it.airgap.beaconsdk.core.internal.compat.Compat
 import it.airgap.beaconsdk.core.internal.compat.VersionedCompat
 import it.airgap.beaconsdk.core.internal.message.VersionedBeaconMessage
+import it.airgap.beaconsdk.core.internal.message.v2.V2BeaconMessage
 import it.airgap.beaconsdk.core.internal.utils.*
 import it.airgap.beaconsdk.core.message.AcknowledgeBeaconResponse
 import it.airgap.beaconsdk.core.message.BeaconMessage
 import it.airgap.beaconsdk.core.message.DisconnectBeaconMessage
 import it.airgap.beaconsdk.core.message.ErrorBeaconResponse
 import it.airgap.beaconsdk.core.scope.BeaconScope
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Required
-import kotlinx.serialization.Serializable
+import kotlinx.serialization.*
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.element
@@ -34,6 +32,8 @@ public abstract class V1BeaconMessage : VersionedBeaconMessage() {
     public abstract val beaconId: String
 
     public companion object {
+        public const val VERSION: String = "1"
+
         public fun from(senderId: String, message: BeaconMessage, context: Context): V1BeaconMessage =
             with(message) {
                 when (this) {
@@ -83,9 +83,10 @@ public abstract class V1BeaconMessage : VersionedBeaconMessage() {
     }
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public data class ErrorV1BeaconResponse(
-    override val version: String,
+    @EncodeDefault override val version: String = V2BeaconMessage.VERSION,
     override val id: String,
     override var beaconId: String,
     val errorType: BeaconError,
@@ -144,10 +145,11 @@ public data class ErrorV1BeaconResponse(
     }
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Serializable
 public data class DisconnectV1BeaconMessage(
-    override val version: String,
+    @EncodeDefault override val version: String = V2BeaconMessage.VERSION,
     override val id: String,
     override var beaconId: String,
 ) : V1BeaconMessage() {
