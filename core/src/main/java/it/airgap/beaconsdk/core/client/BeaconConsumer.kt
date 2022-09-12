@@ -11,9 +11,23 @@ public interface BeaconConsumer {
      *
      * @throws [BeaconException] if processing and sending the [response] failed.
      */
-    @Throws(IllegalArgumentException::class, IllegalStateException::class, BeaconException::class)
+    @Throws(BeaconException::class)
     public suspend fun respond(response: BeaconResponse)
 
+    /**
+     * Responds to the pairing [request] and finalizes the process. Returns
+     * the pairing response, which, depending on the transport used, may require additional handling.
+     *
+     * @throws [BeaconException] if the process failed.
+     */
+    @Throws(BeaconException::class)
     public suspend fun pair(request: PairingRequest): PairingResponse
+
+    /**
+     * Responds to the pairing [request] and finalizes the process. Returns
+     * the pairing response, which, depending on the transport used, may require additional handling.
+     *
+     * @throws [BeaconException] if the process failed.
+     */
     public suspend fun pair(request: String): PairingResponse
 }
