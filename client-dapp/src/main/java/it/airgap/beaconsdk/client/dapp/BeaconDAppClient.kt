@@ -46,6 +46,12 @@ public class BeaconDAppClient @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) constr
 
     override val senderId: String by lazy { identifierCreator.senderId(app.keyPair.publicKey).getOrThrow() }
 
+    /**
+     * Sends the [request] to the previously paired peer.
+     *
+     * @throws [BeaconException] if processing and sending the [request] failed.
+     */
+    @Throws(BeaconException::class)
     override suspend fun request(request: BeaconRequest) {
         send(request, isTerminal = false)
             .takeIfNotIgnored()
@@ -64,6 +70,13 @@ public class BeaconDAppClient @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) constr
         accountController.clearAll()
     }
 
+    /**
+     * Prepares and triggers peer pairing via transport specified with the [connectionType]. Returns
+     * the pairing request, which, depending on the transport used, may require additional handling.
+     *
+     * @throws [BeaconException] if the process failed.
+     */
+    @Throws(BeaconException::class)
     override suspend fun pair(connectionType: Connection.Type): PairingRequest {
         val pairingRequestDeferred = CompletableDeferred<Result<PairingRequest>>()
 
@@ -82,7 +95,9 @@ public class BeaconDAppClient @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) constr
                 .collect()
         }
 
-        return pairingRequestDeferred.await().getOrThrow()
+        return pairingRequestDeferred.await()
+            .mapException { BeaconException.from(it) }
+            .getOrThrow()
     }
 
     override suspend fun prepareRequest(connectionType: Connection.Type): BeaconProducer.RequestMetadata =

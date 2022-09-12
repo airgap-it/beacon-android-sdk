@@ -100,7 +100,7 @@ public class BeaconWalletClient @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) cons
      *
      * @throws [BeaconException] if processing and sending the [response] failed.
      */
-    @Throws(IllegalArgumentException::class, IllegalStateException::class, BeaconException::class)
+    @Throws(BeaconException::class)
     override suspend fun respond(response: BeaconResponse) {
         send(response, isTerminal = true)
             .takeIfNotIgnored()
@@ -108,12 +108,30 @@ public class BeaconWalletClient @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) cons
             ?.getOrThrow()
     }
 
+    /**
+     * Responds to the pairing [request] and finalizes the process. Returns
+     * the pairing response, which, depending on the transport used, may require additional handling.
+     *
+     * @throws [BeaconException] if the process failed.
+     */
+    @Throws(BeaconException::class)
     override suspend fun pair(request: PairingRequest): PairingResponse =
-        connectionController.pair(request).getOrThrow()
+        connectionController.pair(request)
+            .mapException { BeaconException.from(it) }
+            .getOrThrow()
 
+    /**
+     * Responds to the pairing [request] and finalizes the process. Returns
+     * the pairing response, which, depending on the transport used, may require additional handling.
+     *
+     * @throws [BeaconException] if the process failed.
+     */
+    @Throws(BeaconException::class)
     override suspend fun pair(request: String): PairingResponse {
         val request = deserializePairingData<PairingRequest>(request)
-        return connectionController.pair(request).getOrThrow()
+        return connectionController.pair(request)
+            .mapException { BeaconException.from(it) }
+            .getOrThrow()
     }
 
     /**

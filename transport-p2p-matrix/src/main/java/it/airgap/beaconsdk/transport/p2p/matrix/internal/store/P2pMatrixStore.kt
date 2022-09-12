@@ -128,7 +128,7 @@ internal class P2pMatrixStore(
         }
 
     private suspend fun relayServer(): Result<String> =
-        runCatching runCatching@ {
+        runCatching {
             migration.migrateMatrixRelayServer(matrixNodes)
 
             logDebug(TAG, "Looking for a Matrix relay server...")
@@ -155,7 +155,7 @@ internal class P2pMatrixStore(
 
             storageManager.setMatrixRelayServer(upRelayServer)
 
-            return@runCatching upRelayServer
+            upRelayServer
         }
 
     private fun BeaconApplication.publicKeyIndex(boundary: Int): Int =
