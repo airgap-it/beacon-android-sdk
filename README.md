@@ -371,3 +371,5 @@ $ ./gradlew testMock{Release|Debug}UnitTest
 [Beacon SDK](https://github.com/airgap-it/beacon-sdk) - an SDK for web developers (dApp & wallet)
 
 [Beacon iOS SDK](https://github.com/airgap-it/beacon-ios-sdk) - an SDK for iOS developers (wallet)
+
+[Beacon Flutter SDK](https://github.com/TalaoDAO/beacon) - an SDK for Flutter developers (wallet)
