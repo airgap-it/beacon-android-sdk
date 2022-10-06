@@ -25,7 +25,7 @@ public value class HexString(private val value: String) {
 
     public fun toByteArray(): ByteArray = asString().chunked(2).map { it.toInt(16).toByte() }.toByteArray()
     public fun toInt(): Int = asString().toUInt(16).toInt()
-    public fun toBigInteger(): BigInteger = BigInteger(asString(), 16)
+    public fun toBigInteger(): BigInteger = BigInteger(asString().ifEmpty { "00" }, 16)
 
     public fun slice(indices: IntRange): HexString = HexString(value.slice(indices))
     public fun slice(startIndex: Int): HexString = HexString(value.substring(startIndex))

@@ -44,10 +44,14 @@ class DAppFragmentViewModel : ViewModel() {
         viewModelScope.launch {
             val beaconClient = beaconClient ?: return@launch
 
-            val pairingRequest = beaconClient.pair()
-            val serializerPairingRequest = beaconClient.serializePairingData(pairingRequest)
+            try {
+                val pairingRequest = beaconClient.pair()
+                val serializerPairingRequest = beaconClient.serializePairingData(pairingRequest)
 
-            _state.emit { copy(pairingRequest = serializerPairingRequest) }
+                _state.emit { copy(pairingRequest = serializerPairingRequest) }
+            } catch (e: Throwable) {
+                onError(e)
+            }
         }
     }
 

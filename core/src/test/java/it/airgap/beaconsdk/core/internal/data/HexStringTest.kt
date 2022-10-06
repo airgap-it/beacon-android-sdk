@@ -9,18 +9,18 @@ import kotlin.test.assertFailsWith
 
 internal class HexStringTest {
     private val validHexStrings: List<String> = listOf(
+        "",
         "9434dc98",
         "0x7b1ea2cb",
         "e40476d7",
         "c47320abdd31",
         "0x5786dac9eaf4",
+        "0x",
     )
 
     private val invalidHexStrings: List<String> = listOf(
-        "",
         "9434dc98az",
         "0xe40476d77t",
-        "0x",
         "0x1",
     )
 
@@ -122,7 +122,7 @@ internal class HexStringTest {
     @Test
     fun `creates BigInteger from HexString`() {
         val hexStringsWithExpected: List<Pair<String, BigInteger>> =
-            validHexStrings.map { it to BigInteger(withoutHexPrefix(it), 16) }
+            validHexStrings.map { it to BigInteger(withoutHexPrefix(it).ifEmpty { "00" }, 16) }
 
         hexStringsWithExpected
             .map { it.first.asHexString().toBigInteger() to it.second }

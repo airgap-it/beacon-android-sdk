@@ -12,7 +12,6 @@ import it.airgap.beaconsdk.core.message.BeaconResponse
 import it.airgap.beaconsdkdemo.R
 import it.airgap.beaconsdkdemo.utils.toJson
 import kotlinx.android.synthetic.main.fragment_dapp.*
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
