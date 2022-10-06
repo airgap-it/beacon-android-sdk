@@ -76,8 +76,13 @@ class WalletFragmentViewModel : ViewModel() {
                 /* Others */
                 else -> ErrorBeaconResponse.from(request, BeaconError.Unknown)
             }
-            beaconClient.respond(response)
-            removeAwaitingRequest()
+
+            try {
+                beaconClient.respond(response)
+                removeAwaitingRequest()
+            } catch (e: Throwable) {
+                onError(e)
+            }
         }
     }
 
