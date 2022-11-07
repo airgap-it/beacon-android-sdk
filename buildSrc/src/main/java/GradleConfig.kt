@@ -1,14 +1,14 @@
 object Android {
-    const val compileSdk = 32
+    const val compileSdk = 33
     const val minSdk = 21
-    const val targetSdk = 32
+    const val targetSdk = 33
 
-    const val versionCode = 27
-    const val versionName = "3.2.2"
+    const val versionCode = 28
+    const val versionName = "3.2.3-beta01"
 }
 
 object Version {
-    const val kotlin = "1.5.30"
+    const val kotlin = "1.7.20"
 
     const val kotlinSerialization = "1.3.1"
 
