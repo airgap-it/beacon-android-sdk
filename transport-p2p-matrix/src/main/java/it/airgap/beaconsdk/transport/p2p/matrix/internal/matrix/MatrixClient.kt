@@ -28,7 +28,7 @@ internal class MatrixClient(
     val events: Flow<MatrixEvent>
         get() = store.events
 
-    private val syncScopes: MutableMap<String, CoroutineScope> = mutableMapOf()
+    private val syncScopes: CoroutineScopeRegistry = CoroutineScopeRegistry("sync")
 
     suspend fun joinedRooms(): List<MatrixRoom.Joined> =
         store.state().getOrNull()?.rooms?.values?.filterIsInstance<MatrixRoom.Joined>() ?: emptyList()
@@ -51,18 +51,12 @@ internal class MatrixClient(
                 ?: failWith("Login failed", loginResponse.exceptionOrNull())
 
             store.intent(Init(userId, deviceId, accessToken))
-            syncScope(node) { syncPoll(it, node).collect() }
+            syncPoll(node)
         }
 
     suspend fun stop(node: String? = null) {
         with(syncScopes) {
-            if (node != null) {
-                get(node)?.cancel("Sync for node $node canceled.")
-                remove(node)
-            } else {
-                forEach { it.value.cancel("Sync for node ${it.key} canceled.") }
-                clear()
-            }
+            node?.let { cancel(it) } ?: cancelAll()
 
             if (isEmpty()) {
                 store.intent(Reset)
@@ -156,7 +150,7 @@ internal class MatrixClient(
             }
         }
 
-    fun syncPoll(scope: CoroutineScope, node: String, interval: Long = 0): Flow<Result<MatrixSync>> {
+    suspend fun syncPollFlow(scope: CoroutineScope, node: String, interval: Long = 0): Flow<Result<MatrixSync>> {
         val syncMutex = Mutex()
 
         return poller.poll(Dispatchers.IO, interval) {
@@ -171,6 +165,13 @@ internal class MatrixClient(
         }
     }
 
+    private suspend fun syncPoll(node: String) {
+        syncScopes.get(node).launch {
+            syncPollFlow(this, node).collect()
+            syncScopes.cancel(node)
+        }
+    }
+
     private suspend inline fun <T> withAccessToken(
         name: String,
         block: (accessToken: String) -> T,
@@ -178,17 +179,6 @@ internal class MatrixClient(
         val accessToken = store.state().getOrNull()?.accessToken ?: failWithRequiresAuthorization(name)
         return block(accessToken)
     }
-
-    private suspend fun syncScope(node: String, block: suspend (CoroutineScope) -> Unit) {
-        syncScopes
-            .getOrPut(node) { CoroutineScope(CoroutineName(syncScopeName(node)) + Dispatchers.Default) }
-            .launch {
-                block(this)
-                syncScopes.remove(node)
-            }
-    }
-
-    private fun syncScopeName(node: String): String = "sync@$node"
 
     private suspend fun onSyncSuccess(sync: MatrixSync) {
         store.intent(

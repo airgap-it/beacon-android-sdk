@@ -15,6 +15,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlin.reflect.KClass
 
 private typealias StorageSelectCollection<T> = suspend Storage.() -> List<T>
@@ -25,6 +27,8 @@ public class DecoratedStorage(
     private val storage: Storage,
     private val beaconConfiguration: BeaconConfiguration,
 ) : ExtendedStorage, Storage by storage {
+    private val locks: MutableMap<Resource<*>, Mutex> = mutableMapOf()
+
     private val _appMetadata: MutableSharedFlow<AppMetadata> by lazy { resourceFlow() }
     override val appMetadata: Flow<AppMetadata> get() = _appMetadata.onSubscription { emitAll(getAppMetadata(beaconConfiguration).asFlow()) }
 
@@ -40,6 +44,7 @@ public class DecoratedStorage(
         selector: Peer.() -> List<Any>?,
     ) {
         add(
+            Resource.Peers,
             { getPeers(beaconConfiguration) },
             Storage::setPeers,
             _peers,
@@ -50,16 +55,16 @@ public class DecoratedStorage(
     }
 
     override suspend fun findPeer(predicate: (Peer) -> Boolean): Peer? =
-        selectFirst({ getPeers(beaconConfiguration) }, predicate)
+        selectFirst(Resource.Peers, { getPeers(beaconConfiguration) }, predicate)
 
     override suspend fun <T : Peer> findPeer(
         instanceClass: KClass<T>,
         predicate: (T) -> Boolean,
-    ): T? = selectFirstInstance({ getPeers(beaconConfiguration) }, instanceClass, predicate)
+    ): T? = selectFirstInstance(Resource.Peers, { getPeers(beaconConfiguration) }, instanceClass, predicate)
 
     override suspend fun removePeers(predicate: ((Peer) -> Boolean)?) {
-        if (predicate != null) remove({ getPeers(beaconConfiguration) }, Storage::setPeers, predicate)
-        else removeAll(Storage::setPeers)
+        if (predicate != null) remove(Resource.Peers, { getPeers(beaconConfiguration) }, Storage::setPeers, predicate)
+        else removeAll(Resource.Peers, Storage::setPeers)
     }
 
     override suspend fun addAppMetadata(
@@ -68,6 +73,7 @@ public class DecoratedStorage(
         selector: AppMetadata.() -> List<Any>?,
     ) {
         add(
+            Resource.AppMetadata,
             { getAppMetadata(beaconConfiguration) },
             Storage::setAppMetadata,
             _appMetadata,
@@ -78,16 +84,16 @@ public class DecoratedStorage(
     }
 
     override suspend fun findAppMetadata(predicate: (AppMetadata) -> Boolean): AppMetadata? =
-        selectFirst({ getAppMetadata(beaconConfiguration) }, predicate)
+        selectFirst(Resource.AppMetadata, { getAppMetadata(beaconConfiguration) }, predicate)
 
     override suspend fun <T : AppMetadata> findAppMetadata(
         instanceClass: KClass<T>,
         predicate: (T) -> Boolean,
-    ): T? = selectFirstInstance({ getAppMetadata(beaconConfiguration) }, instanceClass, predicate)
+    ): T? = selectFirstInstance(Resource.AppMetadata, { getAppMetadata(beaconConfiguration) }, instanceClass, predicate)
 
     override suspend fun removeAppMetadata(predicate: ((AppMetadata) -> Boolean)?) {
-        if (predicate != null) remove({ getAppMetadata(beaconConfiguration) }, Storage::setAppMetadata, predicate)
-        else removeAll(Storage::setAppMetadata)
+        if (predicate != null) remove(Resource.AppMetadata, { getAppMetadata(beaconConfiguration) }, Storage::setAppMetadata, predicate)
+        else removeAll(Resource.AppMetadata, Storage::setAppMetadata)
     }
 
     override suspend fun addPermissions(
@@ -96,6 +102,7 @@ public class DecoratedStorage(
         selector: Permission.() -> List<Any>?,
     ) {
         add(
+            Resource.Permissions,
             { getPermissions(beaconConfiguration) },
             Storage::setPermissions,
             _permissions,
@@ -106,41 +113,46 @@ public class DecoratedStorage(
     }
 
     override suspend fun findPermission(predicate: (Permission) -> Boolean): Permission? =
-        selectFirst({ getPermissions(beaconConfiguration) }, predicate)
+        selectFirst(Resource.Permissions, { getPermissions(beaconConfiguration) }, predicate)
 
     override suspend fun <T : Permission> findPermission(
         instanceClass: KClass<T>,
         predicate: (T) -> Boolean,
-    ): T? = selectFirstInstance({ getPermissions(beaconConfiguration) }, instanceClass, predicate)
+    ): T? = selectFirstInstance(Resource.Permissions, { getPermissions(beaconConfiguration) }, instanceClass, predicate)
 
     override suspend fun removePermissions(predicate: ((Permission) -> Boolean)?) {
-        if (predicate != null) remove({ getPermissions(beaconConfiguration) }, Storage::setPermissions, predicate)
-        else removeAll(Storage::setPermissions)
+        if (predicate != null) remove(Resource.Permissions, { getPermissions(beaconConfiguration) }, Storage::setPermissions, predicate)
+        else removeAll(Resource.Permissions, Storage::setPermissions)
     }
 
     override suspend fun addMigrations(migrations: Set<String>) {
-        val storageMigrations = getMigrations()
-            .toMutableSet()
-            .also { it.addAll(migrations) }
+        locks.run(Resource.Migrations) {
+            val storageMigrations = getMigrations()
+                .toMutableSet()
+                .also { it.addAll(migrations) }
 
-        setMigrations(storageMigrations)
+            setMigrations(storageMigrations)
+        }
     }
 
     override fun scoped(beaconScope: BeaconScope): ExtendedStorage = DecoratedStorage(storage.scoped(beaconScope), beaconConfiguration)
     override fun extend(beaconConfiguration: BeaconConfiguration): ExtendedStorage = this
 
     private suspend fun <T> selectFirst(
+        resource: Resource<T>,
         select: StorageSelectCollection<T>,
         predicate: (T) -> Boolean,
-    ): T? = select(this).find(predicate)
+    ): T? = locks.run(resource) { select(this).find(predicate) }
 
     private suspend fun <T : Any, Instance : T> selectFirstInstance(
+        resource: Resource<T>,
         select: StorageSelectCollection<T>,
         instanceClass: KClass<Instance>,
         predicate: (Instance) -> Boolean,
-    ): Instance? = select(this).filterIsInstance(instanceClass.java).find(predicate)
+    ): Instance? = locks.run(resource) { select(this).filterIsInstance(instanceClass.java).find(predicate) }
 
     private suspend fun <T> add(
+        resource: Resource<T>,
         select: StorageSelectCollection<T>,
         insert: StorageInsertCollection<T>,
         subscribeFlow: MutableSharedFlow<T>,
@@ -148,28 +160,31 @@ public class DecoratedStorage(
         overwrite: Boolean,
         selector: T.() -> List<Any>?,
     ) {
-        val stored = select(this).distinctByKeepLast(selector)
+        locks.run(resource) {
+            val stored = select(this).distinctByKeepLast(selector)
 
-        val mappedIndices = createMappedIndices(stored, elements, selector)
-        val (toInsert, updatedIndices) = stored.updatedWith(elements, mappedIndices, overwrite)
+            val mappedIndices = createMappedIndices(stored, elements, selector)
+            val (toInsert, updatedIndices) = stored.updatedWith(elements, mappedIndices, overwrite)
 
-        insert(this, toInsert)
+            insert(this, toInsert)
 
-        CoroutineScope(Dispatchers.Default).launch {
-            toInsert.filterIndexed { index, _ -> updatedIndices.contains(index) }.forEach { subscribeFlow.tryEmit(it) }
+            CoroutineScope(Dispatchers.Default).launch {
+                toInsert.filterIndexed { index, _ -> updatedIndices.contains(index) }.forEach { subscribeFlow.tryEmit(it) }
+            }
         }
     }
 
     private suspend fun <T> remove(
+        resource: Resource<T>,
         select: StorageSelectCollection<T>,
         insert: StorageInsertCollection<T>,
         predicate: (T) -> Boolean,
     ) {
-        insert(this, select(this).filterNot(predicate))
+        locks.run(resource) { insert(this, select(this).filterNot(predicate)) }
     }
 
-    private suspend fun <T> removeAll(insert: StorageInsertCollection<T>) {
-        insert(this, emptyList())
+    private suspend fun <T> removeAll(resource: Resource<T>, insert: StorageInsertCollection<T>) {
+        locks.run(resource) { insert(this, emptyList()) }
     }
 
     private fun <T> createMappedIndices(first: List<T>, second: List<T>, selector: T.() -> List<Any>?): Map<Int, Int> {
@@ -221,4 +236,14 @@ public class DecoratedStorage(
     private fun List<Any>.sumHashCodes(): Int = fold(0) { acc, next -> acc + next.hashCode() }
 
     private fun <A, B, R> Pair<A, B>.mapFirst(transform: (A) -> R): Pair<R, B> = Pair(transform(first), second)
+
+    private suspend inline fun <T, R : Resource<*>> MutableMap<Resource<*>, Mutex>.run(resource: R, action: () -> T): T =
+        getOrPut(resource) { Mutex() }.withLock { action() }
+
+    private sealed interface Resource<T> {
+        object Peers : Resource<Peer>
+        object AppMetadata : Resource<it.airgap.beaconsdk.core.data.AppMetadata>
+        object Permissions : Resource<Permission>
+        object Migrations : Resource<String>
+    }
 }
