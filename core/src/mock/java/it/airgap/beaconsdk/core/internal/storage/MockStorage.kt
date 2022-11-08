@@ -21,7 +21,6 @@ public class MockStorage : Storage {
     override suspend fun getMaybePeers(): List<Maybe<Peer>> = mutex.withLock { p2pPeers.map { Maybe.Some(it) } }
     override suspend fun setPeers(p2pPeers: List<Peer>) {
         mutex.withLock {
-            println("UPDATE PEERS $p2pPeers")
             this.p2pPeers = p2pPeers
         }
     }

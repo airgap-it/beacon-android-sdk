@@ -98,18 +98,13 @@ internal class P2pTransport(
     }
 
     private suspend fun P2pPeer.pair() {
-        println("$scopeId 11")
         peerScopes.get(scopeId).launch {
-            println("$scopeId 12")
             val result = client.sendPairingResponse(this@pair)
 
-            println("$scopeId 13")
             if (result.isSuccess) {
-                println("$scopeId 14")
                 storageManager.updatePeers(listOf(selfPaired())) { listOfNotNull(id, name, publicKey, relayServer, icon, appUrl) }
             }
 
-            println("$scopeId 15")
             peerScopes.cancel(scopeId)
         }
     }

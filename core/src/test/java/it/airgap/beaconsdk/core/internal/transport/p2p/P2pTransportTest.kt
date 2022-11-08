@@ -192,13 +192,10 @@ internal class P2pTransportTest {
                     .toList()
             }
 
-            println("1 size: ${peers.size}")
             assertEquals(expectedInStorage.sortedBy { it.name }, fromStorage.await().sortedBy { it.name })
-            println("2")
             coVerify(exactly = peers.filter { !it.isPaired }.size) {
                 p2pClient.sendPairingResponse(match { peers.contains(it) })
             }
-            println("3")
         }
     }
 
