@@ -495,8 +495,6 @@ internal class P2pMatrixTest {
             p2pMatrix.unsubscribeFrom(peer)
             p2pMatrix.subscribeTo(peer)
 
-            println(unsubscribed.await())
-
             assertTrue(p2pMatrix.isSubscribed(peer),
                 "Expected peer to be recognized as subscribed")
             assertTrue(unsubscribed.await()?.isEmpty() == true,

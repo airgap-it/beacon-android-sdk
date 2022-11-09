@@ -11,13 +11,14 @@ import it.airgap.beaconsdk.core.internal.transport.p2p.store.DiscardPairingData
 import it.airgap.beaconsdk.core.internal.transport.p2p.store.OnPairingCompleted
 import it.airgap.beaconsdk.core.internal.transport.p2p.store.OnPairingRequested
 import it.airgap.beaconsdk.core.internal.transport.p2p.store.P2pTransportStore
+import it.airgap.beaconsdk.core.internal.utils.CoroutineScopeRegistry
 import it.airgap.beaconsdk.core.internal.utils.flatMap
 import it.airgap.beaconsdk.core.internal.utils.runCatchingFlat
 import it.airgap.beaconsdk.core.internal.utils.success
 import it.airgap.beaconsdk.core.storage.findPeer
 import it.airgap.beaconsdk.core.transport.data.*
 import it.airgap.beaconsdk.core.transport.p2p.P2pClient
-import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 
 @OptIn(FlowPreview::class)
@@ -31,12 +32,14 @@ internal class P2pTransport(
     override val incomingConnectionMessages: Flow<Result<IncomingConnectionTransportMessage>> by lazy {
         storageManager.updatedPeers
             .filterIsInstance<P2pPeer>()
-            .onEach { onUpdatedP2pPeer(it) }
+            .onEach { it.onUpdated() }
             .filterNot { it.isRemoved || client.isSubscribed(it) }
             .mapNotNull { client.subscribeTo(it) }
             .flattenMerge()
             .map { IncomingConnectionMessage.fromResult(it) }
     }
+
+    private val peerScopes: CoroutineScopeRegistry = CoroutineScopeRegistry("peers")
 
     override suspend fun pair(): Flow<Result<PairingMessage>> = flow {
         val pairingRequest = client.createPairingRequest().also {
@@ -87,18 +90,32 @@ internal class P2pTransport(
         }
     }
 
-    private suspend fun onUpdatedP2pPeer(peer: P2pPeer) {
-        if (!peer.isPaired && !peer.isRemoved) pairP2pPeer(peer)
-        if (peer.isRemoved) client.unsubscribeFrom(peer)
-    }
-
-    private suspend fun pairP2pPeer(peer: P2pPeer) {
-        val result = client.sendPairingResponse(peer)
-
-        if (result.isSuccess) {
-            storageManager.updatePeers(listOf(peer.selfPaired())) { listOfNotNull(id, name, publicKey, relayServer, icon, appUrl) }
+    private suspend fun P2pPeer.onUpdated() {
+        when {
+            isRemoved -> unpair()
+            !isPaired -> pair()
         }
     }
+
+    private suspend fun P2pPeer.pair() {
+        peerScopes.get(scopeId).launch {
+            val result = client.sendPairingResponse(this@pair)
+
+            if (result.isSuccess) {
+                storageManager.updatePeers(listOf(selfPaired())) { listOfNotNull(id, name, publicKey, relayServer, icon, appUrl) }
+            }
+
+            peerScopes.cancel(scopeId)
+        }
+    }
+
+    private suspend fun P2pPeer.unpair() {
+        peerScopes.cancel(scopeId)
+        client.unsubscribeFrom(this)
+    }
+
+    private val P2pPeer.scopeId: String
+        get() = id ?: publicKey
 
     private fun failWithUnknownPeer(publicKey: String?): Nothing =
         throw IllegalStateException("P2P peer with public key $publicKey is not recognized.")

@@ -15,51 +15,49 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlin.reflect.KClass
-
-private typealias StorageSelectCollection<T> = suspend Storage.() -> List<T>
-private typealias StorageInsertCollection<T> = suspend Storage.(List<T>) -> Unit
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class DecoratedStorage(
     private val storage: Storage,
     private val beaconConfiguration: BeaconConfiguration,
 ) : ExtendedStorage, Storage by storage {
-    private val _appMetadata: MutableSharedFlow<AppMetadata> by lazy { resourceFlow() }
-    override val appMetadata: Flow<AppMetadata> get() = _appMetadata.onSubscription { emitAll(getAppMetadata(beaconConfiguration).asFlow()) }
+    override val peers: Flow<Peer>
+        get() = with(ResourceCollection.PeerList) {
+            resourceFlow.onSubscription { emitAll(getPeers(beaconConfiguration).asFlow()) }
+        }
 
-    private val _permissions: MutableSharedFlow<Permission> by lazy { resourceFlow() }
-    override val permissions: Flow<Permission> get() = _permissions.onSubscription { emitAll(getPermissions(beaconConfiguration).asFlow()) }
+    override val appMetadata: Flow<AppMetadata>
+        get() = with(ResourceCollection.AppMetadataList) {
+            resourceFlow.onSubscription { emitAll(getAppMetadata(beaconConfiguration).asFlow()) }
+        }
 
-    private val _peers: MutableSharedFlow<Peer> by lazy { resourceFlow() }
-    override val peers: Flow<Peer> get() = _peers.onSubscription { emitAll(getPeers(beaconConfiguration).asFlow()) }
+    override val permissions: Flow<Permission>
+        get() = with(ResourceCollection.PermissionList) {
+            resourceFlow.onSubscription { emitAll(getPermissions(beaconConfiguration).asFlow()) }
+        }
 
     override suspend fun addPeers(
         peers: List<Peer>,
         overwrite: Boolean,
         selector: Peer.() -> List<Any>?,
     ) {
-        add(
-            { getPeers(beaconConfiguration) },
-            Storage::setPeers,
-            _peers,
-            peers,
-            overwrite,
-            selector,
-        )
+        add(ResourceCollection.PeerList, peers, overwrite, selector)
     }
 
     override suspend fun findPeer(predicate: (Peer) -> Boolean): Peer? =
-        selectFirst({ getPeers(beaconConfiguration) }, predicate)
+        selectFirst(ResourceCollection.PeerList, predicate)
 
     override suspend fun <T : Peer> findPeer(
         instanceClass: KClass<T>,
         predicate: (T) -> Boolean,
-    ): T? = selectFirstInstance({ getPeers(beaconConfiguration) }, instanceClass, predicate)
+    ): T? = selectFirstInstance(ResourceCollection.PeerList, instanceClass, predicate)
 
     override suspend fun removePeers(predicate: ((Peer) -> Boolean)?) {
-        if (predicate != null) remove({ getPeers(beaconConfiguration) }, Storage::setPeers, predicate)
-        else removeAll(Storage::setPeers)
+        if (predicate != null) remove(ResourceCollection.PeerList, predicate)
+        else removeAll(ResourceCollection.PeerList)
     }
 
     override suspend fun addAppMetadata(
@@ -67,27 +65,20 @@ public class DecoratedStorage(
         overwrite: Boolean,
         selector: AppMetadata.() -> List<Any>?,
     ) {
-        add(
-            { getAppMetadata(beaconConfiguration) },
-            Storage::setAppMetadata,
-            _appMetadata,
-            appsMetadata,
-            overwrite,
-            selector,
-        )
+        add(ResourceCollection.AppMetadataList, appsMetadata, overwrite, selector)
     }
 
     override suspend fun findAppMetadata(predicate: (AppMetadata) -> Boolean): AppMetadata? =
-        selectFirst({ getAppMetadata(beaconConfiguration) }, predicate)
+        selectFirst(ResourceCollection.AppMetadataList, predicate)
 
     override suspend fun <T : AppMetadata> findAppMetadata(
         instanceClass: KClass<T>,
         predicate: (T) -> Boolean,
-    ): T? = selectFirstInstance({ getAppMetadata(beaconConfiguration) }, instanceClass, predicate)
+    ): T? = selectFirstInstance(ResourceCollection.AppMetadataList, instanceClass, predicate)
 
     override suspend fun removeAppMetadata(predicate: ((AppMetadata) -> Boolean)?) {
-        if (predicate != null) remove({ getAppMetadata(beaconConfiguration) }, Storage::setAppMetadata, predicate)
-        else removeAll(Storage::setAppMetadata)
+        if (predicate != null) remove(ResourceCollection.AppMetadataList, predicate)
+        else removeAll(ResourceCollection.AppMetadataList)
     }
 
     override suspend fun addPermissions(
@@ -95,81 +86,72 @@ public class DecoratedStorage(
         overwrite: Boolean,
         selector: Permission.() -> List<Any>?,
     ) {
-        add(
-            { getPermissions(beaconConfiguration) },
-            Storage::setPermissions,
-            _permissions,
-            permissions,
-            overwrite,
-            selector,
-        )
+        add(ResourceCollection.PermissionList, permissions, overwrite, selector)
     }
 
     override suspend fun findPermission(predicate: (Permission) -> Boolean): Permission? =
-        selectFirst({ getPermissions(beaconConfiguration) }, predicate)
+        selectFirst(ResourceCollection.PermissionList, predicate)
 
     override suspend fun <T : Permission> findPermission(
         instanceClass: KClass<T>,
         predicate: (T) -> Boolean,
-    ): T? = selectFirstInstance({ getPermissions(beaconConfiguration) }, instanceClass, predicate)
+    ): T? = selectFirstInstance(ResourceCollection.PermissionList, instanceClass, predicate)
 
     override suspend fun removePermissions(predicate: ((Permission) -> Boolean)?) {
-        if (predicate != null) remove({ getPermissions(beaconConfiguration) }, Storage::setPermissions, predicate)
-        else removeAll(Storage::setPermissions)
+        if (predicate != null) remove(ResourceCollection.PermissionList, predicate)
+        else removeAll(ResourceCollection.PermissionList)
     }
 
     override suspend fun addMigrations(migrations: Set<String>) {
-        val storageMigrations = getMigrations()
-            .toMutableSet()
-            .also { it.addAll(migrations) }
+        ResourceCollection.MigrationSet.runAtomic {
+            val storageMigrations = getMigrations()
+                .toMutableSet()
+                .also { it.addAll(migrations) }
 
-        setMigrations(storageMigrations)
+            setMigrations(storageMigrations)
+        }
     }
 
     override fun scoped(beaconScope: BeaconScope): ExtendedStorage = DecoratedStorage(storage.scoped(beaconScope), beaconConfiguration)
     override fun extend(beaconConfiguration: BeaconConfiguration): ExtendedStorage = this
 
-    private suspend fun <T> selectFirst(
-        select: StorageSelectCollection<T>,
+    private suspend fun <T, C : Collection<T>> selectFirst(
+        resourceCollection: ResourceCollection<T, C>,
         predicate: (T) -> Boolean,
-    ): T? = select(this).find(predicate)
+    ): T? = resourceCollection.runAtomic { select(beaconConfiguration).find(predicate) }
 
-    private suspend fun <T : Any, Instance : T> selectFirstInstance(
-        select: StorageSelectCollection<T>,
+    private suspend fun <T : Any, C : Collection<T>, Instance : T> selectFirstInstance(
+        resourceCollection: ResourceCollection<T, C>,
         instanceClass: KClass<Instance>,
         predicate: (Instance) -> Boolean,
-    ): Instance? = select(this).filterIsInstance(instanceClass.java).find(predicate)
+    ): Instance? = resourceCollection.runAtomic { select(beaconConfiguration).filterIsInstance(instanceClass.java).find(predicate) }
 
     private suspend fun <T> add(
-        select: StorageSelectCollection<T>,
-        insert: StorageInsertCollection<T>,
-        subscribeFlow: MutableSharedFlow<T>,
+        resourceCollection: ResourceCollection<T, List<T>>,
         elements: List<T>,
         overwrite: Boolean,
         selector: T.() -> List<Any>?,
     ) {
-        val stored = select(this).distinctByKeepLast(selector)
+        resourceCollection.runAtomic {
+            val stored = select(beaconConfiguration).distinctByKeepLast(selector)
 
-        val mappedIndices = createMappedIndices(stored, elements, selector)
-        val (toInsert, updatedIndices) = stored.updatedWith(elements, mappedIndices, overwrite)
+            val mappedIndices = createMappedIndices(stored, elements, selector)
+            val (toInsert, updatedIndices) = stored.updatedWith(elements, mappedIndices, overwrite)
 
-        insert(this, toInsert)
+            insert(toInsert, beaconConfiguration)
 
-        CoroutineScope(Dispatchers.Default).launch {
-            toInsert.filterIndexed { index, _ -> updatedIndices.contains(index) }.forEach { subscribeFlow.tryEmit(it) }
+            CoroutineScope(Dispatchers.Default).launch {
+                toInsert.filterIndexed { index, _ -> updatedIndices.contains(index) }.forEach { resourceFlow.emit(it) }
+            }
         }
     }
 
-    private suspend fun <T> remove(
-        select: StorageSelectCollection<T>,
-        insert: StorageInsertCollection<T>,
-        predicate: (T) -> Boolean,
-    ) {
-        insert(this, select(this).filterNot(predicate))
+    private suspend fun <T> remove(resourceCollection: ResourceCollection<T, List<T>>, predicate: (T) -> Boolean) {
+        resourceCollection.runAtomic { insert(select(beaconConfiguration).filterNot(predicate), beaconConfiguration) }
     }
 
-    private suspend fun <T> removeAll(insert: StorageInsertCollection<T>) {
-        insert(this, emptyList())
+    private suspend fun <T> removeAll(resourceCollection: ResourceCollection<T, List<T>>) {
+        resourceCollection.runAtomic { insert(emptyList(), beaconConfiguration) }
     }
 
     private fun <T> createMappedIndices(first: List<T>, second: List<T>, selector: T.() -> List<Any>?): Map<Int, Int> {
@@ -180,9 +162,6 @@ public class DecoratedStorage(
 
         return indices.values.filter { it.size == 2 }.associate { it[0] to it[1] }
     }
-
-    private fun <T> resourceFlow(bufferCapacity: Int = 64): MutableSharedFlow<T> =
-        MutableSharedFlow(extraBufferCapacity = bufferCapacity)
 
     private inline fun <T> List<T>.distinctByKeepLast(selector: T.() -> List<Any>?): List<T> {
         val (withSelector, withoutSelector) = map { selector(it)?.sumHashCodes() to it }
@@ -221,4 +200,62 @@ public class DecoratedStorage(
     private fun List<Any>.sumHashCodes(): Int = fold(0) { acc, next -> acc + next.hashCode() }
 
     private fun <A, B, R> Pair<A, B>.mapFirst(transform: (A) -> R): Pair<R, B> = Pair(transform(first), second)
+
+    private sealed class ResourceCollection<T, C : Collection<T>> {
+        abstract val Storage.resourceFlow: MutableSharedFlow<T>
+
+        abstract suspend fun Storage.select(beaconConfiguration: BeaconConfiguration): C
+        abstract suspend fun Storage.insert(collection: C, beaconConfiguration: BeaconConfiguration)
+
+        private val mutex: Mutex = Mutex()
+        suspend inline fun <R> runAtomic(action: ResourceCollection<T, C>.() -> R): R =
+            mutex.withLock { action(this) }
+
+        protected fun <T> resourceFlow(bufferCapacity: Int = 64): MutableSharedFlow<T> =
+            MutableSharedFlow(extraBufferCapacity = bufferCapacity)
+
+        object PeerList : ResourceCollection<Peer, List<Peer>>() {
+            override val Storage.resourceFlow: MutableSharedFlow<Peer> by lazy { resourceFlow() }
+
+            override suspend fun Storage.select(beaconConfiguration: BeaconConfiguration): List<Peer> =
+                getPeers(beaconConfiguration)
+
+            override suspend fun Storage.insert(collection: List<Peer>, beaconConfiguration: BeaconConfiguration) {
+                setPeers(collection)
+            }
+        }
+
+        object AppMetadataList : ResourceCollection<AppMetadata, List<AppMetadata>>() {
+            override val Storage.resourceFlow: MutableSharedFlow<AppMetadata> by lazy { resourceFlow() }
+
+            override suspend fun Storage.select(beaconConfiguration: BeaconConfiguration): List<AppMetadata> =
+                getAppMetadata(beaconConfiguration)
+
+            override suspend fun Storage.insert(collection: List<AppMetadata>, beaconConfiguration: BeaconConfiguration) {
+                setAppMetadata(collection)
+            }
+        }
+
+        object PermissionList : ResourceCollection<Permission, List<Permission>>() {
+            override val Storage.resourceFlow: MutableSharedFlow<Permission> by lazy { resourceFlow() }
+
+            override suspend fun Storage.select(beaconConfiguration: BeaconConfiguration): List<Permission> =
+                getPermissions(beaconConfiguration)
+
+            override suspend fun Storage.insert(collection: List<Permission>, beaconConfiguration: BeaconConfiguration) {
+                setPermissions(collection)
+            }
+        }
+
+        object MigrationSet : ResourceCollection<String, Set<String>>() {
+            override val Storage.resourceFlow: MutableSharedFlow<String> by lazy { resourceFlow() }
+
+            override suspend fun Storage.select(beaconConfiguration: BeaconConfiguration): Set<String> =
+                getMigrations()
+
+            override suspend fun Storage.insert(collection: Set<String>, beaconConfiguration: BeaconConfiguration) {
+                setMigrations(collection)
+            }
+        }
+    }
 }
