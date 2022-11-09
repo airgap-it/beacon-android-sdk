@@ -88,8 +88,12 @@ class WalletFragmentViewModel : ViewModel() {
 
     fun pair(pairingRequest: String) {
         viewModelScope.launch {
-            beaconClient?.pair(pairingRequest)
-            checkForPeers()
+            try {
+                beaconClient?.pair(pairingRequest)
+                checkForPeers()
+            } catch (e: Throwable) {
+                onError(e)
+            }
         }
     }
 
