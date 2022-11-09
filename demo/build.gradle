@@ -68,12 +68,13 @@ dependencies {
     implementation project(path: ':blockchain-substrate')
     implementation project(path: ':transport-p2p-matrix')
 
-    // // Published
+    // Published
 //    def beaconVersion = Android.versionName
 //    def withoutJna = { exclude group: "net.java.dev.jna" }
 //
 //    implementation "com.github.airgap-it.beacon-android-sdk:core:$beaconVersion", withoutJna
 //
+//    implementation "com.github.airgap-it.beacon-android-sdk:client-dapp:$beaconVersion", withoutJna
 //    implementation "com.github.airgap-it.beacon-android-sdk:client-wallet:$beaconVersion", withoutJna
 //    implementation "com.github.airgap-it.beacon-android-sdk:blockchain-tezos:$beaconVersion", withoutJna
 //    implementation "com.github.airgap-it.beacon-android-sdk:blockchain-substrate:$beaconVersion", withoutJna

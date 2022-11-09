@@ -57,7 +57,11 @@ class DAppFragmentViewModel : ViewModel() {
 
     fun requestPermission() {
         viewModelScope.launch {
-            beaconClient?.requestTezosPermission()
+            try {
+                beaconClient?.requestTezosPermission()
+            } catch (e: Exception) {
+                onError(e)
+            }
         }
     }
 

@@ -218,7 +218,7 @@ internal class MatrixClientTest {
             coVerify(exactly = 1) { store.intent(Init(userId, deviceId, accessToken)) }
             coVerify(exactly = 1) { store.intent(OnSyncSuccess(nextSyncToken, pollingTimeout = 30000, null, null)) }
 
-            verify(exactly = 1) { client.syncPoll(any(), node) }
+            verify(exactly = 1) { client.syncPollFlow(any(), node) }
             verify(exactly = 1) { poller.poll<MatrixSyncResponse>(any(), 0, any()) }
 
             confirmVerified(userService, poller)
@@ -667,7 +667,7 @@ internal class MatrixClientTest {
         coEvery { store.state() } returns Result.success(MatrixStoreState(accessToken = accessToken))
 
         runBlocking {
-            client.syncPoll(CoroutineScope(TestCoroutineDispatcher()), node).take(1).collect()
+            client.syncPollFlow(this, node).take(1).collect()
 
             coVerify {
                 store.intent(
@@ -684,6 +684,7 @@ internal class MatrixClientTest {
 
     @Test
     fun `updates retry counter on error and continues polling if max not exceeded`() {
+        val node = "node"
         val accessToken = "accessToken"
 
         coEvery { eventService.sync(any(), any(), any()) } returns Result.failure()
@@ -691,7 +692,7 @@ internal class MatrixClientTest {
 
         runBlocking {
             val scope = CoroutineScope(TestCoroutineDispatcher())
-            client.syncPoll(scope, "node").take(1).collect()
+            client.syncPollFlow(scope, node).take(1).collect()
 
             assertTrue(scope.isActive, "Expected scope to be active")
             coVerify { store.intent(OnSyncError) }
@@ -700,6 +701,7 @@ internal class MatrixClientTest {
 
     @Test
     fun `cancels polling on max retries exceeded`() {
+        val node = "node"
         val accessToken = "accessToken"
 
         coEvery { eventService.sync(any(), any(), any()) } returns Result.failure()
@@ -707,7 +709,7 @@ internal class MatrixClientTest {
 
         runBlocking {
             val scope = CoroutineScope(TestCoroutineDispatcher())
-            client.syncPoll(scope, "node").take(1).collect()
+            client.syncPollFlow(scope, node).take(1).collect()
 
             assertFalse(scope.isActive, "Expected scope to be canceled")
             coVerify { store.intent(OnSyncError) }
