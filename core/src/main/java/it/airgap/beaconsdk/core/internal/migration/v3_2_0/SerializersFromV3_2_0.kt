@@ -46,7 +46,7 @@ private data class PeerSurrogate(
     val isPaired: Boolean = false,
 ) {
     fun toTarget(): Peer = when (type) {
-        Type.P2P -> P2pPeer(id, name, publicKey, relayServer, version, icon, appUrl)
+        Type.P2P -> P2pPeer(id, name, publicKey, relayServer, version, icon, appUrl, isPaired)
     }
 
     @Serializable
