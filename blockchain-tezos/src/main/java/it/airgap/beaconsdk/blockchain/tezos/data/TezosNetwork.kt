@@ -164,6 +164,7 @@ public sealed class TezosNetwork : Network() {
         }
     }
 
+    @Deprecated("'Ithacanet' is no longer a maintained Tezos test network and will be removed from Beacon in future versions.")
     @Serializable
     @SerialName(Ithacanet.TYPE)
     public data class Ithacanet(
@@ -178,6 +179,7 @@ public sealed class TezosNetwork : Network() {
         }
     }
 
+    @Deprecated("'Jakartanet' is no longer a maintained Tezos test network and will be removed from Beacon in future versions.")
     @Serializable
     @SerialName(Jakartanet.TYPE)
     public data class Jakartanet(
@@ -203,6 +205,34 @@ public sealed class TezosNetwork : Network() {
 
         public companion object {
             internal const val TYPE = "kathmandunet"
+        }
+    }
+
+    @Serializable
+    @SerialName(Limanet.TYPE)
+    public data class Limanet(
+        override val name: String? = null,
+        override val rpcUrl: String? = null,
+    ) : TezosNetwork() {
+        @Transient
+        override val type: String = TYPE
+
+        public companion object {
+            internal const val TYPE = "limanet"
+        }
+    }
+
+    @Serializable
+    @SerialName(Mumbainet.TYPE)
+    public data class Mumbainet(
+        override val name: String? = null,
+        override val rpcUrl: String? = null,
+    ) : TezosNetwork() {
+        @Transient
+        override val type: String = TYPE
+
+        public companion object {
+            internal const val TYPE = "mumbainet"
         }
     }
 
