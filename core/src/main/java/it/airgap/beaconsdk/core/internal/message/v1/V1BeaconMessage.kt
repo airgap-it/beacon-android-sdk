@@ -18,8 +18,7 @@ import kotlinx.serialization.*
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.element
-import kotlinx.serialization.encoding.decodeStructure
-import kotlinx.serialization.encoding.encodeStructure
+import kotlinx.serialization.encoding.*
 import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonEncoder
@@ -106,7 +105,7 @@ public data class ErrorV1BeaconResponse(
         public fun serializer(beaconScope: BeaconScope? = null): KSerializer<ErrorV1BeaconResponse> = Serializer(beaconScope)
     }
 
-    internal class Serializer(blockchainRegistry: BlockchainRegistry, compat: Compat<VersionedCompat>) : KJsonSerializer<ErrorV1BeaconResponse> {
+    internal class Serializer(blockchainRegistry: BlockchainRegistry, compat: Compat<VersionedCompat>) : KSerializer<ErrorV1BeaconResponse> {
         constructor(beaconScope: BeaconScope? = null) : this(blockchainRegistry(beaconScope), compat(beaconScope))
 
         private val beaconErrorSerializer: KSerializer<BeaconError> = BeaconError.serializer(blockchainRegistry, compat.versioned.blockchain.identifier)
@@ -119,20 +118,33 @@ public data class ErrorV1BeaconResponse(
             element("errorType", beaconErrorSerializer.descriptor)
         }
 
-        override fun deserialize(
-            jsonDecoder: JsonDecoder,
-            jsonElement: JsonElement,
-        ): ErrorV1BeaconResponse = jsonDecoder.decodeStructure(descriptor) {
-            val version = decodeStringElement(descriptor, 1)
-            val id = decodeStringElement(descriptor, 2)
-            val beaconId = decodeStringElement(descriptor, 3)
-            val errorType = decodeSerializableElement(descriptor, 4, beaconErrorSerializer)
+        override fun deserialize(decoder: Decoder): ErrorV1BeaconResponse = decoder.decodeStructure(descriptor) {
+            var version: String? = null
+            var id: String? = null
+            var beaconId: String? = null
+            var errorType: BeaconError? = null
+
+            while (true) {
+                when (decodeElementIndex(descriptor)) {
+                    1 -> version = decodeStringElement(descriptor, 1)
+                    2 -> id = decodeStringElement(descriptor, 2)
+                    3 -> beaconId = decodeStringElement(descriptor, 3)
+                    4 -> errorType = decodeSerializableElement(descriptor, 4, beaconErrorSerializer)
+                    CompositeDecoder.DECODE_DONE -> break
+                    else -> continue
+                }
+            }
+
+            version ?: failWithMissingField(descriptor.getElementName(1))
+            id ?: failWithMissingField(descriptor.getElementName(2))
+            beaconId ?: failWithMissingField(descriptor.getElementName(3))
+            errorType ?: failWithMissingField(descriptor.getElementName(4))
 
             ErrorV1BeaconResponse(version, id, beaconId, errorType)
         }
 
-        override fun serialize(jsonEncoder: JsonEncoder, value: ErrorV1BeaconResponse) {
-            jsonEncoder.encodeStructure(descriptor) {
+        override fun serialize(encoder: Encoder, value: ErrorV1BeaconResponse) {
+            encoder.encodeStructure(descriptor) {
                 with(value) {
                     encodeStringElement(descriptor, 0, type)
                     encodeStringElement(descriptor, 1, version)
