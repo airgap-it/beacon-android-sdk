@@ -1,32 +1,28 @@
 package it.airgap.beaconsdk.core.internal.network.provider
 
 import io.ktor.client.*
+import io.ktor.client.call.*
 import io.ktor.client.engine.okhttp.*
-import io.ktor.client.features.*
-import io.ktor.client.features.json.*
-import io.ktor.client.features.json.serializer.*
-import io.ktor.client.features.logging.*
+import io.ktor.client.plugins.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.plugins.logging.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
-import it.airgap.beaconsdk.core.internal.utils.decodeFromString
+import io.ktor.serialization.kotlinx.json.*
 import it.airgap.beaconsdk.core.internal.utils.logDebug
 import it.airgap.beaconsdk.core.network.data.HttpHeader
 import it.airgap.beaconsdk.core.network.data.HttpParameter
 import it.airgap.beaconsdk.core.network.exception.HttpException
 import it.airgap.beaconsdk.core.network.provider.HttpClientProvider
-import it.airgap.beaconsdk.core.network.provider.HttpProvider
 import it.airgap.beaconsdk.core.scope.BeaconScope
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonElement
-import kotlin.reflect.KClass
 
 internal class KtorHttpClientProvider(private val json: Json, private val beaconScope: BeaconScope) : HttpClientProvider {
     private val ktorClient by lazy {
         HttpClient(OkHttp) {
-            install(JsonFeature) {
-                serializer = KotlinxSerializer(json)
+            install(ContentNegotiation) {
+                json(json)
             }
 
             install(HttpTimeout)
@@ -59,7 +55,7 @@ internal class KtorHttpClientProvider(private val json: Json, private val beacon
         body: String?,
         timeoutMillis: Long?,
     ): String = request(HttpMethod.Post, baseUrl, endpoint, headers, parameters, timeoutMillis) {
-        body?.let { setBodyAsText(it) }
+        body?.let { setBody(it) }
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -71,9 +67,10 @@ internal class KtorHttpClientProvider(private val json: Json, private val beacon
         body: String?,
         timeoutMillis: Long?,
     ): String = request(HttpMethod.Put, baseUrl, endpoint, headers, parameters, timeoutMillis) {
-        body?.let { setBodyAsText(it) }
+        body?.let { setBody(it) }
     }
 
+    @Throws(HttpException::class)
     private suspend fun request(
         method: HttpMethod,
         baseUrl: String,
@@ -90,28 +87,25 @@ internal class KtorHttpClientProvider(private val json: Json, private val beacon
                 headers(httpHeaders)
                 parameters(httpParameters)
 
+                expectSuccess = true
+
                 timeoutMillis?.let { timeout(it) }
 
                 block(this)
-            }
+            }.body()
         } catch (e: ClientRequestException) {
             throw decodeError(e)
         }
 
-    private suspend fun decodeError(error: ClientRequestException): Throwable =
+    private suspend fun decodeError(error: ClientRequestException): HttpException =
         try {
-            val response = error.response.readText(Charsets.UTF_8)
+            val response = error.response.body<String>()
             HttpException.Serialized(response)
         } catch (e: Exception) {
             HttpException.Failure(error.response.status.value, cause = error)
         }
 
     private fun apiUrl(baseUrl: String, endpoint: String): String = "$baseUrl/${endpoint.trimStart('/')}"
-
-    private fun HttpRequestBuilder.setBodyAsText(body: String) {
-        this.body = json.decodeFromString<JsonElement>(body)
-    }
-
 
     private fun HttpRequestBuilder.headers(headers: List<HttpHeader>) {
         headers.forEach { header(it.first, it.second) }

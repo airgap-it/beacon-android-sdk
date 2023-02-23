@@ -60,13 +60,13 @@ private fun serializersModule(
         subclass(DisconnectV3BeaconMessageContent::class, DisconnectV3BeaconMessageContent.serializer())
     }
 
-    contextual(PermissionV3BeaconRequestContent.Serializer(blockchainRegistry))
-    contextual(PermissionV3BeaconResponseContent.Serializer(blockchainRegistry))
+    contextual(PermissionV3BeaconRequestContent.serializer(blockchainRegistry))
+    contextual(PermissionV3BeaconResponseContent.serializer(blockchainRegistry))
 
-    contextual(BlockchainV3BeaconRequestContent.Serializer(blockchainRegistry))
-    contextual(BlockchainV3BeaconResponseContent.Serializer(blockchainRegistry))
+    contextual(BlockchainV3BeaconRequestContent.serializer(blockchainRegistry))
+    contextual(BlockchainV3BeaconResponseContent.serializer(blockchainRegistry))
 
-    contextual(ErrorV3BeaconResponseContent.Serializer(blockchainRegistry))
+    contextual(ErrorV3BeaconResponseContent.serializer(blockchainRegistry))
 
     // -- pairing --
 

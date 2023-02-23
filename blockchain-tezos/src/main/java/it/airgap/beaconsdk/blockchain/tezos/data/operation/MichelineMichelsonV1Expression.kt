@@ -106,7 +106,7 @@ public data class MichelinePrimitiveBytes(public val bytes: String) : MichelineM
             decoder.decodeStructure(descriptor) {
                 val primitive = HexString(decodeStringElement(descriptor, 0))
 
-                return MichelinePrimitiveBytes(primitive.asString(withPrefix = false))
+                MichelinePrimitiveBytes(primitive.asString(withPrefix = false))
             }
 
         override fun serialize(encoder: Encoder, value: MichelinePrimitiveBytes) {

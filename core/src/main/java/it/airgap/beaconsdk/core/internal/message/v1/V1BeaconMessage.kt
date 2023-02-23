@@ -128,7 +128,7 @@ public data class ErrorV1BeaconResponse(
             val beaconId = decodeStringElement(descriptor, 3)
             val errorType = decodeSerializableElement(descriptor, 4, beaconErrorSerializer)
 
-            return ErrorV1BeaconResponse(version, id, beaconId, errorType)
+            ErrorV1BeaconResponse(version, id, beaconId, errorType)
         }
 
         override fun serialize(jsonEncoder: JsonEncoder, value: ErrorV1BeaconResponse) {
