@@ -10,10 +10,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.element
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.encoding.decodeStructure
-import kotlinx.serialization.encoding.encodeStructure
+import kotlinx.serialization.encoding.*
 import kotlinx.serialization.json.*
 
 /**
@@ -93,6 +90,7 @@ public data class MichelinePrimitiveString(public val string: String) : Michelin
 public data class MichelinePrimitiveBytes(public val bytes: String) : MichelineMichelsonV1Expression() {
     public companion object {}
 
+    @OptIn(ExperimentalSerializationApi::class)
     internal object Serializer : KSerializer<MichelinePrimitiveBytes> {
         object Field {
             const val BYTES = "bytes"
@@ -104,9 +102,18 @@ public data class MichelinePrimitiveBytes(public val bytes: String) : MichelineM
 
         override fun deserialize(decoder: Decoder): MichelinePrimitiveBytes =
             decoder.decodeStructure(descriptor) {
-                val primitive = HexString(decodeStringElement(descriptor, 0))
+                var primitive: HexString? = null
+                while (true) {
+                    when (decodeElementIndex(descriptor)) {
+                        0 -> primitive = HexString(decodeStringElement(descriptor, 0))
+                        CompositeDecoder.DECODE_DONE -> break
+                        else -> continue
+                    }
+                }
 
-                return MichelinePrimitiveBytes(primitive.asString(withPrefix = false))
+                primitive ?: failWithMissingField(descriptor.getElementName(0))
+
+                MichelinePrimitiveBytes(primitive.asString(withPrefix = false))
             }
 
         override fun serialize(encoder: Encoder, value: MichelinePrimitiveBytes) {
