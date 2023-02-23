@@ -95,7 +95,8 @@ dependencies {
     // Ktor
     implementation(Dependencies.ktorOkHttp)
     implementation(Dependencies.ktorJson)
-    implementation(Dependencies.ktorSerializationJvm)
+    implementation(Dependencies.ktorContentNegotiation)
+    implementation(Dependencies.ktorSerializationJson)
     implementation(Dependencies.ktorLoggingJvm)
 
     // Lazy Sodium

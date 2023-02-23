@@ -10,7 +10,7 @@ object Android {
 object Version {
     const val kotlin = "1.7.20"
 
-    const val kotlinSerialization = "1.3.1"
+    const val kotlinSerialization = "1.4.1"
 
     const val androidxCore = "1.6.0"
     const val androidxAppCompat = "1.3.1"
@@ -25,7 +25,7 @@ object Version {
 
     const val coroutines = "1.5.1"
 
-    const val ktor = "1.6.2"
+    const val ktor = "2.2.3"
 
     const val lazySodium = "5.0.2"
     const val jna = "5.9.0"
@@ -52,7 +52,8 @@ object Dependencies {
 
     const val ktorOkHttp = "io.ktor:ktor-client-okhttp:${Version.ktor}"
     const val ktorJson = "io.ktor:ktor-client-json:${Version.ktor}"
-    const val ktorSerializationJvm = "io.ktor:ktor-client-serialization-jvm:${Version.ktor}"
+    const val ktorContentNegotiation = "io.ktor:ktor-client-content-negotiation:${Version.ktor}"
+    const val ktorSerializationJson = "io.ktor:ktor-serialization-kotlinx-json:${Version.ktor}"
     const val ktorLoggingJvm = "io.ktor:ktor-client-logging-jvm:${Version.ktor}"
 
     const val androidxCore = "androidx.core:core-ktx:${Version.androidxCore}"
