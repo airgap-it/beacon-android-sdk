@@ -4,7 +4,9 @@ import it.airgap.beaconsdk.blockchain.tezos.Tezos
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosAccount
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosAppMetadata
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosNetwork
+import it.airgap.beaconsdk.blockchain.tezos.data.TezosNotification
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
+import it.airgap.beaconsdk.blockchain.tezos.data.TezosThreshold
 import it.airgap.beaconsdk.blockchain.tezos.data.operation.TezosOperation
 import it.airgap.beaconsdk.blockchain.tezos.message.request.*
 import it.airgap.beaconsdk.blockchain.tezos.message.response.*
@@ -45,16 +47,27 @@ internal data class PermissionV3TezosRequest(
         origin: Connection.Id,
         destination: Connection.Id,
         blockchainIdentifier: String,
-    ): BeaconMessage = PermissionTezosRequest(id, version, blockchainIdentifier, senderId, appMetadata.toAppMetadata(), origin, destination, network, scopes)
+    ): BeaconMessage = PermissionTezosRequest(
+        id,
+        version,
+        blockchainIdentifier,
+        senderId,
+        appMetadata.toAppMetadata(),
+        origin,
+        destination,
+        network,
+        scopes
+    )
 
     companion object {
-        fun from(permissionRequest: PermissionTezosRequest): PermissionV3TezosRequest = with(permissionRequest) {
-            PermissionV3TezosRequest(
-                network,
-                V3TezosAppMetadata.fromAppMetadata(appMetadata),
-                scopes,
-            )
-        }
+        fun from(permissionRequest: PermissionTezosRequest): PermissionV3TezosRequest =
+            with(permissionRequest) {
+                PermissionV3TezosRequest(
+                    network,
+                    V3TezosAppMetadata.fromAppMetadata(appMetadata),
+                    scopes,
+                )
+            }
     }
 }
 
@@ -67,55 +80,86 @@ internal sealed class BlockchainV3TezosRequest : BlockchainV3BeaconRequestConten
     companion object {
         const val CLASS_DISCRIMINATOR = "type"
 
-        fun from(blockchainRequest: BlockchainTezosRequest): BlockchainV3TezosRequest = with(blockchainRequest) {
-            when (this) {
-                is OperationTezosRequest ->
-                    OperationV3TezosRequest(
-                        network,
-                        operationDetails,
-                        sourceAddress,
-                    )
-                is SignPayloadTezosRequest ->
-                    SignPayloadV3TezosRequest(
-                        signingType,
-                        payload,
-                        sourceAddress,
-                    )
-                is BroadcastTezosRequest ->
-                    BroadcastV3TezosRequest(
-                        network,
-                        signedTransaction,
-                    )
+        fun from(blockchainRequest: BlockchainTezosRequest): BlockchainV3TezosRequest =
+            with(blockchainRequest) {
+                when (this) {
+                    is OperationTezosRequest ->
+                        OperationV3TezosRequest(
+                            network,
+                            operationDetails,
+                            sourceAddress,
+                        )
+
+                    is SignPayloadTezosRequest ->
+                        SignPayloadV3TezosRequest(
+                            signingType,
+                            payload,
+                            sourceAddress,
+                        )
+
+                    is BroadcastTezosRequest ->
+                        BroadcastV3TezosRequest(
+                            network,
+                            signedTransaction,
+                        )
+                }
             }
-        }
     }
 
     @OptIn(ExperimentalSerializationApi::class)
     object Serializer : KJsonSerializer<BlockchainV3TezosRequest> {
-        override val descriptor: SerialDescriptor = buildClassSerialDescriptor("BlockchainV3TezosRequest") {
-            element<String>(CLASS_DISCRIMINATOR)
-        }
+        override val descriptor: SerialDescriptor =
+            buildClassSerialDescriptor("BlockchainV3TezosRequest") {
+                element<String>(CLASS_DISCRIMINATOR)
+            }
 
-        override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): BlockchainV3TezosRequest {
+        override fun deserialize(
+            jsonDecoder: JsonDecoder,
+            jsonElement: JsonElement
+        ): BlockchainV3TezosRequest {
             val type = jsonElement.jsonObject.getString(descriptor.getElementName(0))
 
             return when (type) {
-                OperationV3TezosRequest.TYPE -> jsonDecoder.json.decodeFromJsonElement(OperationV3TezosRequest.serializer(), jsonElement)
-                SignPayloadV3TezosRequest.TYPE -> jsonDecoder.json.decodeFromJsonElement(SignPayloadV3TezosRequest.serializer(), jsonElement)
-                BroadcastV3TezosRequest.TYPE -> jsonDecoder.json.decodeFromJsonElement(BroadcastV3TezosRequest.serializer(), jsonElement)
+                OperationV3TezosRequest.TYPE -> jsonDecoder.json.decodeFromJsonElement(
+                    OperationV3TezosRequest.serializer(),
+                    jsonElement
+                )
+
+                SignPayloadV3TezosRequest.TYPE -> jsonDecoder.json.decodeFromJsonElement(
+                    SignPayloadV3TezosRequest.serializer(),
+                    jsonElement
+                )
+
+                BroadcastV3TezosRequest.TYPE -> jsonDecoder.json.decodeFromJsonElement(
+                    BroadcastV3TezosRequest.serializer(),
+                    jsonElement
+                )
+
                 else -> failWithUnknownType(type)
             }
         }
 
         override fun serialize(jsonEncoder: JsonEncoder, value: BlockchainV3TezosRequest) {
             when (value) {
-                is OperationV3TezosRequest -> jsonEncoder.encodeSerializableValue(OperationV3TezosRequest.serializer(), value)
-                is SignPayloadV3TezosRequest -> jsonEncoder.encodeSerializableValue(SignPayloadV3TezosRequest.serializer(), value)
-                is BroadcastV3TezosRequest -> jsonEncoder.encodeSerializableValue(BroadcastV3TezosRequest.serializer(), value)
+                is OperationV3TezosRequest -> jsonEncoder.encodeSerializableValue(
+                    OperationV3TezosRequest.serializer(),
+                    value
+                )
+
+                is SignPayloadV3TezosRequest -> jsonEncoder.encodeSerializableValue(
+                    SignPayloadV3TezosRequest.serializer(),
+                    value
+                )
+
+                is BroadcastV3TezosRequest -> jsonEncoder.encodeSerializableValue(
+                    BroadcastV3TezosRequest.serializer(),
+                    value
+                )
             }
         }
 
-        private fun failWithUnknownType(type: String): Nothing = failWithIllegalArgument("Unknown Tezos message type $type")
+        private fun failWithUnknownType(type: String): Nothing =
+            failWithIllegalArgument("Unknown Tezos message type $type")
     }
 }
 
@@ -139,7 +183,8 @@ internal data class OperationV3TezosRequest(
         accountId: String,
         blockchainIdentifier: String,
     ): BeaconMessage {
-        val appMetadata = dependencyRegistry(beaconScope).storageManager.findAppMetadata<TezosAppMetadata> { it.senderId == senderId }
+        val appMetadata =
+            dependencyRegistry(beaconScope).storageManager.findAppMetadata<TezosAppMetadata> { it.senderId == senderId }
         return OperationTezosRequest(
             id,
             version,
@@ -180,7 +225,8 @@ internal data class SignPayloadV3TezosRequest(
         accountId: String,
         blockchainIdentifier: String,
     ): BeaconMessage {
-        val appMetadata = dependencyRegistry(beaconScope).storageManager.findAppMetadata<TezosAppMetadata> { it.senderId == senderId }
+        val appMetadata =
+            dependencyRegistry(beaconScope).storageManager.findAppMetadata<TezosAppMetadata> { it.senderId == senderId }
         return SignPayloadTezosRequest(
             id,
             version,
@@ -220,7 +266,8 @@ internal data class BroadcastV3TezosRequest(
         accountId: String,
         blockchainIdentifier: String,
     ): BeaconMessage {
-        val appMetadata = dependencyRegistry(beaconScope).storageManager.findAppMetadata<TezosAppMetadata> { it.senderId == senderId }
+        val appMetadata =
+            dependencyRegistry(beaconScope).storageManager.findAppMetadata<TezosAppMetadata> { it.senderId == senderId }
         return BroadcastTezosRequest(
             id,
             version,
@@ -247,18 +294,25 @@ internal data class PermissionV3TezosResponse(
     val address: String,
     val network: TezosNetwork,
     val scopes: List<TezosPermission.Scope>,
+    val appMetadata: V3TezosAppMetadata?,
+    val threshold: TezosThreshold?,
+    val notification: TezosNotification?
 ) : PermissionV3BeaconResponseContent.BlockchainData() {
 
     companion object {
-        fun from(permissionResponse: PermissionTezosResponse): PermissionV3TezosResponse = with(permissionResponse) {
-            PermissionV3TezosResponse(
-                account.accountId,
-                account.publicKey,
-                account.address,
-                account.network,
-                scopes,
-            )
-        }
+        fun from(permissionResponse: PermissionTezosResponse): PermissionV3TezosResponse =
+            with(permissionResponse) {
+                PermissionV3TezosResponse(
+                    account.accountId,
+                    account.publicKey,
+                    account.address,
+                    account.network,
+                    scopes,
+                    appMetadata?.let { V3TezosAppMetadata.fromAppMetadata(appMetadata) },
+                    threshold,
+                    notification
+                )
+            }
     }
 
     override suspend fun toBeaconMessage(
@@ -269,53 +323,97 @@ internal data class PermissionV3TezosResponse(
         origin: Connection.Id,
         destination: Connection.Id,
         blockchainIdentifier: String,
-    ): BeaconMessage = PermissionTezosResponse(id, version, destination, blockchainIdentifier, TezosAccount(accountId, network, publicKey, address), scopes)
+    ): BeaconMessage = PermissionTezosResponse(
+        id,
+        version,
+        destination,
+        blockchainIdentifier,
+        TezosAccount(accountId, network, publicKey, address),
+        scopes,
+        appMetadata?.toAppMetadata(),
+        threshold,
+        notification
+    )
 }
 
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable(with = BlockchainV3TezosResponse.Serializer::class)
 @JsonClassDiscriminator(BlockchainV3TezosResponse.CLASS_DISCRIMINATOR)
-internal sealed class BlockchainV3TezosResponse : BlockchainV3BeaconResponseContent.BlockchainData() {
+internal sealed class BlockchainV3TezosResponse :
+    BlockchainV3BeaconResponseContent.BlockchainData() {
     abstract val type: String
 
     companion object {
         const val CLASS_DISCRIMINATOR = "type"
 
-        fun from(blockchainResponse: BlockchainTezosResponse): BlockchainV3TezosResponse = with(blockchainResponse) {
-            when (this) {
-                is OperationTezosResponse -> OperationV3TezosResponse(transactionHash)
-                is SignPayloadTezosResponse -> SignPayloadV3TezosResponse(signingType, signature)
-                is BroadcastTezosResponse -> BroadcastV3TezosResponse(transactionHash)
+        fun from(blockchainResponse: BlockchainTezosResponse): BlockchainV3TezosResponse =
+            with(blockchainResponse) {
+                when (this) {
+                    is OperationTezosResponse -> OperationV3TezosResponse(transactionHash)
+                    is SignPayloadTezosResponse -> SignPayloadV3TezosResponse(
+                        signingType,
+                        signature
+                    )
+
+                    is BroadcastTezosResponse -> BroadcastV3TezosResponse(transactionHash)
+                }
             }
-        }
     }
 
     @OptIn(ExperimentalSerializationApi::class)
     object Serializer : KJsonSerializer<BlockchainV3TezosResponse> {
-        override val descriptor: SerialDescriptor = buildClassSerialDescriptor("BlockchainV3TezosResponse") {
-            element<String>(CLASS_DISCRIMINATOR)
-        }
+        override val descriptor: SerialDescriptor =
+            buildClassSerialDescriptor("BlockchainV3TezosResponse") {
+                element<String>(CLASS_DISCRIMINATOR)
+            }
 
-        override fun deserialize(jsonDecoder: JsonDecoder, jsonElement: JsonElement): BlockchainV3TezosResponse {
+        override fun deserialize(
+            jsonDecoder: JsonDecoder,
+            jsonElement: JsonElement
+        ): BlockchainV3TezosResponse {
             val type = jsonElement.jsonObject.getString(descriptor.getElementName(0))
 
             return when (type) {
-                OperationV3TezosResponse.TYPE -> jsonDecoder.json.decodeFromJsonElement(OperationV3TezosResponse.serializer(), jsonElement)
-                SignPayloadV3TezosResponse.TYPE -> jsonDecoder.json.decodeFromJsonElement(SignPayloadV3TezosResponse.serializer(), jsonElement)
-                BroadcastV3TezosResponse.TYPE -> jsonDecoder.json.decodeFromJsonElement(BroadcastV3TezosResponse.serializer(), jsonElement)
+                OperationV3TezosResponse.TYPE -> jsonDecoder.json.decodeFromJsonElement(
+                    OperationV3TezosResponse.serializer(),
+                    jsonElement
+                )
+
+                SignPayloadV3TezosResponse.TYPE -> jsonDecoder.json.decodeFromJsonElement(
+                    SignPayloadV3TezosResponse.serializer(),
+                    jsonElement
+                )
+
+                BroadcastV3TezosResponse.TYPE -> jsonDecoder.json.decodeFromJsonElement(
+                    BroadcastV3TezosResponse.serializer(),
+                    jsonElement
+                )
+
                 else -> failWithUnknownType(type)
             }
         }
 
         override fun serialize(jsonEncoder: JsonEncoder, value: BlockchainV3TezosResponse) {
             when (value) {
-                is OperationV3TezosResponse -> jsonEncoder.encodeSerializableValue(OperationV3TezosResponse.serializer(), value)
-                is SignPayloadV3TezosResponse -> jsonEncoder.encodeSerializableValue(SignPayloadV3TezosResponse.serializer(), value)
-                is BroadcastV3TezosResponse -> jsonEncoder.encodeSerializableValue(BroadcastV3TezosResponse.serializer(), value)
+                is OperationV3TezosResponse -> jsonEncoder.encodeSerializableValue(
+                    OperationV3TezosResponse.serializer(),
+                    value
+                )
+
+                is SignPayloadV3TezosResponse -> jsonEncoder.encodeSerializableValue(
+                    SignPayloadV3TezosResponse.serializer(),
+                    value
+                )
+
+                is BroadcastV3TezosResponse -> jsonEncoder.encodeSerializableValue(
+                    BroadcastV3TezosResponse.serializer(),
+                    value
+                )
             }
         }
 
-        private fun failWithUnknownType(type: String): Nothing = failWithIllegalArgument("Unknown Tezos message type $type")
+        private fun failWithUnknownType(type: String): Nothing =
+            failWithIllegalArgument("Unknown Tezos message type $type")
     }
 }
 
@@ -335,7 +433,8 @@ internal data class OperationV3TezosResponse(
         origin: Connection.Id,
         destination: Connection.Id,
         blockchainIdentifier: String,
-    ): BeaconMessage = OperationTezosResponse(id, version, destination, blockchainIdentifier, transactionHash)
+    ): BeaconMessage =
+        OperationTezosResponse(id, version, destination, blockchainIdentifier, transactionHash)
 
     companion object {
         const val TYPE = "operation_response"
@@ -359,7 +458,14 @@ internal data class SignPayloadV3TezosResponse(
         origin: Connection.Id,
         destination: Connection.Id,
         blockchainIdentifier: String,
-    ): BeaconMessage = SignPayloadTezosResponse(id, version, destination, blockchainIdentifier, signingType, signature)
+    ): BeaconMessage = SignPayloadTezosResponse(
+        id,
+        version,
+        destination,
+        blockchainIdentifier,
+        signingType,
+        signature
+    )
 
     companion object {
         const val TYPE = "sign_payload_response"
@@ -382,7 +488,8 @@ internal data class BroadcastV3TezosResponse(
         origin: Connection.Id,
         destination: Connection.Id,
         blockchainIdentifier: String,
-    ): BeaconMessage = BroadcastTezosResponse(id, version, destination, Tezos.IDENTIFIER, transactionHash)
+    ): BeaconMessage =
+        BroadcastTezosResponse(id, version, destination, Tezos.IDENTIFIER, transactionHash)
 
     companion object {
         const val TYPE = "broadcast_response"

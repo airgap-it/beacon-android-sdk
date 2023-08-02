@@ -64,7 +64,7 @@ class WalletFragmentViewModel : ViewModel() {
 
                 /* Tezos */
 
-                is PermissionTezosRequest -> PermissionTezosResponse.from(request, exampleTezosAccount(request.network, beaconClient))
+                is PermissionTezosRequest -> PermissionTezosResponse.from(request, exampleTezosAccount(request.network, beaconClient), request.scopes)
                 is OperationTezosRequest -> ErrorBeaconResponse.from(request, BeaconError.Aborted)
                 is SignPayloadTezosRequest -> ErrorBeaconResponse.from(request, TezosError.SignatureTypeNotSupported)
                 is BroadcastTezosRequest -> ErrorBeaconResponse.from(request, TezosError.BroadcastError)

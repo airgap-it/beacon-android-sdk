@@ -1,6 +1,7 @@
 package it.airgap.beaconsdk.blockchain.substrate.extensions
 
 import it.airgap.beaconsdk.blockchain.substrate.data.SubstrateAccount
+import it.airgap.beaconsdk.blockchain.substrate.data.SubstrateAppMetadata
 import it.airgap.beaconsdk.blockchain.substrate.data.SubstratePermission
 import it.airgap.beaconsdk.blockchain.substrate.message.request.PermissionSubstrateRequest
 import it.airgap.beaconsdk.blockchain.substrate.message.request.SignPayloadSubstrateRequest
@@ -12,6 +13,13 @@ import it.airgap.beaconsdk.core.client.BeaconClient
 import it.airgap.beaconsdk.core.client.BeaconConsumer
 
 // -- response --
+
+public fun <T> T.ownAppMetadata(): SubstrateAppMetadata where T : BeaconConsumer, T : BeaconClient<*> =
+    SubstrateAppMetadata(
+        senderId = senderId,
+        name = app.name,
+        icon = app.icon,
+    )
 
 public suspend fun <T> T.respondToSubstratePermission(
     request: PermissionSubstrateRequest,

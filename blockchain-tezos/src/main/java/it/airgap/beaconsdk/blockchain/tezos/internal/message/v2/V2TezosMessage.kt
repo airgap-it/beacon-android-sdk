@@ -4,7 +4,9 @@ import it.airgap.beaconsdk.blockchain.tezos.Tezos
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosAccount
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosAppMetadata
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosNetwork
+import it.airgap.beaconsdk.blockchain.tezos.data.TezosNotification
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
+import it.airgap.beaconsdk.blockchain.tezos.data.TezosThreshold
 import it.airgap.beaconsdk.blockchain.tezos.data.operation.TezosOperation
 import it.airgap.beaconsdk.blockchain.tezos.internal.di.extend
 import it.airgap.beaconsdk.blockchain.tezos.internal.utils.failWithUnknownMessage
@@ -80,6 +82,9 @@ internal sealed class V2TezosMessage : V2BeaconMessage() {
                     message.account.publicKey,
                     message.account.network,
                     message.scopes,
+                    message.appMetadata?.let { V2TezosAppMetadata.fromAppMetadata(message.appMetadata) },
+                    message.threshold,
+                    message.notification
                 )
                 is OperationTezosResponse -> OperationV2TezosResponse(
                     message.version,
@@ -282,6 +287,9 @@ internal data class PermissionV2TezosResponse(
     val publicKey: String,
     val network: TezosNetwork,
     val scopes: List<TezosPermission.Scope>,
+    val appMetadata: V2TezosAppMetadata?,
+    val threshold: TezosThreshold?,
+    val notification: TezosNotification?
 ) : V2TezosMessage() {
     @Required
     override val type: String = TYPE
@@ -296,6 +304,9 @@ internal data class PermissionV2TezosResponse(
             Tezos.IDENTIFIER,
             TezosAccount(accountId, network, publicKey, address),
             scopes,
+            appMetadata?.toAppMetadata(),
+            threshold,
+            notification
         )
     }
 

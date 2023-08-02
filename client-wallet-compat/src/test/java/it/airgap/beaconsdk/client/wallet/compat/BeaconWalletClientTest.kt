@@ -100,7 +100,7 @@ internal class BeaconWalletClientTest {
 
         val configuration = BeaconConfiguration(ignoreUnsupportedBlockchains = false)
         storageManager = StorageManager(beaconScope, MockStorage(), MockSecureStorage(), identifierCreator, configuration)
-        beaconWalletClient = BeaconWalletClient(app, beaconId, beaconScope, connectionController, messageController, storageManager, crypto, serializer, configuration)
+        beaconWalletClient = BeaconWalletClient(app, beaconId, beaconScope, connectionController, messageController, storageManager, crypto, serializer, configuration, identifierCreator)
 
         dependencyRegistry = mockDependencyRegistry(beaconScope)
         every { dependencyRegistry.storageManager } returns storageManager
