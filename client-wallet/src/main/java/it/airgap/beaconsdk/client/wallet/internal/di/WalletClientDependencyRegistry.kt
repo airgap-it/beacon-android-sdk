@@ -23,5 +23,6 @@ internal class WalletClientDependencyRegistry(dependencyRegistry: DependencyRegi
             crypto,
             serializer,
             configuration,
+            identifierCreator
         ).also { walletClient = it }
 }

@@ -1,7 +1,10 @@
 package it.airgap.beaconsdk.blockchain.tezos.extension
 
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosAccount
+import it.airgap.beaconsdk.blockchain.tezos.data.TezosAppMetadata
+import it.airgap.beaconsdk.blockchain.tezos.data.TezosNotification
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
+import it.airgap.beaconsdk.blockchain.tezos.data.TezosThreshold
 import it.airgap.beaconsdk.blockchain.tezos.message.request.BroadcastTezosRequest
 import it.airgap.beaconsdk.blockchain.tezos.message.request.OperationTezosRequest
 import it.airgap.beaconsdk.blockchain.tezos.message.request.PermissionTezosRequest
@@ -19,11 +22,21 @@ import it.airgap.beaconsdk.core.data.SigningType
 public suspend fun <T> T.respondToTezosPermission(
     request: PermissionTezosRequest,
     account: TezosAccount,
-    scopes: List<TezosPermission.Scope> = request.scopes
+    scopes: List<TezosPermission.Scope> = request.scopes,
+    threshold: TezosThreshold? = null,
+    notification: TezosNotification? = null
+
 ) where T : BeaconConsumer, T : BeaconClient<*> {
-    val response = PermissionTezosResponse.from(request, account, scopes)
+    val response = PermissionTezosResponse.from(request, account, this, scopes, threshold, notification)
     respond(response)
 }
+
+public fun <T> T.ownAppMetadata(): TezosAppMetadata where T : BeaconConsumer, T : BeaconClient<*> =
+    TezosAppMetadata(
+        senderId = senderId,
+        name = app.name,
+        icon = app.icon,
+    )
 
 public suspend fun <T> T.respondToTezosOperation(
     request: OperationTezosRequest,

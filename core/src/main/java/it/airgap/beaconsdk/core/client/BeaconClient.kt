@@ -33,7 +33,10 @@ public abstract class BeaconClient<BM : BeaconMessage>(
     protected val crypto: Crypto,
     protected val serializer: Serializer,
     protected val configuration: BeaconConfiguration,
+    protected val identifierCreator: IdentifierCreator,
 ) {
+
+    public val senderId: String by lazy { identifierCreator.senderId(app.keyPair.publicKey).getOrThrow() }
 
     public val name: String
         get() = app.name

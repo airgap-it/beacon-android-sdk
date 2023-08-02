@@ -7,7 +7,9 @@ import it.airgap.beaconsdk.blockchain.tezos.Tezos
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosAccount
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosAppMetadata
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosNetwork
+import it.airgap.beaconsdk.blockchain.tezos.data.TezosNotification
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
+import it.airgap.beaconsdk.blockchain.tezos.data.TezosThreshold
 import it.airgap.beaconsdk.blockchain.tezos.data.operation.TezosEndorsementOperation
 import it.airgap.beaconsdk.blockchain.tezos.data.operation.TezosOperation
 import it.airgap.beaconsdk.blockchain.tezos.internal.creator.*
@@ -270,8 +272,11 @@ internal class V1TezosMessageTest {
         publicKey: String = "publicKey",
         network: TezosNetwork = TezosNetwork.Custom(),
         scopes: List<TezosPermission.Scope> = emptyList(),
+        appMetadata: V1TezosAppMetadata = V1TezosAppMetadata("id", "name", "icon"),
+        threshold: TezosThreshold = TezosThreshold("123", "1"),
+        notification: TezosNotification = TezosNotification(1, "url", "test")
     ): Pair<PermissionV1TezosResponse, String> =
-        PermissionV1TezosResponse(version, id, beaconId, publicKey, network, scopes) to """
+        PermissionV1TezosResponse(version, id, beaconId, publicKey, network, scopes, appMetadata, threshold, notification) to """
             {
                 "type": "permission_response",
                 "version": "$version",
@@ -279,7 +284,10 @@ internal class V1TezosMessageTest {
                 "beaconId": "$beaconId",
                 "publicKey": "$publicKey",
                 "network": ${json.encodeToString(network)},
-                "scopes": ${json.encodeToString(scopes)}
+                "scopes": ${json.encodeToString(scopes)},
+                "appMetadata": ${json.encodeToString(appMetadata)},
+                "threshold": ${json.encodeToString(threshold)},
+                "notification": ${json.encodeToString(notification)}
             }
         """.trimIndent()
 
@@ -395,10 +403,13 @@ internal class V1TezosMessageTest {
         publicKey: String = "publicKey",
         network: TezosNetwork = TezosNetwork.Custom(),
         scopes: List<TezosPermission.Scope> = emptyList(),
+        appMetadata: TezosAppMetadata = TezosAppMetadata("id", "name", "icon"),
         destination: Connection.Id = Connection.Id.P2P("receiverId"),
+        threshold: TezosThreshold = TezosThreshold("123", "1"),
+        notification: TezosNotification = TezosNotification(1, "url", "test")
     ): Pair<PermissionV1TezosResponse, PermissionBeaconResponse> =
-        PermissionV1TezosResponse(version, id, beaconId, publicKey, network, scopes) to
-            PermissionTezosResponse(id, version, destination, Tezos.IDENTIFIER, TezosAccount(publicKey, network, publicKey, publicKey), scopes)
+        PermissionV1TezosResponse(version, id, beaconId, publicKey, network, scopes, V1TezosAppMetadata.fromAppMetadata(appMetadata), threshold, notification) to
+            PermissionTezosResponse(id, version, destination, Tezos.IDENTIFIER, TezosAccount(publicKey, network, publicKey, publicKey), scopes, appMetadata, threshold, notification)
 
     private fun createOperationResponsePair(
         version: String = "1",

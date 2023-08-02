@@ -7,7 +7,9 @@ import it.airgap.beaconsdk.blockchain.tezos.Tezos
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosAccount
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosAppMetadata
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosNetwork
+import it.airgap.beaconsdk.blockchain.tezos.data.TezosNotification
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
+import it.airgap.beaconsdk.blockchain.tezos.data.TezosThreshold
 import it.airgap.beaconsdk.blockchain.tezos.data.operation.TezosEndorsementOperation
 import it.airgap.beaconsdk.blockchain.tezos.data.operation.TezosOperation
 import it.airgap.beaconsdk.blockchain.tezos.internal.creator.*
@@ -355,6 +357,9 @@ internal class V3TezosMessageTest {
         address: String = "address",
         network: TezosNetwork = TezosNetwork.Custom(),
         scopes: List<TezosPermission.Scope> = emptyList(),
+        appMetadata: V3TezosAppMetadata = V3TezosAppMetadata("id", "name", "icon"),
+        threshold: TezosThreshold = TezosThreshold("123", "1"),
+        notification: TezosNotification = TezosNotification(1, "url", "test")
     ): Pair<V3BeaconMessage, String> =
         V3BeaconMessage(
             id,
@@ -368,6 +373,9 @@ internal class V3TezosMessageTest {
                     address,
                     network,
                     scopes,
+                    appMetadata,
+                    threshold,
+                    notification
                 ),
             ),
         ) to """
@@ -383,7 +391,10 @@ internal class V3TezosMessageTest {
                         "publicKey": "$publicKey",
                         "address": "$address",
                         "network": ${json.encodeToString(network)},
-                        "scopes": ${json.encodeToString(scopes)}
+                        "appMetadata": ${json.encodeToString(appMetadata)},
+                        "scopes": ${json.encodeToString(scopes)},
+                        "threshold": ${json.encodeToString(threshold)},
+                        "notification": ${json.encodeToString(notification)}
                     }
                 }
             }
@@ -597,7 +608,10 @@ internal class V3TezosMessageTest {
         senderId: String = "senderId",
         account: TezosAccount = TezosAccount("accountId", TezosNetwork.Custom(), "publicKey", "address"),
         scopes: List<TezosPermission.Scope> = emptyList(),
+        appMetadata: TezosAppMetadata = TezosAppMetadata("id", "name", "icon"),
         destination: Connection.Id = Connection.Id.P2P("receiverId"),
+        threshold: TezosThreshold = TezosThreshold("123", "1"),
+        notification: TezosNotification = TezosNotification(1, "url", "test")
     ): Pair<V3BeaconMessage, PermissionBeaconResponse> =
         V3BeaconMessage(
             id,
@@ -611,9 +625,12 @@ internal class V3TezosMessageTest {
                     account.address,
                     account.network,
                     scopes,
+                    V3TezosAppMetadata.fromAppMetadata(appMetadata),
+                    threshold,
+                    notification
                 ),
             ),
-        ) to PermissionTezosResponse(id, version, destination, Tezos.IDENTIFIER, account, scopes)
+        ) to PermissionTezosResponse(id, version, destination, Tezos.IDENTIFIER, account, scopes, appMetadata, threshold, notification)
 
     private fun createOperationResponsePair(
         version: String = "3",
