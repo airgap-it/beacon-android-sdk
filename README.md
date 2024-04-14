@@ -1,5 +1,6 @@
 # Beacon Android SDK
 
+
 [![stable](https://img.shields.io/github/v/tag/airgap-it/beacon-android-sdk?label=stable&sort=semver)](https://github.com/airgap-it/beacon-android-sdk/releases)
 [![latest](https://img.shields.io/github/v/tag/airgap-it/beacon-android-sdk?color=orange&include_prereleases&label=latest)](https://github.com/airgap-it/beacon-android-sdk/releases)
 [![release](https://img.shields.io/jitpack/v/github/airgap-it/beacon-android-sdk)](https://jitpack.io/#airgap-it/beacon-android-sdk)
