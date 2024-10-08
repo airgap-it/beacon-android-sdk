@@ -1,6 +1,6 @@
 object Android {
     const val compileSdk = 33
-    const val minSdk = 21
+    const val minSdk = 28
     const val targetSdk = 33
 
     const val versionCode = 33
@@ -21,7 +21,7 @@ object Version {
     const val androidxLifecycle = "2.3.1"
     const val androidxNavigation = "2.5.1"
 
-    const val androidxSecurity = "1.0.0"
+    const val androidxSecurity = "1.1.0-alpha06"
 
     const val coroutines = "1.5.1"
 

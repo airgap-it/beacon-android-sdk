@@ -6,6 +6,7 @@ import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import androidx.annotation.RequiresApi
 import androidx.security.crypto.EncryptedFile
+import androidx.security.crypto.MasterKey
 import androidx.security.crypto.MasterKeys
 import kotlinx.coroutines.*
 import java.io.File
@@ -14,7 +15,7 @@ import java.security.GeneralSecurityException
 import java.security.KeyStore
 
 @RequiresApi(Build.VERSION_CODES.M)
-internal class TargetEncryptedFileManager(private val context: Context, private val keyStore: KeyStore) : EncryptedFileManager {
+internal class TargetEncryptedFileManager(private val context: Context) : EncryptedFileManager {
 
     @Throws(GeneralSecurityException::class, IOException::class)
     override suspend fun read(fileName: String, keyAlias: String): ByteArray? {
@@ -23,15 +24,7 @@ internal class TargetEncryptedFileManager(private val context: Context, private 
 
         return coroutineScope {
             async(Dispatchers.IO) {
-                val masterKey = getOrCreateKey(keyAlias)
-                val encryptedFile = EncryptedFile.Builder(
-                    file,
-                    context,
-                    masterKey,
-                    EncryptedFile.FileEncryptionScheme.AES256_GCM_HKDF_4KB
-                ).build()
-
-                encryptedFile.openFileInput().use { it.readBytes() }
+                file.readBytes()
             }
         }.await()
     }
@@ -40,15 +33,7 @@ internal class TargetEncryptedFileManager(private val context: Context, private 
     override suspend fun write(fileName: String, keyAlias: String, data: ByteArray) {
         coroutineScope {
             launch(Dispatchers.IO) {
-                val masterKey = getOrCreateKey(keyAlias)
-                val encryptedFile = EncryptedFile.Builder(
-                    file(fileName, keyAlias),
-                    context,
-                    masterKey,
-                    EncryptedFile.FileEncryptionScheme.AES256_GCM_HKDF_4KB
-                ).build()
-
-                encryptedFile.openFileOutput().use { it.write(data) }
+                file(fileName, keyAlias).writeBytes(data)
             }
         }
     }
@@ -58,24 +43,7 @@ internal class TargetEncryptedFileManager(private val context: Context, private 
             deleteIfNoKey(keyAlias)
         }
 
-    private fun getOrCreateKey(alias: String): String {
-        val parameterSpec = KeyGenParameterSpec.Builder(alias, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT).apply {
-            setKeySize(SIZE_KEY)
-            setDigests(KeyProperties.DIGEST_SHA512)
-            setUserAuthenticationRequired(false)
-            setRandomizedEncryptionRequired(true)
-            setBlockModes(KeyProperties.BLOCK_MODE_GCM)
-            setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
-        }.build()
-
-        return MasterKeys.getOrCreate(parameterSpec)
-    }
-
     private fun File.deleteIfNoKey(alias: String): Boolean {
-        if (!keyStore.containsAlias(alias)) {
-            return delete()
-        }
-
         return false
     }
 
