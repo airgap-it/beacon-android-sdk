@@ -3,12 +3,13 @@ package it.airgap.beaconsdk.transport.p2p.matrix.internal
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
+import io.mockk.mockk
 import io.mockk.unmockkAll
-import it.airgap.beaconsdk.core.data.P2pPeer
 import it.airgap.beaconsdk.core.internal.crypto.Crypto
 import it.airgap.beaconsdk.core.internal.crypto.data.KeyPair
 import it.airgap.beaconsdk.core.internal.data.BeaconApplication
-import it.airgap.beaconsdk.core.internal.transport.p2p.data.P2pPairingResponse
+import it.airgap.beaconsdk.core.internal.serializer.coreJson
+import it.airgap.beaconsdk.core.transport.data.P2pPairingResponse
 import it.airgap.beaconsdk.core.internal.utils.asHexString
 import it.airgap.beaconsdk.core.internal.utils.toHexString
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.MatrixEvent
@@ -27,6 +28,7 @@ internal class P2pMatrixCommunicatorTest {
     private lateinit var crypto: Crypto
 
     private lateinit var p2pMatrixCommunicator: P2pMatrixCommunicator
+    private lateinit var json: Json
 
     private val app: BeaconApplication = BeaconApplication(
         KeyPair(byteArrayOf(0), byteArrayOf(0)),
@@ -41,7 +43,8 @@ internal class P2pMatrixCommunicatorTest {
 
         every { crypto.hashKey(any<ByteArray>()) } answers { Result.success(firstArg()) }
 
-        p2pMatrixCommunicator = P2pMatrixCommunicator(app, crypto)
+        json = Json(from = coreJson(mockk(relaxed = true), mockk(relaxed = true))) {}
+        p2pMatrixCommunicator = P2pMatrixCommunicator(app, crypto, json)
     }
 
     @After
@@ -97,30 +100,17 @@ internal class P2pMatrixCommunicatorTest {
     }
 
     @Test
-    fun `creates pairing request payload for specified version`() {
-        val id = "id"
-        val type = "p2p-pairing-response"
-        val relayServer = "relayServer"
-
-        versionsWithPairingPayloads(id, type, app.name, app.icon, app.url, app.keyPair.publicKey.toHexString().asString(), relayServer)
-            .map { P2pPeer(id = id, name = "name", publicKey = "01", relayServer = "peerServer", version = it.first) to it.second }
-            .map { p2pMatrixCommunicator.pairingPayload(it.first, relayServer) to it.second }
-            .forEach { assertEquals(it.second, it.first.getOrThrow()) }
-    }
-
-    @Test
     fun `creates channel opening message`() {
         val recipient = "recipient"
         val payload = "payload"
 
-        val message = p2pMatrixCommunicator.channelOpeningMessage(recipient, payload)
+        val message = p2pMatrixCommunicator.createChannelOpeningMessage(recipient, payload)
 
         assertEquals("@channel-open:$recipient:$payload", message)
     }
 
     private fun versionsWithPairingPayloads(
         id: String = "id",
-        type: String = "type",
         appName: String = "mockApp",
         appIcon: String? = null,
         appUrl: String? = null,
@@ -131,10 +121,10 @@ internal class P2pMatrixCommunicatorTest {
         "1.0" to publicKey,
         "1.0.0" to publicKey,
         "1.abc" to publicKey,
-        "2" to Json.encodeToString(P2pPairingResponse(id, type, appName, "2", publicKey, relayServer, appIcon, appUrl)),
-        "2.0" to Json.encodeToString(P2pPairingResponse(id, type, appName, "2.0", publicKey, relayServer, appIcon, appUrl)),
-        "2.0.0" to Json.encodeToString(P2pPairingResponse(id, type, appName, "2.0.0", publicKey, relayServer, appIcon, appUrl)),
-        "2.abc" to Json.encodeToString(P2pPairingResponse(id, type, appName, "2.abc", publicKey, relayServer, appIcon, appUrl)),
-        "3" to Json.encodeToString(P2pPairingResponse(id, type, appName, "3", publicKey, relayServer, appIcon, appUrl)),
+        "2" to json.encodeToString(P2pPairingResponse(id, appName, "2", publicKey, relayServer, appIcon, appUrl)),
+        "2.0" to json.encodeToString(P2pPairingResponse(id, appName, "2.0", publicKey, relayServer, appIcon, appUrl)),
+        "2.0.0" to json.encodeToString(P2pPairingResponse(id, appName, "2.0.0", publicKey, relayServer, appIcon, appUrl)),
+        "2.abc" to json.encodeToString(P2pPairingResponse(id, appName, "2.abc", publicKey, relayServer, appIcon, appUrl)),
+        "3" to json.encodeToString(P2pPairingResponse(id, appName, "3", publicKey, relayServer, appIcon, appUrl)),
     )
 }

@@ -7,11 +7,14 @@ import io.mockk.confirmVerified
 import io.mockk.impl.annotations.MockK
 import it.airgap.beaconsdk.core.internal.network.HttpClient
 import it.airgap.beaconsdk.core.internal.network.data.ApplicationJson
+import it.airgap.beaconsdk.core.network.provider.HttpClientProvider
 import it.airgap.beaconsdk.core.network.provider.HttpProvider
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.MatrixError
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.login.MatrixLoginRequest
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.login.MatrixLoginResponse
 import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import nodeApiUrl
 import org.junit.Before
 import org.junit.Test
@@ -21,16 +24,21 @@ import kotlin.test.assertEquals
 internal class MatrixUserServiceTest {
 
     @MockK
-    private lateinit var httpClientProvider: HttpProvider
-    private lateinit var httpClient: HttpClient
+    private lateinit var httpClientProvider: HttpClientProvider
 
+    private lateinit var httpClient: HttpClient
     private lateinit var matrixUserService: MatrixUserService
+    private lateinit var json: Json
 
     @Before
     fun setup() {
         MockKAnnotations.init(this)
 
-        httpClient = HttpClient(httpClientProvider)
+        json = Json(from = Json) {
+            prettyPrint = true
+        }
+
+        httpClient = HttpClient(httpClientProvider, json)
         matrixUserService = MatrixUserService(httpClient)
     }
 
@@ -38,17 +46,14 @@ internal class MatrixUserServiceTest {
     fun `logs in to Matrix server and returns response`() {
         val expectedResponse = MatrixLoginResponse("userId", "deviceId", "accessToken")
 
-        coEvery { httpClientProvider.post<MatrixLoginRequest, MatrixLoginResponse, MatrixError>(
+        coEvery { httpClientProvider.post(
             any(),
             any(),
             any(),
             any(),
             any(),
             any(),
-            any(),
-            any(),
-            any(),
-        ) } returns expectedResponse
+        ) } returns json.encodeToString(expectedResponse)
 
         runBlockingTest {
             val node = "node"
@@ -56,7 +61,7 @@ internal class MatrixUserServiceTest {
             val password = "password"
             val deviceId = "deviceId"
 
-            val request = MatrixLoginRequest.Password(
+            val request: MatrixLoginRequest = MatrixLoginRequest.Password(
                 MatrixLoginRequest.UserIdentifier.User(user),
                 password,
                 deviceId,
@@ -69,10 +74,7 @@ internal class MatrixUserServiceTest {
                 "/login",
                 listOf(ApplicationJson()),
                 emptyList(),
-                request,
-                MatrixLoginRequest::class,
-                MatrixLoginResponse::class,
-                MatrixError::class,
+                json.encodeToString(request),
                 null,
             ) }
 
@@ -83,10 +85,7 @@ internal class MatrixUserServiceTest {
     @Test
     fun `returns error if login failed`() {
         val error = IOException()
-        coEvery { httpClientProvider.post<MatrixLoginRequest, MatrixLoginResponse, MatrixError>(
-            any(),
-            any(),
-            any(),
+        coEvery { httpClientProvider.post(
             any(),
             any(),
             any(),

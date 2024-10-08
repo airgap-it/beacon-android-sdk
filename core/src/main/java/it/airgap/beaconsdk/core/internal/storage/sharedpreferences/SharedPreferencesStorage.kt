@@ -7,59 +7,68 @@ import it.airgap.beaconsdk.core.data.AppMetadata
 import it.airgap.beaconsdk.core.data.Peer
 import it.airgap.beaconsdk.core.data.Permission
 import it.airgap.beaconsdk.core.internal.BeaconConfiguration
+import it.airgap.beaconsdk.core.data.Maybe
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import it.airgap.beaconsdk.core.storage.Storage
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class SharedPreferencesStorage(private val sharedPreferences: SharedPreferences) : Storage {
-    override suspend fun getPeers(): List<Peer> =
-        sharedPreferences.getSerializable(KEY_PEERS, emptyList())
+public class SharedPreferencesStorage internal constructor(
+    sharedPreferences: SharedPreferences,
+    beaconScope: BeaconScope = BeaconScope.Global,
+) : Storage, SharedPreferencesBaseStorage(beaconScope, sharedPreferences) {
+    override suspend fun getMaybePeers(): List<Maybe<Peer>> =
+        sharedPreferences.getSerializable(Key.Peers.scoped(), emptyList(), beaconScope)
 
     override suspend fun setPeers(p2pPeers: List<Peer>) {
-        sharedPreferences.putSerializable(KEY_PEERS, p2pPeers)
+        sharedPreferences.putSerializable(Key.Peers.scoped(), p2pPeers, beaconScope)
     }
 
-    override suspend fun getAppMetadata(): List<AppMetadata> =
-        sharedPreferences.getSerializable(KEY_APPS_METADATA, emptyList())
+    override suspend fun getMaybeAppMetadata(): List<Maybe<AppMetadata>> =
+        sharedPreferences.getSerializable(Key.AppsMetadata.scoped(), emptyList(), beaconScope)
 
     override suspend fun setAppMetadata(appMetadata: List<AppMetadata>) {
-        sharedPreferences.putSerializable(KEY_APPS_METADATA, appMetadata)
+        sharedPreferences.putSerializable(Key.AppsMetadata.scoped(), appMetadata, beaconScope)
     }
 
-    override suspend fun getPermissions(): List<Permission> =
-        sharedPreferences.getSerializable(KEY_PERMISSIONS, emptyList())
+    override suspend fun getMaybePermissions(): List<Maybe<Permission>> =
+        sharedPreferences.getSerializable(Key.Permissions.scoped(), emptyList(), beaconScope)
 
     override suspend fun setPermissions(permissions: List<Permission>) {
-        sharedPreferences.putSerializable(KEY_PERMISSIONS, permissions)
+        sharedPreferences.putSerializable(Key.Permissions.scoped(), permissions, beaconScope)
     }
 
     override suspend fun getSdkVersion(): String? =
-        sharedPreferences.getString(KEY_SDK_VERSION, null)
+        sharedPreferences.getString(Key.SdkVersion.scoped(), null)
 
     override suspend fun setSdkVersion(sdkVersion: String) {
-        sharedPreferences.putString(KEY_SDK_VERSION, sdkVersion)
+        sharedPreferences.putString(Key.SdkVersion.scoped(), sdkVersion)
     }
 
     override suspend fun getMigrations(): Set<String> =
-        sharedPreferences.getStringSet(KEY_MIGRATIONS, emptySet()) ?: emptySet()
+        sharedPreferences.getStringSet(Key.Migrations.scoped(), emptySet()) ?: emptySet()
 
     override suspend fun setMigrations(migrations: Set<String>) {
-        sharedPreferences.putStringSet(KEY_MIGRATIONS, migrations)
+        sharedPreferences.putStringSet(Key.Migrations.scoped(), migrations)
     }
 
-    public companion object {
-        private const val KEY_PEERS = "peers"
+    override fun scoped(beaconScope: BeaconScope): Storage =
+        if (beaconScope == this.beaconScope) this
+        else SharedPreferencesStorage(sharedPreferences, beaconScope)
 
-        private const val KEY_APPS_METADATA = "appsMetadata"
-        private const val KEY_PERMISSIONS = "permissions"
-
-        private const val KEY_SDK_VERSION = "sdkVersion"
-
-        private const val KEY_MIGRATIONS = "migrations"
-
-        public fun create(context: Context): SharedPreferencesStorage {
-            val sharedPreferences = context.getSharedPreferences(BeaconConfiguration.STORAGE_NAME, Context.MODE_PRIVATE)
-
-            return SharedPreferencesStorage(sharedPreferences)
-        }
+    private enum class Key(override val value: String) : SharedPreferencesBaseStorage.Key {
+        Peers("peers"),
+        AppsMetadata("appsMetadata"),
+        Permissions("permissions"),
+        SdkVersion("sdkVersion"),
+        Migrations("migrations"),
     }
+
+    public companion object {}
+}
+
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun SharedPreferencesStorage(context: Context): SharedPreferencesStorage {
+    val sharedPreferences = context.getSharedPreferences(BeaconConfiguration.STORAGE_NAME, Context.MODE_PRIVATE)
+
+    return SharedPreferencesStorage(sharedPreferences)
 }

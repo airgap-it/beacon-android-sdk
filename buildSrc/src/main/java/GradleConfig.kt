@@ -1,29 +1,31 @@
 object Android {
-    const val compileSdk = 30
+    const val compileSdk = 33
     const val minSdk = 21
-    const val targetSdk = 30
+    const val targetSdk = 33
 
-    const val versionCode = 13
-    const val versionName = "3.0.0"
+    const val versionCode = 33
+    const val versionName = "3.2.4"
 }
 
 object Version {
-    const val kotlin = "1.5.30"
+    const val kotlin = "1.7.20"
 
-    const val kotlinSerialization = "1.2.2"
+    const val kotlinSerialization = "1.4.1"
 
     const val androidxCore = "1.6.0"
     const val androidxAppCompat = "1.3.1"
     const val androidxConstraintLayout = "2.1.0"
 
     const val androidxActivity = "1.3.1"
+    const val androidxFragment = "1.5.1"
     const val androidxLifecycle = "2.3.1"
+    const val androidxNavigation = "2.5.1"
 
     const val androidxSecurity = "1.0.0"
 
     const val coroutines = "1.5.1"
 
-    const val ktor = "1.6.2"
+    const val ktor = "2.2.3"
 
     const val lazySodium = "5.0.2"
     const val jna = "5.9.0"
@@ -36,6 +38,8 @@ object Version {
     const val androidxEspresso = "3.4.0"
 
     const val mockk = "1.12.0"
+
+    const val bouncyCastle = "1.70"
 }
 
 object Dependencies {
@@ -48,7 +52,8 @@ object Dependencies {
 
     const val ktorOkHttp = "io.ktor:ktor-client-okhttp:${Version.ktor}"
     const val ktorJson = "io.ktor:ktor-client-json:${Version.ktor}"
-    const val ktorSerializationJvm = "io.ktor:ktor-client-serialization-jvm:${Version.ktor}"
+    const val ktorContentNegotiation = "io.ktor:ktor-client-content-negotiation:${Version.ktor}"
+    const val ktorSerializationJson = "io.ktor:ktor-serialization-kotlinx-json:${Version.ktor}"
     const val ktorLoggingJvm = "io.ktor:ktor-client-logging-jvm:${Version.ktor}"
 
     const val androidxCore = "androidx.core:core-ktx:${Version.androidxCore}"
@@ -57,10 +62,14 @@ object Dependencies {
     const val androidxConstraintLayout = "androidx.constraintlayout:constraintlayout:${Version.androidxConstraintLayout}"
 
     const val androidxActivity = "androidx.activity:activity-ktx:${Version.androidxActivity}"
+    const val androidxFragment= "androidx.fragment:fragment-ktx:${Version.androidxFragment}"
 
     const val androidxLifecycleViewModel = "androidx.lifecycle:lifecycle-viewmodel-ktx:${Version.androidxLifecycle}"
     const val androidxLifecycleLiveData = "androidx.lifecycle:lifecycle-livedata-ktx:${Version.androidxLifecycle}"
     const val androidxLifecycleRuntime = "androidx.lifecycle:lifecycle-runtime-ktx:${Version.androidxLifecycle}"
+
+    const val androidxNavigationFragment = "androidx.navigation:navigation-fragment-ktx:${Version.androidxNavigation}"
+    const val androidxNavigationUi = "androidx.navigation:navigation-ui-ktx:${Version.androidxNavigation}"
 
     const val androidxSecurity = "androidx.security:security-crypto:${Version.androidxSecurity}"
 
@@ -80,4 +89,6 @@ object TestDependencies {
     const val androidxEspresso = "androidx.test.espresso:espresso-core:${Version.androidxEspresso}"
 
     const val mockk = "io.mockk:mockk:${Version.mockk}"
+
+    const val bouncyCastle = "org.bouncycastle:bcprov-jdk15on:${Version.bouncyCastle}"
 }

@@ -48,16 +48,23 @@ android {
         freeCompilerArgs += '-Xexplicit-api=warning'
     }
 
-    afterEvaluate {
-        publishing {
-            publications {
-                release(MavenPublication) {
-                    from components.prodRelease
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+            withJavadocJar()
+        }
+    }
+}
 
-                    groupId = 'it.airgap.beaconsdk'
-                    artifactId = 'client-wallet-compat'
-                    version = Android.versionName
-                }
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                from components.prodRelease
+
+                groupId = 'it.airgap.beaconsdk'
+                artifactId = 'client-wallet-compat'
+                version = Android.versionName
             }
         }
     }

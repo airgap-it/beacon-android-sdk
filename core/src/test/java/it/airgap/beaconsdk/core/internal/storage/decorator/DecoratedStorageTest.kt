@@ -1,7 +1,8 @@
 package it.airgap.beaconsdk.core.internal.storage.decorator
 
 import appMetadata
-import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchainSerializer
+import it.airgap.beaconsdk.core.data.*
+import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.storage.MockStorage
 import it.airgap.beaconsdk.core.internal.utils.splitAt
 import it.airgap.beaconsdk.core.storage.Storage
@@ -26,7 +27,7 @@ internal class DecoratedStorageTest {
     @Before
     fun setup() {
         storage = MockStorage()
-        decoratedStorage = DecoratedStorage(storage)
+        decoratedStorage = DecoratedStorage(storage, BeaconConfiguration(ignoreUnsupportedBlockchains = false))
     }
 
     @Test
@@ -43,12 +44,12 @@ internal class DecoratedStorageTest {
 
     @Test
     fun `finds permissions based on predicate`() {
-        val permissions = permissions(3).filterIsInstance<MockBlockchainSerializer.MockPermission>()
+        val permissions = permissions(3).filterIsInstance<MockPermission>()
         val expected = permissions.shuffled().first().copy()
 
         runBlocking { storage.setPermissions(permissions) }
 
-        val found = runBlocking { decoratedStorage.findPermission { it.accountIdentifier == expected.accountIdentifier } }
+        val found = runBlocking { decoratedStorage.findPermission { it.accountId == expected.accountId } }
 
         assertEquals(expected, found)
     }
@@ -85,7 +86,7 @@ internal class DecoratedStorageTest {
             decoratedStorage.addAppMetadata(
                 changed + toAdd,
                 overwrite = true
-            ) { a, b -> a.name == b.name }
+            ) { listOf(name) }
         }
 
         val fromStorage = runBlocking { storage.getAppMetadata() }
@@ -95,7 +96,7 @@ internal class DecoratedStorageTest {
 
     @Test
     fun `adds new permissions and overwrites if already exists based on predicate`() {
-        val permissions = permissions(8).filterIsInstance<MockBlockchainSerializer.MockPermission>()
+        val permissions = permissions(8).filterIsInstance<MockPermission>()
         val expected = permissions.toMutableList()
 
         val (toStorage, toAdd) = permissions.splitAt { it.size / 2 }
@@ -113,7 +114,7 @@ internal class DecoratedStorageTest {
             decoratedStorage.addPermissions(
                 changed + toAdd,
                 overwrite = true
-            ) { a, b -> a.accountIdentifier == b.accountIdentifier }
+            ) { listOf(accountId) }
         }
 
         val fromStorage = runBlocking { storage.getPermissions() }
@@ -141,7 +142,7 @@ internal class DecoratedStorageTest {
             decoratedStorage.addPeers(
                 changed + toAdd,
                 overwrite = true
-            ) { a, b -> a.name == b.name }
+            ) { listOf(name) }
         }
 
         val fromStorage = runBlocking { storage.getPeers() }
@@ -161,9 +162,7 @@ internal class DecoratedStorageTest {
 
         runBlocking { storage.setAppMetadata(toStorage) }
         runBlocking {
-            decoratedStorage.addAppMetadata(changed + toAdd, overwrite = false) { a, b ->
-                a.name == b.name
-            }
+            decoratedStorage.addAppMetadata(changed + toAdd, overwrite = false) { listOf(name) }
         }
 
         val fromStorage = runBlocking { storage.getAppMetadata() }
@@ -173,7 +172,7 @@ internal class DecoratedStorageTest {
 
     @Test
     fun `adds new permissions and does not overwrite if exists base on predicate`() {
-        val permissions = permissions(8).filterIsInstance<MockBlockchainSerializer.MockPermission>()
+        val permissions = permissions(8).filterIsInstance<MockPermission>()
 
         val (toStorage, toAdd) = permissions.splitAt { it.size / 2 }
         val changed = toStorage
@@ -183,9 +182,7 @@ internal class DecoratedStorageTest {
 
         runBlocking { storage.setPermissions(toStorage) }
         runBlocking {
-            decoratedStorage.addPermissions(changed + toAdd, overwrite = false) { a, b ->
-                a.accountIdentifier == b.accountIdentifier
-            }
+            decoratedStorage.addPermissions(changed + toAdd, overwrite = false) { listOf(accountId) }
         }
 
         val fromStorage = runBlocking { storage.getPermissions() }
@@ -205,9 +202,7 @@ internal class DecoratedStorageTest {
 
         runBlocking { storage.setPeers(toStorage) }
         runBlocking {
-            decoratedStorage.addPeers(changed + toAdd, overwrite = false) { a, b ->
-                a.name == b.name
-            }
+            decoratedStorage.addPeers(changed + toAdd, overwrite = false) { listOf(name) }
         }
 
         val fromStorage = runBlocking { storage.getPeers() }
@@ -232,10 +227,10 @@ internal class DecoratedStorageTest {
     fun `removes permissions based on predicate`() {
         val permissions = permissions(4)
         val (toKeep, toRemove) = permissions.splitAt { it.size / 2 }
-        val accountIdentifiersToRemove = toRemove.map { it.accountIdentifier }
+        val accountIdentifiersToRemove = toRemove.map { it.accountId }
 
         runBlocking { storage.setPermissions(permissions) }
-        runBlocking { decoratedStorage.removePermissions { accountIdentifiersToRemove.contains(it.accountIdentifier) } }
+        runBlocking { decoratedStorage.removePermissions { accountIdentifiersToRemove.contains(it.accountId) } }
         val fromStorage = runBlocking { storage.getPermissions() }
 
         assertEquals(toKeep, fromStorage)
@@ -341,8 +336,8 @@ internal class DecoratedStorageTest {
             decoratedStorage.addPermissions(toAdd)
 
             assertEquals(
-                toAdd.sortedBy { it.accountIdentifier },
-                newPermissions.await().sortedBy { it.accountIdentifier })
+                toAdd.sortedBy { it.accountId },
+                newPermissions.await().sortedBy { it.accountId })
         }
     }
 
@@ -388,7 +383,7 @@ internal class DecoratedStorageTest {
 
     @Test
     fun `notifies when permissions are updated`() {
-        val toStorage = permissions(2).filterIsInstance<MockBlockchainSerializer.MockPermission>()
+        val toStorage = permissions(2).filterIsInstance<MockPermission>()
 
         runBlocking {
             storage.setPermissions(toStorage)
@@ -400,13 +395,13 @@ internal class DecoratedStorageTest {
             }
 
             val updated = toStorage.mapIndexed { index, permission ->
-                permission.copy(accountIdentifier = "${permission.accountIdentifier}$index")
+                permission.copy(accountId = "${permission.accountId}$index")
             }
             decoratedStorage.addPermissions(updated)
 
             assertEquals(
-                updated.sortedBy { it.accountIdentifier },
-                subscribed.await().sortedBy { it.accountIdentifier })
+                updated.sortedBy { it.accountId },
+                subscribed.await().sortedBy { it.accountId })
         }
     }
 
@@ -433,4 +428,15 @@ internal class DecoratedStorageTest {
                 subscribed.await().sortedBy { it.name })
         }
     }
+
+    private suspend fun Storage.getPeers(): List<Peer> = getMaybePeers().mapNotNull { it.getOrNull() }
+    private suspend fun Storage.getAppMetadata(): List<AppMetadata> = getMaybeAppMetadata().mapNotNull { it.getOrNull() }
+    private suspend fun Storage.getPermissions(): List<Permission> = getMaybePermissions().mapNotNull { it.getOrNull() }
+
+    private fun <T> Maybe<T>.getOrNull(): T? =
+        when (this) {
+            is Maybe.Some -> value
+            is Maybe.None -> null
+            is Maybe.NoneWithError -> null
+        }
 }

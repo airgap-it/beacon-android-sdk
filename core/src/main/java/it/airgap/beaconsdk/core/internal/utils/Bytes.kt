@@ -4,7 +4,7 @@ import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.internal.data.HexString
 import java.math.BigInteger
 
-private val hexRegex: Regex = Regex("^(${HexString.PREFIX})?([0-9a-fA-F]{2})+$")
+private val hexRegex: Regex = Regex("^(${HexString.PREFIX})?([0-9a-fA-F]{2})*$")
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun String.isHex(): Boolean = this.matches(hexRegex)
@@ -36,6 +36,11 @@ public fun List<Byte>.toHexString(): HexString =
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun Int.toHexString(): HexString =
     toUInt().toString(16).padStartEven('0').asHexString()
+
+public fun Int.toByteArray(trim: Boolean = true): ByteArray =
+    ByteArray(4) { (toLong() shr (it * 8)).toByte() }
+        .reversedArray()
+        .let { if (trim) it.trimLeadingZeros() else it }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun BigInteger.toHexString(): HexString =

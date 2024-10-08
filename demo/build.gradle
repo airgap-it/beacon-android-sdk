@@ -3,13 +3,13 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 
 android {
-    compileSdkVersion 30
+    compileSdkVersion 32
     buildToolsVersion "29.0.3"
 
     defaultConfig {
         applicationId "it.airgap.beaconsdkdemo"
         minSdkVersion 21
-        targetSdkVersion 30
+        targetSdkVersion 32
         versionCode 1
         versionName "1.0"
 
@@ -60,31 +60,42 @@ dependencies {
 
     // Beacon
 
-    // // Local
+    // Local
     implementation project(path: ':core')
+    implementation project(path: ':client-dapp')
     implementation project(path: ':client-wallet')
     implementation project(path: ':blockchain-tezos')
+    implementation project(path: ':blockchain-substrate')
     implementation project(path: ':transport-p2p-matrix')
 
-    // // Published
+    // Published
 //    def beaconVersion = Android.versionName
-//    def withoutJna = { exclude group: 'net.java.dev.jna' }
+//    def withoutJna = { exclude group: "net.java.dev.jna" }
 //
 //    implementation "com.github.airgap-it.beacon-android-sdk:core:$beaconVersion", withoutJna
 //
+//    implementation "com.github.airgap-it.beacon-android-sdk:client-dapp:$beaconVersion", withoutJna
 //    implementation "com.github.airgap-it.beacon-android-sdk:client-wallet:$beaconVersion", withoutJna
 //    implementation "com.github.airgap-it.beacon-android-sdk:blockchain-tezos:$beaconVersion", withoutJna
+//    implementation "com.github.airgap-it.beacon-android-sdk:blockchain-substrate:$beaconVersion", withoutJna
 //    implementation "com.github.airgap-it.beacon-android-sdk:transport-p2p-matrix:$beaconVersion", withoutJna
-//
-//    implementation(Dependencies.jna)
+
+    implementation(Dependencies.jna)
 
     // Activity
     implementation(Dependencies.androidxActivity)
+
+    // Fragment
+    implementation(Dependencies.androidxFragment)
 
     // Lifecycle
     implementation(Dependencies.androidxLifecycleViewModel)
     implementation(Dependencies.androidxLifecycleLiveData)
     implementation(Dependencies.androidxLifecycleRuntime)
+
+    // Navigation
+    implementation(Dependencies.androidxNavigationFragment)
+    implementation(Dependencies.androidxNavigationUi)
 
     // Serialization
     implementation(Dependencies.kotlinxSerializationJson)

@@ -7,6 +7,7 @@ import it.airgap.beaconsdk.core.internal.migration.Migration
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.transport.p2p.data.p2pIdentifierOrNull
 import it.airgap.beaconsdk.core.internal.utils.*
+import it.airgap.beaconsdk.core.storage.findPeer
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.P2pMatrixCommunicator
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.MatrixClient
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.migration.migrateMatrixRelayServer
@@ -21,12 +22,12 @@ internal class P2pMatrixStore(
     private val matrixNodes: List<String>,
     private val storageManager: StorageManager,
     private val migration: Migration,
-) : Store<P2pMatrixStoreState, P2pStoreAction>() {
+) : Store<P2pMatrixStoreState, P2pMatrixStoreAction>() {
 
     private var state: P2pMatrixStoreState? = null
     override suspend fun stateLocked(): Result<P2pMatrixStoreState> = withState { it }
 
-    override suspend fun intentLocked(action: P2pStoreAction): Result<Unit> =
+    override suspend fun intentLocked(action: P2pMatrixStoreAction): Result<Unit> =
         runCatching {
             state = when (action) {
                 is OnChannelCreated -> stateOnChannelCreated(action).getOrThrow()
@@ -93,7 +94,7 @@ internal class P2pMatrixStore(
     private suspend fun updatePeerRelayServer(sender: String) {
         val senderIdentifier = p2pIdentifierOrNull(sender) ?: return
 
-        val peer = storageManager.findInstancePeer<P2pPeer> {
+        val peer = storageManager.findPeer<P2pPeer> {
             runCatching {
                 val peerIdentifier = communicator.recipientIdentifier(
                     it.publicKey.asHexString().toByteArray(),
@@ -107,11 +108,7 @@ internal class P2pMatrixStore(
             }.getOrDefault(false)
         } ?: return
 
-        storageManager.addPeers(
-            listOf(peer.copy(relayServer = senderIdentifier.relayServer)),
-            overwrite = true,
-            compare = { lhs, rhs -> lhs.publicKey == rhs.publicKey }
-        )
+        storageManager.addPeers(listOf(peer.copy(relayServer = senderIdentifier.relayServer)), overwrite = true) { listOf(publicKey) }
     }
 
     private suspend inline fun <T> withState(action: (state: P2pMatrixStoreState) -> T): Result<T> {
@@ -131,7 +128,7 @@ internal class P2pMatrixStore(
         }
 
     private suspend fun relayServer(): Result<String> =
-        runCatching runCatching@ {
+        runCatching {
             migration.migrateMatrixRelayServer(matrixNodes)
 
             logDebug(TAG, "Looking for a Matrix relay server...")
@@ -158,7 +155,7 @@ internal class P2pMatrixStore(
 
             storageManager.setMatrixRelayServer(upRelayServer)
 
-            return@runCatching upRelayServer
+            upRelayServer
         }
 
     private fun BeaconApplication.publicKeyIndex(boundary: Int): Int =

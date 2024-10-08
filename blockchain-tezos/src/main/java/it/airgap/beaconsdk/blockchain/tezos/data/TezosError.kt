@@ -1,13 +1,14 @@
 package it.airgap.beaconsdk.blockchain.tezos.data
 
+import it.airgap.beaconsdk.blockchain.tezos.Tezos
 import it.airgap.beaconsdk.blockchain.tezos.message.request.BroadcastTezosRequest
 import it.airgap.beaconsdk.blockchain.tezos.message.request.OperationTezosRequest
+import it.airgap.beaconsdk.blockchain.tezos.message.request.PermissionTezosRequest
 import it.airgap.beaconsdk.blockchain.tezos.message.request.SignPayloadTezosRequest
 import it.airgap.beaconsdk.core.data.BeaconError
 import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
 import it.airgap.beaconsdk.core.internal.utils.failWithIllegalArgument
 import it.airgap.beaconsdk.core.internal.utils.failWithUnexpectedJsonType
-import it.airgap.beaconsdk.core.message.PermissionBeaconRequest
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
@@ -19,6 +20,8 @@ import kotlinx.serialization.json.*
  */
 @Serializable(with = TezosError.Serializer::class)
 public sealed class TezosError : BeaconError() {
+    override val blockchainIdentifier: String? = Tezos.IDENTIFIER
+
     /**
      * Indicates that the transaction broadcast failed.
      *
@@ -26,6 +29,28 @@ public sealed class TezosError : BeaconError() {
      */
     public object BroadcastError : TezosError() {
         internal const val IDENTIFIER = "BROADCAST_ERROR"
+    }
+
+    /**
+     * Indicates that the specified network is not supported by the wallet.
+     *
+     * Applicable to [PermissionTezosRequest].
+     */
+    public object NetworkNotSupported : TezosError() {
+        internal const val IDENTIFIER = "NETWORK_NOT_SUPPORTED_ERROR"
+
+        override val blockchainIdentifier: String? = null
+    }
+
+    /**
+     * Indicates that there is no address present for the protocol or specified network.
+     *
+     * Applicable to [PermissionTezosRequest].
+     */
+    public object NoAddressError : TezosError() {
+        internal const val IDENTIFIER = "NO_ADDRESS_ERROR"
+
+        override val blockchainIdentifier: String? = null
     }
 
     /**
@@ -39,9 +64,9 @@ public sealed class TezosError : BeaconError() {
 
     /**
      * Indicates that the signature was blocked and could not be completed ([SignPayloadTezosRequest])
-     * or the permissions requested by the dApp were rejected ([PermissionBeaconRequest]).
+     * or the permissions requested by the dApp were rejected ([PermissionTezosRequest]).
      *
-     * Applicable to [SignPayloadTezosRequest] and [PermissionBeaconRequest].
+     * Applicable to [SignPayloadTezosRequest] and [PermissionTezosRequest].
      */
     public object NotGranted : TezosError() {
         internal const val IDENTIFIER = "NOT_GRANTED_ERROR"
@@ -96,6 +121,8 @@ public sealed class TezosError : BeaconError() {
             
             return when (value) {
                 BroadcastError.IDENTIFIER -> BroadcastError
+                NetworkNotSupported.IDENTIFIER -> NetworkNotSupported
+                NoAddressError.IDENTIFIER -> NoAddressError
                 NoPrivateKeyFound.IDENTIFIER -> NoPrivateKeyFound
                 NotGranted.IDENTIFIER -> NotGranted
                 ParametersInvalid.IDENTIFIER -> ParametersInvalid
@@ -109,6 +136,8 @@ public sealed class TezosError : BeaconError() {
         override fun serialize(jsonEncoder: JsonEncoder, value: TezosError) {
             when (value) {
                 BroadcastError -> jsonEncoder.encodeString(BroadcastError.IDENTIFIER)
+                NetworkNotSupported -> jsonEncoder.encodeString(NetworkNotSupported.IDENTIFIER)
+                NoAddressError -> jsonEncoder.encodeString(NoAddressError.IDENTIFIER)
                 NoPrivateKeyFound -> jsonEncoder.encodeString(NoPrivateKeyFound.IDENTIFIER)
                 NotGranted -> jsonEncoder.encodeString(NotGranted.IDENTIFIER)
                 ParametersInvalid -> jsonEncoder.encodeString(ParametersInvalid.IDENTIFIER)

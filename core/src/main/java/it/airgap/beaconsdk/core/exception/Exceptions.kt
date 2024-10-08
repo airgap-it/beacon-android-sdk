@@ -55,6 +55,13 @@ public class ConnectionException(
 }
 
 /**
+ * Throw when an action required a specific blockchain to be registered, but it could not be found.
+ *
+ * @property blockchainIdentifier The identifier of missing blockchain.
+ */
+public class BlockchainNotFoundException(public val blockchainIdentifier: String) : BeaconException("Blockchain \"$blockchainIdentifier\" could not be found")
+
+/**
  * Thrown if an internal error occurred.
  */
 public class InternalException(message: String? = null, cause: Throwable? = null) : BeaconException(message ?: "Internal error", cause) {

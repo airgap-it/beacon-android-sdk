@@ -1,8 +1,11 @@
 package it.airgap.beaconsdk.core.internal.utils
 
 import androidx.annotation.RestrictTo
+import it.airgap.beaconsdk.core.data.Connection
+import it.airgap.beaconsdk.core.exception.BlockchainNotFoundException
 import it.airgap.beaconsdk.core.exception.InternalException
 import it.airgap.beaconsdk.core.message.BeaconMessage
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
@@ -19,6 +22,16 @@ public fun failWithUninitialized(name: String): Nothing =
     throw IllegalStateException("$name uninitialized")
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun failWithUninitialized(beaconScope: BeaconScope): Nothing {
+    val name = when (beaconScope) {
+        is BeaconScope.Global -> "global"
+        is BeaconScope.Instance -> beaconScope.id
+    }
+
+    failWithUninitialized("Scope $name")
+}
+
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun failWithIllegalState(message: String? = null): Nothing =
     throw IllegalStateException(message)
 
@@ -28,7 +41,18 @@ public fun failWithIllegalArgument(message: String? = null): Nothing =
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun failWithBlockchainNotFound(identifier: String): Nothing =
-    throw IllegalStateException("Blockchain \"$identifier\" could not be found")
+    throw BlockchainNotFoundException(identifier)
+
+public fun failWithTransportNotSupported(type: Connection.Type? = null): Nothing =
+    failWithIllegalState("Transport ($type) is not supported.")
+
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun failWithActiveAccountNotSet(): Nothing =
+    failWithIllegalState("Active Account has not been set.")
+
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun failWithAccountNetworkNotFound(accountId: String): Nothing =
+    failWithIllegalState("Account ($accountId) network not found.")
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun failWithExpectedJsonDecoder(actual: KClass<out Decoder>): Nothing =
@@ -49,3 +73,6 @@ public fun failWithMissingField(name: String): Nothing =
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun failWithUnsupportedMessage(message: BeaconMessage, version: String): Nothing =
     throw IllegalArgumentException("Message $message is not supported in version $version")
+
+public fun failWithUnsupportedMessageVersion(version: String, blockchainIdentifier: String): Nothing =
+    throw IllegalArgumentException("Message version $version is not supported for $blockchainIdentifier")

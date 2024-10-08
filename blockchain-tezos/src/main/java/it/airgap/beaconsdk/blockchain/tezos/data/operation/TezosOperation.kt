@@ -192,10 +192,16 @@ public data class TezosOriginationOperation(
     @SerialName("storage_limit") public val storageLimit: String? = null,
     public val balance: String,
     public val delegate: String? = null,
-    public val script: String,
+    public val script: Script,
 ) : TezosOperation() {
     @Required
     override val kind: Kind = Kind.Origination
+
+    @Serializable
+    public data class Script(
+        public val code: MichelineMichelsonV1Expression,
+        public val storage: MichelineMichelsonV1Expression,
+    )
 
     public companion object {}
 }

@@ -4,12 +4,14 @@ import io.mockk.MockKAnnotations
 import io.mockk.coVerify
 import io.mockk.impl.annotations.MockK
 import io.mockk.spyk
+import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.storage.MockSecureStorage
 import it.airgap.beaconsdk.core.internal.storage.MockStorage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
 import it.airgap.beaconsdk.core.internal.utils.failure
 import it.airgap.beaconsdk.core.internal.utils.success
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import kotlinx.coroutines.test.runBlockingTest
 import mockLog
 import org.junit.Before
@@ -23,12 +25,14 @@ internal class CoreMigrationTest {
 
     private lateinit var storageManager: StorageManager
 
+    private var beaconScope: BeaconScope = BeaconScope.Global
+
     @Before
     fun setup() {
         MockKAnnotations.init(this)
         mockLog()
 
-        storageManager = StorageManager(MockStorage(), MockSecureStorage(), identifierCreator)
+        storageManager = StorageManager(beaconScope, MockStorage(), MockSecureStorage(), identifierCreator, BeaconConfiguration(ignoreUnsupportedBlockchains = false))
     }
 
     @Test

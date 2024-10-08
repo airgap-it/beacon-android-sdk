@@ -2,18 +2,22 @@
 import androidx.annotation.IntRange
 import it.airgap.beaconsdk.core.data.*
 import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchain
-import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchainSerializer
-import it.airgap.beaconsdk.core.internal.message.ConnectionTransportMessage
+import it.airgap.beaconsdk.core.internal.blockchain.message.BlockchainMockRequest
+import it.airgap.beaconsdk.core.internal.blockchain.message.BlockchainMockResponse
+import it.airgap.beaconsdk.core.internal.blockchain.message.PermissionMockRequest
+import it.airgap.beaconsdk.core.internal.blockchain.message.PermissionMockResponse
+import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
+import it.airgap.beaconsdk.core.internal.message.IncomingConnectionTransportMessage
 import it.airgap.beaconsdk.core.internal.message.VersionedBeaconMessage
+import it.airgap.beaconsdk.core.internal.message.v1.V1BeaconMessage
+import it.airgap.beaconsdk.core.internal.message.v2.V2BeaconMessage
+import it.airgap.beaconsdk.core.internal.message.v3.V3BeaconMessage
 import it.airgap.beaconsdk.core.internal.utils.failWith
 import it.airgap.beaconsdk.core.message.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.onEach
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonNull
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.*
 
 // -- extensions --
 
@@ -50,11 +54,23 @@ internal fun JsonObject.Companion.fromValues(values: Map<String, Any?>, includeN
     return JsonObject(content)
 }
 
+internal val DependencyRegistry.versionedBeaconMessageContext: VersionedBeaconMessage.Context
+    get() = VersionedBeaconMessage.Context(blockchainRegistry, compat)
+
+internal val DependencyRegistry.v1BeaconMessageContext: V1BeaconMessage.Context
+    get() = V1BeaconMessage.Context(compat)
+
+internal val DependencyRegistry.v2BeaconMessageContext: V2BeaconMessage.Context
+    get() = V2BeaconMessage.Context(compat)
+
+internal val DependencyRegistry.v3BeaconMessageContext: V3BeaconMessage.Context
+    get() = V3BeaconMessage.Context(blockchainRegistry)
+
 // -- flows --
 
 internal fun connectionMessageFlow(
     replay: Int,
-): MutableSharedFlow<Result<ConnectionTransportMessage>> = MutableSharedFlow(replay)
+): MutableSharedFlow<Result<IncomingConnectionTransportMessage>> = MutableSharedFlow(replay)
 
 // -- factories --
 
@@ -62,127 +78,132 @@ internal fun permissionBeaconRequest(
     type: String = "permission_request",
     id: String = "id",
     senderId: String = "senderId",
-    appMetadata: AppMetadata = AppMetadata(senderId, "mockApp"),
+    appMetadata: MockAppMetadata = MockAppMetadata(senderId, "mockApp"),
     blockchainIdentifier: String = MockBlockchain.IDENTIFIER,
-    origin: Origin = Origin.P2P(senderId),
+    origin: Connection.Id = Connection.Id.P2P(senderId),
+    destination: Connection.Id? = Connection.Id.P2P("receiverId"),
     version: String = "version",
-): PermissionBeaconRequest = MockBlockchainSerializer.PermissionMockRequest(type, id, version, blockchainIdentifier, senderId, origin, appMetadata)
+): PermissionBeaconRequest = PermissionMockRequest(type, id, version, blockchainIdentifier, senderId, origin, destination, appMetadata)
 
 internal fun blockchainBeaconRequest(
     type: String = "beacon_request",
     id: String = "id",
     senderId: String = "senderId",
-    appMetadata: AppMetadata = AppMetadata(senderId, "mockApp"),
+    appMetadata: MockAppMetadata = MockAppMetadata(senderId, "mockApp"),
     blockchainIdentifier: String = MockBlockchain.IDENTIFIER,
-    origin: Origin = Origin.P2P(senderId),
+    origin: Connection.Id = Connection.Id.P2P(senderId),
+    destination: Connection.Id? = Connection.Id.P2P("receiverId"),
+    accountId: String = "accountId",
     version: String = "version"
-): BlockchainBeaconRequest = MockBlockchainSerializer.BlockchainMockRequest(type, id, version, blockchainIdentifier, senderId, appMetadata, origin)
+): BlockchainBeaconRequest = BlockchainMockRequest(type, id, version, blockchainIdentifier, senderId, appMetadata, origin, destination, accountId)
 
 internal fun permissionBeaconResponse(
     type: String = "permission_response",
     id: String = "id",
-    publicKey: String = "publicKey",
     blockchainIdentifier: String = MockBlockchain.IDENTIFIER,
-    threshold: Threshold? = null,
     version: String = "version",
-    requestOrigin: Origin = Origin.P2P("senderId"),
-): PermissionBeaconResponse = MockBlockchainSerializer.PermissionMockResponse(type, id, version, requestOrigin, blockchainIdentifier, publicKey, threshold)
+    destination: Connection.Id = Connection.Id.P2P("receiverId"),
+): PermissionBeaconResponse = PermissionMockResponse(type, id, version, destination, blockchainIdentifier)
 
 internal fun blockchainBeaconResponse(
     type: String = "beacon_response",
     id: String = "id",
     blockchainIdentifier: String = MockBlockchain.IDENTIFIER,
     version: String = "version",
-    requestOrigin: Origin = Origin.P2P("senderId"),
-): BlockchainBeaconResponse = MockBlockchainSerializer.BlockchainMockResponse(type, id, version, requestOrigin, blockchainIdentifier)
+    destination: Connection.Id = Connection.Id.P2P("receiverId"),
+): BlockchainBeaconResponse = BlockchainMockResponse(type, id, version, destination, blockchainIdentifier)
 
 internal fun acknowledgeBeaconResponse(
     id: String = "id",
     senderId: String = "senderId",
     version: String = "version",
-    requestOrigin: Origin = Origin.P2P("senderId"),
+    destination: Connection.Id = Connection.Id.P2P("receiverId"),
 ): AcknowledgeBeaconResponse =
-    AcknowledgeBeaconResponse(id, version, requestOrigin, senderId)
+    AcknowledgeBeaconResponse(id, version, destination, senderId)
 
 internal fun errorBeaconResponse(
     id: String = "id",
-    identifier: String = MockBlockchain.IDENTIFIER,
     errorType: BeaconError = BeaconError.Unknown,
+    description: String? = null,
     version: String = "version",
-    requestOrigin: Origin = Origin.P2P("senderId"),
-): ErrorBeaconResponse = ErrorBeaconResponse(id, version, requestOrigin, identifier, errorType)
+    destination: Connection.Id = Connection.Id.P2P("receiverId"),
+): ErrorBeaconResponse = ErrorBeaconResponse(id, version, destination, errorType, description)
 
 internal fun disconnectBeaconMessage(
     id: String = "id",
     senderId: String = "senderId",
     version: String = "version",
-    origin: Origin = Origin.P2P("senderId"),
-): DisconnectBeaconMessage = DisconnectBeaconMessage(id, senderId, version, origin)
+    origin: Connection.Id = Connection.Id.P2P("senderId"),
+    destination: Connection.Id = Connection.Id.P2P("receiverId"),
+): DisconnectBeaconMessage = DisconnectBeaconMessage(id, senderId, version, origin, destination)
 
 internal fun errorBeaconResponses(
     id: String = "id",
     version: String = "version",
-    identifier: String = MockBlockchain.IDENTIFIER,
-    requestOrigin: Origin = Origin.P2P("senderId")
+    destination: Connection.Id = Connection.Id.P2P("receiverId"),
 ): List<ErrorBeaconResponse> =
     listOf(
-        errorBeaconResponse(id, identifier, BeaconError.NetworkNotSupported, version = version, requestOrigin = requestOrigin),
-        errorBeaconResponse(id, identifier, BeaconError.NoAddressError, version = version, requestOrigin = requestOrigin),
-        errorBeaconResponse(id, identifier, BeaconError.Aborted, version = version, requestOrigin = requestOrigin),
-        errorBeaconResponse(id, identifier, BeaconError.Unknown, version = version, requestOrigin = requestOrigin),
+        errorBeaconResponse(id, BeaconError.Aborted, version = version, destination = destination),
+        errorBeaconResponse(id, BeaconError.Unknown, version = version, destination = destination),
     )
 
-internal fun beaconResponses(version: String = "version", requestOrigin: Origin = Origin.P2P("senderId")): List<BeaconResponse> =
+internal fun beaconResponses(version: String = "version", destination: Connection.Id = Connection.Id.P2P("receiverId")): List<BeaconResponse> =
     listOf(
-        permissionBeaconResponse(version = version, requestOrigin = requestOrigin),
-        blockchainBeaconResponse(version = version, requestOrigin = requestOrigin),
-        acknowledgeBeaconResponse(version = version, requestOrigin = requestOrigin),
-    ) + errorBeaconResponses(version = version, requestOrigin = requestOrigin)
+        permissionBeaconResponse(version = version, destination = destination),
+        blockchainBeaconResponse(version = version, destination = destination),
+        acknowledgeBeaconResponse(version = version, destination = destination),
+    ) + errorBeaconResponses(version = version, destination = destination)
 
-internal fun beaconRequests(version: String = "version", origin: Origin = Origin.P2P("senderId")): List<BeaconRequest> =
+internal fun beaconRequests(
+    version: String = "version",
+    origin: Connection.Id = Connection.Id.P2P("senderId"),
+    destination: Connection.Id? = Connection.Id.P2P("receiverId"),
+): List<BeaconRequest> =
     listOf(
-        permissionBeaconRequest(version = version, origin = origin),
-        blockchainBeaconRequest(version = version, origin = origin),
+        permissionBeaconRequest(version = version, origin = origin, destination = destination),
+        blockchainBeaconRequest(version = version, origin = origin, destination = destination),
     )
 
 internal fun beaconMessages(
     version: String = "version",
-    origin: Origin = Origin.P2P("senderId"),
+    origin: Connection.Id = Connection.Id.P2P("senderId"),
+    destination: Connection.Id = Connection.Id.P2P("receiverId"),
     includeRequests: Boolean = true,
     includeResponses: Boolean = true,
     includeDisconnect: Boolean = true,
     includeError: Boolean = true,
 ): List<BeaconMessage> = mutableListOf<BeaconMessage>().apply {
-    if (includeRequests) addAll(beaconRequests(version = version, origin = origin))
-    if (includeResponses) addAll(beaconResponses(version = version, requestOrigin = origin))
-    if (includeDisconnect) add(disconnectBeaconMessage(version = version, origin = origin))
-    if (includeError) add(errorBeaconResponse(version = version, requestOrigin = origin))
+    if (includeRequests) addAll(beaconRequests(version = version, origin = origin, destination = destination))
+    if (includeResponses) addAll(beaconResponses(version = version, destination = destination))
+    if (includeDisconnect) add(disconnectBeaconMessage(version = version, origin = origin, destination = destination))
+    if (includeError) add(errorBeaconResponse(version = version, destination = destination))
 }
 
-internal fun beaconVersionedRequests(version: String = "version", senderId: String = "senderId"): List<VersionedBeaconMessage> =
+internal fun beaconVersionedRequests(version: String = "version", senderId: String = "senderId", context: VersionedBeaconMessage.Context): List<VersionedBeaconMessage> =
     listOf(
-        VersionedBeaconMessage.from(senderId, permissionBeaconRequest(senderId = senderId, version = version)),
-        VersionedBeaconMessage.from(senderId, blockchainBeaconRequest(senderId = senderId, version = version)),
+        VersionedBeaconMessage.from(senderId, permissionBeaconRequest(senderId = senderId, version = version), context),
+        VersionedBeaconMessage.from(senderId, blockchainBeaconRequest(senderId = senderId, version = version), context),
     )
 
-internal fun beaconVersionedResponses(version: String = "version", senderId: String = "senderId"): List<VersionedBeaconMessage> =
+internal fun beaconVersionedResponses(version: String = "version", senderId: String = "senderId", context: VersionedBeaconMessage.Context): List<VersionedBeaconMessage> =
     listOf(
-        VersionedBeaconMessage.from(senderId, permissionBeaconResponse(version = version)),
-        VersionedBeaconMessage.from(senderId, blockchainBeaconResponse(version = version)),
+        VersionedBeaconMessage.from(senderId, permissionBeaconResponse(version = version), context),
+        VersionedBeaconMessage.from(senderId, blockchainBeaconResponse(version = version), context),
     )
 
 internal fun beaconVersionedMessages(
     version: String = "version",
     senderId: String = "senderId",
+    context: VersionedBeaconMessage.Context,
     includeRequests: Boolean = true,
     includeResponses: Boolean = true,
     includeDisconnect: Boolean = true,
     includeError: Boolean = true,
 ): List<VersionedBeaconMessage> = mutableListOf<VersionedBeaconMessage>().apply {
-    if (includeRequests) addAll(beaconVersionedRequests(version, senderId))
-    if (includeResponses) addAll(beaconVersionedResponses(version, senderId))
-    if (includeDisconnect) add(VersionedBeaconMessage.from(senderId, disconnectBeaconMessage(senderId = senderId, version = version)))
-    if (includeError) add(VersionedBeaconMessage.from(senderId, errorBeaconResponse(version = version)))
+    if (includeRequests) addAll(beaconVersionedRequests(version, senderId, context))
+    if (includeResponses) addAll(beaconVersionedResponses(version, senderId, context))
+    if (includeDisconnect) add(VersionedBeaconMessage.from(senderId, disconnectBeaconMessage(senderId = senderId, version = version), context))
+    if (includeError) add(VersionedBeaconMessage.from(senderId, errorBeaconResponse(version = version), context))
 }
 
 internal fun p2pPeers(
@@ -194,22 +215,19 @@ internal fun p2pPeers(
         P2pPeer("id#$it", "name#$it", "publicKey#$it", "relayServer#$it", version, isPaired = paired)
     }
 
-internal fun appMetadata(@IntRange(from = 1) number: Int = 1): List<AppMetadata> =
-    (0 until number).map { AppMetadata("sender#$it", "name#$it") }
+internal fun appMetadata(@IntRange(from = 1) number: Int = 1): List<MockAppMetadata> =
+    (0 until number).map { MockAppMetadata("sender#$it", "name#$it") }
 
 internal fun permissions(
     @IntRange(from = 1) number: Int = 1,
     blockchainIdentifier: String = MockBlockchain.IDENTIFIER,
 ): List<Permission> =
-    appMetadata(number).mapIndexed { index, appMetadata ->
-        MockBlockchainSerializer.MockPermission(
+    (0 until number).map {
+        MockPermission(
             blockchainIdentifier,
-            "accountIdentifier#$index",
-            "address#$index",
-            "sender#$index",
-            appMetadata,
-            "publicKey#$index",
-            index.toLong(),
+            "accountIdentifier#$it",
+            "sender#$it",
+            it.toLong(),
         )
     }
 

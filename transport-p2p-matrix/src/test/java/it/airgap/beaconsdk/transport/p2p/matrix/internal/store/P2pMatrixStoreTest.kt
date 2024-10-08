@@ -3,6 +3,7 @@ package it.airgap.beaconsdk.transport.p2p.matrix.internal.store
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import it.airgap.beaconsdk.core.data.P2pPeer
+import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.crypto.data.KeyPair
 import it.airgap.beaconsdk.core.internal.data.BeaconApplication
 import it.airgap.beaconsdk.core.internal.migration.Migration
@@ -13,6 +14,7 @@ import it.airgap.beaconsdk.core.internal.transport.p2p.data.P2pIdentifier
 import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
 import it.airgap.beaconsdk.core.internal.utils.asHexString
 import it.airgap.beaconsdk.core.internal.utils.success
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.P2pMatrixCommunicator
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.MatrixClient
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.migration.migrateMatrixRelayServer
@@ -44,6 +46,8 @@ internal class P2pMatrixStoreTest {
     private lateinit var storageManager: StorageManager
     private lateinit var p2pStore: P2pMatrixStore
 
+    private val beaconScope: BeaconScope = BeaconScope.Global
+
     private val app: BeaconApplication = BeaconApplication(
         KeyPair(byteArrayOf(0), byteArrayOf(0)),
         "mockApp",
@@ -64,7 +68,7 @@ internal class P2pMatrixStoreTest {
             Result.success(P2pIdentifier(firstArg(), secondArg()))
         }
 
-        storageManager = spyk(StorageManager(MockStorage(), MockSecureStorage(), identifierCreator).apply { addPlugins(MockP2pMatrixStoragePlugin()) })
+        storageManager = spyk(StorageManager(beaconScope, MockStorage(), MockSecureStorage(), identifierCreator, BeaconConfiguration(ignoreUnsupportedBlockchains = false)).apply { addPlugins(MockP2pMatrixStoragePlugin()) })
         p2pStore = P2pMatrixStore(app, p2pProtocol, matrixClient, matrixNodes, storageManager, migration)
     }
 

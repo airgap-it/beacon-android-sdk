@@ -1,6 +1,7 @@
 package it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.network.room
 
 import it.airgap.beaconsdk.core.internal.network.HttpClient
+import it.airgap.beaconsdk.core.internal.network.HttpClient.Companion.post
 import it.airgap.beaconsdk.core.internal.network.data.ApplicationJson
 import it.airgap.beaconsdk.core.internal.network.data.BearerHeader
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.MatrixError

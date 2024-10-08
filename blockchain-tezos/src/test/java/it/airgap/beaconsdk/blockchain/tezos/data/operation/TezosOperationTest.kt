@@ -1,15 +1,70 @@
 package it.airgap.beaconsdk.blockchain.tezos.data.operation
 
 import fromValues
+import io.mockk.MockKAnnotations
+import io.mockk.impl.annotations.MockK
+import it.airgap.beaconsdk.blockchain.tezos.Tezos
+import it.airgap.beaconsdk.blockchain.tezos.internal.creator.*
+import it.airgap.beaconsdk.blockchain.tezos.internal.serializer.*
+import it.airgap.beaconsdk.blockchain.tezos.internal.wallet.TezosWallet
+import it.airgap.beaconsdk.core.internal.BeaconConfiguration
+import it.airgap.beaconsdk.core.internal.compat.CoreCompat
+import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
+import it.airgap.beaconsdk.core.internal.serializer.coreJson
+import it.airgap.beaconsdk.core.internal.storage.MockSecureStorage
+import it.airgap.beaconsdk.core.internal.storage.MockStorage
+import it.airgap.beaconsdk.core.internal.storage.StorageManager
+import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.encodeToJsonElement
+import mockDependencyRegistry
+import org.junit.Before
 import org.junit.Test
 import kotlin.test.assertEquals
 
 internal class TezosOperationTest {
+
+    @MockK
+    private lateinit var wallet: TezosWallet
+
+    @MockK
+    private lateinit var identifierCreator: IdentifierCreator
+
+    private lateinit var dependencyRegistry: DependencyRegistry
+    private lateinit var storageManager: StorageManager
+
+    private lateinit var json: Json
+
+    private val beaconScope: BeaconScope = BeaconScope.Global
+
+    @Before
+    fun setup() {
+        MockKAnnotations.init(this)
+
+        storageManager = StorageManager(beaconScope, MockStorage(), MockSecureStorage(), identifierCreator, BeaconConfiguration(ignoreUnsupportedBlockchains = false))
+        val tezos = Tezos(
+            wallet,
+            TezosCreator(
+                DataTezosCreator(storageManager, identifierCreator),
+                V1BeaconMessageTezosCreator(),
+                V2BeaconMessageTezosCreator(),
+                V3BeaconMessageTezosCreator(),
+            ),
+            TezosSerializer(
+                DataTezosSerializer(),
+                V1BeaconMessageTezosSerializer(),
+                V2BeaconMessageTezosSerializer(),
+                V3BeaconMessageTezosSerializer(),
+            ),
+        )
+
+        dependencyRegistry = mockDependencyRegistry(tezos)
+        json = coreJson(dependencyRegistry.blockchainRegistry, CoreCompat(beaconScope))
+    }
 
     @Test
     fun `is deserialized from JSON`() {
@@ -52,7 +107,7 @@ internal class TezosOperationTest {
             ),
             transactionWithJson(includeNulls = true),
         ).map {
-            Json.decodeFromString<TezosOperation>(it.second) to it.first
+            json.decodeFromString<TezosOperation>(it.second) to it.first
         }.forEach {
             assertEquals(it.second, it.first)
         }
@@ -61,14 +116,14 @@ internal class TezosOperationTest {
     @Test
     fun `deserializes ballot type from JSON`() {
         ballotTypesWithJsonStrings()
-            .map { Json.decodeFromString<TezosBallotOperation.Type>(it.second) to it.first }
+            .map { json.decodeFromString<TezosBallotOperation.Type>(it.second) to it.first }
             .forEach { assertEquals(it.second, it.first) }
     }
 
     @Test
     fun `deserializes transaction parameters from JSON`() {
         listOf(transactionParametersWithJson())
-            .map { Json.decodeFromString<TezosTransactionOperation.Parameters>(it.second) to it.first }
+            .map { json.decodeFromString<TezosTransactionOperation.Parameters>(it.second) to it.first }
             .forEach { assertEquals(it.second, it.first) }
     }
 
@@ -110,8 +165,8 @@ internal class TezosOperationTest {
                 parameters = TezosTransactionOperation.Parameters("entrypoint", MichelinePrimitiveString("string"))
             ),
         ).map {
-            Json.decodeFromString(JsonObject.serializer(), Json.encodeToString(it.first)) to
-                    Json.decodeFromString(JsonObject.serializer(), it.second)
+            json.decodeFromString(JsonObject.serializer(), json.encodeToString(it.first)) to
+                    json.decodeFromString(JsonObject.serializer(), it.second)
         }.forEach {
             assertEquals(it.second, it.first)
         }
@@ -120,7 +175,7 @@ internal class TezosOperationTest {
     @Test
     fun `serializes ballot type to JSON`() {
         ballotTypesWithJsonStrings()
-            .map { Json.encodeToString(it.first) to it.second }
+            .map { json.encodeToString(it.first) to it.second }
             .forEach { assertEquals(it.second, it.first) }
     }
 
@@ -128,8 +183,8 @@ internal class TezosOperationTest {
     fun `serializes transaction parameters to JSON`() {
         listOf(transactionParametersWithJson())
             .map {
-                Json.decodeFromString(JsonObject.serializer(), Json.encodeToString(it.first)) to
-                        Json.decodeFromString(JsonObject.serializer(), it.second)
+                json.decodeFromString(JsonObject.serializer(), json.encodeToString(it.first)) to
+                        json.decodeFromString(JsonObject.serializer(), it.second)
             }.forEach {
                 assertEquals(it.second, it.first)
             }
@@ -159,7 +214,7 @@ internal class TezosOperationTest {
                 "source": "$source",
                 "period": "$period",
                 "proposal": "$proposal",
-                "ballot": ${Json.encodeToString(ballot)}
+                "ballot": ${json.encodeToString(ballot)}
             }
         """.trimIndent()
 
@@ -188,9 +243,9 @@ internal class TezosOperationTest {
             "delegate" to delegate,
         )
 
-        val json = JsonObject.fromValues(values, includeNulls).toString()
+        val jsonObject = JsonObject.fromValues(values, includeNulls).toString()
 
-        return TezosDelegationOperation(source, fee, counter, gasLimit, storageLimit, delegate) to json
+        return TezosDelegationOperation(source, fee, counter, gasLimit, storageLimit, delegate) to jsonObject
     }
 
     private fun doubleBakingEvidenceWithJson(
@@ -224,8 +279,8 @@ internal class TezosOperationTest {
         TezosDoubleBakingEvidenceOperation(bh1, bh2) to """
             {
                 "kind": "double_baking_evidence",
-                "bh1": ${Json.encodeToString(bh1)},
-                "bh2": ${Json.encodeToString(bh2)}
+                "bh1": ${json.encodeToString(bh1)},
+                "bh2": ${json.encodeToString(bh2)}
             }
         """.trimIndent()
 
@@ -248,8 +303,8 @@ internal class TezosOperationTest {
         TezosDoubleEndorsementEvidenceOperation(op1, op2) to """
             {
                 "kind": "double_endorsement_evidence",
-                "op1": ${Json.encodeToString(op1)},
-                "op2": ${Json.encodeToString(op2)}
+                "op1": ${json.encodeToString(op1)},
+                "op2": ${json.encodeToString(op2)}
             }
         """.trimIndent()
 
@@ -261,7 +316,10 @@ internal class TezosOperationTest {
         storageLimit: String? = null,
         balance: String = "balance",
         delegate: String? = null,
-        script: String = "script",
+        script: TezosOriginationOperation.Script = TezosOriginationOperation.Script(
+            code = MichelinePrimitiveInt(0),
+            storage = MichelinePrimitiveInt(1),
+        ),
         includeNulls: Boolean = false,
     ) : Pair<TezosOriginationOperation, String> {
         val values = mapOf(
@@ -273,10 +331,10 @@ internal class TezosOperationTest {
             "storage_limit" to storageLimit,
             "balance" to balance,
             "delegate" to delegate,
-            "script" to script,
+            "script" to  json.encodeToJsonElement(script),
         )
 
-        val json = JsonObject.fromValues(values, includeNulls).toString()
+        val jsonObject = JsonObject.fromValues(values, includeNulls).toString()
 
         return TezosOriginationOperation(
             source,
@@ -287,7 +345,7 @@ internal class TezosOperationTest {
             balance,
             delegate,
             script,
-        ) to json
+        ) to jsonObject
     }
 
     private fun proposalsWithJson(
@@ -298,7 +356,7 @@ internal class TezosOperationTest {
             {
                 "kind": "proposals",
                 "period": "$period",
-                "proposals": ${Json.encodeToString(proposals)}
+                "proposals": ${json.encodeToString(proposals)}
             }
         """.trimIndent()
 
@@ -321,7 +379,7 @@ internal class TezosOperationTest {
             "public_key" to publicKey,
         )
 
-        val json = JsonObject.fromValues(values, includeNulls).toString()
+        val jsonObject = JsonObject.fromValues(values, includeNulls).toString()
 
         return TezosRevealOperation(
             source,
@@ -330,7 +388,7 @@ internal class TezosOperationTest {
             gasLimit,
             storageLimit,
             publicKey,
-        ) to json
+        ) to jsonObject
     }
 
     private fun seedNonceRevelationWithJson(
@@ -352,7 +410,7 @@ internal class TezosOperationTest {
         gasLimit: String? = null,
         storageLimit: String? = null,
         amount: String = "amount",
-        destination: String = "destination",
+        destination: String = "receiverId",
         parameters: TezosTransactionOperation.Parameters? = null,
         includeNulls: Boolean = false,
     ) : Pair<TezosTransactionOperation, String> {
@@ -365,10 +423,10 @@ internal class TezosOperationTest {
             "storage_limit" to storageLimit,
             "amount" to amount,
             "destination" to destination,
-            "parameters" to parameters?.let { Json.encodeToJsonElement(it) },
+            "parameters" to parameters?.let { json.encodeToJsonElement(it) },
         )
 
-        val json = JsonObject.fromValues(values, includeNulls).toString()
+        val jsonObject = JsonObject.fromValues(values, includeNulls).toString()
 
         return TezosTransactionOperation(
             source,
@@ -379,7 +437,7 @@ internal class TezosOperationTest {
             amount,
             destination,
             parameters,
-        ) to json
+        ) to jsonObject
     }
 
     private fun transactionParametersWithJson(
@@ -389,7 +447,7 @@ internal class TezosOperationTest {
         TezosTransactionOperation.Parameters(entrypoint, value) to """
             {
                 "entrypoint": "$entrypoint",
-                "value": ${Json.encodeToString(value)}
+                "value": ${json.encodeToString(value)}
             }
         """.trimIndent()
 }

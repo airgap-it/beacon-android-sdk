@@ -1,18 +1,57 @@
 package it.airgap.beaconsdk.core.data
 
 import fromValues
+import io.mockk.MockKAnnotations
+import io.mockk.every
+import io.mockk.impl.annotations.MockK
+import it.airgap.beaconsdk.core.internal.blockchain.BlockchainRegistry
+import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchain
+import it.airgap.beaconsdk.core.internal.compat.CoreCompat
+import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
+import it.airgap.beaconsdk.core.internal.serializer.coreJson
+import it.airgap.beaconsdk.core.scope.BeaconScope
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import mockBeaconSdk
+import org.junit.Before
 import org.junit.Test
 import kotlin.test.assertEquals
 
 internal class PeerTest {
+
+    @MockK
+    private lateinit var dependencyRegistry: DependencyRegistry
+
+    @MockK
+    private lateinit var blockchainRegistry: BlockchainRegistry
+
+    private lateinit var mockBlockchain: MockBlockchain
+    private lateinit var json: Json
+
+    private val beaconScope: BeaconScope = BeaconScope.Global
+
+    @Before
+    fun setup() {
+        MockKAnnotations.init(this)
+
+        mockBeaconSdk(dependencyRegistry = dependencyRegistry)
+
+        mockBlockchain = MockBlockchain()
+
+        every { dependencyRegistry.blockchainRegistry } returns blockchainRegistry
+
+        every { blockchainRegistry.get(any()) } returns mockBlockchain
+        every { blockchainRegistry.getOrNull(any()) } returns mockBlockchain
+
+        json = coreJson(dependencyRegistry.blockchainRegistry, CoreCompat(beaconScope))
+    }
+
     @Test
     fun `is deserialized from JSON`() {
         (expectedWithJson() + expectedWithJson(includeNulls = true))
-            .map { Json.decodeFromString<Peer>(it.second) to it.first }
+            .map { json.decodeFromString<Peer>(it.second) to it.first }
             .forEach { assertEquals(it.second, it.first) }
     }
 
@@ -20,8 +59,8 @@ internal class PeerTest {
     fun `serializes to JSON`() {
         expectedWithJson()
             .map {
-                Json.decodeFromString(JsonObject.serializer(), Json.encodeToString(it.first)) to
-                        Json.decodeFromString(JsonObject.serializer(), it.second)
+                json.decodeFromString(JsonObject.serializer(), json.encodeToString(it.first)) to
+                        json.decodeFromString(JsonObject.serializer(), it.second)
             }.forEach {
                 assertEquals(it.second, it.first)
             }

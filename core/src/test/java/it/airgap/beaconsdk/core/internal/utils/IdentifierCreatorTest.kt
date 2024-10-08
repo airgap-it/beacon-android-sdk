@@ -34,20 +34,21 @@ internal class IdentifierCreatorTest {
     @Test
     fun `creates account identifier from address and network`() {
         expectedIdentifiers()
-            .map { identifierCreator.accountIdentifier(it.first.first, it.first.second).getOrThrow() to it.second }
+            .map { identifierCreator.accountId(it.first.first, it.first.second).getOrThrow() to it.second }
             .forEach { assertEquals(it.second, it.first) }
     }
 
     @Test
     fun `creates sender identifier from public key`() {
         val publicKey = "00"
-        val senderId = identifierCreator.senderIdentifier(publicKey.asHexString().toByteArray()).getOrThrow()
+        val senderId = identifierCreator.senderId(publicKey.asHexString().toByteArray()).getOrThrow()
 
         assertEquals(publicKey, senderId)
     }
 
-    private fun expectedIdentifiers(address: String = "address"): List<Pair<Pair<String, Network>, String>> =
+    private fun expectedIdentifiers(address: String = "address"): List<Pair<Pair<String, Network?>, String>> =
         listOf(
+            Pair(address, null) to address,
             Pair(address, MockNetwork()) to "$address-mock",
             Pair(address, MockNetwork(name = "name")) to "$address-mock-name:name",
             Pair(address, MockNetwork(rpcUrl = "rpcUrl")) to "$address-mock-rpc:rpcUrl",

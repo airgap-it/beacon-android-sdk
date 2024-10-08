@@ -1,10 +1,16 @@
 package it.airgap.beaconsdk.blockchain.tezos.message.request
 
+import androidx.annotation.RestrictTo
+import it.airgap.beaconsdk.blockchain.tezos.Tezos
+import it.airgap.beaconsdk.blockchain.tezos.extension.ownAppMetadata
+import it.airgap.beaconsdk.blockchain.tezos.data.TezosAppMetadata
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosNetwork
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
+import it.airgap.beaconsdk.blockchain.tezos.internal.TezosBeaconConfiguration
 import it.airgap.beaconsdk.blockchain.tezos.message.response.PermissionTezosResponse
-import it.airgap.beaconsdk.core.data.AppMetadata
-import it.airgap.beaconsdk.core.data.Origin
+import it.airgap.beaconsdk.core.client.BeaconClient
+import it.airgap.beaconsdk.core.client.BeaconProducer
+import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.message.PermissionBeaconRequest
 
 /**
@@ -26,10 +32,32 @@ public data class PermissionTezosRequest internal constructor(
     override val version: String,
     override val blockchainIdentifier: String,
     override val senderId: String,
-    override val appMetadata: AppMetadata,
-    override val origin: Origin,
+    override val appMetadata: TezosAppMetadata,
+    override val origin: Connection.Id,
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) override val destination: Connection.Id?,
     public val network: TezosNetwork,
     public val scopes: List<TezosPermission.Scope>,
 ) : PermissionBeaconRequest() {
     public companion object {}
+}
+
+public suspend fun <T> PermissionTezosRequest(
+    network: TezosNetwork = TezosNetwork.Mainnet(),
+    scopes: List<TezosPermission.Scope> = listOf(TezosPermission.Scope.OperationRequest, TezosPermission.Scope.Sign),
+    producer: T,
+    transportType: Connection.Type = Connection.Type.P2P,
+) : PermissionTezosRequest where T : BeaconClient<*>, T : BeaconProducer {
+    val requestMetadata = producer.prepareRequest(transportType)
+
+    return PermissionTezosRequest(
+        id = requestMetadata.id,
+        version = TezosBeaconConfiguration.MESSAGE_VERSION,
+        blockchainIdentifier = Tezos.IDENTIFIER,
+        senderId = requestMetadata.senderId,
+        appMetadata = producer.ownAppMetadata(),
+        origin = requestMetadata.origin,
+        destination = requestMetadata.destination,
+        network = network,
+        scopes = scopes,
+    )
 }

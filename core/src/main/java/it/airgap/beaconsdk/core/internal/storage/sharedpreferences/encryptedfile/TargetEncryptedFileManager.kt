@@ -7,10 +7,7 @@ import android.security.keystore.KeyProperties
 import androidx.annotation.RequiresApi
 import androidx.security.crypto.EncryptedFile
 import androidx.security.crypto.MasterKeys
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import java.io.File
 import java.io.IOException
 import java.security.GeneralSecurityException
@@ -24,8 +21,8 @@ internal class TargetEncryptedFileManager(private val context: Context, private 
         val file = file(fileName, keyAlias)
         if (!file.exists()) return null
 
-        return withContext(Dispatchers.IO) {
-            async {
+        return coroutineScope {
+            async(Dispatchers.IO) {
                 val masterKey = getOrCreateKey(keyAlias)
                 val encryptedFile = EncryptedFile.Builder(
                     file,
@@ -41,8 +38,8 @@ internal class TargetEncryptedFileManager(private val context: Context, private 
 
     @Throws(GeneralSecurityException::class, IOException::class)
     override suspend fun write(fileName: String, keyAlias: String, data: ByteArray) {
-        withContext(Dispatchers.IO) {
-            launch {
+        coroutineScope {
+            launch(Dispatchers.IO) {
                 val masterKey = getOrCreateKey(keyAlias)
                 val encryptedFile = EncryptedFile.Builder(
                     file(fileName, keyAlias),
@@ -60,10 +57,8 @@ internal class TargetEncryptedFileManager(private val context: Context, private 
         File(context.filesDir, name).apply {
             deleteIfNoKey(keyAlias)
         }
-    
+
     private fun getOrCreateKey(alias: String): String {
-        keyStore.load(null)
-        
         val parameterSpec = KeyGenParameterSpec.Builder(alias, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT).apply {
             setKeySize(SIZE_KEY)
             setDigests(KeyProperties.DIGEST_SHA512)

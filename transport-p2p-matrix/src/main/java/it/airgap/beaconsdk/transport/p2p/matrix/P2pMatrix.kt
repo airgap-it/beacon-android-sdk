@@ -1,12 +1,17 @@
 package it.airgap.beaconsdk.transport.p2p.matrix
 
+import it.airgap.beaconsdk.core.data.Connection
+import it.airgap.beaconsdk.core.data.P2P
 import it.airgap.beaconsdk.core.data.P2pPeer
 import it.airgap.beaconsdk.core.internal.data.HexString
 import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.core.internal.transport.p2p.data.P2pMessage
 import it.airgap.beaconsdk.core.internal.utils.*
 import it.airgap.beaconsdk.core.internal.utils.delegate.default
+import it.airgap.beaconsdk.core.network.provider.HttpClientProvider
 import it.airgap.beaconsdk.core.network.provider.HttpProvider
+import it.airgap.beaconsdk.core.transport.data.P2pPairingRequest
+import it.airgap.beaconsdk.core.transport.data.P2pPairingResponse
 import it.airgap.beaconsdk.core.transport.p2p.P2pClient
 import it.airgap.beaconsdk.transport.p2p.matrix.data.MatrixRoom
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.BeaconP2pMatrixConfiguration
@@ -41,9 +46,9 @@ public class P2pMatrix internal constructor(
             .onStart { tryLog(TAG) { matrix.start() } }
     }
 
-    private val matrixMessageEvents: Flow<MatrixEvent.TextMessage> get() = matrixEvents.filterIsInstance()
-    private val matrixInviteEvents: Flow<MatrixEvent.Invite> get() = matrixEvents.filterIsInstance()
-    private val matrixJoinEvents: Flow<MatrixEvent.Join> get() = matrixEvents.filterIsInstance()
+    private val matrixMessageEvents: Flow<MatrixEvent.TextMessage> by lazy { matrixEvents.filterIsInstance() }
+    private val matrixInviteEvents: Flow<MatrixEvent.Invite> by lazy { matrixEvents.filterIsInstance() }
+    private val matrixJoinEvents: Flow<MatrixEvent.Join> by lazy { matrixEvents.filterIsInstance() }
 
     private val subscribedFlows: MutableMap<HexString, MutableSet<String>> = mutableMapOf()
 
@@ -107,6 +112,26 @@ public class P2pMatrix internal constructor(
             matrix.sendTextMessageTo(recipient.asString(), encrypted).getOrThrow()
         }
 
+    override suspend fun createPairingRequest(): Result<P2pPairingRequest> =
+        runCatchingFlat {
+            val relayServer = store.state().getOrThrow().relayServer
+            communicator.pairingRequest(relayServer)
+        }
+
+    override suspend fun createPairingResponse(request: P2pPairingRequest): Result<P2pPairingResponse> =
+        runCatching {
+            val relayServer = store.state().getOrThrow().relayServer
+            communicator.pairingResponse(request, relayServer)
+        }
+
+    override val pairingResponses: Flow<Result<P2pPairingResponse>> by lazy {
+        matrixMessageEvents
+            .filter { communicator.recognizeChannelOpeningMessage(it.message) }
+            .map { communicator.destructChannelOpeningMessage(it.message) }
+            .map { security.decryptPairingPayload(it) }
+            .map { communicator.pairingResponseFromPayload(it) }
+    }
+
     /**
      * Sends a pairing message to the specified [peer].
      */
@@ -117,9 +142,9 @@ public class P2pMatrix internal constructor(
             val relayServer = store.state().getOrThrow().relayServer
             val payload = security.encryptPairingPayload(
                 publicKey,
-                communicator.pairingPayload(peer, relayServer).getOrThrow(),
+                communicator.pairingResponsePayload(peer, relayServer).getOrThrow(),
             ).getOrThrow()
-            val message = communicator.channelOpeningMessage(recipient.asString(), payload.toHexString().asString())
+            val message = communicator.createChannelOpeningMessage(recipient.asString(), payload.toHexString().asString())
 
             matrix.sendTextMessageTo(recipient.asString(), message, newRoom = true).getOrThrow()
         }
@@ -150,7 +175,7 @@ public class P2pMatrix internal constructor(
                 start(relayServer, id, password, deviceId).onFailure { this@P2pMatrix.resetHard() }
             }.getOrThrow()
 
-            CoroutineScope(CoroutineName("collectInviteEvents")).launch {
+            CoroutineScope(CoroutineName("collectInviteEvents") + Dispatchers.Default).launch {
                 matrixInviteEvents
                     .distinctUntilChangedBy { it.roomId }
                     .collect {
@@ -242,11 +267,6 @@ public class P2pMatrix internal constructor(
             }
         }
 
-    private suspend fun MatrixRoom.isActive(recipient: String): Boolean {
-        val activeChannels = store.state().getOrNull()?.activeChannels ?: return false
-        return activeChannels[recipient] == id
-    }
-
     private suspend fun MatrixRoom.isActive(): Boolean = !isInactive()
     private suspend fun MatrixRoom.isInactive(): Boolean {
         val inactiveChannels = store.state().getOrNull()?.inactiveChannels ?: return false
@@ -259,6 +279,12 @@ public class P2pMatrix internal constructor(
         matrixJoinEvents.first { it.roomId == id && it.userId == member }
         logDebug(TAG, "$member joined room $id")
     }
+
+    private fun P2pMatrixSecurity.decryptPairingPayload(recipientAndPayload: Result<Pair<String, String>>): Result<String> =
+        recipientAndPayload.flatMap { decryptPairingPayload(it.second.asHexString().toByteArray()) }
+
+    private fun P2pMatrixCommunicator.pairingResponseFromPayload(payload: Result<String>): Result<P2pPairingResponse> =
+        payload.map { pairingResponseFromPayload(it) }
 
     private fun <V> MutableMap<HexString, MutableSet<V>>.addTo(key: ByteArray, value: V) {
         getOrPut(key.toHexString()) { mutableSetOf() }.add(value)
@@ -281,27 +307,40 @@ public class P2pMatrix internal constructor(
      * @property [matrixNodes] A list of Matrix nodes used in the connection, set to [BeaconP2pMatrixConfiguration.defaultNodes] by default.
      * One node will be selected randomly based on the local key pair and used as the primary connection node,
      * the rest will be used as a fallback if the primary node goes down.
-     * @property [httpProvider] An optional external [HttpProvider] implementation used to make Beacon HTTP requests.
+     * @property [httpClientProvider] An optional external [HttpProvider] implementation used to make Beacon HTTP requests.
      */
-    public class Factory(
-        storagePlugin: P2pMatrixStoragePlugin? = null,
-        private val matrixNodes: List<String> = BeaconP2pMatrixConfiguration.defaultNodes,
-        private val httpProvider: HttpProvider? = null
+    public class Factory private constructor(
+        storagePlugin: P2pMatrixStoragePlugin?,
+        private val matrixNodes: List<String>,
+        private val httpClientProvider: HttpClientProvider?,
+        private val httpProvider: HttpProvider?,
     ) : P2pClient.Factory<P2pMatrix> {
+
+        public constructor(
+            storagePlugin: P2pMatrixStoragePlugin? = null,
+            matrixNodes: List<String> = BeaconP2pMatrixConfiguration.defaultNodes,
+            httpClientProvider: HttpClientProvider? = null,
+        ) : this(storagePlugin, matrixNodes, httpClientProvider, null)
+
+        @Deprecated(
+            "Use P2pMatrix.Factory(P2pMatrixStoragePlugin?, List<String>, HttpClientProvider?) instead.",
+            replaceWith = ReplaceWith("P2pMatrix.Factory(storagePlugin, matrixNodes, httpProvider)"),
+            level = DeprecationLevel.WARNING,
+        )
+        public constructor(
+            storagePlugin: P2pMatrixStoragePlugin? = null,
+            matrixNodes: List<String> = BeaconP2pMatrixConfiguration.defaultNodes,
+            httpProvider: HttpProvider,
+        ) : this(storagePlugin, matrixNodes, null, httpProvider)
+
         private var _extendedDependencyRegistry: ExtendedDependencyRegistry? = null
         private fun extendedDependencyRegistry(dependencyRegistry: DependencyRegistry): ExtendedDependencyRegistry =
             _extendedDependencyRegistry ?: dependencyRegistry.extend().also { _extendedDependencyRegistry = it }
 
-        private var storagePlugin: P2pMatrixStoragePlugin by default(storagePlugin) { SharedPreferencesP2pMatrixStoragePlugin.create(applicationContext) }
+        private var storagePlugin: P2pMatrixStoragePlugin by default(storagePlugin) { SharedPreferencesP2pMatrixStoragePlugin(applicationContext) }
 
         override fun create(dependencyRegistry: DependencyRegistry): P2pMatrix =
-            with(extendedDependencyRegistry(dependencyRegistry)) {
-                with(storageManager) {
-                    if (!hasPlugin<P2pMatrixStoragePlugin>()) addPlugins(storagePlugin.extend())
-                }
-
-                P2pMatrix(matrixClient(httpProvider), p2pMatrixStore(httpProvider, matrixNodes), p2pMatrixSecurity, p2pMatrixCommunicator)
-            }
+            extendedDependencyRegistry(dependencyRegistry).p2pMatrix(storagePlugin, matrixNodes, httpClientProvider)
     }
 
     public companion object {
@@ -310,10 +349,24 @@ public class P2pMatrix internal constructor(
 }
 
 /**
- * Creates a new instance of [P2pMatrix.Factory] configured with optional [storagePlugin], [matrixNodes] and [httpProvider].
+ * Creates a new instance of [P2pMatrix.Factory] configured with optional [storagePlugin], [matrixNodes] and [httpClientProvider].
  */
 public fun p2pMatrix(
     storagePlugin: P2pMatrixStoragePlugin? = null,
     matrixNodes: List<String> = BeaconP2pMatrixConfiguration.defaultNodes,
-    httpProvider: HttpProvider? = null,
-): P2pMatrix.Factory = P2pMatrix.Factory(storagePlugin, matrixNodes, httpProvider)
+    httpClientProvider: HttpClientProvider? = null,
+): Connection = P2P(P2pMatrix.Factory(storagePlugin, matrixNodes, httpClientProvider))
+
+/**
+ * Creates a new instance of [P2pMatrix.Factory] configured with optional [storagePlugin], [matrixNodes] and [httpProvider].
+ */
+@Deprecated(
+    "Use p2pMatrix(P2pMatrixStoragePlugin?, List<String>, HttpClientProvider?) instead.",
+    replaceWith = ReplaceWith("p2pMatrix(storagePlugin, matrixNodes, httpProvider)"),
+    level = DeprecationLevel.WARNING,
+)
+public fun p2pMatrix(
+    storagePlugin: P2pMatrixStoragePlugin? = null,
+    matrixNodes: List<String> = BeaconP2pMatrixConfiguration.defaultNodes,
+    httpProvider: HttpProvider,
+): Connection = P2P(P2pMatrix.Factory(storagePlugin, matrixNodes, httpProvider))
