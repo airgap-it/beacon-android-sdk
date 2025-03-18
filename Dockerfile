@@ -1,4 +1,32 @@
-FROM androidsdk/android-30:latest
+FROM ubuntu:24.04
+
+### Prepare environment ###
+
+# Install essential tools
+RUN apt-get update -qqy && \
+    apt-get install -qqy build-essential openjdk-17-jdk wget unzip && \
+    apt-get clean && \
+    apt-get autoremove -y
+
+
+### Install Android SDK ###
+
+ENV ANDROID_HOME=/usr/lib/android-sdk
+
+# Download command line tools
+RUN wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O android-commandlinetools.zip && \
+    unzip -q android-commandlinetools.zip -d ${ANDROID_HOME} && \
+    mv ${ANDROID_HOME}/cmdline-tools ${ANDROID_HOME}/latest && \
+    mkdir ${ANDROID_HOME}/cmdline-tools && \
+    mv ${ANDROID_HOME}/latest ${ANDROID_HOME}/cmdline-tools && \
+    rm android-commandlinetools.zip
+
+ENV PATH=${PATH}:${ANDROID_HOME}/cmdline-tools/latest/bin
+
+# Accept licenses
+RUN yes | sdkmanager --licenses
+
+### Build ###
 
 RUN mkdir /build
 WORKDIR /build

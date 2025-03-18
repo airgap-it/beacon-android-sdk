@@ -73,7 +73,7 @@ public class ConnectionController internal constructor(private val transports: L
             other.onSuccess { return Result.failure(ConnectionException.from(connectionType, thisException)) }
             other.onFailure { otherException ->
                 val concat = thisException.concat(ConnectionException.from(connectionType, otherException))
-                concat?.let { Result.failure<Unit>(concat) } ?: Result.failure()
+                Result.failure<Unit>(concat)
             }
         }
 

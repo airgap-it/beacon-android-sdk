@@ -1,3 +1,7 @@
+import it.airgap.beaconsdk.build.Android
+import it.airgap.beaconsdk.build.Dependencies
+import it.airgap.beaconsdk.build.TestDependencies
+
 plugins {
     id 'com.android.library'
     id 'kotlin-android'
@@ -6,13 +10,12 @@ plugins {
 }
 
 android {
+    namespace "${Android.namespace}.client.wallet.compat"
     compileSdk Android.compileSdk
 
     defaultConfig {
         minSdk Android.minSdk
-        targetSdk Android.targetSdk
-        versionCode Android.versionCode
-        versionName Android.versionName
+        version Android.versionName
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
@@ -25,15 +28,19 @@ android {
         }
     }
 
-    flavorDimensions "version"
+    buildFeatures {
+        buildConfig true
+    }
+
+    flavorDimensions "${Android.namespace}.version"
     productFlavors {
         prod {
-            dimension "version"
+            dimension "${Android.namespace}.version"
             buildConfigField("String", "VERSION_NAME", "\"${defaultConfig.versionName}\"")
 
         }
         mock {
-            dimension "version"
+            dimension "${Android.namespace}.version"
             buildConfigField("String", "VERSION_NAME", "\"${defaultConfig.versionName}-mock\"")
         }
     }
@@ -49,7 +56,7 @@ android {
     }
 
     publishing {
-        singleVariant("release") {
+        singleVariant("prodRelease") {
             withSourcesJar()
             withJavadocJar()
         }
