@@ -108,14 +108,16 @@ public data class ErrorV1BeaconResponse(
     internal class Serializer(blockchainRegistry: BlockchainRegistry, compat: Compat<VersionedCompat>) : KSerializer<ErrorV1BeaconResponse> {
         constructor(beaconScope: BeaconScope? = null) : this(blockchainRegistry(beaconScope), compat(beaconScope))
 
-        private val beaconErrorSerializer: KSerializer<BeaconError> = BeaconError.serializer(blockchainRegistry, compat.versioned.blockchain.identifier)
+        private val beaconErrorSerializer: KSerializer<BeaconError> by lazy { BeaconError.serializer(blockchainRegistry, compat.versioned.blockchain.identifier) }
 
-        override val descriptor: SerialDescriptor = buildClassSerialDescriptor("ErrorV1BeaconResponse") {
-            element<String>("type")
-            element<String>("version")
-            element<String>("id")
-            element<String>("beaconId")
-            element("errorType", beaconErrorSerializer.descriptor)
+        override val descriptor: SerialDescriptor by lazy {
+            buildClassSerialDescriptor("ErrorV1BeaconResponse") {
+                element<String>("type")
+                element<String>("version")
+                element<String>("id")
+                element<String>("beaconId")
+                element("errorType", beaconErrorSerializer.descriptor)
+            }
         }
 
         override fun deserialize(decoder: Decoder): ErrorV1BeaconResponse = decoder.decodeStructure(descriptor) {
