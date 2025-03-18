@@ -7,7 +7,7 @@ import it.airgap.beaconsdk.core.exception.UnknownException
 public fun Result.Companion.success(): Result<Unit> = success(Unit)
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public fun <T> Result.Companion.failure(): Result<T> = failure(UnknownException())
+public fun <T> Result.Companion.failure(exception: Throwable? = null): Result<T> = failure(exception ?: UnknownException())
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public inline fun <T, S> Result<T>.flatMap(transform: (T) -> Result<S>): Result<S> =

@@ -1,7 +1,9 @@
 package it.airgap.beaconsdkdemo.dapp
 
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -10,17 +12,29 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import it.airgap.beaconsdk.core.message.BeaconResponse
 import it.airgap.beaconsdkdemo.R
+import it.airgap.beaconsdkdemo.databinding.FragmentDappBinding
 import it.airgap.beaconsdkdemo.utils.toJson
-import kotlinx.android.synthetic.main.fragment_dapp.*
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 class DAppFragment : Fragment(R.layout.fragment_dapp) {
+    private var _binding: FragmentDappBinding? = null
+    private val binding: FragmentDappBinding
+        get() = _binding!!
 
     private val viewModel by viewModels<DAppFragmentViewModel>()
     private val json: Json by lazy {
         Json { prettyPrint = true }
+    }
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        _binding = FragmentDappBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -32,10 +46,15 @@ class DAppFragment : Fragment(R.layout.fragment_dapp) {
             }
         }
 
-        resetButton.setOnClickListener { viewModel.reset() }
-        pairButton.setOnClickListener { viewModel.pair() }
-        requestPermissionButton.setOnClickListener { viewModel.requestPermission() }
-        clearResponseButton.setOnClickListener { viewModel.clearResponse() }
+        binding.resetButton.setOnClickListener { viewModel.reset() }
+        binding.pairButton.setOnClickListener { viewModel.pair() }
+        binding.requestPermissionButton.setOnClickListener { viewModel.requestPermission() }
+        binding.clearResponseButton.setOnClickListener { viewModel.clearResponse() }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 
     private fun render(state: State) {
@@ -43,17 +62,17 @@ class DAppFragment : Fragment(R.layout.fragment_dapp) {
             onBeaconResponse(beaconResponse)
             error?.let { onError(it) }
 
-            pairButton.isEnabled = activeAccount == null
-            resetButton.isEnabled = activeAccount != null
-            requestPermissionButton.isEnabled = pairingRequest != null || activeAccount != null
+            binding.pairButton.isEnabled = activeAccount == null
+            binding.resetButton.isEnabled = activeAccount != null
+            binding.requestPermissionButton.isEnabled = pairingRequest != null || activeAccount != null
 
-            pairingRequestTextView.text = pairingRequest
+            binding.pairingRequestTextView.text = pairingRequest
         }
     }
 
     private fun onBeaconResponse(beaconResponse: BeaconResponse?) {
-        clearResponseButton.isEnabled = beaconResponse != null
-        messageTextView.text = beaconResponse?.let { json.encodeToString(it.toJson(json)) }
+        binding.clearResponseButton.isEnabled = beaconResponse != null
+        binding.messageTextView.text = beaconResponse?.let { json.encodeToString(it.toJson(json)) }
     }
 
     private fun onError(exception: Throwable) {

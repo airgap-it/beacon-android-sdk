@@ -1,14 +1,16 @@
-object Android {
-    const val compileSdk = 33
-    const val minSdk = 21
-    const val targetSdk = 33
+package it.airgap.beaconsdk.build
 
-    const val versionCode = 33
+object Android {
+    const val namespace = "it.airgap.beaconsdk"
+    const val compileSdk = 35
+    const val minSdk = 21
+    const val targetSdk = 35
+
     const val versionName = "3.2.4"
 }
 
 object Version {
-    const val kotlin = "1.7.20"
+    const val kotlin = "2.1.0"
 
     const val kotlinSerialization = "1.4.1"
 
