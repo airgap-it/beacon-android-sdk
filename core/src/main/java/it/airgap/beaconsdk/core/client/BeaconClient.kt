@@ -163,15 +163,30 @@ public abstract class BeaconClient<BM : BeaconMessage>(
         storageManager.removePermissions()
     }
 
+    /**
+     * Serializes the [pairingMessage] to a String.
+     */
     public fun serializePairingData(pairingMessage: PairingMessage): String =
         serializer.serialize(pairingMessage).getOrThrow()
 
+    /**
+     * Deserializes the [serialized] payload to a specific [PairingMessage].
+     */
     @JvmName("deserializePairingDataInlined")
     public inline fun <reified T : PairingMessage> deserializePairingData(serialized: String): T =
         `serializer$inline`.deserialize<T>(serialized).getOrThrow()
 
+    /**
+     * Deserialized the [serialized] payload to a [PairingMessage].
+     */
     public fun deserializePairingData(serialized: String): PairingMessage =
         serializer.deserialize<PairingMessage>(serialized).getOrThrow()
+
+    /**
+     * Creates a sender ID from the [publicKey].
+     */
+    public fun senderId(publicKey: ByteArray): String =
+        identifierCreator.senderId(publicKey).getOrThrow()
 
     protected open suspend fun processMessage(origin: Connection.Id, message: BeaconMessage): Result<Unit> =
         when (message) {
