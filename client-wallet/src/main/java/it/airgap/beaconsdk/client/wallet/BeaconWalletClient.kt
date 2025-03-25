@@ -131,9 +131,7 @@ public class BeaconWalletClient @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) cons
     @Throws(BeaconException::class)
     override suspend fun pair(request: String): PairingResponse {
         val request = deserializePairingData<PairingRequest>(request)
-        return connectionController.pair(request)
-            .mapException { BeaconException.from(it) }
-            .getOrThrow()
+        return pair(request)
     }
 
     /**
