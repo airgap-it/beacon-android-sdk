@@ -101,7 +101,7 @@ internal class P2pTransport(
     private suspend fun addPeer(pairingData: P2pPairingMessage) {
         when (val peer = pairingData.toPeer()) {
             is P2pPeer -> {
-                storageManager.addPeers(listOf(peer), overwrite = true) { listOfNotNull(id) }
+                storageManager.addPeers(listOf(peer), overwrite = true) { listOfNotNull(publicKey) }
                 store.intent(OnPairingCompleted(peer))
             }
         }
@@ -119,7 +119,7 @@ internal class P2pTransport(
             val result = client.sendPairingResponse(this@pair)
 
             if (result.isSuccess) {
-                storageManager.updatePeers(listOf(selfPaired())) { listOfNotNull(id, name, publicKey, relayServer, icon, appUrl) }
+                storageManager.updatePeers(listOf(selfPaired())) { listOfNotNull(name, publicKey, relayServer, icon, appUrl) }
             }
 
             peerScopes.cancel(scopeId)
@@ -132,7 +132,7 @@ internal class P2pTransport(
     }
 
     private val P2pPeer.scopeId: String
-        get() = id ?: publicKey
+        get() = publicKey
 
     private fun failWithUnknownPeer(publicKey: String?): Nothing =
         throw IllegalStateException("P2P peer with public key $publicKey is not recognized.")

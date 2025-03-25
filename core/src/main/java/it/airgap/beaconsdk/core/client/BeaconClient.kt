@@ -66,6 +66,9 @@ public abstract class BeaconClient<BM : BeaconMessage>(
      *
      * The new peers will be persisted and subscribed.
      */
+    @Deprecated(
+        message = "",
+    )
     public suspend fun addPeers(vararg peers: Peer) {
         addPeers(peers.toList())
     }
@@ -132,7 +135,7 @@ public abstract class BeaconClient<BM : BeaconMessage>(
      * Removes permissions granted for the specified [accountIdentifiers].
      */
     public suspend fun removePermissionsFor(vararg accountIdentifiers: String) {
-        storageManager.removePermissions { accountIdentifiers.contains(it.accountId) }
+        removePermissionsFor(accountIdentifiers.toList())
     }
 
     /**

@@ -18,7 +18,7 @@ public interface ExtendedStorage : Storage {
     public suspend fun addPeers(
         peers: List<Peer>,
         overwrite: Boolean = false,
-        selector: Peer.() -> List<Any>? = { listOfNotNull(id, name, publicKey, version, icon, appUrl, isPaired, isRemoved) },
+        selector: Peer.() -> List<Any>? = { listOfNotNull(name, publicKey, version, icon, appUrl, isPaired, isRemoved) },
     )
 
     public suspend fun findPeer(predicate: (Peer) -> Boolean): Peer?

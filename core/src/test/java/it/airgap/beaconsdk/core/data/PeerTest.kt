@@ -67,20 +67,18 @@ internal class PeerTest {
     }
 
     private fun expectedWithJson(
-        id: String = "id",
         name: String = "name",
         publicKey: String = "publicKey",
         version: String = "version",
         includeNulls: Boolean = false,
     ): List<Pair<Peer, String>> = listOf(
-        expectedP2pWithJson(id, name, publicKey, version, includeNulls = includeNulls),
-        expectedP2pWithJson(id, name, publicKey, version, icon = "icon", includeNulls = includeNulls),
-        expectedP2pWithJson(id, name, publicKey, version, appUrl = "appUrl", includeNulls = includeNulls),
-        expectedP2pWithJson(id, name, publicKey, version, icon = "icon", appUrl = "appUrl", includeNulls = includeNulls),
+        expectedP2pWithJson(name, publicKey, version, includeNulls = includeNulls),
+        expectedP2pWithJson(name, publicKey, version, icon = "icon", includeNulls = includeNulls),
+        expectedP2pWithJson(name, publicKey, version, appUrl = "appUrl", includeNulls = includeNulls),
+        expectedP2pWithJson(name, publicKey, version, icon = "icon", appUrl = "appUrl", includeNulls = includeNulls),
     )
 
     private fun expectedP2pWithJson(
-        id: String = "id",
         name: String = "name",
         publicKey: String = "publicKey",
         version: String = "version",
@@ -89,11 +87,10 @@ internal class PeerTest {
         appUrl: String? = null,
         includeNulls: Boolean = false,
     ): Pair<P2pPeer, String> =
-        P2pPeer(id, name, publicKey, relayServer, version, icon, appUrl) to
-                p2pJson(id, name, publicKey, relayServer, version, icon, appUrl, includeNulls)
+        P2pPeer(name, publicKey, relayServer, version, icon, appUrl) to
+                p2pJson(name, publicKey, relayServer, version, icon, appUrl, includeNulls)
 
     private fun p2pJson(
-        id: String = "id",
         name: String = "name",
         publicKey: String = "publicKey",
         relayServer: String = "relayServer",
@@ -104,7 +101,6 @@ internal class PeerTest {
     ): String {
         val values = mapOf(
             "type" to "p2p",
-            "id" to id,
             "name" to name,
             "publicKey" to publicKey,
             "relayServer" to relayServer,
