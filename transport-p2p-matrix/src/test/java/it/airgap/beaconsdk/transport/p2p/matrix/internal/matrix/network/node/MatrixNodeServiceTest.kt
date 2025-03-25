@@ -11,7 +11,7 @@ import it.airgap.beaconsdk.core.network.provider.HttpClientProvider
 import it.airgap.beaconsdk.core.scope.BeaconScope
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.BeaconP2pMatrixConfiguration
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.node.MatrixVersionsResponse
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import mockDependencyRegistry
@@ -68,7 +68,7 @@ internal class MatrixNodeServiceTest {
             any(),
         ) } throws IOException()
 
-        runBlockingTest {
+        runTest {
             assertTrue(matrixNodeService.isUp(upNode), "Expected upNode to be recognized as up.")
             assertFalse(matrixNodeService.isUp(downNode), "Expected downNode to be recognized as down.")
         }

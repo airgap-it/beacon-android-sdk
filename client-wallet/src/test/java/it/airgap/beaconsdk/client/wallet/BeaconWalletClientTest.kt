@@ -29,7 +29,7 @@ import it.airgap.beaconsdk.core.message.BeaconMessage
 import it.airgap.beaconsdk.core.message.DisconnectBeaconMessage
 import it.airgap.beaconsdk.core.scope.BeaconScope
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import mockDependencyRegistry
 import org.junit.After
 import org.junit.Before
@@ -115,7 +115,7 @@ internal class BeaconWalletClientTest {
 
     @Test
     fun `connects for messages flow`() {
-        runBlockingTest {
+        runTest {
             val requests = beaconVersionedRequests(dAppVersion, dAppId, dependencyRegistry.versionedBeaconMessageContext).shuffled()
 
             val beaconMessageFlow = beaconConnectionMessageFlow(requests.size + 1)
@@ -143,7 +143,7 @@ internal class BeaconWalletClientTest {
 
     @Test
     fun `responds to request`() {
-        runBlockingTest {
+        runTest {
             coEvery { connectionController.send(any()) } returns Result.success()
 
             val destination = Connection.Id.P2P(dAppId)
@@ -163,7 +163,7 @@ internal class BeaconWalletClientTest {
 
     @Test
     fun `emits BeaconException when internal error occurred`() {
-        runBlockingTest {
+        runTest {
             val requests = beaconVersionedRequests(context = dependencyRegistry.versionedBeaconMessageContext).shuffled()
             val beaconMessageFlow = beaconConnectionMessageFlow(requests.size + 1)
 
@@ -190,7 +190,7 @@ internal class BeaconWalletClientTest {
 
     @Test
     fun `fails to respond when outgoing message processing failed with internal error`() {
-        runBlockingTest {
+        runTest {
             val error = IllegalStateException()
             coEvery { messageController.onOutgoingMessage(any(), any(), any()) } returns Result.failure(error)
 
@@ -205,7 +205,7 @@ internal class BeaconWalletClientTest {
     @Test
     fun `fails to respond when message sending failed`() {
         val error = IOException()
-        runBlockingTest {
+        runTest {
             coEvery { connectionController.send(any()) } returns Result.failure(error)
 
             val responses = beaconResponses().shuffled()
@@ -227,7 +227,7 @@ internal class BeaconWalletClientTest {
 
     @Test
     fun `removes peer on disconnect message received`() {
-        runBlockingTest {
+        runTest {
             val publicKey = "publicKey"
             val origin = Connection.Id.P2P(publicKey)
             val peer = P2pPeer(name = "name", relayServer = "relayServer", publicKey = publicKey)
@@ -259,7 +259,7 @@ internal class BeaconWalletClientTest {
 
     @Test
     fun `adds peers to storage`() {
-        runBlockingTest {
+        runTest {
             storageManager.setPeers(emptyList())
 
             val (newPeersVararg, newPeersList) = p2pPeers(4).splitAt { it.size / 2 }
@@ -278,7 +278,7 @@ internal class BeaconWalletClientTest {
 
     @Test
     fun `returns peers from storage`() {
-        runBlockingTest {
+        runTest {
             val storagePeers = p2pPeers(4)
             storageManager.setPeers(storagePeers)
 
@@ -290,7 +290,7 @@ internal class BeaconWalletClientTest {
 
     @Test
     fun `removes peers from storage and sends disconnect message`() {
-        runBlockingTest {
+        runTest {
             val (toKeep, toRemove) = p2pPeers(4).splitAt { it.size / 2 }
 
             val expectedDisconnectMessages = toRemove.map {
@@ -319,7 +319,7 @@ internal class BeaconWalletClientTest {
 
     @Test
     fun `does not remove any peer if not specified and does not send disconnect messages`() {
-        runBlockingTest {
+        runTest {
             val storagePeers = p2pPeers(4)
             storageManager.setPeers(storagePeers)
             beaconWalletClient.removePeers()
@@ -333,7 +333,7 @@ internal class BeaconWalletClientTest {
 
     @Test
     fun `removes all peers from storage and sends disconnect messages`() {
-        runBlockingTest {
+        runTest {
             val peers = p2pPeers(4)
 
             val expectedDisconnectMessages = peers.map {
@@ -356,7 +356,7 @@ internal class BeaconWalletClientTest {
 
     @Test
     fun `returns app metadata from storage`() {
-        runBlockingTest {
+        runTest {
             val storageMetadata = appMetadata(4)
             storageManager.setAppMetadata(storageMetadata)
 
@@ -368,7 +368,7 @@ internal class BeaconWalletClientTest {
 
     @Test
     fun `returns app metadata matching specified sender ID`() {
-        runBlockingTest {
+        runTest {
             val storageMetadata = appMetadata(4)
             storageManager.setAppMetadata(storageMetadata)
 
@@ -381,7 +381,7 @@ internal class BeaconWalletClientTest {
 
     @Test
     fun `removes app metadata matching specified sender IDs`() {
-        runBlockingTest {
+        runTest {
             val (toKeep, toRemove) = appMetadata(4).splitAt { it.size / 2 }
             storageManager.setAppMetadata(toKeep + toRemove)
 
@@ -400,7 +400,7 @@ internal class BeaconWalletClientTest {
 
     @Test
     fun `removes app metadata from storage`() {
-        runBlockingTest {
+        runTest {
             val (toKeep, toRemove) = appMetadata(4).splitAt { it.size / 2 }
             storageManager.setAppMetadata(toKeep + toRemove)
 
@@ -418,7 +418,7 @@ internal class BeaconWalletClientTest {
 
     @Test
     fun `does not remove any app metadata if not specified`() {
-        runBlockingTest {
+        runTest {
             val storageAppMetadata = appMetadata(4)
             storageManager.setAppMetadata(storageAppMetadata)
             beaconWalletClient.removeAppMetadata()
@@ -431,7 +431,7 @@ internal class BeaconWalletClientTest {
 
     @Test
     fun `removes all app metadata from storage`() {
-        runBlockingTest {
+        runTest {
             val storageMetadata = appMetadata(4)
             storageManager.setAppMetadata(storageMetadata)
             beaconWalletClient.removeAllAppMetadata()
@@ -444,7 +444,7 @@ internal class BeaconWalletClientTest {
 
     @Test
     fun `returns permissions from storage`() {
-        runBlockingTest {
+        runTest {
             val storagePermissions = permissions(4)
             storageManager.setPermissions(storagePermissions)
 
@@ -456,7 +456,7 @@ internal class BeaconWalletClientTest {
 
     @Test
     fun `returns permissions matching specified account identifier`() {
-        runBlockingTest {
+        runTest {
             val storagePermissions = permissions(4)
             storageManager.setPermissions(storagePermissions)
 
@@ -470,7 +470,7 @@ internal class BeaconWalletClientTest {
 
     @Test
     fun `removes permissions matching specified account IDs`() {
-        runBlockingTest {
+        runTest {
             val (toKeep, toRemove) = permissions(4).splitAt { it.size / 2 }
             storageManager.setPermissions(toKeep + toRemove)
 
@@ -489,7 +489,7 @@ internal class BeaconWalletClientTest {
 
     @Test
     fun `removes permissions from storage`() {
-        runBlockingTest {
+        runTest {
             val (toKeep, toRemove) = permissions(4).splitAt { it.size / 2 }
             storageManager.setPermissions(toKeep + toRemove)
 
@@ -507,7 +507,7 @@ internal class BeaconWalletClientTest {
 
     @Test
     fun `does not remove any permission if not specified`() {
-        runBlockingTest {
+        runTest {
             val storagePermissions = permissions(4)
             storageManager.setPermissions(storagePermissions)
             beaconWalletClient.removePermissions()
@@ -520,7 +520,7 @@ internal class BeaconWalletClientTest {
 
     @Test
     fun `removes all permissions from storage`() {
-        runBlockingTest {
+        runTest {
             val storagePermissions = permissions(4)
             storageManager.setPermissions(storagePermissions)
             beaconWalletClient.removeAllPermissions()

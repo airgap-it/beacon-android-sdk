@@ -18,7 +18,6 @@ import it.airgap.beaconsdk.core.internal.utils.Base58Check
 import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
 import it.airgap.beaconsdk.core.internal.utils.Poller
 import it.airgap.beaconsdk.core.network.provider.HttpClientProvider
-import it.airgap.beaconsdk.core.network.provider.HttpProvider
 import it.airgap.beaconsdk.core.scope.BeaconScope
 import kotlinx.serialization.json.Json
 import kotlin.reflect.KClass
@@ -64,13 +63,6 @@ public interface DependencyRegistry {
 
     public val json: Json
     public fun httpClient(httpClientProvider: HttpClientProvider?): HttpClient
-
-    @Deprecated(
-        "Use httpClient(HttpClientProvider?) instead.",
-        replaceWith = ReplaceWith("httpClient(httpProvider)"),
-        level = DeprecationLevel.WARNING,
-    )
-    public fun httpClient(httpProvider: HttpProvider): HttpClient
 
     // -- migration --
 

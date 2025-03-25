@@ -4,16 +4,25 @@ import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.data.MockAppMetadata
 import it.airgap.beaconsdk.core.internal.blockchain.MockBlockchain
 import it.airgap.beaconsdk.core.internal.message.v2.V2BeaconMessage
-import it.airgap.beaconsdk.core.internal.utils.*
+import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
+import it.airgap.beaconsdk.core.internal.utils.dependencyRegistry
+import it.airgap.beaconsdk.core.internal.utils.failWithIllegalArgument
+import it.airgap.beaconsdk.core.internal.utils.getSerializable
+import it.airgap.beaconsdk.core.internal.utils.getString
 import it.airgap.beaconsdk.core.message.BeaconMessage
 import it.airgap.beaconsdk.core.scope.BeaconScope
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.element
 import kotlinx.serialization.descriptors.elementNames
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.JsonDecoder
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonEncoder
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.encodeToJsonElement
+import kotlinx.serialization.json.jsonObject
 
 @Serializable(with = V2MockPermissionBeaconRequest.Serializer::class)
 internal data class V2MockPermissionBeaconRequest(
@@ -37,7 +46,6 @@ internal data class V2MockPermissionBeaconRequest(
             rest,
         )
 
-    @OptIn(ExperimentalSerializationApi::class)
     object Serializer : KJsonSerializer<V2MockPermissionBeaconRequest> {
         private val knownFields: Set<String> get() = descriptor.elementNames.toSet()
 
@@ -92,7 +100,6 @@ internal data class V2MockPermissionBeaconResponse(
             rest,
         )
 
-    @OptIn(ExperimentalSerializationApi::class)
     object Serializer : KJsonSerializer<V2MockPermissionBeaconResponse> {
         private val knownFields: Set<String> get() = descriptor.elementNames.toSet()
 
@@ -169,7 +176,6 @@ internal data class V2MockBlockchainBeaconMessage(
             V2MockBlockchainBeaconMessage(type, version, id, senderId, rest, MockBeaconMessageType.Request)
     }
 
-    @OptIn(ExperimentalSerializationApi::class)
     object Serializer : KJsonSerializer<V2MockBlockchainBeaconMessage> {
         private val knownFields: Set<String> get() = descriptor.elementNames.toSet()
 

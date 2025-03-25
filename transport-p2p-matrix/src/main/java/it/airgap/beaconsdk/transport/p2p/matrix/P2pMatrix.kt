@@ -9,7 +9,6 @@ import it.airgap.beaconsdk.core.internal.transport.p2p.data.P2pMessage
 import it.airgap.beaconsdk.core.internal.utils.*
 import it.airgap.beaconsdk.core.internal.utils.delegate.default
 import it.airgap.beaconsdk.core.network.provider.HttpClientProvider
-import it.airgap.beaconsdk.core.network.provider.HttpProvider
 import it.airgap.beaconsdk.core.transport.data.P2pPairingRequest
 import it.airgap.beaconsdk.core.transport.data.P2pPairingResponse
 import it.airgap.beaconsdk.core.transport.p2p.P2pClient
@@ -309,29 +308,11 @@ public class P2pMatrix internal constructor(
      * the rest will be used as a fallback if the primary node goes down.
      * @property [httpClientProvider] An optional external [HttpProvider] implementation used to make Beacon HTTP requests.
      */
-    public class Factory private constructor(
-        storagePlugin: P2pMatrixStoragePlugin?,
-        private val matrixNodes: List<String>,
-        private val httpClientProvider: HttpClientProvider?,
-        private val httpProvider: HttpProvider?,
+    public class Factory(
+        storagePlugin: P2pMatrixStoragePlugin? = null,
+        private val matrixNodes: List<String> = BeaconP2pMatrixConfiguration.defaultNodes,
+        private val httpClientProvider: HttpClientProvider? = null,
     ) : P2pClient.Factory<P2pMatrix> {
-
-        public constructor(
-            storagePlugin: P2pMatrixStoragePlugin? = null,
-            matrixNodes: List<String> = BeaconP2pMatrixConfiguration.defaultNodes,
-            httpClientProvider: HttpClientProvider? = null,
-        ) : this(storagePlugin, matrixNodes, httpClientProvider, null)
-
-        @Deprecated(
-            "Use P2pMatrix.Factory(P2pMatrixStoragePlugin?, List<String>, HttpClientProvider?) instead.",
-            replaceWith = ReplaceWith("P2pMatrix.Factory(storagePlugin, matrixNodes, httpProvider)"),
-            level = DeprecationLevel.WARNING,
-        )
-        public constructor(
-            storagePlugin: P2pMatrixStoragePlugin? = null,
-            matrixNodes: List<String> = BeaconP2pMatrixConfiguration.defaultNodes,
-            httpProvider: HttpProvider,
-        ) : this(storagePlugin, matrixNodes, null, httpProvider)
 
         private var _extendedDependencyRegistry: ExtendedDependencyRegistry? = null
         private fun extendedDependencyRegistry(dependencyRegistry: DependencyRegistry): ExtendedDependencyRegistry =
@@ -356,17 +337,3 @@ public fun p2pMatrix(
     matrixNodes: List<String> = BeaconP2pMatrixConfiguration.defaultNodes,
     httpClientProvider: HttpClientProvider? = null,
 ): Connection = P2P(P2pMatrix.Factory(storagePlugin, matrixNodes, httpClientProvider))
-
-/**
- * Creates a new instance of [P2pMatrix.Factory] configured with optional [storagePlugin], [matrixNodes] and [httpProvider].
- */
-@Deprecated(
-    "Use p2pMatrix(P2pMatrixStoragePlugin?, List<String>, HttpClientProvider?) instead.",
-    replaceWith = ReplaceWith("p2pMatrix(storagePlugin, matrixNodes, httpProvider)"),
-    level = DeprecationLevel.WARNING,
-)
-public fun p2pMatrix(
-    storagePlugin: P2pMatrixStoragePlugin? = null,
-    matrixNodes: List<String> = BeaconP2pMatrixConfiguration.defaultNodes,
-    httpProvider: HttpProvider,
-): Connection = P2P(P2pMatrix.Factory(storagePlugin, matrixNodes, httpProvider))

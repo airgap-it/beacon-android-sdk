@@ -2,7 +2,6 @@ package it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api
 
 import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
 import it.airgap.beaconsdk.core.internal.utils.getString
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -30,7 +29,6 @@ internal sealed class MatrixError : Exception() {
     @Serializable
     data class Other(@SerialName(Serializer.Field.ERRCODE) override val code: String, override val error: String) : MatrixError()
 
-    @OptIn(ExperimentalSerializationApi::class)
     object Serializer : KJsonSerializer<MatrixError> {
         object Field {
             const val ERRCODE = "errcode"

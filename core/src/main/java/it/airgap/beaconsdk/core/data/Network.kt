@@ -6,7 +6,6 @@ import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
 import it.airgap.beaconsdk.core.internal.utils.blockchainRegistry
 import it.airgap.beaconsdk.core.internal.utils.getString
 import it.airgap.beaconsdk.core.scope.BeaconScope
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
@@ -36,7 +35,6 @@ public abstract class Network {
         public fun serializer(beaconScope: BeaconScope? = null): KSerializer<Network> = Serializer(beaconScope)
     }
 
-    @OptIn(ExperimentalSerializationApi::class)
     internal class Serializer(private val blockchainRegistry: BlockchainRegistry) : KJsonSerializer<Network> {
         constructor(beaconScope: BeaconScope? = null) : this(blockchainRegistry(beaconScope))
 
