@@ -35,7 +35,6 @@ internal class PeerSerializer : KSerializer<Peer> {
 @Serializable
 private data class PeerSurrogate(
     @JsonNames(v3_2_0_BEACON_CORE_CLASS_DISCRIMINATOR) val type: Type,
-    val id: String? = null,
     val name: String,
     val publicKey: String,
     val relayServer: String,
@@ -45,7 +44,7 @@ private data class PeerSurrogate(
     val isPaired: Boolean = false,
 ) {
     fun toTarget(): Peer = when (type) {
-        Type.P2P -> P2pPeer(id, name, publicKey, relayServer, version, icon, appUrl, isPaired)
+        Type.P2P -> P2pPeer(name, publicKey, relayServer, version, icon, appUrl, isPaired)
     }
 
     @Serializable
@@ -59,5 +58,5 @@ private fun PeerSurrogate(value: Peer): PeerSurrogate = with(value) {
         is P2pPeer -> PeerSurrogate.Type.P2P
     }
 
-    return PeerSurrogate(type, id, name, publicKey, relayServer, version, icon, appUrl, isPaired)
+    return PeerSurrogate(type, name, publicKey, relayServer, version, icon, appUrl, isPaired)
 }

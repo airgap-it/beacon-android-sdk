@@ -9,7 +9,6 @@ import kotlinx.serialization.Transient
  */
 @Serializable(with = PeerSerializer::class)
 public sealed class Peer {
-    public abstract val id: String?
     public abstract val name: String
     public abstract val publicKey: String
     public abstract val version: String
@@ -41,7 +40,6 @@ public sealed class Peer {
  */
 @Serializable
 public data class P2pPeer(
-    override val id: String? = null,
     override val name: String,
     override val publicKey: String,
     public val relayServer: String,
@@ -53,14 +51,13 @@ public data class P2pPeer(
 ) : Peer() {
 
     public constructor(
-        id: String? = null,
         name: String,
         publicKey: String,
         relayServer: String,
         version: String = "1",
         icon: String? = null,
         appUrl: String? = null,
-    ) : this(id, name, publicKey, relayServer, version, icon, appUrl, isPaired = false, isRemoved = false)
+    ) : this(name, publicKey, relayServer, version, icon, appUrl, isPaired = false, isRemoved = false)
 
     public companion object {
         internal const val TYPE = "p2p"

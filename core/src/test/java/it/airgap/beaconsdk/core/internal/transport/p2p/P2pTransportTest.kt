@@ -296,17 +296,17 @@ internal class P2pTransportTest {
     }
 
     private val validKnownPeers = listOf(
-        P2pPeer("1", "peer1", "0x00", "relayServer", isPaired = true),
-        P2pPeer("2", "peer2", "0x01", "relayServer", "1", isPaired = true),
-        P2pPeer("3", "peer3", "0x02", "relayServer", "2", isPaired = true),
-        P2pPeer("4", "peer4", "0x03", "relayServer", "3", isPaired = true),
+        P2pPeer("peer1", "0x00", "relayServer", isPaired = true),
+        P2pPeer("peer2", "0x01", "relayServer", "1", isPaired = true),
+        P2pPeer("peer3", "0x02", "relayServer", "2", isPaired = true),
+        P2pPeer("peer4", "0x03", "relayServer", "3", isPaired = true),
     )
 
     private val validNewPeers = listOf(
-        P2pPeer("1", "peer1", "0x00", "relayServer", isPaired = false),
-        P2pPeer("2", "peer2", "0x01", "relayServer", "1", isPaired = false),
-        P2pPeer("3", "peer3", "0x02", "relayServer", "2", isPaired = false),
-        P2pPeer("4", "peer4", "0x03", "relayServer", "3", isPaired = false),
+        P2pPeer("peer1", "0x00", "relayServer", isPaired = false),
+        P2pPeer("peer2", "0x01", "relayServer", "1", isPaired = false),
+        P2pPeer("peer3", "0x02", "relayServer", "2", isPaired = false),
+        P2pPeer("peer4", "0x03", "relayServer", "3", isPaired = false),
     )
 
     private fun messagesAndFlows(
