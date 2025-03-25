@@ -2,7 +2,6 @@
 
 package it.airgap.beaconsdk.core.internal.migration.v3_2_0
 
-import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.data.P2pPeer
 import it.airgap.beaconsdk.core.data.Peer
 import it.airgap.beaconsdk.core.internal.serializer.BEACON_CORE_CLASS_DISCRIMINATOR
@@ -61,49 +60,4 @@ private fun PeerSurrogate(value: Peer): PeerSurrogate = with(value) {
     }
 
     return PeerSurrogate(type, id, name, publicKey, relayServer, version, icon, appUrl, isPaired)
-}
-
-// -- Origin --
-
-internal class OriginSerializer : KSerializer<Origin> {
-    override val descriptor: SerialDescriptor = OriginSurrogate.serializer().descriptor
-
-    override fun deserialize(decoder: Decoder): Origin {
-        val surrogate = decoder.decodeSerializableValue(OriginSurrogate.serializer())
-        return surrogate.toTarget()
-    }
-
-    override fun serialize(encoder: Encoder, value: Origin) {
-        val surrogate = OriginSurrogate(value)
-        encoder.encodeSerializableValue(OriginSurrogate.serializer(), surrogate)
-    }
-}
-
-@Serializable
-private data class OriginSurrogate(
-    @JsonNames(v3_2_0_BEACON_CORE_CLASS_DISCRIMINATOR) val type: Type,
-    val id: String,
-) {
-    fun toTarget(): Origin = when (type) {
-        Type.Website -> Origin.Website(id)
-        Type.Extension -> Origin.Extension(id)
-        Type.P2P -> Origin.P2P(id)
-    }
-
-    @Serializable
-    enum class Type {
-        @SerialName(Origin.Website.TYPE) Website,
-        @SerialName(Origin.Extension.TYPE) Extension,
-        @SerialName(Origin.P2P.TYPE) P2P,
-    }
-}
-
-private fun OriginSurrogate(value: Origin): OriginSurrogate = with(value) {
-    val type = when (this) {
-        is Origin.Website -> OriginSurrogate.Type.Website
-        is Origin.Extension -> OriginSurrogate.Type.Extension
-        is Origin.P2P -> OriginSurrogate.Type.P2P
-    }
-
-    return OriginSurrogate(type, id)
 }

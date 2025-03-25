@@ -16,7 +16,6 @@ import it.airgap.beaconsdk.core.internal.crypto.provider.LazySodiumCryptoProvide
 import it.airgap.beaconsdk.core.internal.migration.CoreMigration
 import it.airgap.beaconsdk.core.internal.migration.Migration
 import it.airgap.beaconsdk.core.internal.network.HttpClient
-import it.airgap.beaconsdk.core.internal.network.HttpClientDeprecated
 import it.airgap.beaconsdk.core.internal.network.provider.KtorHttpClientProvider
 import it.airgap.beaconsdk.core.internal.serializer.Serializer
 import it.airgap.beaconsdk.core.internal.serializer.coreJson
@@ -32,7 +31,6 @@ import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
 import it.airgap.beaconsdk.core.internal.utils.Poller
 import it.airgap.beaconsdk.core.internal.utils.delegate.lazyWeak
 import it.airgap.beaconsdk.core.network.provider.HttpClientProvider
-import it.airgap.beaconsdk.core.network.provider.HttpProvider
 import it.airgap.beaconsdk.core.scope.BeaconScope
 import it.airgap.beaconsdk.core.storage.SecureStorage
 import it.airgap.beaconsdk.core.storage.Storage
@@ -131,9 +129,6 @@ internal class CoreDependencyRegistry(
 
         return httpClients.getOrPut(httpClientProvider.hashCode()) { HttpClient(httpClientProvider, json) }
     }
-
-    override fun httpClient(httpProvider: HttpProvider): HttpClient =
-        httpClients.getOrPut(httpProvider.hashCode()) { HttpClientDeprecated(httpProvider) }
 
     private val httpClientProvider: HttpClientProvider by lazyWeak {
         when (BeaconConfiguration.httpClientProvider) {

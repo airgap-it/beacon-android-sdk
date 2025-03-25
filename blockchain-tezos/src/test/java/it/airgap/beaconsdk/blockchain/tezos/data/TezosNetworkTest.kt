@@ -103,14 +103,6 @@ internal class TezosNetworkTest {
         TezosNetwork.Ghostnet(name, rpcUrl) to json("ghostnet", name, rpcUrl, includeNulls),
         TezosNetwork.Mondaynet(name, rpcUrl) to json("mondaynet", name, rpcUrl, includeNulls),
         TezosNetwork.Dailynet(name, rpcUrl) to json("dailynet", name, rpcUrl, includeNulls),
-        TezosNetwork.Delphinet(name, rpcUrl) to json("delphinet", name, rpcUrl, includeNulls),
-        TezosNetwork.Edonet(name, rpcUrl) to json("edonet", name, rpcUrl, includeNulls),
-        TezosNetwork.Florencenet(name, rpcUrl) to json("florencenet", name, rpcUrl, includeNulls),
-        TezosNetwork.Granadanet(name, rpcUrl) to json("granadanet", name, rpcUrl, includeNulls),
-        TezosNetwork.Hangzhounet(name, rpcUrl) to json("hangzhounet", name, rpcUrl, includeNulls),
-        TezosNetwork.Ithacanet(name, rpcUrl) to json("ithacanet", name, rpcUrl, includeNulls),
-        TezosNetwork.Jakartanet(name, rpcUrl) to json("jakartanet", name, rpcUrl, includeNulls),
-        TezosNetwork.Kathmandunet(name, rpcUrl) to json("kathmandunet", name, rpcUrl, includeNulls),
         TezosNetwork.Custom(name, rpcUrl) to json("custom", name, rpcUrl, includeNulls),
     )
 

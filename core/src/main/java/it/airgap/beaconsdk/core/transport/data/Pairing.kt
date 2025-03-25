@@ -26,7 +26,6 @@ public sealed interface PairingMessage {
 
     public fun toPeer(): Peer
 
-    @OptIn(ExperimentalSerializationApi::class)
     public class Serializer : KJsonSerializer<PairingMessage> {
         override val descriptor: SerialDescriptor = buildClassSerialDescriptor("PairingData") {
             element<String>("type")
@@ -59,7 +58,6 @@ public sealed interface PairingMessage {
 
 public sealed interface PairingRequest : PairingMessage {
 
-    @OptIn(ExperimentalSerializationApi::class)
     public class Serializer : KJsonSerializer<PairingRequest> {
         override val descriptor: SerialDescriptor = buildClassSerialDescriptor("PairingRequest") {
             element<String>("type")
@@ -92,7 +90,6 @@ public sealed interface PairingRequest : PairingMessage {
 
 public sealed interface PairingResponse : PairingMessage {
 
-    @OptIn(ExperimentalSerializationApi::class)
     public class Serializer : KJsonSerializer<PairingResponse> {
         override val descriptor: SerialDescriptor = buildClassSerialDescriptor("PairingResponse") {
             element<String>("type")

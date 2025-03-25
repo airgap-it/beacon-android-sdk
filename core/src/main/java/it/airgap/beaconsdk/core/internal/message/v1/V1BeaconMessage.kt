@@ -8,17 +8,30 @@ import it.airgap.beaconsdk.core.internal.compat.Compat
 import it.airgap.beaconsdk.core.internal.compat.VersionedCompat
 import it.airgap.beaconsdk.core.internal.message.VersionedBeaconMessage
 import it.airgap.beaconsdk.core.internal.message.v2.V2BeaconMessage
-import it.airgap.beaconsdk.core.internal.utils.*
+import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
+import it.airgap.beaconsdk.core.internal.utils.blockchainRegistry
+import it.airgap.beaconsdk.core.internal.utils.compat
+import it.airgap.beaconsdk.core.internal.utils.failWithMissingField
+import it.airgap.beaconsdk.core.internal.utils.failWithUnsupportedMessage
+import it.airgap.beaconsdk.core.internal.utils.getString
 import it.airgap.beaconsdk.core.message.AcknowledgeBeaconResponse
 import it.airgap.beaconsdk.core.message.BeaconMessage
 import it.airgap.beaconsdk.core.message.DisconnectBeaconMessage
 import it.airgap.beaconsdk.core.message.ErrorBeaconResponse
 import it.airgap.beaconsdk.core.scope.BeaconScope
-import kotlinx.serialization.*
+import kotlinx.serialization.EncodeDefault
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Required
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.element
-import kotlinx.serialization.encoding.*
+import kotlinx.serialization.encoding.CompositeDecoder
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.encoding.decodeStructure
+import kotlinx.serialization.encoding.encodeStructure
 import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonEncoder
@@ -54,7 +67,6 @@ public abstract class V1BeaconMessage : VersionedBeaconMessage() {
 
     public class Context(public val compat: Compat<VersionedCompat>)
 
-    @OptIn(ExperimentalSerializationApi::class)
     internal class Serializer(private val blockchainRegistry: BlockchainRegistry, private val compat: Compat<VersionedCompat>) : KJsonSerializer<V1BeaconMessage> {
         constructor(beaconScope: BeaconScope? = null) : this(blockchainRegistry(beaconScope), compat(beaconScope))
 

@@ -18,7 +18,7 @@ import it.airgap.beaconsdk.transport.p2p.matrix.internal.storage.setMatrixSyncTo
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
 import kotlin.test.assertEquals
@@ -43,7 +43,7 @@ internal class MatrixStoreTest {
 
     @Test
     fun `initializes state at first run`() {
-        runBlockingTest {
+        runTest {
             val userId = "userId"
             val deviceId = "deviceId"
             val accessToken = "accessToken"
@@ -69,7 +69,7 @@ internal class MatrixStoreTest {
 
     @Test
     fun `initializes state on every next run`() {
-        runBlockingTest {
+        runTest {
             val syncToken = "syncToken"
             val rooms = listOf(
                 MatrixRoom.Joined("1", listOf("member#1", "member#2")),
@@ -109,7 +109,7 @@ internal class MatrixStoreTest {
 
     @Test
     fun `sets new sync data on successful sync`() {
-        runBlockingTest {
+        runTest {
             val syncToken = "syncToken"
             val pollingTimeout = 1000L
             val rooms = listOf(
@@ -139,7 +139,7 @@ internal class MatrixStoreTest {
 
     @Test
     fun `merges new data on successful sync`() {
-        runBlockingTest {
+        runTest {
             val storageRooms = listOf(
                 MatrixRoom.Joined("1", listOf("member#1", "member#2")),
                 MatrixRoom.Invited("2", listOf("member#3", "member#4")),
@@ -214,7 +214,7 @@ internal class MatrixStoreTest {
 
     @Test
     fun `increases polling retries counter and sets polling state on error`() {
-        runBlockingTest {
+        runTest {
             val currentRetries = matrixStore.state().getOrThrow().pollingRetries
             matrixStore.intent(OnSyncError).getOrThrow()
 
@@ -230,7 +230,7 @@ internal class MatrixStoreTest {
 
     @Test
     fun `increases transaction counter on new txn id created`() {
-        runBlockingTest {
+        runTest {
             val currentCounter = matrixStore.state().getOrThrow().transactionCounter
             matrixStore.intent(OnTxnIdCreated).getOrThrow()
 
@@ -243,7 +243,7 @@ internal class MatrixStoreTest {
 
     @Test
     fun `resets state`() {
-        runBlockingTest {
+        runTest {
             val userId = "userId"
             val deviceId = "deviceId"
             val accessToken = "accessToken"
@@ -269,7 +269,7 @@ internal class MatrixStoreTest {
 
     @Test
     fun `resets state hard`() {
-        runBlockingTest {
+        runTest {
             val userId = "userId"
             val deviceId = "deviceId"
             val accessToken = "accessToken"

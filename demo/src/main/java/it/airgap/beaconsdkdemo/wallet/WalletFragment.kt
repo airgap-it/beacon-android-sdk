@@ -16,7 +16,6 @@ import it.airgap.beaconsdkdemo.R
 import it.airgap.beaconsdkdemo.databinding.FragmentWalletBinding
 import it.airgap.beaconsdkdemo.utils.toJson
 import kotlinx.coroutines.launch
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 class WalletFragment : Fragment(R.layout.fragment_wallet) {

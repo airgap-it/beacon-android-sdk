@@ -1,9 +1,14 @@
 package it.airgap.beaconsdk.core.internal.storage
 
 import androidx.annotation.RestrictTo
-import it.airgap.beaconsdk.core.data.*
+import it.airgap.beaconsdk.core.data.AppMetadata
+import it.airgap.beaconsdk.core.data.Peer
+import it.airgap.beaconsdk.core.data.Permission
+import it.airgap.beaconsdk.core.data.selfRemoved
 import it.airgap.beaconsdk.core.internal.BeaconConfiguration
-import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.*
+import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.getAppMetadata
+import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.getPeers
+import it.airgap.beaconsdk.core.internal.storage.sharedpreferences.getPermissions
 import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
 import it.airgap.beaconsdk.core.internal.utils.asHexString
 import it.airgap.beaconsdk.core.scope.BeaconScope
@@ -13,14 +18,11 @@ import it.airgap.beaconsdk.core.storage.Storage
 import it.airgap.beaconsdk.core.storage.StoragePlugin
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
-import kotlin.reflect.KProperty1
 
-@OptIn(ExperimentalCoroutinesApi::class)
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class StorageManager(
     private val beaconScope: BeaconScope,

@@ -9,11 +9,12 @@ import it.airgap.beaconsdk.core.internal.network.HttpClient
 import it.airgap.beaconsdk.core.internal.network.data.ApplicationJson
 import it.airgap.beaconsdk.core.internal.network.data.BearerHeader
 import it.airgap.beaconsdk.core.network.provider.HttpClientProvider
-import it.airgap.beaconsdk.core.network.provider.HttpProvider
-import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.MatrixError
-import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.room.*
-import kotlinx.coroutines.test.runBlockingTest
-import kotlinx.serialization.encodeToString
+import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.room.MatrixCreateRoomRequest
+import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.room.MatrixCreateRoomResponse
+import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.room.MatrixInviteRoomRequest
+import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.room.MatrixInviteRoomResponse
+import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.room.MatrixJoinRoomResponse
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import nodeApiUrl
 import org.junit.Before
@@ -55,7 +56,7 @@ internal class MatrixRoomServiceTest {
             any(),
         ) } returns json.encodeToString(expectedResponse)
 
-        runBlockingTest {
+        runTest {
             val node = "node"
             val accessToken = "token"
             val request = MatrixCreateRoomRequest()
@@ -88,7 +89,7 @@ internal class MatrixRoomServiceTest {
             any(),
         ) } throws error
 
-        runBlockingTest {
+        runTest {
             val exception = matrixRoomService.createRoom("node", "token").exceptionOrNull()
 
             assertEquals(error, exception)
@@ -108,7 +109,7 @@ internal class MatrixRoomServiceTest {
             any(),
         ) } returns json.encodeToString(expectedResponse)
 
-        runBlockingTest {
+        runTest {
             val node = "node"
             val accessToken = "token"
             val user = "user"
@@ -143,7 +144,7 @@ internal class MatrixRoomServiceTest {
             any(),
         ) } throws error
 
-        runBlockingTest {
+        runTest {
             val exception = matrixRoomService.inviteToRoom("node", "token", "user", "roomId").exceptionOrNull()
 
             assertEquals(error, exception)
@@ -163,7 +164,7 @@ internal class MatrixRoomServiceTest {
             any(),
         ) } returns json.encodeToString(expectedResponse)
 
-        runBlockingTest {
+        runTest {
             val node = "node"
             val accessToken = "token"
             val roomId = "roomId"
@@ -196,7 +197,7 @@ internal class MatrixRoomServiceTest {
             any(),
         ) } throws error
 
-        runBlockingTest {
+        runTest {
             val exception = matrixRoomService.joinRoom("node", "token", "roomId").exceptionOrNull()
 
             assertEquals(error, exception)

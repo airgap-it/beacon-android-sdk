@@ -4,7 +4,6 @@ import it.airgap.beaconsdk.core.internal.di.DependencyRegistry
 import it.airgap.beaconsdk.core.internal.di.findExtended
 import it.airgap.beaconsdk.core.internal.network.HttpClient
 import it.airgap.beaconsdk.core.network.provider.HttpClientProvider
-import it.airgap.beaconsdk.core.network.provider.HttpProvider
 import it.airgap.beaconsdk.transport.p2p.matrix.P2pMatrix
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.P2pMatrixCommunicator
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.P2pMatrixSecurity
@@ -17,13 +16,6 @@ internal interface ExtendedDependencyRegistry : DependencyRegistry {
     // -- client --
 
     fun p2pMatrix(storagePlugin: P2pMatrixStoragePlugin, matrixNodes: List<String>, httpClientProvider: HttpClientProvider?): P2pMatrix
-
-    @Deprecated(
-        "Use p2pMatrix(P2pMatrixStoragePlugin, List<String>, HttpClientProvider?) instead.",
-        replaceWith = ReplaceWith("p2pMatrix(storagePlugin, matrixNodes, httpProvider)"),
-        level = DeprecationLevel.WARNING,
-    )
-    fun p2pMatrix(storagePlugin: P2pMatrixStoragePlugin, matrixNodes: List<String>, httpProvider: HttpProvider): P2pMatrix
 
     // -- P2P --
 
