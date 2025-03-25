@@ -2,8 +2,24 @@ package it.airgap.beaconsdk.core.internal.blockchain
 
 import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.blockchain.Blockchain
-import it.airgap.beaconsdk.core.data.*
-import it.airgap.beaconsdk.core.internal.blockchain.message.*
+import it.airgap.beaconsdk.core.data.AppMetadata
+import it.airgap.beaconsdk.core.data.BeaconError
+import it.airgap.beaconsdk.core.data.MockAppMetadata
+import it.airgap.beaconsdk.core.data.MockNetwork
+import it.airgap.beaconsdk.core.data.MockPermission
+import it.airgap.beaconsdk.core.data.Network
+import it.airgap.beaconsdk.core.data.Permission
+import it.airgap.beaconsdk.core.internal.blockchain.message.MockError
+import it.airgap.beaconsdk.core.internal.blockchain.message.V1MockBlockchainBeaconMessage
+import it.airgap.beaconsdk.core.internal.blockchain.message.V1MockPermissionBeaconRequest
+import it.airgap.beaconsdk.core.internal.blockchain.message.V1MockPermissionBeaconResponse
+import it.airgap.beaconsdk.core.internal.blockchain.message.V2MockBlockchainBeaconMessage
+import it.airgap.beaconsdk.core.internal.blockchain.message.V2MockPermissionBeaconRequest
+import it.airgap.beaconsdk.core.internal.blockchain.message.V2MockPermissionBeaconResponse
+import it.airgap.beaconsdk.core.internal.blockchain.message.V3MockBlockchainBeaconRequestData
+import it.airgap.beaconsdk.core.internal.blockchain.message.V3MockBlockchainBeaconResponseData
+import it.airgap.beaconsdk.core.internal.blockchain.message.V3MockPermissionBeaconRequestData
+import it.airgap.beaconsdk.core.internal.blockchain.message.V3MockPermissionBeaconResponseData
 import it.airgap.beaconsdk.core.internal.blockchain.serializer.DataBlockchainSerializer
 import it.airgap.beaconsdk.core.internal.blockchain.serializer.V1BeaconMessageBlockchainSerializer
 import it.airgap.beaconsdk.core.internal.blockchain.serializer.V2BeaconMessageBlockchainSerializer
@@ -18,7 +34,6 @@ import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
 import it.airgap.beaconsdk.core.internal.utils.SuperClassSerializer
 import it.airgap.beaconsdk.core.internal.utils.failWithIllegalArgument
 import it.airgap.beaconsdk.core.internal.utils.getString
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
@@ -44,7 +59,6 @@ public class MockBlockchainSerializer : Blockchain.Serializer {
             get() = SuperClassSerializer(MockError.serializer())
     }
 
-    @OptIn(ExperimentalSerializationApi::class)
     override val v1: V1BeaconMessageBlockchainSerializer = object : V1BeaconMessageBlockchainSerializer {
         override val message: KSerializer<V1BeaconMessage> = object : KJsonSerializer<V1BeaconMessage> {
             override val descriptor: SerialDescriptor = buildClassSerialDescriptor("MockV1BeaconMessage") {
@@ -73,7 +87,6 @@ public class MockBlockchainSerializer : Blockchain.Serializer {
 
     }
 
-    @OptIn(ExperimentalSerializationApi::class)
     override val v2: V2BeaconMessageBlockchainSerializer = object : V2BeaconMessageBlockchainSerializer {
         override val message: KSerializer<V2BeaconMessage> =
             object : KJsonSerializer<V2BeaconMessage> {

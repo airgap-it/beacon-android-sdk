@@ -32,7 +32,7 @@ import it.airgap.beaconsdk.core.message.BeaconMessage
 import it.airgap.beaconsdk.core.scope.BeaconScope
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import mockDependencyRegistry
 import org.junit.After
 import org.junit.Before
@@ -117,7 +117,7 @@ internal class BeaconWalletClientTest {
 
     @Test
     fun `connects for messages with callback`() {
-        runBlockingTest {
+        runTest {
             val requests = beaconVersionedRequests(context = dependencyRegistry.versionedBeaconMessageContext).shuffled()
             val beaconMessageFlow = beaconConnectionMessageFlow(requests.size + 1)
 
@@ -202,7 +202,7 @@ internal class BeaconWalletClientTest {
 
     @Test
     fun `returns internal BeaconException when internal error occurred`() {
-        runBlockingTest {
+        runTest {
             val requests = beaconVersionedRequests(context = dependencyRegistry.versionedBeaconMessageContext).shuffled()
             val beaconMessageFlow = beaconConnectionMessageFlow(requests.size + 1)
 
@@ -288,7 +288,7 @@ internal class BeaconWalletClientTest {
 
     @Test
     fun `removes message callback`() {
-        runBlockingTest {
+        runTest {
             val requests = beaconVersionedRequests(context = dependencyRegistry.versionedBeaconMessageContext).shuffled()
             val (requestsForAll, requestsFor2) = requests.splitAt { it.size / 2 }
             val beaconMessageFlow = beaconConnectionMessageFlow(requests.size + 1)
@@ -364,7 +364,7 @@ internal class BeaconWalletClientTest {
 
     @Test
     fun `stops and removes all callbacks`() {
-        runBlockingTest {
+        runTest {
             val requests = beaconVersionedRequests(context = dependencyRegistry.versionedBeaconMessageContext).shuffled()
             val beaconMessageFlow = beaconConnectionMessageFlow(requests.size + 1)
 

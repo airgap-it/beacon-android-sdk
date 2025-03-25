@@ -1,13 +1,19 @@
 package it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix
 
-import io.mockk.*
+import io.mockk.MockKAnnotations
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.confirmVerified
 import io.mockk.impl.annotations.MockK
+import io.mockk.spyk
+import io.mockk.unmockkAll
+import io.mockk.verify
 import it.airgap.beaconsdk.core.exception.BeaconException
 import it.airgap.beaconsdk.core.internal.utils.Poller
 import it.airgap.beaconsdk.core.internal.utils.failure
+import it.airgap.beaconsdk.transport.p2p.matrix.data.MatrixRoom
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.BeaconP2pMatrixConfiguration
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.MatrixEvent
-import it.airgap.beaconsdk.transport.p2p.matrix.data.MatrixRoom
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.MatrixSync
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.event.MatrixEventResponse
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.login.MatrixLoginResponse
@@ -19,24 +25,48 @@ import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.sync.Ma
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.sync.MatrixSyncRoom
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.sync.MatrixSyncRooms
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.sync.MatrixSyncState
-import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.sync.MatrixSyncStateEvent.*
+import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.sync.MatrixSyncStateEvent.Create
+import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.sync.MatrixSyncStateEvent.Member
+import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.sync.MatrixSyncStateEvent.Message
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.network.event.MatrixEventService
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.network.node.MatrixNodeService
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.network.room.MatrixRoomService
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.network.user.MatrixUserService
-import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.store.*
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.test.TestCoroutineDispatcher
-import kotlinx.coroutines.test.TestCoroutineScope
-import kotlinx.coroutines.test.runBlockingTest
+import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.store.HardReset
+import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.store.Init
+import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.store.MatrixStore
+import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.store.MatrixStoreState
+import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.store.OnSyncError
+import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.store.OnSyncSuccess
+import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.store.OnTxnIdCreated
+import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.store.Reset
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withTimeoutOrNull
 import mockLog
 import mockTime
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import java.io.IOException
-import kotlin.test.*
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 internal class MatrixClientTest {
 
@@ -81,9 +111,11 @@ internal class MatrixClientTest {
             MatrixEvent.TextMessage("node", "1", "sender#1", "message#2"),
             MatrixEvent.Invite("node", "2", "sender#1"),
         )
-        coEvery { store.events } returns flow { events.forEach { emit(it) } }.shareIn(TestCoroutineScope(), SharingStarted.Lazily)
+        val scope = CoroutineScope(Dispatchers.Default)
 
-        runBlockingTest {
+        coEvery { store.events } returns flow { events.forEach { emit(it) } }.shareIn(scope, SharingStarted.Lazily)
+
+        runTest {
             val emitted = client.events.take(events.size).toList()
 
             assertEquals(events.sortedBy { it.toString() }, emitted.sortedBy { it.toString() })
@@ -103,7 +135,7 @@ internal class MatrixClientTest {
             )
         )
 
-        runBlockingTest {
+        runTest {
             val joined = client.joinedRooms()
 
             assertEquals(
@@ -126,7 +158,7 @@ internal class MatrixClientTest {
             )
         )
 
-        runBlockingTest {
+        runTest {
             val invited = client.invitedRooms()
 
             assertEquals(
@@ -149,7 +181,7 @@ internal class MatrixClientTest {
             )
         )
 
-        runBlockingTest {
+        runTest {
             val left = client.leftRooms()
 
             assertEquals(
@@ -163,11 +195,11 @@ internal class MatrixClientTest {
     fun `returns its login status`() {
         coEvery { store.state() } returns Result.success(MatrixStoreState(accessToken = null))
 
-        runBlockingTest { assertFalse(client.isLoggedIn(), "Expected client not to be logged in") }
+        runTest { assertFalse(client.isLoggedIn(), "Expected client not to be logged in") }
 
         coEvery { store.state() } returns Result.success(MatrixStoreState(accessToken = "accessToken"))
 
-        runBlockingTest { assertTrue(client.isLoggedIn(), "Expected client to be logged in") }
+        runTest { assertTrue(client.isLoggedIn(), "Expected client to be logged in") }
     }
 
     @Test
@@ -231,7 +263,7 @@ internal class MatrixClientTest {
 
         coEvery { userService.login(any(), any(), any(), any()) } returns Result.failure(error)
 
-        runBlockingTest {
+        runTest {
             val exception = assertFailsWith<BeaconException> {
                 client.start("node", "userId", "password", "deviceId").getOrThrow()
             }
@@ -244,7 +276,7 @@ internal class MatrixClientTest {
     fun `fails to start if no access token was returned on login`() {
         coEvery { userService.login(any(), any(), any(), any()) } returns Result.success(MatrixLoginResponse())
 
-        runBlockingTest {
+        runTest {
             assertFailsWith<BeaconException> {
                 client.start("node", "userId", "password", "deviceId").getOrThrow()
             }
@@ -348,7 +380,7 @@ internal class MatrixClientTest {
     @Test
     fun `resets connection`() {
         val node = "node"
-        runBlockingTest {
+        runTest {
             client.resetHard(node)
 
             coVerify(exactly = 1) { client.stop(node) }
@@ -366,7 +398,7 @@ internal class MatrixClientTest {
         coEvery { roomService.createRoom(any(), any(), any()) } returns Result.success(MatrixCreateRoomResponse(roomId))
         coEvery { store.state() } returns Result.success(MatrixStoreState(accessToken = accessToken))
 
-        runBlockingTest {
+        runTest {
             val room = client.createTrustedPrivateRoom(node, *members.toTypedArray()).getOrThrow()
 
             assertEquals(MatrixRoom.Unknown(roomId), room)
@@ -384,7 +416,7 @@ internal class MatrixClientTest {
     fun `fails to create trusted private room if has no access token`() {
         coEvery { store.state() } returns Result.success(MatrixStoreState(accessToken = null))
 
-        runBlockingTest {
+        runTest {
             val result = client.createTrustedPrivateRoom("node")
 
             assertTrue(result.isFailure, "Expected room create result to be a failure")
@@ -402,7 +434,7 @@ internal class MatrixClientTest {
             MatrixInviteRoomResponse())
         coEvery { store.state() } returns Result.success(MatrixStoreState(accessToken = accessToken))
 
-        runBlockingTest {
+        runTest {
             val result = client.inviteToRoom(node, user, roomId)
 
             assertTrue(result.isSuccess, "Expected result to be a success")
@@ -422,7 +454,7 @@ internal class MatrixClientTest {
         coEvery { roomService.inviteToRoom(any(), any(), any(), any()) } returns Result.success(MatrixInviteRoomResponse())
         coEvery { store.state() } returns Result.success(MatrixStoreState(accessToken = accessToken))
 
-        runBlockingTest {
+        runTest {
             val result = client.inviteToRoom(node, user, room)
 
             assertTrue(result.isSuccess, "Expected result to be a success")
@@ -443,7 +475,7 @@ internal class MatrixClientTest {
     fun `fails to invite to rooms specified by ids if has no access token`() {
         coEvery { store.state() } returns Result.success(MatrixStoreState(accessToken = null))
 
-        runBlockingTest {
+        runTest {
             val result = client.inviteToRoom("node", "user", "1")
 
             assertTrue(result.isFailure, "Expected room create result to be a failure")
@@ -454,7 +486,7 @@ internal class MatrixClientTest {
     fun `fails to invite to rooms if has no access token`() {
         coEvery { store.state() } returns Result.success(MatrixStoreState(accessToken = null))
 
-        runBlockingTest {
+        runTest {
             val result = client.inviteToRoom("node", "user", MatrixRoom.Joined("1", emptyList()))
 
             assertTrue(result.isFailure, "Expected room create result to be a failure")
@@ -472,7 +504,7 @@ internal class MatrixClientTest {
             MatrixJoinRoomResponse(user))
         coEvery { store.state() } returns Result.success(MatrixStoreState(accessToken = accessToken))
 
-        runBlockingTest {
+        runTest {
             val result = client.joinRoom(node, roomId)
 
             assertTrue(result.isSuccess, "Expected result to be a success")
@@ -492,7 +524,7 @@ internal class MatrixClientTest {
         coEvery { roomService.joinRoom(any(), any(), any()) } returns Result.success(MatrixJoinRoomResponse(user))
         coEvery { store.state() } returns Result.success(MatrixStoreState(accessToken = accessToken))
 
-        runBlockingTest {
+        runTest {
             val result = client.joinRoom(node, room)
 
             assertTrue(result.isSuccess, "Expected result to be a success")
@@ -512,7 +544,7 @@ internal class MatrixClientTest {
     fun `fails to join rooms specified by ids if has no access token`() {
         coEvery { store.state() } returns Result.success(MatrixStoreState(accessToken = null))
 
-        runBlockingTest {
+        runTest {
             val result = client.joinRoom("node", "1")
 
             assertTrue(result.isFailure, "Expected room create result to be a failure")
@@ -523,7 +555,7 @@ internal class MatrixClientTest {
     fun `fails to join rooms if has no access token`() {
         coEvery { store.state() } returns Result.success(MatrixStoreState(accessToken = null))
 
-        runBlockingTest {
+        runTest {
             val result = client.joinRoom("node", MatrixRoom.Joined("1", emptyList()))
 
             assertTrue(result.isFailure, "Expected room create result to be a failure")
@@ -544,7 +576,7 @@ internal class MatrixClientTest {
             MatrixEventResponse())
         coEvery { store.state() } returns Result.success(MatrixStoreState(accessToken = accessToken, transactionCounter = 1))
 
-        runBlockingTest {
+        runTest {
             val result = client.sendTextMessage(node, roomId, message)
 
             assertTrue(result.isSuccess, "Expected result to be a success")
@@ -576,7 +608,7 @@ internal class MatrixClientTest {
         coEvery { eventService.sendTextMessage(any(), any(), any(), any(), any()) } returns Result.success(MatrixEventResponse())
         coEvery { store.state() } returns Result.success(MatrixStoreState(accessToken = accessToken, transactionCounter = 1))
 
-        runBlockingTest {
+        runTest {
             val result = client.sendTextMessage(node, room, message)
 
             assertTrue(result.isSuccess, "Expected result to be a success")
@@ -599,7 +631,7 @@ internal class MatrixClientTest {
     fun `fails to send message to room specified by id if has no access token`() {
         coEvery { store.state() } returns Result.success(MatrixStoreState(accessToken = null))
 
-        runBlockingTest {
+        runTest {
             val result = client.inviteToRoom("node", "1", "message")
 
             assertTrue(result.isFailure, "Expected room create result to be a failure")
@@ -610,7 +642,7 @@ internal class MatrixClientTest {
     fun `fails to send message to room if has no access token`() {
         coEvery { store.state() } returns Result.success(MatrixStoreState(accessToken = null))
 
-        runBlockingTest {
+        runTest {
             val result = client.sendTextMessage("node", MatrixRoom.Joined("1", emptyList()), "message")
 
             assertTrue(result.isFailure, "Expected room create result to be a failure")
@@ -627,7 +659,7 @@ internal class MatrixClientTest {
         coEvery { eventService.sync(any(), any(), any(), any()) } returns Result.success(MatrixSyncResponse())
         coEvery { store.state() } returns Result.success(MatrixStoreState(accessToken = accessToken, syncToken = since, pollingTimeout = timeout))
 
-        runBlockingTest {
+        runTest {
             val response = client.sync(node).getOrThrow()
 
             assertEquals(MatrixSync(), response)
@@ -641,7 +673,7 @@ internal class MatrixClientTest {
     fun `fails to sync if has no access token`() {
         coEvery { store.state() } returns Result.success(MatrixStoreState(accessToken = null))
 
-        runBlockingTest {
+        runTest {
             val result = client.sync("node")
 
             assertTrue(result.isFailure, "Expected room create result to be a failure")
@@ -690,8 +722,8 @@ internal class MatrixClientTest {
         coEvery { eventService.sync(any(), any(), any()) } returns Result.failure()
         coEvery { store.state() } returns Result.success(MatrixStoreState(accessToken = accessToken))
 
-        runBlocking {
-            val scope = CoroutineScope(TestCoroutineDispatcher())
+        runTest {
+            val scope = CoroutineScope(Dispatchers.Default)
             client.syncPollFlow(scope, node).take(1).collect()
 
             assertTrue(scope.isActive, "Expected scope to be active")
@@ -707,8 +739,8 @@ internal class MatrixClientTest {
         coEvery { eventService.sync(any(), any(), any()) } returns Result.failure()
         coEvery { store.state() } returns Result.success(MatrixStoreState(accessToken = accessToken, pollingRetries = BeaconP2pMatrixConfiguration.MATRIX_MAX_SYNC_RETRIES))
 
-        runBlocking {
-            val scope = CoroutineScope(TestCoroutineDispatcher())
+        runTest {
+            val scope = CoroutineScope(Dispatchers.Default)
             client.syncPollFlow(scope, node).take(1).collect()
 
             assertFalse(scope.isActive, "Expected scope to be canceled")

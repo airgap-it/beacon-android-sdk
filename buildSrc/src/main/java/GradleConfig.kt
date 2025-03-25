@@ -6,40 +6,40 @@ object Android {
     const val minSdk = 21
     const val targetSdk = 35
 
-    const val versionName = "3.2.5-beta01"
+    const val versionName = "4.0.0-beta01"
 }
 
 object Version {
     const val kotlin = "2.1.0"
 
-    const val kotlinSerialization = "1.4.1"
+    const val kotlinSerialization = "1.8.0"
 
-    const val androidxCore = "1.6.0"
-    const val androidxAppCompat = "1.3.1"
-    const val androidxConstraintLayout = "2.1.0"
+    const val androidxCore = "1.15.0"
+    const val androidxAppCompat = "1.7.0"
+    const val androidxConstraintLayout = "2.2.1"
 
-    const val androidxActivity = "1.3.1"
-    const val androidxFragment = "1.5.1"
-    const val androidxLifecycle = "2.3.1"
-    const val androidxNavigation = "2.5.1"
+    const val androidxActivity = "1.10.1"
+    const val androidxFragment = "1.8.6"
+    const val androidxLifecycle = "2.8.7"
+    const val androidxNavigation = "2.8.9"
 
     const val androidxSecurity = "1.0.0"
 
-    const val coroutines = "1.5.1"
+    const val coroutines = "1.10.1"
 
-    const val ktor = "2.2.3"
+    const val ktor = "3.1.1"
 
     const val lazySodium = "5.0.2"
     const val jna = "5.9.0"
 
-    const val materialComponents = "1.4.0"
+    const val materialComponents = "1.12.0"
 
     const val junit = "4.13.2"
 
-    const val androidxJunit = "1.1.3"
-    const val androidxEspresso = "3.4.0"
+    const val androidxJunit = "1.2.1"
+    const val androidxEspresso = "3.6.1"
 
-    const val mockk = "1.12.0"
+    const val mockk = "1.13.9"
 
     const val bouncyCastle = "1.70"
 }

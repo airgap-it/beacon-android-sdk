@@ -4,14 +4,22 @@ import it.airgap.beaconsdk.core.internal.data.HexString
 import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
 import it.airgap.beaconsdk.core.internal.utils.failWithMissingField
 import it.airgap.beaconsdk.core.internal.utils.failWithUnexpectedJsonType
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.element
-import kotlinx.serialization.encoding.*
-import kotlinx.serialization.json.*
+import kotlinx.serialization.encoding.CompositeDecoder
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.encoding.decodeStructure
+import kotlinx.serialization.encoding.encodeStructure
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonDecoder
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonEncoder
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonArray
 
 /**
  * Base for JSON Micheline expressions.
@@ -90,7 +98,6 @@ public data class MichelinePrimitiveString(public val string: String) : Michelin
 public data class MichelinePrimitiveBytes(public val bytes: String) : MichelineMichelsonV1Expression() {
     public companion object {}
 
-    @OptIn(ExperimentalSerializationApi::class)
     internal object Serializer : KSerializer<MichelinePrimitiveBytes> {
         object Field {
             const val BYTES = "bytes"
@@ -139,7 +146,6 @@ public data class MichelinePrimitiveApplication(
 public data class MichelineNode(public val expressions: List<MichelineMichelsonV1Expression>) : MichelineMichelsonV1Expression() {
     public companion object {}
 
-    @OptIn(ExperimentalSerializationApi::class)
     internal object Serializer : KJsonSerializer<MichelineNode> {
         object Field {
             const val EXPRESSIONS = "expressions"

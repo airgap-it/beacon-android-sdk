@@ -8,8 +8,16 @@ import it.airgap.beaconsdk.blockchain.tezos.data.TezosNotification
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosThreshold
 import it.airgap.beaconsdk.blockchain.tezos.data.operation.TezosOperation
-import it.airgap.beaconsdk.blockchain.tezos.message.request.*
-import it.airgap.beaconsdk.blockchain.tezos.message.response.*
+import it.airgap.beaconsdk.blockchain.tezos.message.request.BlockchainTezosRequest
+import it.airgap.beaconsdk.blockchain.tezos.message.request.BroadcastTezosRequest
+import it.airgap.beaconsdk.blockchain.tezos.message.request.OperationTezosRequest
+import it.airgap.beaconsdk.blockchain.tezos.message.request.PermissionTezosRequest
+import it.airgap.beaconsdk.blockchain.tezos.message.request.SignPayloadTezosRequest
+import it.airgap.beaconsdk.blockchain.tezos.message.response.BlockchainTezosResponse
+import it.airgap.beaconsdk.blockchain.tezos.message.response.BroadcastTezosResponse
+import it.airgap.beaconsdk.blockchain.tezos.message.response.OperationTezosResponse
+import it.airgap.beaconsdk.blockchain.tezos.message.response.PermissionTezosResponse
+import it.airgap.beaconsdk.blockchain.tezos.message.response.SignPayloadTezosResponse
 import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.data.SigningType
 import it.airgap.beaconsdk.core.internal.message.v3.BlockchainV3BeaconRequestContent
@@ -30,7 +38,11 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.element
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.JsonClassDiscriminator
+import kotlinx.serialization.json.JsonDecoder
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonEncoder
+import kotlinx.serialization.json.jsonObject
 
 @Serializable
 internal data class PermissionV3TezosRequest(
@@ -106,7 +118,6 @@ internal sealed class BlockchainV3TezosRequest : BlockchainV3BeaconRequestConten
             }
     }
 
-    @OptIn(ExperimentalSerializationApi::class)
     object Serializer : KJsonSerializer<BlockchainV3TezosRequest> {
         override val descriptor: SerialDescriptor =
             buildClassSerialDescriptor("BlockchainV3TezosRequest") {
@@ -360,7 +371,6 @@ internal sealed class BlockchainV3TezosResponse :
             }
     }
 
-    @OptIn(ExperimentalSerializationApi::class)
     object Serializer : KJsonSerializer<BlockchainV3TezosResponse> {
         override val descriptor: SerialDescriptor =
             buildClassSerialDescriptor("BlockchainV3TezosResponse") {

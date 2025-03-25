@@ -5,15 +5,34 @@ import it.airgap.beaconsdk.core.data.BeaconError
 import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.internal.blockchain.BlockchainRegistry
 import it.airgap.beaconsdk.core.internal.message.VersionedBeaconMessage
-import it.airgap.beaconsdk.core.internal.utils.*
-import it.airgap.beaconsdk.core.message.*
+import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
+import it.airgap.beaconsdk.core.internal.utils.blockchainRegistry
+import it.airgap.beaconsdk.core.internal.utils.getSerializable
+import it.airgap.beaconsdk.core.internal.utils.getString
+import it.airgap.beaconsdk.core.internal.utils.getStringOrNull
+import it.airgap.beaconsdk.core.message.AcknowledgeBeaconResponse
+import it.airgap.beaconsdk.core.message.BeaconMessage
+import it.airgap.beaconsdk.core.message.BlockchainBeaconRequest
+import it.airgap.beaconsdk.core.message.BlockchainBeaconResponse
+import it.airgap.beaconsdk.core.message.DisconnectBeaconMessage
+import it.airgap.beaconsdk.core.message.ErrorBeaconResponse
+import it.airgap.beaconsdk.core.message.PermissionBeaconRequest
+import it.airgap.beaconsdk.core.message.PermissionBeaconResponse
 import it.airgap.beaconsdk.core.scope.BeaconScope
-import kotlinx.serialization.*
+import kotlinx.serialization.EncodeDefault
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.element
 import kotlinx.serialization.encoding.encodeStructure
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.JsonClassDiscriminator
+import kotlinx.serialization.json.JsonDecoder
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonEncoder
+import kotlinx.serialization.json.jsonObject
 
 @OptIn(ExperimentalSerializationApi::class)
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -123,7 +142,6 @@ public data class PermissionV3BeaconRequestContent(
             Serializer(beaconScope)
     }
 
-    @OptIn(ExperimentalSerializationApi::class)
     internal class Serializer(private val blockchainRegistry: BlockchainRegistry) : KJsonSerializer<PermissionV3BeaconRequestContent> {
         constructor(beaconScope: BeaconScope? = null) : this(blockchainRegistry(beaconScope))
 
@@ -204,7 +222,6 @@ public data class BlockchainV3BeaconRequestContent(
             Serializer(beaconScope)
     }
 
-    @OptIn(ExperimentalSerializationApi::class)
     internal class Serializer(private val blockchainRegistry: BlockchainRegistry) : KJsonSerializer<BlockchainV3BeaconRequestContent> {
         constructor(beaconScope: BeaconScope? = null) : this(blockchainRegistry(beaconScope))
 
@@ -286,7 +303,6 @@ public data class PermissionV3BeaconResponseContent(
             Serializer(beaconScope)
     }
 
-    @OptIn(ExperimentalSerializationApi::class)
     internal class Serializer(private val blockchainRegistry: BlockchainRegistry) : KJsonSerializer<PermissionV3BeaconResponseContent> {
         constructor(beaconScope: BeaconScope? = null) : this(blockchainRegistry(beaconScope))
 
@@ -359,7 +375,6 @@ public data class BlockchainV3BeaconResponseContent(
             Serializer(beaconScope)
     }
 
-    @OptIn(ExperimentalSerializationApi::class)
     internal class Serializer(private val blockchainRegistry: BlockchainRegistry) : KJsonSerializer<BlockchainV3BeaconResponseContent> {
         constructor(beaconScope: BeaconScope? = null) : this(blockchainRegistry(beaconScope))
 
@@ -427,7 +442,6 @@ public data class ErrorV3BeaconResponseContent(
             Serializer(beaconScope)
     }
 
-    @OptIn(ExperimentalSerializationApi::class)
     internal class Serializer(private val blockchainRegistry: BlockchainRegistry) : KJsonSerializer<ErrorV3BeaconResponseContent> {
         constructor(beaconScope: BeaconScope? = null) : this(blockchainRegistry(beaconScope))
 

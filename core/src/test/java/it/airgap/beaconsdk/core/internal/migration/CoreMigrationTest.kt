@@ -12,7 +12,7 @@ import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
 import it.airgap.beaconsdk.core.internal.utils.failure
 import it.airgap.beaconsdk.core.internal.utils.success
 import it.airgap.beaconsdk.core.scope.BeaconScope
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import mockLog
 import org.junit.Before
 import org.junit.Test
@@ -57,7 +57,7 @@ internal class CoreMigrationTest {
             versionedMigration2,
         ))
 
-        runBlockingTest {
+        runTest {
             migration.migrate(target)
 
             coVerify(exactly = 1) { versionedMigration1.perform(target) }
@@ -97,7 +97,7 @@ internal class CoreMigrationTest {
             versionedMigration3,
         ))
 
-        runBlockingTest {
+        runTest {
             storageManager.setSdkVersion("4")
 
             migration.migrate(target)
@@ -147,7 +147,7 @@ internal class CoreMigrationTest {
             versionedMigration2,
         ))
 
-        runBlockingTest {
+        runTest {
             storageManager.setSdkVersion("4")
 
             migration.register(versionedMigration3)
@@ -199,7 +199,7 @@ internal class CoreMigrationTest {
             versionedMigration3,
         ))
 
-        runBlockingTest {
+        runTest {
             storageManager.setSdkVersion("2")
 
             migration.migrate(target)
@@ -249,7 +249,7 @@ internal class CoreMigrationTest {
             versionedMigration3,
         ))
 
-        runBlockingTest {
+        runTest {
             storageManager.setSdkVersion("3")
 
             migration.migrate(target)
@@ -299,7 +299,7 @@ internal class CoreMigrationTest {
             versionedMigration3,
         ))
 
-        runBlockingTest {
+        runTest {
             with(storageManager) {
                 setSdkVersion("4")
                 setMigrations(setOf(versionedMigration1.migrationIdentifier(target)))
@@ -349,7 +349,7 @@ internal class CoreMigrationTest {
             versionedMigration3,
         ))
 
-        runBlockingTest {
+        runTest {
             storageManager.setSdkVersion("4")
 
             migration.migrate(target)

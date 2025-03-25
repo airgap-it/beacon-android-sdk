@@ -2,7 +2,7 @@ package it.airgap.beaconsdk.core.internal.utils
 
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
 import kotlin.math.abs
@@ -148,7 +148,7 @@ internal class CollectionTest {
         val elements = listOf(1, 2, 3, 4, 5)
 
         val collected = mutableListOf<Int>()
-        runBlockingTest {
+        runTest {
             elements.launchForEach {
                 delay(abs(Random.nextInt() % 1000).toLong())
                 collected.add(it)
@@ -165,7 +165,7 @@ internal class CollectionTest {
     fun `runs suspend block for each element in list and returns list or results`() {
         val elements = listOf(1, 2, 3, 4, 5)
 
-        runBlockingTest {
+        runTest {
             val results = elements.asyncMap {
                 delay(abs(Random.nextInt() % 1000).toLong())
                 it * 2

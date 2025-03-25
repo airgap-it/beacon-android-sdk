@@ -20,7 +20,7 @@ import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.sync.Ma
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import mockDependencyRegistry
@@ -163,7 +163,7 @@ internal class MatrixEventServiceTest {
             any(),
         ) } returns json.encodeToString(expectedResponse)
 
-        runBlockingTest {
+        runTest {
             val node = "node"
             val accessToken = "accessToken"
             val roomId = "roomId"
@@ -203,7 +203,7 @@ internal class MatrixEventServiceTest {
             any(),
         ) } throws error
 
-        runBlockingTest {
+        runTest {
             val exception = matrixEventService.sendTextMessage(
                 "node",
                 "token",

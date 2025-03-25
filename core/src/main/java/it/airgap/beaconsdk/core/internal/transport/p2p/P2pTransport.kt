@@ -3,7 +3,11 @@ package it.airgap.beaconsdk.core.internal.transport.p2p
 import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.data.P2pPeer
 import it.airgap.beaconsdk.core.data.selfPaired
-import it.airgap.beaconsdk.core.internal.message.*
+import it.airgap.beaconsdk.core.internal.message.IncomingConnectionMessage
+import it.airgap.beaconsdk.core.internal.message.IncomingConnectionTransportMessage
+import it.airgap.beaconsdk.core.internal.message.OutgoingConnectionTransportMessage
+import it.airgap.beaconsdk.core.internal.message.SerializedIncomingConnectionMessage
+import it.airgap.beaconsdk.core.internal.message.SerializedOutgoingConnectionMessage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.transport.Transport
 import it.airgap.beaconsdk.core.internal.transport.p2p.data.P2pMessage
@@ -16,12 +20,25 @@ import it.airgap.beaconsdk.core.internal.utils.flatMap
 import it.airgap.beaconsdk.core.internal.utils.runCatchingFlat
 import it.airgap.beaconsdk.core.internal.utils.success
 import it.airgap.beaconsdk.core.storage.findPeer
-import it.airgap.beaconsdk.core.transport.data.*
+import it.airgap.beaconsdk.core.transport.data.P2pPairingMessage
+import it.airgap.beaconsdk.core.transport.data.P2pPairingRequest
+import it.airgap.beaconsdk.core.transport.data.PairingMessage
+import it.airgap.beaconsdk.core.transport.data.PairingRequest
+import it.airgap.beaconsdk.core.transport.data.PairingResponse
 import it.airgap.beaconsdk.core.transport.p2p.P2pClient
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.flow.filterNot
+import kotlinx.coroutines.flow.flattenMerge
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 
-@OptIn(FlowPreview::class)
+@OptIn(ExperimentalCoroutinesApi::class)
 internal class P2pTransport(
     private val storageManager: StorageManager,
     private val client: P2pClient,

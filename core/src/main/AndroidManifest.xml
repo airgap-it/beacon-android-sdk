@@ -3,7 +3,6 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
 
-    <!-- Until `androidx.security:1.1.0` is production ready -->
     <uses-sdk tools:overrideLibrary="androidx.security" />
 
     <application>

@@ -11,7 +11,7 @@ import it.airgap.beaconsdk.core.scope.BeaconScope
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.BeaconP2pMatrixConfiguration
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.migration.MatrixMigrationTarget
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.storage.*
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import mockLog
 import org.junit.Before
 import org.junit.Test
@@ -63,7 +63,7 @@ internal class P2pMatrixMigrationFromV1_0_4Test {
         val matrixNodes = listOf("node1", "node2")
         val target = MatrixMigrationTarget.RelayServer(matrixNodes)
 
-        runBlockingTest {
+        runTest {
             storageManager.setMatrixRelayServer(relayServer)
 
             migration.perform(target).getOrThrow()
@@ -80,7 +80,7 @@ internal class P2pMatrixMigrationFromV1_0_4Test {
         val matrixNodes = listOf("node1", "node2")
         val target = MatrixMigrationTarget.RelayServer(matrixNodes)
 
-        runBlockingTest {
+        runTest {
             storageManager.setMatrixRelayServer(null)
 
             migration.perform(target).getOrThrow()
@@ -96,7 +96,7 @@ internal class P2pMatrixMigrationFromV1_0_4Test {
         val matrixNodes = BeaconP2pMatrixConfiguration.defaultNodes
         val target = MatrixMigrationTarget.RelayServer(matrixNodes)
 
-        runBlockingTest {
+        runTest {
             with(storageManager) {
                 setMatrixRelayServer(null)
                 setMatrixSyncToken(null)
@@ -116,7 +116,7 @@ internal class P2pMatrixMigrationFromV1_0_4Test {
         val matrixNodes = BeaconP2pMatrixConfiguration.defaultNodes
         val target = MatrixMigrationTarget.RelayServer(matrixNodes)
 
-        runBlockingTest {
+        runTest {
             with(storageManager) {
                 setMatrixRelayServer(null)
                 setMatrixSyncToken("token")

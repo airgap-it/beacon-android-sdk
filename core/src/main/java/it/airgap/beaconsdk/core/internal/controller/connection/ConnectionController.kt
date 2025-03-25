@@ -4,21 +4,28 @@ import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.exception.ConnectionException
 import it.airgap.beaconsdk.core.exception.MultipleConnectionException
-import it.airgap.beaconsdk.core.internal.message.*
+import it.airgap.beaconsdk.core.internal.message.BeaconIncomingConnectionMessage
+import it.airgap.beaconsdk.core.internal.message.BeaconOutgoingConnectionMessage
 import it.airgap.beaconsdk.core.internal.message.IncomingConnectionTransportMessage
+import it.airgap.beaconsdk.core.internal.message.SerializedIncomingConnectionMessage
+import it.airgap.beaconsdk.core.internal.message.SerializedOutgoingConnectionMessage
 import it.airgap.beaconsdk.core.internal.serializer.Serializer
 import it.airgap.beaconsdk.core.internal.transport.Transport
-import it.airgap.beaconsdk.core.internal.utils.*
+import it.airgap.beaconsdk.core.internal.utils.asyncMap
+import it.airgap.beaconsdk.core.internal.utils.failWithIllegalArgument
+import it.airgap.beaconsdk.core.internal.utils.failWithTransportNotSupported
+import it.airgap.beaconsdk.core.internal.utils.failure
+import it.airgap.beaconsdk.core.internal.utils.flatMap
+import it.airgap.beaconsdk.core.internal.utils.runCatchingFlat
+import it.airgap.beaconsdk.core.internal.utils.success
 import it.airgap.beaconsdk.core.transport.data.PairingMessage
 import it.airgap.beaconsdk.core.transport.data.PairingRequest
 import it.airgap.beaconsdk.core.transport.data.PairingResponse
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlin.reflect.KClass
 
-@OptIn(ExperimentalCoroutinesApi::class)
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class ConnectionController internal constructor(private val transports: List<Transport>, private val serializer: Serializer) {
 
