@@ -5,20 +5,21 @@ import io.ktor.client.call.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.plugins.logging.*
+import io.ktor.client.plugins.logging.LogLevel
+import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
-import it.airgap.beaconsdk.core.internal.utils.logDebug
+import it.airgap.beaconsdk.core.internal.utils.Logger
 import it.airgap.beaconsdk.core.network.data.HttpHeader
 import it.airgap.beaconsdk.core.network.data.HttpParameter
 import it.airgap.beaconsdk.core.network.exception.HttpException
 import it.airgap.beaconsdk.core.network.provider.HttpClientProvider
-import it.airgap.beaconsdk.core.scope.BeaconScope
 import kotlinx.serialization.json.Json
+import io.ktor.client.plugins.logging.Logger as KtorLogger
 
-internal class KtorHttpClientProvider(private val json: Json, private val beaconScope: BeaconScope) : HttpClientProvider {
+internal class KtorHttpClientProvider(private val json: Json, private val logger: Logger? = null) : HttpClientProvider {
     private val ktorClient by lazy {
         HttpClient(OkHttp) {
             install(ContentNegotiation) {
@@ -28,9 +29,9 @@ internal class KtorHttpClientProvider(private val json: Json, private val beacon
             install(HttpTimeout)
 
             install(Logging) {
-                logger = object : Logger {
+                logger = object : KtorLogger {
                     override fun log(message: String) {
-                        logDebug("$TAG\$$beaconScope", message)
+                        this@KtorHttpClientProvider.logger?.debug(message)
                     }
                 }
                 level = LogLevel.ALL

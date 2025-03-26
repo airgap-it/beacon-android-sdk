@@ -2,6 +2,7 @@ package it.airgap.beaconsdk.core.internal.utils
 
 import io.mockk.verify
 import it.airgap.beaconsdk.core.exception.BeaconException
+import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import mockLog
 import org.junit.Before
 import org.junit.Test
@@ -33,19 +34,22 @@ internal class TryTest {
 
     @Test
     fun `executes block and returns result on success`() {
-        val result = tryLog("TAG") {}
+        val tag = "TAG"
+        val configuration = BeaconConfiguration()
+        val result = tryLog(Logger(tag, BeaconConfiguration())) {}
 
         assertNotNull(result, "Expected result not to be null")
-        verify(exactly = 0) { logError(any(), any()) }
+        verify(exactly = 0) { logError(tag, any(), configuration) }
     }
 
     @Test
     fun `executes block and logs exception on error returning null as result`() {
         val tag = "TAG"
-        val result = tryLog<Unit>(tag) { failWith() }
+        val configuration = BeaconConfiguration()
+        val result = tryLog<Unit>(Logger(tag, configuration)) { failWith() }
 
         assertNull(result, "Expected result to be null")
-        verify(exactly = 1) { logError(tag, match { it is BeaconException }) }
+        verify(exactly = 1) { logError(tag, match { it is BeaconException }, configuration) }
     }
 
     @Test

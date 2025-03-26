@@ -22,6 +22,7 @@ internal class P2pMatrixStore(
     private val matrixNodes: List<String>,
     private val storageManager: StorageManager,
     private val migration: Migration,
+    private val logger: Logger? = null,
 ) : Store<P2pMatrixStoreState, P2pMatrixStoreAction>() {
 
     private var state: P2pMatrixStoreState? = null
@@ -131,27 +132,27 @@ internal class P2pMatrixStore(
         runCatching {
             migration.migrateMatrixRelayServer(matrixNodes)
 
-            logDebug(TAG, "Looking for a Matrix relay server...")
+            logger?.debug("Looking for a Matrix relay server...")
 
             val savedRelayServer = storageManager.getMatrixRelayServer()
             savedRelayServer?.let {
-                logDebug(TAG, "Found cached Matrix relay server, using $it.")
+                logger?.debug("Found cached Matrix relay server, using $it.")
 
                 return@runCatching it
             }
 
-            logDebug(TAG, "No cached Matrix relay server found, looking for reachable nodes...")
+            logger?.debug("No cached Matrix relay server found, looking for reachable nodes...")
 
             val offset = app.publicKeyIndex(matrixNodes.size)
             val upRelayServer = matrixNodes
                 .shiftedBy(offset)
                 .firstOrNull { node ->
                     matrixClient.isUp(node).also {
-                        if (!it) logDebug(TAG, "Node $node is unreachable.")
+                        if (!it) logger?.debug("Node $node is unreachable.")
                     }
                 } ?: failWithUnreachableNodes()
 
-            logDebug(TAG, "Using $upRelayServer.")
+            logger?.debug("Using $upRelayServer.")
 
             storageManager.setMatrixRelayServer(upRelayServer)
 

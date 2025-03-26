@@ -12,11 +12,11 @@ public inline fun <T> runCatchingFlat(block: () -> Result<T>): Result<T> =
     }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public inline fun <T> tryLog(tag: String, block: () -> T): T? =
+public inline fun <T> tryLog(logger: Logger?, block: () -> T): T? =
     try {
         block()
     } catch (e: Exception) {
-        logError(tag, e)
+        logger?.error(e)
         null
     }
 

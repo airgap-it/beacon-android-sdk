@@ -49,15 +49,15 @@ internal fun mockDependencyRegistry(): DependencyRegistry =
 internal fun mockLog() {
     mockkStatic("it.airgap.beaconsdk.core.internal.utils.LogKt")
 
-    every { logInfo(any(), any()) } answers {
+    every { logInfo(any(), any(), any()) } answers {
         println("[INFO] ${firstArg<String>()}: ${secondArg<String>()}")
     }
 
-    every { logDebug(any(), any()) } answers {
+    every { logDebug(any(), any(), any()) } answers {
         println("[DEBUG] ${firstArg<String>()}: ${secondArg<String>()}")
     }
 
-    every { logError(any(), any()) } answers {
+    every { logError(any(), any(), any()) } answers {
         println("[ERROR] ${firstArg<String>()}: ${secondArg<Throwable>()}")
     }
 }

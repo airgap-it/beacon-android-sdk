@@ -1,6 +1,7 @@
 package it.airgap.beaconsdk.core.internal.di
 
 import it.airgap.beaconsdk.core.blockchain.Blockchain
+import it.airgap.beaconsdk.core.configuration.LogLevel
 import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.data.P2P
 import it.airgap.beaconsdk.core.internal.BeaconConfiguration
@@ -28,6 +29,7 @@ import it.airgap.beaconsdk.core.internal.transport.p2p.store.P2pTransportStore
 import it.airgap.beaconsdk.core.internal.utils.Base58
 import it.airgap.beaconsdk.core.internal.utils.Base58Check
 import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
+import it.airgap.beaconsdk.core.internal.utils.Logger
 import it.airgap.beaconsdk.core.internal.utils.Poller
 import it.airgap.beaconsdk.core.internal.utils.delegate.lazyWeak
 import it.airgap.beaconsdk.core.network.provider.HttpClientProvider
@@ -86,10 +88,13 @@ internal class CoreDependencyRegistry(
 
     // -- transport --
 
-    override fun transport(connection: Connection): Transport =
-        when (connection) {
-            is P2P -> P2pTransport(storageManager, connection.client.create(this), p2pTransportStore)
+    override fun transport(connection: Connection): Transport {
+        val logger = logger("${Transport.TAG} ${connection.type}")
+
+        return when (connection) {
+            is P2P -> P2pTransport(storageManager, connection.client.create(this), p2pTransportStore, logger)
         }
+    }
 
     private val p2pTransportStore: P2pTransportStore
         get() = P2pTransportStore()
@@ -103,6 +108,12 @@ internal class CoreDependencyRegistry(
     override val base58: Base58 by lazyWeak { Base58() }
     override val base58Check: Base58Check by lazyWeak { Base58Check(base58, crypto) }
     override val poller: Poller by lazyWeak { Poller() }
+
+    override fun logger(tag: String): Logger? =
+        when (beaconConfiguration.logLevel) {
+            LogLevel.Off -> null
+            else -> Logger(tag, beaconConfiguration)
+        }
 
     private val cryptoProvider: CryptoProvider by lazyWeak {
         when (BeaconConfiguration.cryptoProvider) {
@@ -132,7 +143,10 @@ internal class CoreDependencyRegistry(
 
     private val httpClientProvider: HttpClientProvider by lazyWeak {
         when (BeaconConfiguration.httpClientProvider) {
-            BeaconConfiguration.HttpClientProvider.Ktor -> KtorHttpClientProvider(json, beaconScope)
+            BeaconConfiguration.HttpClientProvider.Ktor -> KtorHttpClientProvider(
+                json,
+                logger("${KtorHttpClientProvider.TAG}\$$beaconScope")
+            )
         }
     }
 
@@ -142,6 +156,7 @@ internal class CoreDependencyRegistry(
         CoreMigration(
             storageManager,
             listOf(),
+            logger(CoreMigration.TAG),
         )
     }
 

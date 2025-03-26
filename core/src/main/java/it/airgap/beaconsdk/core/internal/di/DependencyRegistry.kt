@@ -16,6 +16,7 @@ import it.airgap.beaconsdk.core.internal.transport.Transport
 import it.airgap.beaconsdk.core.internal.utils.Base58
 import it.airgap.beaconsdk.core.internal.utils.Base58Check
 import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
+import it.airgap.beaconsdk.core.internal.utils.Logger
 import it.airgap.beaconsdk.core.internal.utils.Poller
 import it.airgap.beaconsdk.core.network.provider.HttpClientProvider
 import it.airgap.beaconsdk.core.scope.BeaconScope
@@ -58,6 +59,8 @@ public interface DependencyRegistry {
     public val base58: Base58
     public val base58Check: Base58Check
     public val poller: Poller
+
+    public fun logger(tag: String): Logger?
 
     // -- network --
 
