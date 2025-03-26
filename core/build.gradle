@@ -1,3 +1,7 @@
+import it.airgap.beaconsdk.build.Android
+import it.airgap.beaconsdk.build.Dependencies
+import it.airgap.beaconsdk.build.TestDependencies
+
 plugins {
     id 'com.android.library'
     id 'kotlin-android'
@@ -7,18 +11,15 @@ plugins {
 }
 
 android {
+    namespace Android.namespace
     compileSdk Android.compileSdk
 
     defaultConfig {
         minSdk Android.minSdk
-        targetSdk Android.targetSdk
-        versionCode Android.versionCode
-        versionName Android.versionName
+        version Android.versionName
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
-
-    defaultPublishConfig "prodRelease"
 
     buildTypes {
         release {
@@ -27,15 +28,19 @@ android {
         }
     }
 
-    flavorDimensions "version"
+    buildFeatures {
+        buildConfig true
+    }
+
+    flavorDimensions "${Android.namespace}.version"
     productFlavors {
         prod {
-            dimension "version"
+            dimension "${Android.namespace}.version"
             buildConfigField("String", "VERSION_NAME", "\"${defaultConfig.versionName}\"")
 
         }
         mock {
-            dimension "version"
+            dimension "${Android.namespace}.version"
             buildConfigField("String", "VERSION_NAME", "\"${defaultConfig.versionName}-mock\"")
         }
     }
@@ -52,7 +57,7 @@ android {
     }
 
     publishing {
-        singleVariant("release") {
+        singleVariant("prodRelease") {
             withSourcesJar()
             withJavadocJar()
         }
@@ -101,7 +106,7 @@ dependencies {
 
     // Lazy Sodium
     implementation(Dependencies.lazySodium)
-    implementation(Dependencies.jna)
+    testImplementation(Dependencies.jna)
 
     // Test
     testImplementation(TestDependencies.kotlinTest)

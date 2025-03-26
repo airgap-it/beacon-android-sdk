@@ -2,7 +2,6 @@ package it.airgap.beaconsdk.blockchain.tezos.data.operation
 
 import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
 import it.airgap.beaconsdk.core.internal.utils.getSerializable
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Required
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -59,7 +58,6 @@ public sealed class TezosOperation {
         Delegation,
     }
 
-    @OptIn(ExperimentalSerializationApi::class)
     internal object Serializer : KJsonSerializer<TezosOperation> {
         override val descriptor: SerialDescriptor = buildClassSerialDescriptor("TezosOperation") {
             element<String>("kind")

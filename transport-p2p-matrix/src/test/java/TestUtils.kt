@@ -20,7 +20,7 @@ internal fun p2pPeers(
     paired: Boolean = false,
 ): List<P2pPeer> =
     (0 until number).map {
-        P2pPeer("id#$it", "name#$it", it.toHexString().asString(), "relayServer#$it", version, isPaired = paired)
+        P2pPeer("name#$it", it.toHexString().asString(), "relayServer#$it", version, isPaired = paired)
     }
 
 // -- values --

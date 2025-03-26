@@ -6,6 +6,7 @@ import it.airgap.beaconsdk.core.transport.data.PairingRequest
 import it.airgap.beaconsdk.core.transport.data.PairingResponse
 
 public interface BeaconConsumer {
+    public val senderId: String
     /**
      * Sends the [response] in reply to a previously received request.
      *

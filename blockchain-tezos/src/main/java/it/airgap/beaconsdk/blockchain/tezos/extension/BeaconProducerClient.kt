@@ -1,6 +1,5 @@
 package it.airgap.beaconsdk.blockchain.tezos.extension
 
-import it.airgap.beaconsdk.blockchain.tezos.data.TezosAppMetadata
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosNetwork
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
 import it.airgap.beaconsdk.blockchain.tezos.data.operation.TezosOperation
@@ -12,15 +11,6 @@ import it.airgap.beaconsdk.core.client.BeaconClient
 import it.airgap.beaconsdk.core.client.BeaconProducer
 import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.data.SigningType
-
-// -- AppMetadata --
-
-public fun <T> T.ownAppMetadata(): TezosAppMetadata where T : BeaconProducer, T : BeaconClient<*> =
-    TezosAppMetadata(
-        senderId = senderId,
-        name = app.name,
-        icon = app.icon,
-    )
 
 // -- request --
 

@@ -70,6 +70,12 @@ To add `Beacon Android SDK` into your project:
 
     // alternatively, all modules
     implementation "com.github.airgap-it:beacon-android-sdk:$beacon_version"
+    
+    
+    // REQUIRED
+    def jna_version = "x.y.z"
+    
+    implementation "net.java.dev.jna:jna:$jna_version@aar"
   }
   ```
 

@@ -2,10 +2,12 @@ package it.airgap.beaconsdk.core.internal
 
 import androidx.annotation.RestrictTo
 import it.airgap.beaconsdk.BuildConfig
+import it.airgap.beaconsdk.core.configuration.LogLevel
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public data class BeaconConfiguration(
     public val ignoreUnsupportedBlockchains: Boolean = false,
+    public val logLevel: LogLevel = LogLevel.Default,
 ) {
 
     internal enum class CryptoProvider {

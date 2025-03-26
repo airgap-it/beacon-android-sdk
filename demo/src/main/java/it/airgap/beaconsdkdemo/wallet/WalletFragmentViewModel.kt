@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import it.airgap.beaconsdk.blockchain.substrate.data.SubstrateAccount
 import it.airgap.beaconsdk.blockchain.substrate.data.SubstrateNetwork
+import it.airgap.beaconsdk.blockchain.substrate.extensions.ownAppMetadata
 import it.airgap.beaconsdk.blockchain.substrate.message.request.PermissionSubstrateRequest
 import it.airgap.beaconsdk.blockchain.substrate.message.response.PermissionSubstrateResponse
 import it.airgap.beaconsdk.blockchain.substrate.substrate
@@ -64,14 +65,14 @@ class WalletFragmentViewModel : ViewModel() {
 
                 /* Tezos */
 
-                is PermissionTezosRequest -> PermissionTezosResponse.from(request, exampleTezosAccount(request.network, beaconClient))
+                is PermissionTezosRequest -> PermissionTezosResponse.from(request, exampleTezosAccount(request.network, beaconClient), request.scopes)
                 is OperationTezosRequest -> ErrorBeaconResponse.from(request, BeaconError.Aborted)
                 is SignPayloadTezosRequest -> ErrorBeaconResponse.from(request, TezosError.SignatureTypeNotSupported)
                 is BroadcastTezosRequest -> ErrorBeaconResponse.from(request, TezosError.BroadcastError)
 
                 /* Substrate*/
 
-                is PermissionSubstrateRequest -> PermissionSubstrateResponse.from(request, listOf(exampleSubstrateAccount(request.networks.first(), beaconClient)))
+                is PermissionSubstrateRequest -> PermissionSubstrateResponse.from(request, listOf(exampleSubstrateAccount(request.networks.first(), beaconClient)), beaconClient.ownAppMetadata())
 
                 /* Others */
                 else -> ErrorBeaconResponse.from(request, BeaconError.Unknown)

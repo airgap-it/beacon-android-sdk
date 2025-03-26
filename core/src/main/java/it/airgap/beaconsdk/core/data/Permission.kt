@@ -8,7 +8,6 @@ import it.airgap.beaconsdk.core.internal.utils.blockchainRegistry
 import it.airgap.beaconsdk.core.internal.utils.compat
 import it.airgap.beaconsdk.core.internal.utils.getStringOrNull
 import it.airgap.beaconsdk.core.scope.BeaconScope
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
@@ -39,7 +38,6 @@ public abstract class Permission {
         public fun serializer(beaconScope: BeaconScope? = null): KSerializer<Permission> = Serializer(beaconScope)
     }
 
-    @OptIn(ExperimentalSerializationApi::class)
     internal class Serializer(private val blockchainRegistry: BlockchainRegistry, private val compat: Compat<VersionedCompat>) : KJsonSerializer<Permission> {
         constructor(beaconScope: BeaconScope? = null) : this(blockchainRegistry(beaconScope), compat(beaconScope))
 

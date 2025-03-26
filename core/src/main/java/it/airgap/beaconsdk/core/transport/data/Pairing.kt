@@ -26,7 +26,6 @@ public sealed interface PairingMessage {
 
     public fun toPeer(): Peer
 
-    @OptIn(ExperimentalSerializationApi::class)
     public class Serializer : KJsonSerializer<PairingMessage> {
         override val descriptor: SerialDescriptor = buildClassSerialDescriptor("PairingData") {
             element<String>("type")
@@ -59,7 +58,6 @@ public sealed interface PairingMessage {
 
 public sealed interface PairingRequest : PairingMessage {
 
-    @OptIn(ExperimentalSerializationApi::class)
     public class Serializer : KJsonSerializer<PairingRequest> {
         override val descriptor: SerialDescriptor = buildClassSerialDescriptor("PairingRequest") {
             element<String>("type")
@@ -92,7 +90,6 @@ public sealed interface PairingRequest : PairingMessage {
 
 public sealed interface PairingResponse : PairingMessage {
 
-    @OptIn(ExperimentalSerializationApi::class)
     public class Serializer : KJsonSerializer<PairingResponse> {
         override val descriptor: SerialDescriptor = buildClassSerialDescriptor("PairingResponse") {
             element<String>("type")
@@ -146,7 +143,7 @@ public data class P2pPairingRequest(
     @EncodeDefault
     override val type: String = TYPE
 
-    override fun toPeer(): Peer = P2pPeer(id = id, name = name, version = version, publicKey = publicKey, relayServer = relayServer, icon = icon, appUrl = appUrl)
+    override fun toPeer(): Peer = P2pPeer(name = name, version = version, publicKey = publicKey, relayServer = relayServer, icon = icon, appUrl = appUrl)
 
     public companion object {
         public const val TYPE: String = "p2p-pairing-${PairingRequest.TYPE_SUFFIX}"
@@ -168,7 +165,7 @@ public data class P2pPairingResponse(
     @EncodeDefault
     override val type: String = TYPE
 
-    override fun toPeer(): Peer = P2pPeer(id = id, name = name, publicKey = publicKey, relayServer = relayServer, version = version, icon = icon, appUrl = appUrl, isPaired = true)
+    override fun toPeer(): Peer = P2pPeer(name = name, publicKey = publicKey, relayServer = relayServer, version = version, icon = icon, appUrl = appUrl, isPaired = true)
 
     public companion object {
         public const val TYPE: String = "p2p-pairing-${PairingResponse.TYPE_SUFFIX}"

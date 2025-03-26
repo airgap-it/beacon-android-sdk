@@ -2,7 +2,9 @@
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosAccount
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosAppMetadata
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosNetwork
+import it.airgap.beaconsdk.blockchain.tezos.data.TezosNotification
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
+import it.airgap.beaconsdk.blockchain.tezos.data.TezosThreshold
 import it.airgap.beaconsdk.blockchain.tezos.message.request.PermissionTezosRequest
 import it.airgap.beaconsdk.blockchain.tezos.message.response.PermissionTezosResponse
 import it.airgap.beaconsdk.core.data.Connection
@@ -49,7 +51,10 @@ internal fun permissionTezosResponse(
     id: String = "id",
     account: TezosAccount = TezosAccount("accountId", TezosNetwork.Custom(), "publicKey", "address"),
     blockchainIdentifier: String = MockBlockchain.IDENTIFIER,
+    appMetadata: TezosAppMetadata = TezosAppMetadata(id, "mockApp"),
     scopes: List<TezosPermission.Scope> = emptyList(),
     version: String = "version",
     destination: Connection.Id = Connection.Id.P2P("receiverId"),
-): PermissionTezosResponse = PermissionTezosResponse(id, version, destination, blockchainIdentifier, account, scopes)
+    threshold: TezosThreshold = TezosThreshold("123", "1"),
+    notification: TezosNotification = TezosNotification(1, "url", "test")
+): PermissionTezosResponse = PermissionTezosResponse(id, version, destination, blockchainIdentifier, account, scopes, appMetadata, threshold, notification)

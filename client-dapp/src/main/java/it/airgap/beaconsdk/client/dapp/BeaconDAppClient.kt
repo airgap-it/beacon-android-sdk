@@ -42,9 +42,7 @@ public class BeaconDAppClient @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) constr
     serializer: Serializer,
     identifierCreator: IdentifierCreator,
     configuration: BeaconConfiguration,
-) : BeaconClient<BeaconResponse>(app, beaconId, beaconScope, connectionController, messageController, storageManager, crypto, serializer, configuration), BeaconProducer {
-
-    override val senderId: String by lazy { identifierCreator.senderId(app.keyPair.publicKey).getOrThrow() }
+) : BeaconClient<BeaconResponse>(app, beaconId, beaconScope, connectionController, messageController, storageManager, crypto, serializer, configuration, identifierCreator), BeaconProducer {
 
     /**
      * Sends the [request] to the previously paired peer.

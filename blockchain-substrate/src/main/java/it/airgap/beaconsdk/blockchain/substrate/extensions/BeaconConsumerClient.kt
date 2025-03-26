@@ -18,7 +18,7 @@ public suspend fun <T> T.respondToSubstratePermission(
     accounts: List<SubstrateAccount>,
     scopes: List<SubstratePermission.Scope> = request.scopes
 ) where T : BeaconConsumer, T : BeaconClient<*> {
-    val response = PermissionSubstrateResponse.from(request, accounts, scopes)
+    val response = PermissionSubstrateResponse.from(request, accounts, this, scopes)
     respond(response)
 }
 

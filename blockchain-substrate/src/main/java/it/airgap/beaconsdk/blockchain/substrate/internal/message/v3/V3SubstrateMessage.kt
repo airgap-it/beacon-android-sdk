@@ -86,7 +86,6 @@ internal sealed class BlockchainV3SubstrateRequest : BlockchainV3BeaconRequestCo
         }
     }
 
-    @OptIn(ExperimentalSerializationApi::class)
     object Serializer : KJsonSerializer<BlockchainV3SubstrateRequest> {
         override val descriptor: SerialDescriptor = buildClassSerialDescriptor("BlockchainV3SubstrateRequest") {
             element<String>("type")
@@ -459,7 +458,6 @@ internal sealed class BlockchainV3SubstrateResponse : BlockchainV3BeaconResponse
         }
     }
 
-    @OptIn(ExperimentalSerializationApi::class)
     object Serializer : KJsonSerializer<BlockchainV3SubstrateResponse> {
         override val descriptor: SerialDescriptor = buildClassSerialDescriptor("BlockchainV3SubstrateResponse") {
             element<String>("type")

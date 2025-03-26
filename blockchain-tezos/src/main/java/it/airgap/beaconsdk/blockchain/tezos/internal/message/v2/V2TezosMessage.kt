@@ -4,7 +4,9 @@ import it.airgap.beaconsdk.blockchain.tezos.Tezos
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosAccount
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosAppMetadata
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosNetwork
+import it.airgap.beaconsdk.blockchain.tezos.data.TezosNotification
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosPermission
+import it.airgap.beaconsdk.blockchain.tezos.data.TezosThreshold
 import it.airgap.beaconsdk.blockchain.tezos.data.operation.TezosOperation
 import it.airgap.beaconsdk.blockchain.tezos.internal.di.extend
 import it.airgap.beaconsdk.blockchain.tezos.internal.utils.failWithUnknownMessage
@@ -26,11 +28,19 @@ import it.airgap.beaconsdk.core.internal.utils.getString
 import it.airgap.beaconsdk.core.message.BeaconMessage
 import it.airgap.beaconsdk.core.scope.BeaconScope
 import it.airgap.beaconsdk.core.storage.findAppMetadata
-import kotlinx.serialization.*
+import kotlinx.serialization.EncodeDefault
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.Required
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.element
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.JsonClassDiscriminator
+import kotlinx.serialization.json.JsonDecoder
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonEncoder
+import kotlinx.serialization.json.jsonObject
 
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable(with = V2TezosMessage.Serializer::class)
@@ -80,6 +90,9 @@ internal sealed class V2TezosMessage : V2BeaconMessage() {
                     message.account.publicKey,
                     message.account.network,
                     message.scopes,
+                    message.appMetadata?.let { V2TezosAppMetadata.fromAppMetadata(message.appMetadata) },
+                    message.threshold,
+                    message.notification
                 )
                 is OperationTezosResponse -> OperationV2TezosResponse(
                     message.version,
@@ -104,7 +117,6 @@ internal sealed class V2TezosMessage : V2BeaconMessage() {
             }
     }
 
-    @OptIn(ExperimentalSerializationApi::class)
     object Serializer : KJsonSerializer<V2TezosMessage> {
         override val descriptor: SerialDescriptor = buildClassSerialDescriptor("V2TezosMessage") {
             element<String>(CLASS_DISCRIMINATOR)
@@ -282,6 +294,9 @@ internal data class PermissionV2TezosResponse(
     val publicKey: String,
     val network: TezosNetwork,
     val scopes: List<TezosPermission.Scope>,
+    val appMetadata: V2TezosAppMetadata?,
+    val threshold: TezosThreshold?,
+    val notification: TezosNotification?
 ) : V2TezosMessage() {
     @Required
     override val type: String = TYPE
@@ -296,6 +311,9 @@ internal data class PermissionV2TezosResponse(
             Tezos.IDENTIFIER,
             TezosAccount(accountId, network, publicKey, address),
             scopes,
+            appMetadata?.toAppMetadata(),
+            threshold,
+            notification
         )
     }
 

@@ -6,7 +6,6 @@ import it.airgap.beaconsdk.core.internal.network.HttpClient
 import it.airgap.beaconsdk.core.internal.utils.app
 import it.airgap.beaconsdk.core.internal.utils.delegate.lazyWeak
 import it.airgap.beaconsdk.core.network.provider.HttpClientProvider
-import it.airgap.beaconsdk.core.network.provider.HttpProvider
 import it.airgap.beaconsdk.transport.p2p.matrix.P2pMatrix
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.P2pMatrixCommunicator
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.P2pMatrixSecurity
@@ -31,17 +30,7 @@ internal class P2pMatrixDependencyRegistry(dependencyRegistry: DependencyRegistr
 
         val httpClient = httpClient(httpClientProvider)
 
-        return P2pMatrix(matrixClient(httpClient), p2pMatrixStore(httpClient, matrixNodes), p2pMatrixSecurity, p2pMatrixCommunicator)
-    }
-
-    override fun p2pMatrix(storagePlugin: P2pMatrixStoragePlugin, matrixNodes: List<String>, httpProvider: HttpProvider): P2pMatrix {
-        with(storageManager) {
-            if (!hasPlugin<P2pMatrixStoragePlugin>()) addPlugins(storagePlugin.extend())
-        }
-
-        val httpClient = httpClient(httpProvider)
-
-        return P2pMatrix(matrixClient(httpClient), p2pMatrixStore(httpClient, matrixNodes), p2pMatrixSecurity, p2pMatrixCommunicator)
+        return P2pMatrix(matrixClient(httpClient), p2pMatrixStore(httpClient, matrixNodes), p2pMatrixSecurity, p2pMatrixCommunicator, logger(P2pMatrix.TAG))
     }
 
     // -- P2P --
@@ -50,7 +39,7 @@ internal class P2pMatrixDependencyRegistry(dependencyRegistry: DependencyRegistr
     override val p2pMatrixSecurity: P2pMatrixSecurity by lazyWeak { P2pMatrixSecurity(app(beaconScope), crypto) }
 
     override fun p2pMatrixStore(httpClient: HttpClient, matrixNodes: List<String>): P2pMatrixStore =
-        P2pMatrixStore(app(beaconScope), p2pMatrixCommunicator, matrixClient(httpClient), matrixNodes, storageManager, migration)
+        P2pMatrixStore(app(beaconScope), p2pMatrixCommunicator, matrixClient(httpClient), matrixNodes, storageManager, migration, logger(P2pMatrixStore.TAG))
 
     // -- Matrix --
 
@@ -64,6 +53,7 @@ internal class P2pMatrixDependencyRegistry(dependencyRegistry: DependencyRegistr
                 MatrixRoomService(httpClient),
                 MatrixEventService(httpClient),
                 poller,
+                logger(MatrixClient.TAG),
             )
         }
 

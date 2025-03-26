@@ -3,7 +3,11 @@ package it.airgap.beaconsdk.core.internal.transport.p2p
 import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.data.P2pPeer
 import it.airgap.beaconsdk.core.data.selfPaired
-import it.airgap.beaconsdk.core.internal.message.*
+import it.airgap.beaconsdk.core.internal.message.IncomingConnectionMessage
+import it.airgap.beaconsdk.core.internal.message.IncomingConnectionTransportMessage
+import it.airgap.beaconsdk.core.internal.message.OutgoingConnectionTransportMessage
+import it.airgap.beaconsdk.core.internal.message.SerializedIncomingConnectionMessage
+import it.airgap.beaconsdk.core.internal.message.SerializedOutgoingConnectionMessage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.transport.Transport
 import it.airgap.beaconsdk.core.internal.transport.p2p.data.P2pMessage
@@ -12,21 +16,36 @@ import it.airgap.beaconsdk.core.internal.transport.p2p.store.OnPairingCompleted
 import it.airgap.beaconsdk.core.internal.transport.p2p.store.OnPairingRequested
 import it.airgap.beaconsdk.core.internal.transport.p2p.store.P2pTransportStore
 import it.airgap.beaconsdk.core.internal.utils.CoroutineScopeRegistry
+import it.airgap.beaconsdk.core.internal.utils.Logger
 import it.airgap.beaconsdk.core.internal.utils.flatMap
 import it.airgap.beaconsdk.core.internal.utils.runCatchingFlat
 import it.airgap.beaconsdk.core.internal.utils.success
 import it.airgap.beaconsdk.core.storage.findPeer
-import it.airgap.beaconsdk.core.transport.data.*
+import it.airgap.beaconsdk.core.transport.data.P2pPairingMessage
+import it.airgap.beaconsdk.core.transport.data.P2pPairingRequest
+import it.airgap.beaconsdk.core.transport.data.PairingMessage
+import it.airgap.beaconsdk.core.transport.data.PairingRequest
+import it.airgap.beaconsdk.core.transport.data.PairingResponse
 import it.airgap.beaconsdk.core.transport.p2p.P2pClient
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.flow.filterNot
+import kotlinx.coroutines.flow.flattenMerge
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 
-@OptIn(FlowPreview::class)
+@OptIn(ExperimentalCoroutinesApi::class)
 internal class P2pTransport(
     private val storageManager: StorageManager,
     private val client: P2pClient,
     private val store: P2pTransportStore,
-) : Transport() {
+    logger: Logger? = null,
+) : Transport(logger) {
     override val type: Connection.Type = Connection.Type.P2P
 
     override val incomingConnectionMessages: Flow<Result<IncomingConnectionTransportMessage>> by lazy {
@@ -84,7 +103,7 @@ internal class P2pTransport(
     private suspend fun addPeer(pairingData: P2pPairingMessage) {
         when (val peer = pairingData.toPeer()) {
             is P2pPeer -> {
-                storageManager.addPeers(listOf(peer), overwrite = true) { listOfNotNull(id) }
+                storageManager.addPeers(listOf(peer), overwrite = true) { listOfNotNull(publicKey) }
                 store.intent(OnPairingCompleted(peer))
             }
         }
@@ -102,7 +121,7 @@ internal class P2pTransport(
             val result = client.sendPairingResponse(this@pair)
 
             if (result.isSuccess) {
-                storageManager.updatePeers(listOf(selfPaired())) { listOfNotNull(id, name, publicKey, relayServer, icon, appUrl) }
+                storageManager.updatePeers(listOf(selfPaired())) { listOfNotNull(name, publicKey, relayServer, icon, appUrl) }
             }
 
             peerScopes.cancel(scopeId)
@@ -115,7 +134,7 @@ internal class P2pTransport(
     }
 
     private val P2pPeer.scopeId: String
-        get() = id ?: publicKey
+        get() = publicKey
 
     private fun failWithUnknownPeer(publicKey: String?): Nothing =
         throw IllegalStateException("P2P peer with public key $publicKey is not recognized.")

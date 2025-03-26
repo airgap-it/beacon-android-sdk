@@ -19,7 +19,7 @@ import it.airgap.beaconsdk.transport.p2p.matrix.internal.P2pMatrixCommunicator
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.MatrixClient
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.migration.migrateMatrixRelayServer
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.storage.*
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import mockLog
 import org.junit.After
 import org.junit.Before
@@ -79,7 +79,7 @@ internal class P2pMatrixStoreTest {
 
     @Test
     fun `initializes state with cached relay server`() {
-        runBlockingTest {
+        runTest {
             val cachedNode = "cachedNode"
 
             val recipient = "recipient"
@@ -113,7 +113,7 @@ internal class P2pMatrixStoreTest {
         coEvery { matrixClient.isUp(upNode) } returns true
         coEvery { matrixClient.isUp(downNode) } returns false
 
-        runBlockingTest {
+        runTest {
             val recipient = "recipient"
             val channelId = "channelId"
 
@@ -139,7 +139,7 @@ internal class P2pMatrixStoreTest {
     fun `fails if all nodes are down`() {
         coEvery { matrixClient.isUp(any()) } returns false
 
-        runBlockingTest {
+        runTest {
             val recipient = "recipient"
             val channelId = "channelId"
 
@@ -151,7 +151,7 @@ internal class P2pMatrixStoreTest {
 
     @Test
     fun `updates state on new channel created`() {
-        runBlockingTest {
+        runTest {
             val cachedNode = "cachedNode"
 
             val recipient1 = "recipient1"
@@ -186,7 +186,7 @@ internal class P2pMatrixStoreTest {
 
     @Test
     fun `updates state on new channel event`() {
-        runBlockingTest {
+        runTest {
             val cachedNode = "cachedNode"
 
             val publicKey = "00"
@@ -235,7 +235,7 @@ internal class P2pMatrixStoreTest {
 
     @Test
     fun `updates state on channel closed`() {
-        runBlockingTest {
+        runTest {
             val cachedNode = "cachedNode"
 
             val recipient1 = "recipient1"
@@ -275,7 +275,7 @@ internal class P2pMatrixStoreTest {
 
     @Test
     fun `resets state hard`() {
-        runBlockingTest {
+        runTest {
             val cachedNode = "cachedNode"
             with(storageManager) {
                 setMatrixRelayServer(cachedNode)

@@ -2,7 +2,6 @@
 
 package it.airgap.beaconsdk.core.internal.migration.v3_2_0
 
-import it.airgap.beaconsdk.core.data.Origin
 import it.airgap.beaconsdk.core.data.P2pPeer
 import it.airgap.beaconsdk.core.data.Peer
 import it.airgap.beaconsdk.core.internal.serializer.BEACON_CORE_CLASS_DISCRIMINATOR
@@ -36,7 +35,6 @@ internal class PeerSerializer : KSerializer<Peer> {
 @Serializable
 private data class PeerSurrogate(
     @JsonNames(v3_2_0_BEACON_CORE_CLASS_DISCRIMINATOR) val type: Type,
-    val id: String? = null,
     val name: String,
     val publicKey: String,
     val relayServer: String,
@@ -46,7 +44,7 @@ private data class PeerSurrogate(
     val isPaired: Boolean = false,
 ) {
     fun toTarget(): Peer = when (type) {
-        Type.P2P -> P2pPeer(id, name, publicKey, relayServer, version, icon, appUrl, isPaired)
+        Type.P2P -> P2pPeer(name, publicKey, relayServer, version, icon, appUrl, isPaired)
     }
 
     @Serializable
@@ -60,50 +58,5 @@ private fun PeerSurrogate(value: Peer): PeerSurrogate = with(value) {
         is P2pPeer -> PeerSurrogate.Type.P2P
     }
 
-    return PeerSurrogate(type, id, name, publicKey, relayServer, version, icon, appUrl, isPaired)
-}
-
-// -- Origin --
-
-internal class OriginSerializer : KSerializer<Origin> {
-    override val descriptor: SerialDescriptor = OriginSurrogate.serializer().descriptor
-
-    override fun deserialize(decoder: Decoder): Origin {
-        val surrogate = decoder.decodeSerializableValue(OriginSurrogate.serializer())
-        return surrogate.toTarget()
-    }
-
-    override fun serialize(encoder: Encoder, value: Origin) {
-        val surrogate = OriginSurrogate(value)
-        encoder.encodeSerializableValue(OriginSurrogate.serializer(), surrogate)
-    }
-}
-
-@Serializable
-private data class OriginSurrogate(
-    @JsonNames(v3_2_0_BEACON_CORE_CLASS_DISCRIMINATOR) val type: Type,
-    val id: String,
-) {
-    fun toTarget(): Origin = when (type) {
-        Type.Website -> Origin.Website(id)
-        Type.Extension -> Origin.Extension(id)
-        Type.P2P -> Origin.P2P(id)
-    }
-
-    @Serializable
-    enum class Type {
-        @SerialName(Origin.Website.TYPE) Website,
-        @SerialName(Origin.Extension.TYPE) Extension,
-        @SerialName(Origin.P2P.TYPE) P2P,
-    }
-}
-
-private fun OriginSurrogate(value: Origin): OriginSurrogate = with(value) {
-    val type = when (this) {
-        is Origin.Website -> OriginSurrogate.Type.Website
-        is Origin.Extension -> OriginSurrogate.Type.Extension
-        is Origin.P2P -> OriginSurrogate.Type.P2P
-    }
-
-    return OriginSurrogate(type, id)
+    return PeerSurrogate(type, name, publicKey, relayServer, version, icon, appUrl, isPaired)
 }

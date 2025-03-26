@@ -3,13 +3,11 @@ package it.airgap.beaconsdk.client.dapp
 import beaconConnectionMessageFlow
 import beaconRequests
 import beaconVersionedResponses
-import disconnectBeaconMessage
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import it.airgap.beaconsdk.client.dapp.internal.controller.account.AccountController
 import it.airgap.beaconsdk.client.dapp.internal.storage.MockDAppClientStorage
 import it.airgap.beaconsdk.core.data.Connection
-import it.airgap.beaconsdk.core.data.P2pPeer
 import it.airgap.beaconsdk.core.data.Permission
 import it.airgap.beaconsdk.core.exception.BeaconException
 import it.airgap.beaconsdk.core.internal.BeaconConfiguration
@@ -24,7 +22,6 @@ import it.airgap.beaconsdk.core.internal.message.BeaconOutgoingConnectionMessage
 import it.airgap.beaconsdk.core.internal.message.VersionedBeaconMessage
 import it.airgap.beaconsdk.core.internal.serializer.Serializer
 import it.airgap.beaconsdk.core.internal.storage.MockSecureStorage
-import it.airgap.beaconsdk.core.internal.storage.MockStorage
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
 import it.airgap.beaconsdk.core.internal.utils.IdentifierCreator
 import it.airgap.beaconsdk.core.internal.utils.splitAt
@@ -34,7 +31,7 @@ import it.airgap.beaconsdk.core.message.BeaconMessage
 import it.airgap.beaconsdk.core.message.DisconnectBeaconMessage
 import it.airgap.beaconsdk.core.scope.BeaconScope
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import mockDependencyRegistry
 import org.junit.After
 import org.junit.Before
@@ -135,7 +132,7 @@ internal class BeaconDAppClientTest {
 
     @Test
     fun `connects for messages flow`() {
-        runBlockingTest {
+        runTest {
             val responses = beaconVersionedResponses(dAppVersion, walletId, dependencyRegistry.versionedBeaconMessageContext).shuffled()
 
             val beaconMessageFlow = beaconConnectionMessageFlow(responses.size + 1)
@@ -160,7 +157,7 @@ internal class BeaconDAppClientTest {
 
     @Test
     fun `sends a request`() {
-        runBlockingTest {
+        runTest {
             coEvery { connectionController.send(any()) } returns Result.success()
 
             val destination = walletConnectionId
@@ -180,7 +177,7 @@ internal class BeaconDAppClientTest {
 
     @Test
     fun `emits BeaconException when internal error occurred`() {
-        runBlockingTest {
+        runTest {
             val responses = beaconVersionedResponses(context = dependencyRegistry.versionedBeaconMessageContext).shuffled()
             val beaconMessageFlow = beaconConnectionMessageFlow(responses.size + 1)
 
@@ -207,7 +204,7 @@ internal class BeaconDAppClientTest {
 
     @Test
     fun `fails to request when outgoing message processing failed with internal error`() {
-        runBlockingTest {
+        runTest {
             val error = IllegalStateException()
             coEvery { messageController.onOutgoingMessage(any(), any(), any()) } returns Result.failure(error)
 
@@ -222,7 +219,7 @@ internal class BeaconDAppClientTest {
     @Test
     fun `fails to request when message sending failed`() {
         val error = IOException()
-        runBlockingTest {
+        runTest {
             coEvery { connectionController.send(any()) } returns Result.failure(error)
 
             val responses = beaconRequests().shuffled()
@@ -244,7 +241,7 @@ internal class BeaconDAppClientTest {
 
 //    @Test
 //    fun `removes peer on disconnect message received`() {
-//        runBlockingTest {
+//        runTest {
 //            val publicKey = "publicKey"
 //            val origin = Connection.Id.P2P(publicKey)
 //            val peer = P2pPeer(name = "name", relayServer = "relayServer", publicKey = publicKey)
@@ -274,7 +271,7 @@ internal class BeaconDAppClientTest {
 
     @Test
     fun `adds peers to storage`() {
-        runBlockingTest {
+        runTest {
             storageManager.setPeers(emptyList())
 
             val (newPeersVararg, newPeersList) = p2pPeers(4).splitAt { it.size / 2 }
@@ -293,7 +290,7 @@ internal class BeaconDAppClientTest {
 
     @Test
     fun `returns peers from storage`() {
-        runBlockingTest {
+        runTest {
             val storagePeers = p2pPeers(4)
             storageManager.setPeers(storagePeers)
 
@@ -305,7 +302,7 @@ internal class BeaconDAppClientTest {
 
     @Test
     fun `removes peers from storage and sends disconnect message`() {
-        runBlockingTest {
+        runTest {
             val (toKeep, toRemove) = p2pPeers(4).splitAt { it.size / 2 }
 
             val expectedDisconnectMessages = toRemove.map {
@@ -334,7 +331,7 @@ internal class BeaconDAppClientTest {
 
     @Test
     fun `does not remove any peer if not specified and does not send disconnect messages`() {
-        runBlockingTest {
+        runTest {
             val storagePeers = p2pPeers(4)
             storageManager.setPeers(storagePeers)
             beaconDAppClient.removePeers()
@@ -348,7 +345,7 @@ internal class BeaconDAppClientTest {
 
     @Test
     fun `removes all peers from storage and sends disconnect messages`() {
-        runBlockingTest {
+        runTest {
             val peers = p2pPeers(4)
 
             val expectedDisconnectMessages = peers.map {
@@ -371,7 +368,7 @@ internal class BeaconDAppClientTest {
 
     @Test
     fun `returns permissions from storage`() {
-        runBlockingTest {
+        runTest {
             val storagePermissions = permissions(4)
             storageManager.setPermissions(storagePermissions)
 
@@ -383,7 +380,7 @@ internal class BeaconDAppClientTest {
 
     @Test
     fun `returns permissions matching specified account identifier`() {
-        runBlockingTest {
+        runTest {
             val storagePermissions = permissions(4)
             storageManager.setPermissions(storagePermissions)
 
@@ -397,7 +394,7 @@ internal class BeaconDAppClientTest {
 
     @Test
     fun `removes permissions matching specified account IDs`() {
-        runBlockingTest {
+        runTest {
             val (toKeep, toRemove) = permissions(4).splitAt { it.size / 2 }
             storageManager.setPermissions(toKeep + toRemove)
 
@@ -416,7 +413,7 @@ internal class BeaconDAppClientTest {
 
     @Test
     fun `removes permissions from storage`() {
-        runBlockingTest {
+        runTest {
             val (toKeep, toRemove) = permissions(4).splitAt { it.size / 2 }
             storageManager.setPermissions(toKeep + toRemove)
 
@@ -434,7 +431,7 @@ internal class BeaconDAppClientTest {
 
     @Test
     fun `does not remove any permission if not specified`() {
-        runBlockingTest {
+        runTest {
             val storagePermissions = permissions(4)
             storageManager.setPermissions(storagePermissions)
             beaconDAppClient.removePermissions()
@@ -447,7 +444,7 @@ internal class BeaconDAppClientTest {
 
     @Test
     fun `removes all permissions from storage`() {
-        runBlockingTest {
+        runTest {
             val storagePermissions = permissions(4)
             storageManager.setPermissions(storagePermissions)
             beaconDAppClient.removeAllPermissions()

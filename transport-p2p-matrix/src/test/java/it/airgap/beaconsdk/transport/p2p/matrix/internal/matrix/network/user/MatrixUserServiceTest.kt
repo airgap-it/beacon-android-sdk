@@ -8,12 +8,9 @@ import io.mockk.impl.annotations.MockK
 import it.airgap.beaconsdk.core.internal.network.HttpClient
 import it.airgap.beaconsdk.core.internal.network.data.ApplicationJson
 import it.airgap.beaconsdk.core.network.provider.HttpClientProvider
-import it.airgap.beaconsdk.core.network.provider.HttpProvider
-import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.MatrixError
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.login.MatrixLoginRequest
 import it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.login.MatrixLoginResponse
-import kotlinx.coroutines.test.runBlockingTest
-import kotlinx.serialization.encodeToString
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import nodeApiUrl
 import org.junit.Before
@@ -55,7 +52,7 @@ internal class MatrixUserServiceTest {
             any(),
         ) } returns json.encodeToString(expectedResponse)
 
-        runBlockingTest {
+        runTest {
             val node = "node"
             val user = "user"
             val password = "password"
@@ -94,7 +91,7 @@ internal class MatrixUserServiceTest {
             any(),
         ) } throws error
 
-        runBlockingTest {
+        runTest {
             val exception = matrixUserService.login("node", "user", "password", "deviceId").exceptionOrNull()
 
             assertEquals(error, exception)

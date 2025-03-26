@@ -33,7 +33,10 @@ public abstract class BeaconClient<BM : BeaconMessage>(
     protected val crypto: Crypto,
     protected val serializer: Serializer,
     protected val configuration: BeaconConfiguration,
+    protected val identifierCreator: IdentifierCreator,
 ) {
+
+    public val senderId: String by lazy { identifierCreator.senderId(app.keyPair.publicKey).getOrThrow() }
 
     public val name: String
         get() = app.name
@@ -129,7 +132,7 @@ public abstract class BeaconClient<BM : BeaconMessage>(
      * Removes permissions granted for the specified [accountIdentifiers].
      */
     public suspend fun removePermissionsFor(vararg accountIdentifiers: String) {
-        storageManager.removePermissions { accountIdentifiers.contains(it.accountId) }
+        removePermissionsFor(accountIdentifiers.toList())
     }
 
     /**
@@ -160,15 +163,30 @@ public abstract class BeaconClient<BM : BeaconMessage>(
         storageManager.removePermissions()
     }
 
+    /**
+     * Serializes the [pairingMessage] to a String.
+     */
     public fun serializePairingData(pairingMessage: PairingMessage): String =
         serializer.serialize(pairingMessage).getOrThrow()
 
+    /**
+     * Deserializes the [serialized] payload to a specific [PairingMessage].
+     */
     @JvmName("deserializePairingDataInlined")
     public inline fun <reified T : PairingMessage> deserializePairingData(serialized: String): T =
         `serializer$inline`.deserialize<T>(serialized).getOrThrow()
 
+    /**
+     * Deserialized the [serialized] payload to a [PairingMessage].
+     */
     public fun deserializePairingData(serialized: String): PairingMessage =
         serializer.deserialize<PairingMessage>(serialized).getOrThrow()
+
+    /**
+     * Creates a sender ID from the [publicKey].
+     */
+    public fun senderId(publicKey: ByteArray): String =
+        identifierCreator.senderId(publicKey).getOrThrow()
 
     protected open suspend fun processMessage(origin: Connection.Id, message: BeaconMessage): Result<Unit> =
         when (message) {

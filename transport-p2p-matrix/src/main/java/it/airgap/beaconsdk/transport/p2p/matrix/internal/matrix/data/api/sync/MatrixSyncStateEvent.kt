@@ -2,7 +2,6 @@ package it.airgap.beaconsdk.transport.p2p.matrix.internal.matrix.data.api.sync
 
 import it.airgap.beaconsdk.core.internal.utils.KJsonSerializer
 import it.airgap.beaconsdk.core.internal.utils.getString
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -103,7 +102,6 @@ internal sealed class MatrixSyncStateEvent<Content> {
         @SerialName("state_key") override val stateKey: String? = null,
     ) : MatrixSyncStateEvent<JsonElement>()
 
-    @OptIn(ExperimentalSerializationApi::class)
     object Serializer : KJsonSerializer<MatrixSyncStateEvent<*>> {
         override val descriptor: SerialDescriptor = buildClassSerialDescriptor("MatrixStateEvent") {
             element<String>("type")
