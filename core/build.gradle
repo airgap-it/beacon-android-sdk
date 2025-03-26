@@ -106,7 +106,7 @@ dependencies {
 
     // Lazy Sodium
     implementation(Dependencies.lazySodium)
-    implementation(Dependencies.jna)
+    testImplementation(Dependencies.jna)
 
     // Test
     testImplementation(TestDependencies.kotlinTest)
