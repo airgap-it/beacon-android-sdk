@@ -65,6 +65,14 @@ public data class PermissionTezosResponse internal constructor(
                 notification
             )
 
+        /**
+         * Creates a new instance of [PermissionTezosResponse] from the [request]
+         * with the specified [account] and optional [scopes]. The [appMetadata] is provided
+         * by the [consumer].
+         *
+         * The response will have an id matching the one of the [request].
+         * If no custom [scopes] are provided, the values will be also taken from the [request].
+         */
         @Throws(BeaconException::class)
         public fun <T> from(
             request: PermissionTezosRequest,
