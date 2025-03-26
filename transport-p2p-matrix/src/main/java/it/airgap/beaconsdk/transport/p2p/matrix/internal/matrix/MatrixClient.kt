@@ -24,6 +24,7 @@ internal class MatrixClient(
     private val roomService: MatrixRoomService,
     private val eventService: MatrixEventService,
     private val poller: Poller,
+    private val logger: Logger? = null,
 ) {
     val events: Flow<MatrixEvent>
         get() = store.events
@@ -194,14 +195,14 @@ internal class MatrixClient(
     private suspend fun onSyncError(scope: CoroutineScope, error: Throwable?) {
         store.intent(OnSyncError)
 
-        error?.let { logError(TAG, it) }
+        error?.let { logger?.error(it) }
 
         val pollingRetries = store.state().getOrNull()?.pollingRetries
         if (pollingRetries == null || pollingRetries >= BeaconP2pMatrixConfiguration.MATRIX_MAX_SYNC_RETRIES) {
-            logDebug(TAG, "Max sync retries exceeded")
+            logger?.debug("Max sync retries exceeded")
             scope.cancel()
         } else {
-            logDebug(TAG, "Retry syncing...")
+            logger?.debug("Retry syncing...")
         }
     }
 

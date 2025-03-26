@@ -16,6 +16,7 @@ import it.airgap.beaconsdk.core.internal.transport.p2p.store.OnPairingCompleted
 import it.airgap.beaconsdk.core.internal.transport.p2p.store.OnPairingRequested
 import it.airgap.beaconsdk.core.internal.transport.p2p.store.P2pTransportStore
 import it.airgap.beaconsdk.core.internal.utils.CoroutineScopeRegistry
+import it.airgap.beaconsdk.core.internal.utils.Logger
 import it.airgap.beaconsdk.core.internal.utils.flatMap
 import it.airgap.beaconsdk.core.internal.utils.runCatchingFlat
 import it.airgap.beaconsdk.core.internal.utils.success
@@ -43,7 +44,8 @@ internal class P2pTransport(
     private val storageManager: StorageManager,
     private val client: P2pClient,
     private val store: P2pTransportStore,
-) : Transport() {
+    logger: Logger? = null,
+) : Transport(logger) {
     override val type: Connection.Type = Connection.Type.P2P
 
     override val incomingConnectionMessages: Flow<Result<IncomingConnectionTransportMessage>> by lazy {

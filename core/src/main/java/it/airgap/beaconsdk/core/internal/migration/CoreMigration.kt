@@ -1,9 +1,14 @@
 package it.airgap.beaconsdk.core.internal.migration
 
 import it.airgap.beaconsdk.core.internal.storage.StorageManager
+import it.airgap.beaconsdk.core.internal.utils.Logger
 import it.airgap.beaconsdk.core.internal.utils.logDebug
 
-internal class CoreMigration(private val storageManager: StorageManager, migrations: List<VersionedMigration>) : Migration(migrations) {
+internal class CoreMigration(
+    private val storageManager: StorageManager,
+    migrations: List<VersionedMigration>,
+    private val logger: Logger? = null,
+) : Migration(migrations) {
     private var _sdkVersion: String? = null
     private suspend fun sdkVersion(): String? =
         _sdkVersion ?: storageManager.getSdkVersion()?.also { _sdkVersion = it }
@@ -31,8 +36,8 @@ internal class CoreMigration(private val storageManager: StorageManager, migrati
             forEach { migration ->
                 migration
                     .perform(target)
-                    .onSuccess { logDebug(TAG, "Migration from version ${migration.fromVersion} targeted at ${target.identifier} completed.") }
-                    .onFailure { logDebug(TAG, "Migration from version ${migration.fromVersion} targeted at ${target.identifier} failed.") }
+                    .onSuccess { logger?.debug("Migration from version ${migration.fromVersion} targeted at ${target.identifier} completed.") }
+                    .onFailure { logger?.debug("Migration from version ${migration.fromVersion} targeted at ${target.identifier} failed.") }
                     .getOrThrow()
 
                 val identifier = migration.migrationIdentifier(target)
@@ -46,6 +51,6 @@ internal class CoreMigration(private val storageManager: StorageManager, migrati
     }
 
     companion object {
-        private const val TAG = "Migration"
+        const val TAG = "Migration"
     }
 }
