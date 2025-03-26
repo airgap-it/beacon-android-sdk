@@ -66,9 +66,6 @@ public abstract class BeaconClient<BM : BeaconMessage>(
      *
      * The new peers will be persisted and subscribed.
      */
-    @Deprecated(
-        message = "",
-    )
     public suspend fun addPeers(vararg peers: Peer) {
         addPeers(peers.toList())
     }
