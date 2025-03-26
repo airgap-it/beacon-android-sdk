@@ -31,13 +31,6 @@ public suspend fun <T> T.respondToTezosPermission(
     respond(response)
 }
 
-public fun <T> T.ownAppMetadata(): TezosAppMetadata where T : BeaconConsumer, T : BeaconClient<*> =
-    TezosAppMetadata(
-        senderId = senderId,
-        name = app.name,
-        icon = app.icon,
-    )
-
 public suspend fun <T> T.respondToTezosOperation(
     request: OperationTezosRequest,
     transactionHash: String,

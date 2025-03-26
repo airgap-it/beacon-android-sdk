@@ -1,22 +1,18 @@
 package it.airgap.beaconsdk.blockchain.substrate.extensions
 
-import it.airgap.beaconsdk.blockchain.substrate.data.SubstrateAppMetadata
 import it.airgap.beaconsdk.blockchain.substrate.data.SubstrateNetwork
 import it.airgap.beaconsdk.blockchain.substrate.data.SubstratePermission
 import it.airgap.beaconsdk.blockchain.substrate.data.SubstrateSignerPayload
-import it.airgap.beaconsdk.blockchain.substrate.message.request.*
+import it.airgap.beaconsdk.blockchain.substrate.message.request.PermissionSubstrateRequest
+import it.airgap.beaconsdk.blockchain.substrate.message.request.SignPayloadReturnSubstrateRequest
+import it.airgap.beaconsdk.blockchain.substrate.message.request.SignPayloadSubmitAndReturnSubstrateRequest
+import it.airgap.beaconsdk.blockchain.substrate.message.request.SignPayloadSubmitSubstrateRequest
+import it.airgap.beaconsdk.blockchain.substrate.message.request.TransferReturnSubstrateRequest
+import it.airgap.beaconsdk.blockchain.substrate.message.request.TransferSubmitAndReturnSubstrateRequest
+import it.airgap.beaconsdk.blockchain.substrate.message.request.TransferSubmitSubstrateRequest
 import it.airgap.beaconsdk.core.client.BeaconClient
 import it.airgap.beaconsdk.core.client.BeaconProducer
 import it.airgap.beaconsdk.core.data.Connection
-
-// -- AppMetadata --
-
-public fun <T> T.ownAppMetadata(): SubstrateAppMetadata where T : BeaconProducer, T : BeaconClient<*> =
-    SubstrateAppMetadata(
-        senderId = senderId,
-        name = app.name,
-        icon = app.icon,
-    )
 
 // -- request --
 
