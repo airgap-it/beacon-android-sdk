@@ -30,7 +30,7 @@ internal class P2pMatrixDependencyRegistry(dependencyRegistry: DependencyRegistr
 
         val httpClient = httpClient(httpClientProvider)
 
-        return P2pMatrix(matrixClient(httpClient), p2pMatrixStore(httpClient, matrixNodes), p2pMatrixSecurity, p2pMatrixCommunicator)
+        return P2pMatrix(matrixClient(httpClient), p2pMatrixStore(httpClient, matrixNodes), p2pMatrixSecurity, p2pMatrixCommunicator, logger(P2pMatrix.TAG))
     }
 
     // -- P2P --
@@ -39,7 +39,7 @@ internal class P2pMatrixDependencyRegistry(dependencyRegistry: DependencyRegistr
     override val p2pMatrixSecurity: P2pMatrixSecurity by lazyWeak { P2pMatrixSecurity(app(beaconScope), crypto) }
 
     override fun p2pMatrixStore(httpClient: HttpClient, matrixNodes: List<String>): P2pMatrixStore =
-        P2pMatrixStore(app(beaconScope), p2pMatrixCommunicator, matrixClient(httpClient), matrixNodes, storageManager, migration)
+        P2pMatrixStore(app(beaconScope), p2pMatrixCommunicator, matrixClient(httpClient), matrixNodes, storageManager, migration, logger(P2pMatrixStore.TAG))
 
     // -- Matrix --
 
@@ -53,6 +53,7 @@ internal class P2pMatrixDependencyRegistry(dependencyRegistry: DependencyRegistr
                 MatrixRoomService(httpClient),
                 MatrixEventService(httpClient),
                 poller,
+                logger(MatrixClient.TAG),
             )
         }
 

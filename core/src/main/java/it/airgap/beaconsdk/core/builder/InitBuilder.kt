@@ -1,6 +1,7 @@
 package it.airgap.beaconsdk.core.builder
 
 import it.airgap.beaconsdk.core.blockchain.Blockchain
+import it.airgap.beaconsdk.core.configuration.LogLevel
 import it.airgap.beaconsdk.core.data.Connection
 import it.airgap.beaconsdk.core.internal.BeaconConfiguration
 import it.airgap.beaconsdk.core.internal.data.BeaconApplication
@@ -87,10 +88,15 @@ public abstract class InitBuilder<T, S : Storage, SecureS : SecureStorage, Self 
     public var ignoreUnsupportedBlockchains: Boolean = false
 
     /**
+     * Specifies the granularity of the logs.
+     */
+    public var logLevel: LogLevel = LogLevel.Default
+
+    /**
      * Builds a new instance of [T] and initializes the SDK.
      */
     public suspend fun build(): T {
-        val configuration = BeaconConfiguration(ignoreUnsupportedBlockchains)
+        val configuration = BeaconConfiguration(ignoreUnsupportedBlockchains, logLevel)
         val partialApp = BeaconApplication.Partial(name, iconUrl, appUrl)
 
         beaconSdk.add(beaconScope, partialApp, configuration, blockchains, storage, secureStorage)

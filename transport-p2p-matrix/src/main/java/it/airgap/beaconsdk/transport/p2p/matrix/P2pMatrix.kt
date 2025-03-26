@@ -38,11 +38,12 @@ public class P2pMatrix internal constructor(
     private val store: P2pMatrixStore,
     private val security: P2pMatrixSecurity,
     private val communicator: P2pMatrixCommunicator,
+    private val logger: Logger? = null,
 ) : P2pClient {
     private val matrixEvents: Flow<MatrixEvent> by lazy {
         matrix.events
             .filter { event -> store.state().map { it.relayServer == event.node }.getOrDefault(true) }
-            .onStart { tryLog(TAG) { matrix.start() } }
+            .onStart { tryLog(logger) { matrix.start() } }
     }
 
     private val matrixMessageEvents: Flow<MatrixEvent.TextMessage> by lazy { matrixEvents.filterIsInstance() }
@@ -179,7 +180,7 @@ public class P2pMatrix internal constructor(
                     .distinctUntilChangedBy { it.roomId }
                     .collect {
                         store.intent(OnChannelEvent(it.sender, it.roomId))
-                        tryLog(TAG) {
+                        tryLog(logger) {
                             joinRoomRepeated(it.roomId)
                         }
                     }
@@ -198,7 +199,7 @@ public class P2pMatrix internal constructor(
         carryError: Throwable? = null,
     ) {
         if (retry < 0) carryError?.let { throw it } ?: failWithJoiningRoomFailed(roomId)
-        logDebug(TAG, "Joining room $roomId (retries remaining: $retry)")
+        logger?.debug("Joining room $roomId (retries remaining: $retry)")
 
         val relayServer = store.state().getOrThrow().relayServer
         val error = joinRoom(relayServer, roomId).exceptionOrNull() ?: return
@@ -247,11 +248,11 @@ public class P2pMatrix internal constructor(
 
             val openChannel = joinedRooms().firstOrNull { it.isActive() && it.hasMember(recipient) }
             openChannel?.let {
-                logDebug(TAG, "Channel already open, reusing ${it.id}")
+                logger?.debug("Channel already open, reusing ${it.id}")
                 return@runCatching it.id
             }
 
-            logDebug(TAG, "No relevant rooms found")
+            logger?.debug("No relevant rooms found")
             createRoom(recipient).getOrThrow()?.id
         }
 
@@ -274,9 +275,9 @@ public class P2pMatrix internal constructor(
 
     private suspend fun MatrixRoom.waitForMember(member: String) {
         if (hasMember(member)) return
-        logDebug(TAG, "Waiting for $member to join room $id")
+        logger?.debug("Waiting for $member to join room $id")
         matrixJoinEvents.first { it.roomId == id && it.userId == member }
-        logDebug(TAG, "$member joined room $id")
+        logger?.debug("$member joined room $id")
     }
 
     private fun P2pMatrixSecurity.decryptPairingPayload(recipientAndPayload: Result<Pair<String, String>>): Result<String> =
@@ -325,7 +326,7 @@ public class P2pMatrix internal constructor(
     }
 
     public companion object {
-        private const val TAG = "P2pMatrix"
+        internal const val TAG = "P2pMatrix"
     }
 }
 
