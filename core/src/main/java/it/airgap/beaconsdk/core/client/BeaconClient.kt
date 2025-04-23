@@ -41,7 +41,12 @@ public abstract class BeaconClient<BM : BeaconMessage>(
     public val name: String
         get() = app.name
 
-    private val messageFlow: Flow<Result<BM>> by lazy {
+    /**
+     * Connects with known peers and subscribes to incoming messages
+     * returning a [Flow] of received [BM] instances or occurred errors
+     * represented as a [Result].
+     */
+    public fun connect(): Flow<Result<BM>> =
         connectionController.subscribe()
             .map { result -> result.flatMap { messageController.onIncomingMessage(it.origin, ownOrigin(it.origin), it.content) } }
             .onEach { result -> result.getOrNull()?.let { processMessage(it.first, it.second) } }
@@ -52,14 +57,6 @@ public abstract class BeaconClient<BM : BeaconMessage>(
                     onFailure = { Result.failure(BeaconException.from(it)) },
                 )
             }
-    }
-
-    /**
-     * Connects with known peers and subscribes to incoming messages
-     * returning a [Flow] of received [BM] instances or occurred errors
-     * represented as a [Result].
-     */
-    public fun connect(): Flow<Result<BM>> = messageFlow
 
     /**
      * Adds new [peers].
