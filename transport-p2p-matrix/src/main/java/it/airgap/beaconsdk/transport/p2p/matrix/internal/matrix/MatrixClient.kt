@@ -168,8 +168,11 @@ internal class MatrixClient(
 
     private suspend fun syncPoll(node: String) {
         syncScopes.get(node).launch {
-            syncPollFlow(this, node).collect()
-            syncScopes.cancel(node)
+            try {
+                syncPollFlow(this, node).collect()
+            } finally {
+                syncScopes.cancel(node)
+            }
         }
     }
 
