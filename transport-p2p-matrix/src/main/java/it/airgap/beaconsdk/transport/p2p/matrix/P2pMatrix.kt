@@ -41,9 +41,7 @@ public class P2pMatrix internal constructor(
     private val logger: Logger? = null,
 ) : P2pClient {
     private val matrixEvents: Flow<MatrixEvent> by lazy {
-        matrix.events
-            .filter { event -> store.state().map { it.relayServer == event.node }.getOrDefault(true) }
-            .onStart { tryLog(logger) { matrix.start() } }
+        matrix.events.filter { event -> store.state().map { it.relayServer == event.node }.getOrDefault(true) }
     }
 
     private val matrixMessageEvents: Flow<MatrixEvent.TextMessage> by lazy { matrixEvents.filterIsInstance() }
@@ -82,10 +80,10 @@ public class P2pMatrix internal constructor(
                         if (subscribedFlows.containsElement(publicKey, identifier)) emit(it)
                         else cancelFlow()
                     }
-            } catch (e: CancellationException) {
-                /* no action */
+            } finally {
+                unsubscribeFrom(peer)
             }
-        }
+        }.onStart { tryLog(logger) { matrix.start() } }
     }
 
     /**
@@ -161,7 +159,7 @@ public class P2pMatrix internal constructor(
         message.map { P2pMessage(publicKey.toHexString().asString(), it) }
 
     private suspend fun MatrixClient.start() {
-        startMutex.withLock withLock@ {
+        startMutex.withLock {
             if (isLoggedIn()) return@withLock
 
             val id = security.userId().getOrThrow()
